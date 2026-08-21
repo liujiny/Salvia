@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup OCSP
 
     \brief Allocates and initialises an OCSP context.

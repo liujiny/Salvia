@@ -1,4 +1,4 @@
-// FB Alpha Space Firebird driver module
+﻿// FB Alpha Space Firebird driver module
 // Based on MAME driver by Chris Hardy
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-#ifndef S2650_H
+﻿#ifndef S2650_H
 #define S2650_H
 
 #include "osd_cpu.h"

@@ -1,4 +1,4 @@
-// FinalBurn Neo Exidy Circus driver module
+﻿// FinalBurn Neo Exidy Circus driver module
 // Based on MAME driver by Mike Coates
 
 #include "tiles_generic.h"

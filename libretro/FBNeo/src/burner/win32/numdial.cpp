@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 #include <ctype.h>
 
 const double PI = 3.14159265358979323846f;			// Pi

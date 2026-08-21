@@ -1,4 +1,4 @@
-#define OP(num,func_name) static void func_name(nec_state_t *nec_state)
+﻿#define OP(num,func_name) static void func_name(nec_state_t *nec_state)
 
 OP( 0x00, i_add_br8  ) { DEF_br8;	ADDB;	PutbackRMByte(ModRM,dst);	CLKM(2,2,2,16,16,7);		}
 OP( 0x01, i_add_wr16 ) { DEF_wr16;	ADDW;	PutbackRMWord(ModRM,dst);	CLKR(24,24,11,24,16,7,2,EA);}

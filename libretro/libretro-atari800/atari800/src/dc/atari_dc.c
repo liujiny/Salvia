@@ -1,4 +1,4 @@
-/*
+﻿/*
  * SEGA Dreamcast support using KallistiOS (http://cadcdev.sourceforge.net)
  * (c) 2002-2015 Christian Groessler (chris@groessler.org)
  */

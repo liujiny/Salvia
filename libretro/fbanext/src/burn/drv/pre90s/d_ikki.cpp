@@ -1,4 +1,4 @@
-// FB Alpha Ikki / Farmers Rebellion driver module
+﻿// FB Alpha Ikki / Farmers Rebellion driver module
 // Based on MAME driver by Uki
 
 #include "tiles_generic.h"

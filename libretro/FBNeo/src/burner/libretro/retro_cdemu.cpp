@@ -1,4 +1,4 @@
-#include "retro_common.h"
+﻿#include "retro_common.h"
 #include "retro_cdemu.h"
 #include "burnint.h"
 #include "neocdlist.h"

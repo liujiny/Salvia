@@ -1,4 +1,4 @@
-#ifndef namco52_h
+﻿#ifndef namco52_h
 #define namco52_h
 
 /* While a little confusing, this interface uses 2 gains.

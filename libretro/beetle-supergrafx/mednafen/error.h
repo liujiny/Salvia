@@ -1,4 +1,4 @@
-#ifndef __MDFN_ERROR_H
+﻿#ifndef __MDFN_ERROR_H
 #define __MDFN_ERROR_H
 
 #include <errno.h>

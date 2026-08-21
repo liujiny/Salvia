@@ -1,4 +1,4 @@
-#ifndef _VSARM_USER_SETTINGS_H_
+﻿#ifndef _VSARM_USER_SETTINGS_H_
 #define _VSARM_USER_SETTINGS_H_
 
 /* Enables blinding mode, to prevent timing attacks */

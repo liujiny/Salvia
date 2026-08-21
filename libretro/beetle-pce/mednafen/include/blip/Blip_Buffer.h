@@ -1,4 +1,4 @@
-// Band-limited sound synthesis buffer
+﻿// Band-limited sound synthesis buffer
 // Various changes and hacks for use in Mednafen.
 
 // Blip_Buffer 0.4.1

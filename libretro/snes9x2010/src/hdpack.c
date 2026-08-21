@@ -1,4 +1,4 @@
-/* hdpack.c: HD texture pack engine. See hdpack.h for the format and
+﻿/* hdpack.c: HD texture pack engine. See hdpack.h for the format and
  * the architecture summary. All code is MSVC C89.
  *
  * Image sheets may be PNG, WebP or DDS; they are decoded through

@@ -1,4 +1,4 @@
-/* XzIn.c - Xz input
+﻿/* XzIn.c - Xz input
 2011-02-01 : Igor Pavlov : Public domain */
 
 #include <string.h>

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * sound.c - android sound
  *
  * Copyright (C) 2014 Kostas Nakos

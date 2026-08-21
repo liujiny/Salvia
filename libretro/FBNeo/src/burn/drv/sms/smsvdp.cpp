@@ -1,4 +1,4 @@
-/*
+﻿/*
     vdp.c --
     Video Display Processor (VDP) emulation.
 */

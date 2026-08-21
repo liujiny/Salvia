@@ -1,4 +1,4 @@
-// FB Neo Oli-Boo-Chu driver module
+﻿// FB Neo Oli-Boo-Chu driver module
 // Based on MAME driver by Nicola Salmoria
 // Sound emulation: hap
 

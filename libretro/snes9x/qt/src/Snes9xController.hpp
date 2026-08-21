@@ -1,4 +1,4 @@
-#ifndef __SNES9X_CONTROLLER_HPP
+﻿#ifndef __SNES9X_CONTROLLER_HPP
 #define __SNES9X_CONTROLLER_HPP
 #include <functional>
 #include <vector>

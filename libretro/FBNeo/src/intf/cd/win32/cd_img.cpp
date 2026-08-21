@@ -1,4 +1,4 @@
-// FBNeo cd-img, TruRip .ccd/.sub/.img support by Jan Klaassen
+﻿// FBNeo cd-img, TruRip .ccd/.sub/.img support by Jan Klaassen
 // .bin/.cue re-work by dink
 // .chd support: compressed CD image backend via libchdr (MAME project, BSD-3-Clause).
 // The image IS the .chd file; no CUE parsing required.  Sector layout is

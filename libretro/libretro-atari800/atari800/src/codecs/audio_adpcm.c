@@ -1,4 +1,4 @@
-/*
+﻿/*
  * audio_adpcm.c - Audio codec for Microsoft ADPCM adaptive PCM coding
  *
  * This is a derivative work of code from the FFmpeg project. The FFmpeg code

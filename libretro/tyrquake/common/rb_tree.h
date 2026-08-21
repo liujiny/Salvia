@@ -1,4 +1,4 @@
-/*
+﻿/*
   Red Black Trees
   (C) 1999  Andrea Arcangeli <andrea@suse.de>
 

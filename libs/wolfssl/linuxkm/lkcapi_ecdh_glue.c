@@ -1,4 +1,4 @@
-/* lkcapi_ecdh_glue.c -- glue logic to register ecdh wolfCrypt
+﻿/* lkcapi_ecdh_glue.c -- glue logic to register ecdh wolfCrypt
  * implementations with the Linux Kernel Cryptosystem
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.

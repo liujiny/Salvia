@@ -1,4 +1,4 @@
-struct x1_010_interface
+﻿struct x1_010_interface
 {
 	int clock;	/* clock */
 	int volume;	/* volume */

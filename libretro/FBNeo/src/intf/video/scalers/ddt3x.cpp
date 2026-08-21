@@ -1,4 +1,4 @@
-/*
+﻿/*
    Hyllian's Data Dependent Triangulation 3x
    
    Copyright (C) 2011, 2012 Hyllian/Jararaca - sergiogdb@gmail.com

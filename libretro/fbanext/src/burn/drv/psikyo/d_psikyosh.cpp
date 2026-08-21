@@ -1,4 +1,4 @@
-// FB Alpha Psikyo Sh2-based hardware driver module
+﻿// FB Alpha Psikyo Sh2-based hardware driver module
 // Based on MAME driver by David Haywood
 
 // To do!

@@ -1,4 +1,4 @@
-/* wolfcaam_ecdsa.h
+﻿/* wolfcaam_ecdsa.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

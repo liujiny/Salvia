@@ -1,4 +1,4 @@
-// Direct3D9 video output
+﻿// Direct3D9 video output
 // rewritten by regret  (Motion Blur source from VBA-M)
 #include "burner.h"
 #include "vid_directx_support.h"

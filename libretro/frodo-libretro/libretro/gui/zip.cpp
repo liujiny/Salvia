@@ -1,4 +1,4 @@
-/*
+﻿/*
 	modded for libretro-uae
 */
 

@@ -1,4 +1,4 @@
-case 0x7d: {
+﻿case 0x7d: {
   op_io();
   regs.B.a = regs.x;
   regs.p.n = !!(regs.B.a & 0x80);

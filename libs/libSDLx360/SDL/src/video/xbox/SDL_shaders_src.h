@@ -1,4 +1,4 @@
-#ifndef _SDL_shaders_src_h
+﻿#ifndef _SDL_shaders_src_h
 #define _SDL_shaders_src_h
 
 const static char* g_strShaderNormalSource =

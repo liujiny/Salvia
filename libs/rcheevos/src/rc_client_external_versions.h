@@ -1,4 +1,4 @@
-#ifndef RC_CLIENT_EXTERNAL_CONVERSIONS_H
+﻿#ifndef RC_CLIENT_EXTERNAL_CONVERSIONS_H
 #define RC_CLIENT_EXTERNAL_CONVERSIONS_H
 
 #include "rc_client_internal.h"

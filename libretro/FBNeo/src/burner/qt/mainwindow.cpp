@@ -1,4 +1,4 @@
-#include <QtWidgets>
+﻿#include <QtWidgets>
 #ifdef Q_OS_MACX
 #include <OpenGL/gl.h>
 #else

@@ -1,4 +1,4 @@
-#ifndef SEEKABLE_H
+﻿#ifndef SEEKABLE_H
 #define SEEKABLE_H
 
 #if defined (__cplusplus)

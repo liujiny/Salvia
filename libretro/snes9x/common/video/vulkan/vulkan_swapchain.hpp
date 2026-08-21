@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "vulkan_hpp_wrapper.hpp"
 #include <functional>

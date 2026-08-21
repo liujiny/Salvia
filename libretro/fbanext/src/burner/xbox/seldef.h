@@ -1,4 +1,4 @@
-// Selector definition, which will be used by other module, added by regret
+﻿// Selector definition, which will be used by other module, added by regret
 
 #define MASKMISC		(1 << (HARDWARE_PREFIX_MISC		>> 24))
 #define MASKCPS			(1 << (HARDWARE_PREFIX_CPS1		>> 24))

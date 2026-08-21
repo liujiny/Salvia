@@ -1,4 +1,4 @@
-#define VERBOSE 0
+﻿#define VERBOSE 0
 
 /*
  * vidhrdw/konamigx.c - Konami GX video hardware (here there be dragons)

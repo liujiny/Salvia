@@ -1,4 +1,4 @@
-static UINT32 I386OP(shift_rotate32)(UINT8 modrm, UINT32 value, UINT8 shift)
+﻿static UINT32 I386OP(shift_rotate32)(UINT8 modrm, UINT32 value, UINT8 shift)
 {
 	UINT32 dst, src;
 	dst = value;

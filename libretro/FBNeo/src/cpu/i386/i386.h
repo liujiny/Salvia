@@ -1,4 +1,4 @@
-#ifndef __I386_H_
+﻿#ifndef __I386_H_
 #define __I386_H_
 
 #define HAS_I486 		0

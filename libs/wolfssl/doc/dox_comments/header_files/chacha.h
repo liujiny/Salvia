@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup ChaCha
 
     \brief This function sets the initialization vector (nonce) for a ChaCha

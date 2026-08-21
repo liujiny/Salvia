@@ -1,4 +1,4 @@
-// Crazy Climber / Moon Shuttle sample player.
+﻿// Crazy Climber / Moon Shuttle sample player.
 
 #include "gal.h"
 

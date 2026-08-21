@@ -1,4 +1,4 @@
-/* silabs_random.c
+﻿/* silabs_random.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

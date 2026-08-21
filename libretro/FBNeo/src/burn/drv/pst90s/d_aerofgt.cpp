@@ -1,4 +1,4 @@
-// FinalBurn Neo Video System Co. hardware driver module
+﻿// FinalBurn Neo Video System Co. hardware driver module
 // Based on MAME driver by Nicola Salmoria
 
 // aerfboot & other boots - gfx ish

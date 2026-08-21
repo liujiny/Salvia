@@ -1,4 +1,4 @@
-// Time pilot, pooyan, rallyx, tutankhm, and rocnrope sound
+﻿// Time pilot, pooyan, rallyx, tutankhm, and rocnrope sound
 // also used by Jungler and Tactician in pre90s/d_rallyx.cpp
 // Based on MAME driver by Nicola Salmoria
 

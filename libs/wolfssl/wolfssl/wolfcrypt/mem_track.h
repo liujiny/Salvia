@@ -1,4 +1,4 @@
-/* mem_track.h
+﻿/* mem_track.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

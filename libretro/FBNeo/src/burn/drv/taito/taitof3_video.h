@@ -1,4 +1,4 @@
-extern void TaitoF3DrawCommon(INT32 scanline_start);
+﻿extern void TaitoF3DrawCommon(INT32 scanline_start);
 extern void TaitoF3VideoInit();
 extern void TaitoF3VideoExit();
 extern void TaitoF3VideoReset();

@@ -1,4 +1,4 @@
-#ifndef XEP80_FONTS_H_
+﻿#ifndef XEP80_FONTS_H_
 #define XEP80_FONTS_H_
 
 #include "config.h"

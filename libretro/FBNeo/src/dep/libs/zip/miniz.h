@@ -1,4 +1,4 @@
-#ifndef MINIZ_EXPORT
+﻿#ifndef MINIZ_EXPORT
 #define MINIZ_EXPORT
 #endif
 /* miniz.c 3.1.0 - public domain deflate/inflate, zlib-subset, ZIP

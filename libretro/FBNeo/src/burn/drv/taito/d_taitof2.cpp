@@ -1,4 +1,4 @@
-// Based on MAME driver by David Graves, Bryan McPhail, Brad Oliver, Andrew Prime, Brian Troha, Nicola Salmoria
+﻿// Based on MAME driver by David Graves, Bryan McPhail, Brad Oliver, Andrew Prime, Brian Troha, Nicola Salmoria
 
 // Todo:
 //  what next?

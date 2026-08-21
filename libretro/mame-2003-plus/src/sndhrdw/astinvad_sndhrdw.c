@@ -1,4 +1,4 @@
-/***********************************
+﻿/***********************************
  updated: 1997-04-09 08:46 TT
  updated  20-3-1998 LT Added colour changes on base explosion
  updated  02-6-1998 HJB copied from 8080bw and removed unneeded code

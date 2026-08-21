@@ -1,4 +1,4 @@
-// FB Alpha Alien Invaders driver module
+﻿// FB Alpha Alien Invaders driver module
 // Based on MAME driver by David Haywood, Mariusz Wojcieszek
 
 #include "tiles_generic.h"

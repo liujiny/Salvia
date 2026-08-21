@@ -1,4 +1,4 @@
-#ifndef ESC_H_
+﻿#ifndef ESC_H_
 #define ESC_H_
 
 /* TRUE to enable patched (fast) Serial I/O. */

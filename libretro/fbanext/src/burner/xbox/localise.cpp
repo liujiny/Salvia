@@ -1,4 +1,4 @@
-// Language module, added by regret
+﻿// Language module, added by regret
 
 /* changelog:
  update 2: add string cache

@@ -1,4 +1,4 @@
-/* Alloc.h -- Memory allocation functions
+﻿/* Alloc.h -- Memory allocation functions
 2024-01-22 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_ALLOC_H

@@ -1,4 +1,4 @@
-#ifndef RC_MACROS_H
+﻿#ifndef RC_MACROS_H
 #define RC_MACROS_H
 
 /* Little helpers for magnitude conversions */

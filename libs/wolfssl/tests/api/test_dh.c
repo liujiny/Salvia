@@ -1,4 +1,4 @@
-/* test_dh.c
+﻿/* test_dh.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

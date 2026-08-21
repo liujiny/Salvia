@@ -1,4 +1,4 @@
-#include "rc_client_external.h"
+﻿#include "rc_client_external.h"
 
 #include "rc_client_external_versions.h"
 #include "rc_client_internal.h"

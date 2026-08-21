@@ -1,4 +1,4 @@
-#include "launcher.h"
+﻿#include "launcher.h"
 
 #ifdef _XBOX
 	#include <xbox.h>

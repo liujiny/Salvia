@@ -1,4 +1,4 @@
-#if TIME_LOOP_HACKS
+﻿#if TIME_LOOP_HACKS
 
 #define CHECK_BC_LOOP												\
 if( _BC > 1 && _PCD < 0xfffc ) {									\

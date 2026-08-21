@@ -1,4 +1,4 @@
-/* src/config.h.in.  Generated from configure.ac by autoheader.  */
+﻿/* src/config.h.in.  Generated from configure.ac by autoheader.  */
 /* Version number of package */
 #define VERSION "1.0.9"
 

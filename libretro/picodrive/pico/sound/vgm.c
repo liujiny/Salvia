@@ -1,4 +1,4 @@
-/*
+﻿/*
  * VGM parser for PicoDrive
  * SPDX-License-Identifier: MIT
  *

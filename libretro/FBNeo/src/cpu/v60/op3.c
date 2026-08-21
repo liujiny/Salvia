@@ -1,4 +1,4 @@
-static UINT32 opINCB(void) /* TRUSTED */
+﻿static UINT32 opINCB(void) /* TRUSTED */
 {
 	UINT8 appb;
 	modAdd=PC+1;

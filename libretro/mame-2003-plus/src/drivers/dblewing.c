@@ -1,4 +1,4 @@
-/*
+﻿/*
 Double Wings
 Mitchell 1993
 This game runs on Data East hardware.

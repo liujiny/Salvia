@@ -1,4 +1,4 @@
-/*
+﻿/*
   libco.armeabi (2013-04-05)
   author: Themaister
   license: public domain

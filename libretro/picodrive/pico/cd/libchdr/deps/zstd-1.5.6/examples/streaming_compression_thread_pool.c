@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) Martin Liska, SUSE, Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *

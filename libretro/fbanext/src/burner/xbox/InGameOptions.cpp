@@ -1,4 +1,4 @@
-#include <xtl.h>
+﻿#include <xtl.h>
 #include "burner.h"
 #include "InGameOptions.h"
 #include "RomList.h"

@@ -1,4 +1,4 @@
-// FB Alpha Safari Rally driver module
+﻿// FB Alpha Safari Rally driver module
 // Based on MAME driver by Zsolt Vasvari
 
 #include "tiles_generic.h"

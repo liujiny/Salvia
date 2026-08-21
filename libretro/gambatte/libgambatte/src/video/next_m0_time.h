@@ -1,4 +1,4 @@
-#ifndef NEXT_M0_TIME_H_
+﻿#ifndef NEXT_M0_TIME_H_
 #define NEXT_M0_TIME_H_
 
 namespace gambatte {

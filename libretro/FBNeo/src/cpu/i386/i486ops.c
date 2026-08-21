@@ -1,4 +1,4 @@
-// Intel 486+ specific opcodes
+﻿// Intel 486+ specific opcodes
 
 static void I486OP(cpuid)(void)				// Opcode 0x0F A2
 {

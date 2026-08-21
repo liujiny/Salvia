@@ -1,4 +1,4 @@
-/*  From some old project of mine
+﻿/*  From some old project of mine
  *  Copyright (C) 2011 KrossX
  *
  *  This program is free software: you can redistribute it and/or modify

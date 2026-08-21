@@ -1,4 +1,4 @@
-/****************************************************************************
+﻿/****************************************************************************
 
 Royal Mahjong (c) 1982 Falcon
 and many other Dyna/Dynax games running in similar bare-bones hardware

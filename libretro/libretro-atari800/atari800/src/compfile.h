@@ -1,4 +1,4 @@
-#ifndef COMPFILE_H_
+﻿#ifndef COMPFILE_H_
 #define COMPFILE_H_
 
 #include <stdio.h>  /* FILE */

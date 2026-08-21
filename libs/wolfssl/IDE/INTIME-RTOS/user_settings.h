@@ -1,4 +1,4 @@
-/* Example custom user settings for wolfSSL and INtime RTOS port */
+﻿/* Example custom user settings for wolfSSL and INtime RTOS port */
 
 #ifndef WOLFSSL_USER_SETTINGS_H
 #define WOLFSSL_USER_SETTINGS_H

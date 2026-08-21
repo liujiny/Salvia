@@ -1,4 +1,4 @@
-#include "common.h"
+﻿#include "common.h"
 #include "../libretro/dosio.h"
 #include "fdc.h"
 #include "fdd.h"

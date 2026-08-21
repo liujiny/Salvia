@@ -1,4 +1,4 @@
-
+﻿
 void ds1302_reset();
 void ds1302_dat_write(UINT8 data);
 void ds1302_clk_write(UINT8 data);

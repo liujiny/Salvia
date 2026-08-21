@@ -1,4 +1,4 @@
-/*	System18 Hardware
+﻿/*	System18 Hardware
 **
 **	MC68000 + Z80
 **	2xYM3438 + Custom PCM

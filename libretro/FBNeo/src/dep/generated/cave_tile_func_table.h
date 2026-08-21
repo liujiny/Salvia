@@ -1,4 +1,4 @@
-// Table with all function addresses.
+﻿// Table with all function addresses.
 static RenderTileFunction RenderTileFunctionTable[] = {
 	&RenderTile16_320_ROT0_NOFLIP_NOROWSCROLL_NOROWSELECT_NOCLIP_256, &RenderTile16_320_ROT0_NOFLIP_NOROWSCROLL_NOROWSELECT_CLIP_256, 
 	&RenderTile16_320_ROT0_NOFLIP_ROWSCROLL_NOROWSELECT_NOCLIP_256, &RenderTile16_320_ROT0_NOFLIP_ROWSCROLL_NOROWSELECT_CLIP_256, 

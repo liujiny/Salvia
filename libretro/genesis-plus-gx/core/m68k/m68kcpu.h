@@ -1,4 +1,4 @@
-#ifndef M68KCPU__HEADER
+﻿#ifndef M68KCPU__HEADER
 #define M68KCPU__HEADER
 
 /* ======================================================================== */

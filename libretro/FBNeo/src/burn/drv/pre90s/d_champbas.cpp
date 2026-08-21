@@ -1,4 +1,4 @@
-// FB Neo Champion Baseball driver module
+﻿// FB Neo Champion Baseball driver module
 // Based on MAME driver by Ernesto Corvi, Jarek Parchanski, Nicola Salmoria, hap
 
 // note:

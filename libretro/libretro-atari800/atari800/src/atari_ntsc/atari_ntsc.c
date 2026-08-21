@@ -1,4 +1,4 @@
-/* Based on nes_ntsc 0.2.2. http://www.slack.net/~ant/ */
+﻿/* Based on nes_ntsc 0.2.2. http://www.slack.net/~ant/ */
 
 #include "colours.h"
 #include "atari_ntsc.h"

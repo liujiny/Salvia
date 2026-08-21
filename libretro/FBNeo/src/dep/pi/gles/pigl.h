@@ -1,4 +1,4 @@
-/**
+﻿/**
 ** Copyright (C) 2015-2019 Akop Karapetyan
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");

@@ -1,4 +1,4 @@
-#include "vulkan_slang_pipeline.hpp"
+﻿#include "vulkan_slang_pipeline.hpp"
 #include "slang_helpers.hpp"
 #include <unordered_map>
 

@@ -1,4 +1,4 @@
-#ifndef gaelco_snd_h
+﻿#ifndef gaelco_snd_h
 #define gaelco_snd_h
 
 struct gaelcosnd_interface

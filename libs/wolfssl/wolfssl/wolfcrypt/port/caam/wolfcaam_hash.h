@@ -1,4 +1,4 @@
-/* wolfcaam_hash.h
+﻿/* wolfcaam_hash.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

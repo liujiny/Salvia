@@ -1,4 +1,4 @@
-#ifndef M68KMAME__HEADER
+﻿#ifndef M68KMAME__HEADER
 #define M68KMAME__HEADER
 
 /* ======================================================================== */

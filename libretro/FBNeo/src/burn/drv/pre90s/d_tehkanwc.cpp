@@ -1,4 +1,4 @@
-// FB Neo - Tehkan Wolrd Cup driver
+﻿// FB Neo - Tehkan Wolrd Cup driver
 // Based on MAME driver by Ernesto Corvi
 
 #include "tiles_generic.h"

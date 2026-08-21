@@ -1,4 +1,4 @@
-// Midway Sounds Good audio module
+﻿// Midway Sounds Good audio module
 // based on MAME sources by Aaron Giles
 
 #include "burnint.h"

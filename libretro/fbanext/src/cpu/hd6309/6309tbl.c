@@ -1,4 +1,4 @@
-HD6309_INLINE void illegal( void );
+﻿HD6309_INLINE void illegal( void );
 HD6309_INLINE void neg_di( void );
 HD6309_INLINE void oim_di( void );
 HD6309_INLINE void aim_di( void );

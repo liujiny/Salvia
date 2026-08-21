@@ -1,4 +1,4 @@
-/* module tracker decoding support using libmikmod */
+﻿/* module tracker decoding support using libmikmod */
 
 #if !defined(_SND_MIKMOD_H_)
 #define _SND_MIKMOD_H_

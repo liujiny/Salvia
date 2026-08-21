@@ -1,4 +1,4 @@
-/* Tecmo System
+﻿/* Tecmo System
  Driver by Farfetch, David Haywood & Tomasz Slanina
   Protection simulation by nuapete
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * dummy/none mp3 code
  * (C) notaz, 2013
  *

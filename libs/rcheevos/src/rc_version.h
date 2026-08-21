@@ -1,4 +1,4 @@
-#ifndef RC_VERSION_H
+﻿#ifndef RC_VERSION_H
 #define RC_VERSION_H
 
 #include "rc_export.h"

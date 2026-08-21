@@ -1,4 +1,4 @@
-#include "opera_log.h"
+﻿#include "opera_log.h"
 
 #include <stddef.h>
 

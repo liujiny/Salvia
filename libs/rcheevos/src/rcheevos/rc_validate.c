@@ -1,4 +1,4 @@
-#include "rc_validate.h"
+﻿#include "rc_validate.h"
 
 #include "rc_consoles.h"
 #include "rc_internal.h"

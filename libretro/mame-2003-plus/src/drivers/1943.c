@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 TODO: 1943 is almost identical to GunSmoke (one more scrolling playfield). We
       should merge the two drivers.

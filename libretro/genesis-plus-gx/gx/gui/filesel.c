@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  filesel.c
  * 
  *  File Browser

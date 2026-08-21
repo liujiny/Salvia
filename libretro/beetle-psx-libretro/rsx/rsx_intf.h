@@ -1,4 +1,4 @@
-#ifndef __RSX_INTF_H__
+﻿#ifndef __RSX_INTF_H__
 #define __RSX_INTF_H__
 
 #include "libretro.h"

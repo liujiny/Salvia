@@ -1,4 +1,4 @@
-/*
+﻿/*
  * gpu_duck_driver.h
  *
  * Bridge between the PSX GP0 command stream (as parsed by xbox_soft's

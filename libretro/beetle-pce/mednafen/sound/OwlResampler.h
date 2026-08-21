@@ -1,4 +1,4 @@
-#ifndef __MDFN_SOUND_OWLRESAMPLER_H
+﻿#ifndef __MDFN_SOUND_OWLRESAMPLER_H
 #define __MDFN_SOUND_OWLRESAMPLER_H
 
 class OwlResampler;

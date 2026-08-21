@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup RIPEMD
     \brief  この関数は、RIPemdのダイジェスト、バッファ、LOLEN ,HILENを初期化することによってRIPemd構造を初期化します。
     \return 0  機能の実行に成功したことに戻ります。RIPEMD構造が初期化されます。

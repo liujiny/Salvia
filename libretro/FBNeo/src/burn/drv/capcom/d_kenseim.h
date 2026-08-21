@@ -1,4 +1,4 @@
-static UINT8 KenseimInputPort0[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+﻿static UINT8 KenseimInputPort0[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 static UINT8 KenseimInputPort1[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 static UINT8 KenseimInputPort2[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 static UINT8 KenseimDip[2]        = {0, 0};

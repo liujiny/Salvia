@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 #include "vidhrdw/generic.h"
 
 static int gfxbank;

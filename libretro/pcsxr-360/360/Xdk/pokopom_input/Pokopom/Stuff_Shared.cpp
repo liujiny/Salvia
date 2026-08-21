@@ -1,4 +1,4 @@
-#include "General.h"
+﻿#include "General.h"
 
 std::list <keyEvent> keyEventList;
 

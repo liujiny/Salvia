@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup Diffie-Hellman
     \brief  この関数は、Diffie-Hellman Exchangeプロトコルを使用して安全な秘密鍵を交渉するのに使用するためのDiffie-Hellmanキーを初期化します。
     \return none  いいえ返します。

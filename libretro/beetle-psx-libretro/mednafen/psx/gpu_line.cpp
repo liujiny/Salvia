@@ -1,4 +1,4 @@
-#ifdef __cplusplus
+﻿#ifdef __cplusplus
 
 #ifndef __STDC_CONSTANT_MACROS
 #define __STDC_CONSTANT_MACROS

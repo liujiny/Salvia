@@ -1,4 +1,4 @@
-case 0x00: {
+﻿case 0x00: {
   op_io();
   break;
 }

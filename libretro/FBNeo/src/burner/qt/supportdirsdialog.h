@@ -1,4 +1,4 @@
-#ifndef SUPPORTDIRSDIALOG_H
+﻿#ifndef SUPPORTDIRSDIALOG_H
 #define SUPPORTDIRSDIALOG_H
 
 #include <QDialog>

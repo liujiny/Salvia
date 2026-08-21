@@ -1,4 +1,4 @@
-/*
+﻿/*
  * crc32.c - functions for computing CRC32
  *
  * Copyright (C) 2012 Tomasz Krasuski

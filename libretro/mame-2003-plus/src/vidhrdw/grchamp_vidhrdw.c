@@ -1,4 +1,4 @@
-/*	video hardware for Taito Grand Champion */
+﻿/*	video hardware for Taito Grand Champion */
 
 #include "driver.h"
 #include "vidhrdw/generic.h"

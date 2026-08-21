@@ -1,4 +1,4 @@
-#define DR_WAV_IMPLEMENTATION
+﻿#define DR_WAV_IMPLEMENTATION
 #include "../../dr_wav.h"
 #include <sndfile.h>
 #include "../common/dr_common.c"

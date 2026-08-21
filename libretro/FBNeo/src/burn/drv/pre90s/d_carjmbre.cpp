@@ -1,4 +1,4 @@
-// FB Alpha Car Jamborie driver module
+﻿// FB Alpha Car Jamborie driver module
 // Based on MAME driver by Hap
 
 #include "tiles_generic.h"

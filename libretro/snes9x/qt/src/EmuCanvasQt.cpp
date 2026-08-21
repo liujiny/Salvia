@@ -1,4 +1,4 @@
-#include "EmuCanvasQt.hpp"
+﻿#include "EmuCanvasQt.hpp"
 #include "EmuConfig.hpp"
 
 #include <QGuiApplication>

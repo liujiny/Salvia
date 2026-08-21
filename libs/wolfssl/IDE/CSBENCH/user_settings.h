@@ -1,4 +1,4 @@
-#ifndef WOLFSSL_CSBENCH_H
+﻿#ifndef WOLFSSL_CSBENCH_H
 #define WOLFSSL_CSBENCH_H
 
 /* wolfSSL settings */

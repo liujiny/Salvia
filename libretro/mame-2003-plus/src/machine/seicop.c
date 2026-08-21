@@ -1,4 +1,4 @@
-#include <math.h>
+﻿#include <math.h>
 #include "driver.h"
 #include "sndhrdw/seibu.h"
 #include "includes/denjinmk.h"

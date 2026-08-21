@@ -1,4 +1,4 @@
-/* silabs_aes.h
+﻿/* silabs_aes.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * cuefile handling
  * (C) notaz, 2008
  * (C) irixxxx, 2020-2023

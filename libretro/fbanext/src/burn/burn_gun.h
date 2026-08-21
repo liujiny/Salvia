@@ -1,4 +1,4 @@
-#define MAX_GUNS	4
+﻿#define MAX_GUNS	4
 
 extern INT32 nBurnGunNumPlayers;
 

@@ -1,4 +1,4 @@
-// Version number, written as  vV.V.BB  or  vV.V.BBaa
+﻿// Version number, written as  vV.V.BB  or  vV.V.BBaa
 // (0xVVBBaa, in BCD notation)
 
 #define VER_MAJOR  1

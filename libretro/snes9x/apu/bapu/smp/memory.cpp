@@ -1,4 +1,4 @@
-unsigned SMP::port_read(unsigned addr) {
+﻿unsigned SMP::port_read(unsigned addr) {
   return apuram[0xf4 + (addr & 3)];
 }
 

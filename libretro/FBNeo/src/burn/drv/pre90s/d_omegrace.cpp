@@ -1,4 +1,4 @@
-// FB Neo Omega Race driver moulde
+﻿// FB Neo Omega Race driver moulde
 // Based on MAME driver by Bernd Wiebelt
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-/*** DRIVER INFO **************************************************************
+﻿/*** DRIVER INFO **************************************************************
 
 Macross Plus                        (c)1996 Banpresto
 Quiz Bisyoujo Senshi Sailor Moon    (c)1997 Banpresto

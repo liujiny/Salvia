@@ -1,4 +1,4 @@
-/* Pass (c)1992, Oksan
+﻿/* Pass (c)1992, Oksan
 
  Driver by David Haywood
  Inputs by Stephh

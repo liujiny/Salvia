@@ -1,4 +1,4 @@
-#ifndef _USER_SETTINGS_H_
+﻿#ifndef _USER_SETTINGS_H_
 #define _USER_SETTINGS_H_
 
 #define WOLFSSL_AZSPHERE

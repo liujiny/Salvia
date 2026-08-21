@@ -1,4 +1,4 @@
-/* devcrypto_hash.c
+﻿/* devcrypto_hash.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

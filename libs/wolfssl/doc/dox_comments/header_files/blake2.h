@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup BLAKE2
 
     \brief This function initializes a Blake2b structure for use with the

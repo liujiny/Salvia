@@ -1,4 +1,4 @@
-#ifndef _LUAENGINE_H
+﻿#ifndef _LUAENGINE_H
 #define _LUAENGINE_H
 
 enum LuaCallID

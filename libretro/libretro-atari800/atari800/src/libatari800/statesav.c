@@ -1,4 +1,4 @@
-/*
+﻿/*
  * libatari800/video.c - Atari800 as a library - saving the emulator's state to a file
  *
  * Copyright (c) 2001-2002 Jacek Poplawski

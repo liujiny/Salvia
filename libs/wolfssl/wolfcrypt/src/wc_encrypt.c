@@ -1,4 +1,4 @@
-/* wc_encrypt.c
+﻿/* wc_encrypt.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

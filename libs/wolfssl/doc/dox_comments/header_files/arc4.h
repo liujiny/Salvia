@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup ARC4
     \brief This function encrypts an input message from the buffer in, placing
     the ciphertext in the output buffer out, or decrypts a ciphertext from the

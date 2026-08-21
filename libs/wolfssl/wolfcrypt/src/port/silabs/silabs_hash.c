@@ -1,4 +1,4 @@
-/* silabs_hash.c
+﻿/* silabs_hash.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-#ifndef __MDFN_PCE_HUC_H
+﻿#ifndef __MDFN_PCE_HUC_H
 #define __MDFN_PCE_HUC_H
 
 #include <stddef.h>

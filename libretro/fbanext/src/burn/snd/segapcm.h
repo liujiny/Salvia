@@ -1,4 +1,4 @@
-#define   BANK_256    (11)
+﻿#define   BANK_256    (11)
 #define   BANK_512    (12)
 #define   BANK_12M    (13)
 #define   BANK_MASK7    (0x70<<16)

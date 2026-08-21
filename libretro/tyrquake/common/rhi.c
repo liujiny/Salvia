@@ -1,4 +1,4 @@
-/*
+﻿/*
  * RHI selection and dispatch.
  *
  * The 'tyrquake_renderer' core option selects a backend at

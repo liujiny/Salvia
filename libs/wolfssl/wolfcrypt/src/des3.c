@@ -1,4 +1,4 @@
-/* des3.c
+﻿/* des3.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

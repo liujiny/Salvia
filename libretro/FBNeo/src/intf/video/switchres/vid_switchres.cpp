@@ -1,4 +1,4 @@
-#include "switchres_wrapper.h"
+﻿#include "switchres_wrapper.h"
 #include "burner.h"
 
 

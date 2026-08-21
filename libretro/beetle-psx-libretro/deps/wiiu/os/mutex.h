@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <wiiu/types.h>
 #include <wiiu/os/thread.h>
 

@@ -1,4 +1,4 @@
-#include "libretro.h"
+﻿#include "libretro.h"
 #include "mednafen/mednafen-types.h"
 #include <math.h>
 #include <algorithm>

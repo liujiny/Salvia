@@ -1,4 +1,4 @@
-#ifdef HAVE_OPLL_CORE
+﻿#ifdef HAVE_OPLL_CORE
 /*
  * Copyright (C) 2019 Nuke.YKT
  * 

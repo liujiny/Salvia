@@ -1,4 +1,4 @@
-/* 7zCrc.c -- CRC32 init
+﻿/* 7zCrc.c -- CRC32 init
 2010-12-01 : Igor Pavlov : Public domain */
 
 #include "7zCrc.h"

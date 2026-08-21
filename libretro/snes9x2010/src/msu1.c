@@ -1,4 +1,4 @@
-/***********************************************************************************
+﻿/***********************************************************************************
   Snes9x - Portable Super Nintendo Entertainment System (TM) emulator.
 
   MSU1 emulator code (C port for the snes9x2010 libretro core).

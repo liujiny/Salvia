@@ -1,4 +1,4 @@
-/*
+﻿/*
  * sysrom.c - functions for searching and loading system ROM images
  *
  * Copyright (C) 2012 Tomasz Krasuski

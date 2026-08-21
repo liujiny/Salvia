@@ -1,4 +1,4 @@
-// FB Alpha Bishi Bashi driver module
+﻿// FB Alpha Bishi Bashi driver module
 // Based on MAME driver by R. Belmont
 
 #include "tiles_generic.h"

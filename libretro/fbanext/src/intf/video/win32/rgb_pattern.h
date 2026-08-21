@@ -1,4 +1,4 @@
-// d3d RGB effects patterns
+﻿// d3d RGB effects patterns
 
 static const unsigned char pattern_18x10_large_round[] =
 {

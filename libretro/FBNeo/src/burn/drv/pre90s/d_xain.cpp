@@ -1,4 +1,4 @@
-// FinalBurn Neo Xain'd Sleena driver module
+﻿// FinalBurn Neo Xain'd Sleena driver module
 // Based on MAME driver by Carlos A. Lozano, Rob Rosenbrock, Phil Stroffolino, and Bryan McPhail
 
 #include "tiles_generic.h"

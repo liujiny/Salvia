@@ -1,4 +1,4 @@
-/*  pcfread.c
+﻿/*  pcfread.c
 
     FreeType font driver for pcf fonts
 

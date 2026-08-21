@@ -1,4 +1,4 @@
-UINT8 usb_sound_status_read();
+﻿UINT8 usb_sound_status_read();
 void usb_sound_data_write(UINT8 data);
 UINT8 usb_sound_prgram_read(UINT16 offset);
 void usb_sound_prgram_write(UINT16 offset, UINT8 data);

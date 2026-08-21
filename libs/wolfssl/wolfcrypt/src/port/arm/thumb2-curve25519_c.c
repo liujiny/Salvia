@@ -1,4 +1,4 @@
-/* thumb2-curve25519
+﻿/* thumb2-curve25519
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

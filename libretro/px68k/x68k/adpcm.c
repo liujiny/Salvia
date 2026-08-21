@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  ADPCM.C - ADPCM (OKI MSM6258V)
  */
 

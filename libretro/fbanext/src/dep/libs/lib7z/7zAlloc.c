@@ -1,4 +1,4 @@
-/* 7zAlloc.c -- Allocation functions
+﻿/* 7zAlloc.c -- Allocation functions
 2010-10-29 : Igor Pavlov : Public domain */
 
 #include "7zAlloc.h"

@@ -1,4 +1,4 @@
-// Midway Turbo Cheap Squeak audio module
+﻿// Midway Turbo Cheap Squeak audio module
 // based on MAME sources by Aaron Giles
 
 #include "burnint.h"

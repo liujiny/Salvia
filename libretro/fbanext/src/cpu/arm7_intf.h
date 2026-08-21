@@ -1,4 +1,4 @@
-
+﻿
 // use these in arm7.cpp
 void Arm7_program_write_byte_32le(UINT32 addr, UINT8 data);
 void Arm7_program_write_word_32le(UINT32 addr, UINT16 data);

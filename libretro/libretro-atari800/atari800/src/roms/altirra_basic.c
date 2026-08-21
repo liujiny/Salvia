@@ -1,4 +1,4 @@
-/*
+﻿/*
  * altirra_basic.c - BASIC ROM replacement
  *
  * Compiled from the sources in the emuos folder.

@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  sha.cpp
  *
  *  Copyright (C) 1998, 2009

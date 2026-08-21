@@ -1,4 +1,4 @@
-/* test_des3.h
+﻿/* test_des3.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

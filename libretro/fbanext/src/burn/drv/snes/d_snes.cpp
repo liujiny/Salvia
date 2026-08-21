@@ -1,4 +1,4 @@
-#include "snes.h"
+﻿#include "snes.h"
 
 unsigned char DoSnesReset = 0;
 

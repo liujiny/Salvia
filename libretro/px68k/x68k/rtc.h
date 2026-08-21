@@ -1,4 +1,4 @@
-#ifndef _X68K_RTC_H
+﻿#ifndef _X68K_RTC_H
 #define _X68K_RTC_H
 
 #include <stdint.h>

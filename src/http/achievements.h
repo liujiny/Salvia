@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define NO_DATABASE
 

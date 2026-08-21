@@ -1,4 +1,4 @@
-/* Magical Cat Adventure / Nostradamus Video Hardware */
+﻿/* Magical Cat Adventure / Nostradamus Video Hardware */
 
 /*
 Notes:

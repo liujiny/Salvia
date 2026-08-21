@@ -1,4 +1,4 @@
-#ifndef __PCE_INPUT_H
+﻿#ifndef __PCE_INPUT_H
 #define __PCE_INPUT_H
 
 #include <boolean.h>

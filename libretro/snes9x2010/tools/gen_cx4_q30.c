@@ -1,4 +1,4 @@
-/* gen_cx4_q30.c - offline generator for the CX4 wireframe sine/cosine tables.
+﻿/* gen_cx4_q30.c - offline generator for the CX4 wireframe sine/cosine tables.
  *
  * The Capcom CX4 (Hitachi HG51B169) is a fixed-point DSP: it has no floating
  * point unit and performs all trigonometry through integer data-ROM tables.

@@ -1,4 +1,4 @@
-void ymz770_init(UINT8 *rom, INT32 rom_length);
+﻿void ymz770_init(UINT8 *rom, INT32 rom_length);
 void ymz774_init(UINT8 *rom, INT32 rom_length); // ymz774-specific!
 void ymz770_exit();
 void ymz770_set_buffered(INT32 (*pCPUCyclesCB)(), INT32 nCPUMhz);

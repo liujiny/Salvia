@@ -1,4 +1,4 @@
-#include "../libpicofe/gp2x/plat_gp2x.h"
+﻿#include "../libpicofe/gp2x/plat_gp2x.h"
 
 // ------------ gfx options menu ------------
 

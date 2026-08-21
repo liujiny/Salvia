@@ -1,4 +1,4 @@
-/*****************************************************************************\
+ï»¿/*****************************************************************************\
      Snes9x - Portable Super Nintendo Entertainment System (TM) emulator.
                 This file is licensed under the Snes9x License.
    For further information, consult the LICENSE file in the root directory.
@@ -169,16 +169,16 @@ void SetInfoDlgColor(unsigned char, unsigned char, unsigned char);
 #elif defined(_XBOX)
 #include <ppcintrinsics.h>
 #include <ppcintrinsics.h>
-// Para leer un WORD (16 bits) con bytes invertidos (instrucción lhbrx)
+// Para leer un WORD (16 bits) con bytes invertidos (instrucciï¿½n lhbrx)
 #define READ_WORD(s)    ((uint16)__loadshortbytereverse(0, (void*)(s)))
 // PARA CORREGIR TU ERROR: El nombre correcto es __loadwordbytereverse (32 bits)
 // En el XDK, un 'word' de PowerPC son 32 bits.
 #define READ_DWORD(s)   ((uint32)__loadwordbytereverse(0, (void*)(s)))
-// Para escribir un WORD (16 bits) con bytes invertidos (instrucción sthbrx)
+// Para escribir un WORD (16 bits) con bytes invertidos (instrucciï¿½n sthbrx)
 #define WRITE_WORD(s,d) __storeshortbytereverse((uint16)(d), 0, (void*)(s))
-// Para escribir un DWORD (32 bits) con bytes invertidos (instrucción stwbrx)
+// Para escribir un DWORD (32 bits) con bytes invertidos (instrucciï¿½n stwbrx)
 #define WRITE_DWORD(s,d) __storewordbytereverse((uint32)(d), 0, (void*)(s))
-// Lee 32 bits invertidos y aplica máscara para quedarse con los 24 bits bajos
+// Lee 32 bits invertidos y aplica mï¿½scara para quedarse con los 24 bits bajos
 #define READ_3WORD(s) (__loadwordbytereverse(0, (void*)(s)) & 0x00FFFFFF)
 
 #define WRITE_3WORD(s, d) { \

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * MP3 decoding using dr_mp3
  * (C) irixxxx, 2020
  *

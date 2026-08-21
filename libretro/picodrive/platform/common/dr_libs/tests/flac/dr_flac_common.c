@@ -1,4 +1,4 @@
-#define DR_FLAC_IMPLEMENTATION
+﻿#define DR_FLAC_IMPLEMENTATION
 #include "../../dr_flac.h"
 
 /* libFLAC has a warning in their header. *sigh*. */

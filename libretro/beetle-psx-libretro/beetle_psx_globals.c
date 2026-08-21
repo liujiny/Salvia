@@ -1,4 +1,4 @@
-#include <boolean.h>
+﻿#include <boolean.h>
 #include <stdint.h>
 #include "beetle_psx_globals.h"
 

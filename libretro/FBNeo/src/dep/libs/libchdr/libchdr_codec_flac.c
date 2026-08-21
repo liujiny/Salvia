@@ -1,4 +1,4 @@
-#include "codec_flac.h"
+﻿#include "codec_flac.h"
 
 #include <stddef.h>
 #include <stdlib.h>

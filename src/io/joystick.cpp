@@ -1,4 +1,4 @@
-#include <SDL.h>
+﻿#include <SDL.h>
 #include <io/joystick.h>
 #include <io/hotkeys.h>
 #include <io/filelist.h>

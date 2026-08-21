@@ -1,4 +1,4 @@
-/* armv8-chacha-asm
+﻿/* armv8-chacha-asm
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-#include "tiles_generic.h"
+﻿#include "tiles_generic.h"
 #include "konamiic.h"
 
 static void (*K053245Callback[2])(INT32 *code,INT32 *color,INT32 *priority);

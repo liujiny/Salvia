@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "ui_ControllerPanel.h"
 #include "BindingPanel.hpp"
 #include <QMenu>

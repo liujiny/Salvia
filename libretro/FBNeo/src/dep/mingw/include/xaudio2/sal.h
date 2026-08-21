@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #if __GNUC__ >=3
 #pragma GCC system_header

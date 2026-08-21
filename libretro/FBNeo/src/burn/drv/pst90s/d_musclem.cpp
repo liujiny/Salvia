@@ -1,4 +1,4 @@
-// FB Neo Inter Geo Muscle Master hardware driver module
+﻿// FB Neo Inter Geo Muscle Master hardware driver module
 // Based on MAME driver by Phil Bennett
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-// FB Neo The Pit driver module
+﻿// FB Neo The Pit driver module
 // Based on MAME driver by Zsolt Vasvari
 
 #include "tiles_generic.h"

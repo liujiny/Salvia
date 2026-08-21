@@ -1,4 +1,4 @@
-//
+﻿//
 //  Sparkle.h
 //  Sparkle
 //

@@ -1,4 +1,4 @@
-/* lhash.h
+﻿/* lhash.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

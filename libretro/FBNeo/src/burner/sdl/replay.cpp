@@ -1,4 +1,4 @@
-// Functions for recording & replaying input
+﻿// Functions for recording & replaying input
 // Stub version for SDL/Pi
 #include "burner.h"
 

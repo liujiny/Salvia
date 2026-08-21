@@ -1,4 +1,4 @@
-// TC0110PCR
+﻿// TC0110PCR
 
 #include "burnint.h"
 #include "taito_ic.h"

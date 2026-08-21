@@ -1,4 +1,4 @@
-// FB Neo Splendor Blast driver module
+﻿// FB Neo Splendor Blast driver module
 // Based on MAME driver by Acho A. Tang, Nicola Salmoria
 
 // TOdink:

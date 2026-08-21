@@ -1,4 +1,4 @@
-/*
+﻿/*
  * altirra_5200_os.c - 5200 OS ROM replacement
  *
  * Compiled from the sources in the emuos folder.

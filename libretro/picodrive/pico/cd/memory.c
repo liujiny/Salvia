@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Memory I/O handlers for Sega/Mega CD.
  * (C) notaz, 2007-2009
  * (C) irixxxx, 2019-2024

@@ -1,4 +1,4 @@
-#ifndef GRAPH_H
+﻿#ifndef GRAPH_H
 #define GRAPH_H 1
 
 extern void DrawFBoxBmp(char  *buffer,int x,int y,int dx,int dy,unsigned   color);

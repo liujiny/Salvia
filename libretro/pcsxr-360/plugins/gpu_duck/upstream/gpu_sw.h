@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "common/heap_array.h"
 #include "gpu.h"
 #include "gpu_sw_backend.h"

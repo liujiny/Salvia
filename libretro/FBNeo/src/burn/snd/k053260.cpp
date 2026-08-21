@@ -1,4 +1,4 @@
-// copyright-holders:Ernesto Corvi, Alex W. Jackson
+﻿// copyright-holders:Ernesto Corvi, Alex W. Jackson
 /*********************************************************
 
     Konami 053260 KDSC

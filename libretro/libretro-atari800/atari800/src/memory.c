@@ -1,4 +1,4 @@
-/*
+﻿/*
  * memory.c - memory emulation
  *
  * Copyright (C) 1995-1998 David Firth

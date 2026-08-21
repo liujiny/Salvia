@@ -1,4 +1,4 @@
-/* wolfcaam_fsl_nxp.c
+﻿/* wolfcaam_fsl_nxp.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

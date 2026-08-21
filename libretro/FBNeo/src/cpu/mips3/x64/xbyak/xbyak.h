@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifndef XBYAK_XBYAK_H_
 #define XBYAK_XBYAK_H_
 /*!

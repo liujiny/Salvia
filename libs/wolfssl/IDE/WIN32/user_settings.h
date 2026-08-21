@@ -1,4 +1,4 @@
-/* user_settings.h - Win32 (x86 Little-Endian)
+﻿/* user_settings.h - Win32 (x86 Little-Endian)
  * wolfSSL 5.8.4 configuration for curl with TLS 1.3 support
  */
 

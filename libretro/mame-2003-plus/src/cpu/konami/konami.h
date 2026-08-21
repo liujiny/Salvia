@@ -1,4 +1,4 @@
-/*** konami: Portable Konami cpu emulator ******************************************/
+﻿/*** konami: Portable Konami cpu emulator ******************************************/
 
 #ifndef _KONAMI_H
 #define _KONAMI_H

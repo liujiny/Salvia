@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "IS9xDisplayOutput.h"
 #include "common/video/vulkan/vulkan_context.hpp"

@@ -1,4 +1,4 @@
-/* user_settings_fipsv2.h
+﻿/* user_settings_fipsv2.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

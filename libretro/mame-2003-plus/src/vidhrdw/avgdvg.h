@@ -1,4 +1,4 @@
-#ifndef __AVGDVG__
+﻿#ifndef __AVGDVG__
 #define __AVGDVG__
 
 /* vector engine types, passed to vg_init */

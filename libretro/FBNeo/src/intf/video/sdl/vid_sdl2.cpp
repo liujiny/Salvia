@@ -1,4 +1,4 @@
-// blitter effects via SDL2
+﻿// blitter effects via SDL2
 #include "burner.h"
 #include "vid_support.h"
 #include "vid_softfx.h"

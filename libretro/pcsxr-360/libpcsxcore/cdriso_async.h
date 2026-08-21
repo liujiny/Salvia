@@ -1,4 +1,4 @@
-/*
+﻿/*
  * cdriso_async.h
  *
  * Async prefetch layer for the CD ISO reader.  Wraps the synchronous

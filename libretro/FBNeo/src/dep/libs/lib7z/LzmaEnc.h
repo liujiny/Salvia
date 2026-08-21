@@ -1,4 +1,4 @@
-/*  LzmaEnc.h -- LZMA Encoder
+﻿/*  LzmaEnc.h -- LZMA Encoder
 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_LZMA_ENC_H

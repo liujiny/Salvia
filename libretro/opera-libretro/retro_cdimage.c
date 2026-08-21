@@ -1,4 +1,4 @@
-#include "retro_cdimage.h"
+﻿#include "retro_cdimage.h"
 
 #include "libopera/opera_cdrom.h"
 #include "opera_lr_callbacks.h"

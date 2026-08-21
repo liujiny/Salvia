@@ -1,4 +1,4 @@
-#ifndef RC_INTERNAL_H
+﻿#ifndef RC_INTERNAL_H
 #define RC_INTERNAL_H
 
 #include "rc_runtime_types.h"

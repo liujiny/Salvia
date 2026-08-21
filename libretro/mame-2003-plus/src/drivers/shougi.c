@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 
 Driver by Jarek Burczynski, started by Tomasz Slanina  dox@space.pl
 Lots of hardware info from Guru

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef __YMDELTAT_H__
 #define __YMDELTAT_H__

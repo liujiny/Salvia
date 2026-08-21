@@ -1,4 +1,4 @@
-#ifndef __P_SPU_CONFIG_H__
+﻿#ifndef __P_SPU_CONFIG_H__
 #define __P_SPU_CONFIG_H__
 
 /* SPU runtime configuration (port from pcsx_rearmed).

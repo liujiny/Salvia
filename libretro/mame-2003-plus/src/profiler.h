@@ -1,4 +1,4 @@
-#ifndef PROFILER_H
+﻿#ifndef PROFILER_H
 #define PROFILER_H
 
 /* profiling */

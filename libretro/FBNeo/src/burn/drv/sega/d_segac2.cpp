@@ -1,4 +1,4 @@
-// FinalBurn Neo Sega System C/C2 driver module
+﻿// FinalBurn Neo Sega System C/C2 driver module
 // Based on MAME driver by David Haywood and Aaron Giles
 
 // System C/C2 vdp note: (Ribbit)

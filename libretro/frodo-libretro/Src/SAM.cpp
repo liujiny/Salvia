@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  SAM.h - Simple Assembler and Monitor With Integrated System Explorer
  *
  *  Frodo (C) 1994-1997,2002-2009 Christian Bauer

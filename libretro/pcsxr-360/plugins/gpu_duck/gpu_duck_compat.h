@@ -1,4 +1,4 @@
-/*
+﻿/*
  * gpu_duck_compat.h
  *
  * VS2010 / XDK (MSC_VER==1600) compatibility shim for the SwanStation SW

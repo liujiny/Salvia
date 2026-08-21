@@ -1,4 +1,4 @@
-#ifndef __MDFN_TYPES_H
+﻿#ifndef __MDFN_TYPES_H
 #define __MDFN_TYPES_H
 
 #if defined(__x86_64__) && defined(__code_model_large__)

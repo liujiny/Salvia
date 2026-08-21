@@ -1,4 +1,4 @@
-#ifndef QINPUTINTERFACE_H
+﻿#ifndef QINPUTINTERFACE_H
 #define QINPUTINTERFACE_H
 
 #include <QObject>

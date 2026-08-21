@@ -1,4 +1,4 @@
-/* arm_features.h — Xbox 360 PPC32 stub.
+﻿/* arm_features.h — Xbox 360 PPC32 stub.
  *
  * Replacement for pcsx_rearmed/include/arm_features.h.  Upstream
  * detects ARM architecture revision (HAVE_ARMV5/6/7/8, HAVE_NEON32) and

@@ -1,4 +1,4 @@
-// uncomment to find memory leaks at end
+﻿// uncomment to find memory leaks at end
 // #define CHECK_MEMORY_LEAKS
 
 // to also display file locations in some cases define _CRTDBG_MAP_ALLOC in the project properties

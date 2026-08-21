@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup Diffie-Hellman
 
     \brief This function initializes a Diffie-Hellman key for use in

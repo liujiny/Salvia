@@ -1,4 +1,4 @@
-// Define macros for appliction title and description
+﻿// Define macros for appliction title and description
 #ifdef FBA_DEBUG
  #define APP_TITLE "FB Alpha [DEBUG]"
 #else

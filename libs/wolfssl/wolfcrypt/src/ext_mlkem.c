@@ -1,4 +1,4 @@
-/* ext_mlkem.c
+﻿/* ext_mlkem.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

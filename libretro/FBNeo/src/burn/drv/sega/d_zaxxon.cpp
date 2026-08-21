@@ -1,4 +1,4 @@
-/*
+﻿/*
    Games supported:
         * Zaxxon		    yes
         * Super Zaxxon		yes

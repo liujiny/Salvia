@@ -1,4 +1,4 @@
-#ifndef cem3394_h
+﻿#ifndef cem3394_h
 #define cem3394_h
 
 #define MAX_CEM3394 6

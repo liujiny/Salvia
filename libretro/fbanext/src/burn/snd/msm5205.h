@@ -1,4 +1,4 @@
-
+﻿
 #define MSM5205_S96_3B 0     /* prescaler 1/96(4KHz) , data 3bit */
 #define MSM5205_S48_3B 1     /* prescaler 1/48(8KHz) , data 3bit */
 #define MSM5205_S64_3B 2     /* prescaler 1/64(6KHz) , data 3bit */

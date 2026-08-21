@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "eeprom.h"
 
 #define SERIAL_BUFFER_LENGTH 40

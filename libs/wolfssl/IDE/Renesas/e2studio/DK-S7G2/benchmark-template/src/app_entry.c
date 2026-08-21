@@ -1,4 +1,4 @@
-/* app_entry.c
+﻿/* app_entry.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-#include "opera_clio.h"
+﻿#include "opera_clio.h"
 #include "opera_clock.h"
 #include "opera_core.h"
 #include "opera_state.h"

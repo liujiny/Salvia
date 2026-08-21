@@ -1,4 +1,4 @@
-#ifndef __YGV608_H__
+﻿#ifndef __YGV608_H__
 #define __YGV608_H__
 
 /*

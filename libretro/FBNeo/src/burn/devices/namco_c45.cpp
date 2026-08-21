@@ -1,4 +1,4 @@
-// Based on MAME sources by Phil Stroffolino, Aaron Giles, and Alex W. Jackson
+﻿// Based on MAME sources by Phil Stroffolino, Aaron Giles, and Alex W. Jackson
 
 #include "tiles_generic.h"
 #include "m68000_intf.h"

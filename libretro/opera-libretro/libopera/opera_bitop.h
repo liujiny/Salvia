@@ -1,4 +1,4 @@
-/*
+﻿/*
   www.freedo.org
   The first working 3DO multiplayer emulator.
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
     SDL - Simple DirectMedia Layer / Xbox 360 native USB HID mouse
 
     Lector de raton USB HID nativo para Xbox 360 (consolas CFW: RGH/JTAG).

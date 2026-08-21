@@ -1,4 +1,4 @@
-#ifndef __PCFX_SCSICD_H
+﻿#ifndef __PCFX_SCSICD_H
 #define __PCFX_SCSICD_H
 
 #include <stdint.h>

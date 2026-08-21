@@ -1,4 +1,4 @@
-// FinalBurn Neo Hyperstone-based game driver module
+﻿// FinalBurn Neo Hyperstone-based game driver module
 // Based on MAME driver by Angelo Salese, David Haywood, Pierpaolo Prazzoli, Tomasz Slanina
 
 // mrkickera	- not working

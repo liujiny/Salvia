@@ -1,4 +1,4 @@
-/*
+﻿/*
  * votraxsnd.c - Atari800 interface to votrax.c
  *
  * Copyright (C) 2007-2010 Atari800 development team (see DOC/CREDITS)

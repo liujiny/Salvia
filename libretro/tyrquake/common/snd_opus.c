@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Ogg/Opus streaming music support, loosely based on several open source
  * Quake engine based projects with many modifications.
  *

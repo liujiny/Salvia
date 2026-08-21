@@ -1,4 +1,4 @@
-/* ext_lms.c
+﻿/* ext_lms.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-/* test_wolfmath.c
+﻿/* test_wolfmath.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

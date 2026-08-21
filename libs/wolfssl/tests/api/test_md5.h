@@ -1,4 +1,4 @@
-/* test_md5.h
+﻿/* test_md5.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

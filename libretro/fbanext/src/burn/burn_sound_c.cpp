@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "burn_sound.h"
 
 #define CLIP(A) ((A) < -0x8000 ? -0x8000 : (A) > 0x7fff ? 0x7fff : (A))

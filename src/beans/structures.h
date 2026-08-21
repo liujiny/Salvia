@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <string>
 #include <vector>
@@ -105,7 +105,7 @@ struct ListStatus{
           posYear(_posYear),
           onlyParents(_onlyParents)
     {
-        // Los arrays de char se siguen inicializando vacíos automáticamente
+        // Los arrays de char se siguen inicializando vacï¿½os automï¿½ticamente
         std::memset(relativePath, 0, sizeof(relativePath));
         std::memset(zippedPath, 0, sizeof(zippedPath));
         std::memset(zipname, 0, sizeof(zipname));
@@ -240,9 +240,9 @@ struct GameData {
 		description[0] = '\0';
 	}
 
-	// --- Métodos SET seguros ---
+	// --- Mï¿½todos SET seguros ---
     void setCloneof(const char* src) {
-        // Copia asegurando que no se pase del tamaño y fuerza el carácter nulo al final
+        // Copia asegurando que no se pase del tamaï¿½o y fuerza el carï¿½cter nulo al final
         std::strncpy(cloneof, src, sizeof(cloneof) - 1);
         cloneof[sizeof(cloneof) - 1] = '\0';
     }

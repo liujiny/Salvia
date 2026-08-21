@@ -1,4 +1,4 @@
-/* esp32-crypt.h
+﻿/* esp32-crypt.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-// Based on MAME driver by David Graves
+﻿// Based on MAME driver by David Graves
 
 #include "tiles_generic.h"
 #include "m68000_intf.h"

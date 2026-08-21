@@ -1,4 +1,4 @@
-
+﻿
 /*!
 */
 int wc_InitSakkeKey(SakkeKey* key, void* heap, int devId);

@@ -1,4 +1,4 @@
-/* quic.c QUIC unit tests
+﻿/* quic.c QUIC unit tests
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

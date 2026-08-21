@@ -1,4 +1,4 @@
-#include "codec_lzma.h"
+﻿#include "codec_lzma.h"
 
 #include <stddef.h>
 #include <stdlib.h>

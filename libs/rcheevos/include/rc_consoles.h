@@ -1,4 +1,4 @@
-#ifndef RC_CONSOLES_H
+﻿#ifndef RC_CONSOLES_H
 #define RC_CONSOLES_H
 
 #include "rc_export.h"

@@ -1,4 +1,4 @@
-#ifndef __MDFN_PSX_SIO_H
+﻿#ifndef __MDFN_PSX_SIO_H
 #define __MDFN_PSX_SIO_H
 
 #include <stdint.h>

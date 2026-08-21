@@ -1,4 +1,4 @@
-/*
+﻿/*
 
   Cross Pang
   video hardware emulation

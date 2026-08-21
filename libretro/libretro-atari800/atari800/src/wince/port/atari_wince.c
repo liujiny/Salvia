@@ -1,4 +1,4 @@
-/*
+﻿/*
  * atari_wince.c - WinCE port specific code
  *
  * Copyright (C) 2001 Vasyl Tsvirkunov

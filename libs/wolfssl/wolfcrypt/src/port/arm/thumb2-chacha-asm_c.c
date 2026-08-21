@@ -1,4 +1,4 @@
-/* thumb2-chacha-asm
+﻿/* thumb2-chacha-asm
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

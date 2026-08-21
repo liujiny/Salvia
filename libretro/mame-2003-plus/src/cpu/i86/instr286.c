@@ -1,4 +1,4 @@
-/* descriptor table format in memory
+﻿/* descriptor table format in memory
    UINT16 limit
    UINT24 addr
    0..3 type

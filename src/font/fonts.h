@@ -1,4 +1,4 @@
-#ifndef FONTS
+ï»¿#ifndef FONTS
 #define FONTS
 
 #include <SDL.h>
@@ -46,7 +46,7 @@ public:
         if(m) SDL_mutexV(m);
     }
 private:
-    // Prohibimos copiar el lock para evitar errores lógicos
+    // Prohibimos copiar el lock para evitar errores lï¿½gicos
     ScopedFontLock(const ScopedFontLock&);
     ScopedFontLock& operator=(const ScopedFontLock&);
 };

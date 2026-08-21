@@ -1,4 +1,4 @@
-
+﻿
 /*-------------------------------------------------------------*/
 /*--- Compression machinery (not incl block sorting)        ---*/
 /*---                                            compress.c ---*/

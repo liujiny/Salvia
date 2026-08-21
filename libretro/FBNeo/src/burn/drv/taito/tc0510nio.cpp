@@ -1,4 +1,4 @@
-// TC0510NIO
+﻿// TC0510NIO
 // Based on MAME sources by Nicola Salmoria
 
 #include "burnint.h"

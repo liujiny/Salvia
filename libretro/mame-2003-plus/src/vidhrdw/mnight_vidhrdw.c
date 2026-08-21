@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 #include "vidhrdw/generic.h"
 
 #define COLORTABLE_START(gfxn,color)	Machine->drv->gfxdecodeinfo[gfxn].color_codes_start + \

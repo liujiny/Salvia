@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2004-2006 NSRT Team ( http://nsrt.edgeemu.com )
 
 This program is free software; you can redistribute it and/or

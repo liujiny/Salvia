@@ -1,4 +1,4 @@
-/*
+﻿/*
   showimage:  A test application for the SDL image loading library.
   Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
 

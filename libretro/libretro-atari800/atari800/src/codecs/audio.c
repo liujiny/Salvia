@@ -1,4 +1,4 @@
-/*
+﻿/*
  * audio.c - interface for audio codecs
  *
  * Copyright (C) 2021 Rob McMullen

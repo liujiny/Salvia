@@ -1,4 +1,4 @@
-#include "rsx/rsx_lib_vulkan.h"
+﻿#include "rsx/rsx_lib_vulkan.h"
 
 #include <stdint.h>
 

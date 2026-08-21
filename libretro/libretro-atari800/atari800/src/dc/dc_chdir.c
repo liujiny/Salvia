@@ -1,4 +1,4 @@
-/*
+﻿/*
  * chdir.c - chdir stuff
  *
  * original (C) 2000 Jordan DeLong

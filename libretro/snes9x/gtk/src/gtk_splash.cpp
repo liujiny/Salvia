@@ -1,4 +1,4 @@
-int gtk_splash_combo_size = 1340;
+﻿int gtk_splash_combo_size = 1340;
 
 unsigned char gtk_splash_combo[] =
 {

@@ -1,4 +1,4 @@
-/* XzDec.c -- Xz Decode
+﻿/* XzDec.c -- Xz Decode
 2011-02-07 : Igor Pavlov : Public domain */
 
 /* #define XZ_DUMP */

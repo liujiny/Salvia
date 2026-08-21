@@ -1,4 +1,4 @@
-/* test_sm2.h
+﻿/* test_sm2.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

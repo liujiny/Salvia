@@ -1,4 +1,4 @@
-#include "EmulationPanel.hpp"
+﻿#include "EmulationPanel.hpp"
 #include "EmuApplication.hpp"
 #include "EmuConfig.hpp"
 

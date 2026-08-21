@@ -1,4 +1,4 @@
-/*
+﻿/*
  * The SVP chip emulator, mem I/O stuff
  *
  * Copyright (c) Gražvydas "notaz" Ignotas, 2008

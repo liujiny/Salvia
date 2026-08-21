@@ -1,4 +1,4 @@
-#ifndef __FMOPL_H_
+﻿#ifndef __FMOPL_H_
 #define __FMOPL_H_
 
 /* --- select emulation chips --- */

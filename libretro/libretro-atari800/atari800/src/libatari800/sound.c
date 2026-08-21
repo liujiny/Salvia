@@ -1,4 +1,4 @@
-/*
+﻿/*
  * libatari800/sound.c - Atari800 as a library - sound output
  *
  * Copyright (c) 2001-2002 Jacek Poplawski

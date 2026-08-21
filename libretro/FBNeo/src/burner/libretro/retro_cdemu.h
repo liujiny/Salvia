@@ -1,4 +1,4 @@
-#ifndef __RETRO_CDEMU__
+﻿#ifndef __RETRO_CDEMU__
 #define __RETRO_CDEMU__
 
 #include "burner.h"

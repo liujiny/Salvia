@@ -1,4 +1,4 @@
-// TC0640FIO
+﻿// TC0640FIO
 // Based on MAME sources by Nicola Salmoria
 
 #include "burnint.h"

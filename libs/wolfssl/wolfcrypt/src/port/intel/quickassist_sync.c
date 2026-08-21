@@ -1,4 +1,4 @@
-/* quickassist_sync.c
+﻿/* quickassist_sync.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

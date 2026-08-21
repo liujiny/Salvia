@@ -1,4 +1,4 @@
-/* INTEL 8255 PPI I/O chip */
+﻿/* INTEL 8255 PPI I/O chip */
 
 
 /* NOTE: When port is input, then data present on the ports

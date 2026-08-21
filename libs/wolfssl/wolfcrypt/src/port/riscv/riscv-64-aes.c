@@ -1,4 +1,4 @@
-/* riscv-64-aes.c
+﻿/* riscv-64-aes.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

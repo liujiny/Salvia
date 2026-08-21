@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 
 #define VMIN	0x0000
 #define VMAX	0x7fff

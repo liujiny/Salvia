@@ -1,4 +1,4 @@
-
+﻿
 void h6280WritePort(UINT8 port, UINT8 data);
 void h6280Write(UINT32 address, UINT8 data);
 UINT8 h6280Read(UINT32 address);

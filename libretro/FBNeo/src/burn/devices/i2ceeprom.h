@@ -1,4 +1,4 @@
-enum {
+﻿enum {
 	I2C_NONE = 0,
 	I2C_AT24C01,
 	I2C_24C01,

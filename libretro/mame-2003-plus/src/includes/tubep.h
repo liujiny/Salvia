@@ -1,4 +1,4 @@
-VIDEO_EOF( tubep_eof );
+﻿VIDEO_EOF( tubep_eof );
 PALETTE_INIT( tubep );
 VIDEO_UPDATE( tubep );
 PALETTE_INIT( rjammer );

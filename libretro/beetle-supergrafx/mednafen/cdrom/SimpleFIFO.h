@@ -1,4 +1,4 @@
-#ifndef __MDFN_SIMPLEFIFO_H
+﻿#ifndef __MDFN_SIMPLEFIFO_H
 #define __MDFN_SIMPLEFIFO_H
 
 #include <vector>

@@ -1,4 +1,4 @@
-/* test_ossl_dsa.h
+﻿/* test_ossl_dsa.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

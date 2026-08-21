@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 #include "dsound_core.h"
 
 // DirectSoundCreate

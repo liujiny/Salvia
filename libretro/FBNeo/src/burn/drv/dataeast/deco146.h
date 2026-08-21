@@ -1,4 +1,4 @@
-// license:BSD-3-Clause
+﻿// license:BSD-3-Clause
 // copyright-holders:David Haywood, Charles MacDonald
 
 #include "bitswap.h"

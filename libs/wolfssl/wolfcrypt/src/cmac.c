@@ -1,4 +1,4 @@
-/* cmac.c
+﻿/* cmac.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

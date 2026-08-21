@@ -1,4 +1,4 @@
-/*
+﻿/*
 	"Gladiator"
 	(C) 1984 SNK
 

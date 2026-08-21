@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 	SCSP (YMF292-F) header
 */

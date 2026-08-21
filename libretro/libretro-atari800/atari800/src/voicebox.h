@@ -1,4 +1,4 @@
-#ifndef VOICEBOX_H_
+﻿#ifndef VOICEBOX_H_
 #define VOICEBOX_H_
 
 int VOICEBOX_Initialise(int *argc, char *argv[]);

@@ -1,4 +1,4 @@
-/* wolfssl-multiplatform-Bridging-Header.h
+﻿/* wolfssl-multiplatform-Bridging-Header.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

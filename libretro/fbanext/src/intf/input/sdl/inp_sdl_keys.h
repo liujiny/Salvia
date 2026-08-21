@@ -1,4 +1,4 @@
-#ifdef BUILD_SDL
+﻿#ifdef BUILD_SDL
 
 static int SDLtoFBK[512] = {
 	0,

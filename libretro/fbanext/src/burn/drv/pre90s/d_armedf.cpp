@@ -1,4 +1,4 @@
-// FB Alpha Armed Formation driver module
+﻿// FB Alpha Armed Formation driver module
 // Based on MAME driver by Carlos A. Lozano, Phil Stroffolino, and Takahiro Nogi
 
 #include "tiles_generic.h"

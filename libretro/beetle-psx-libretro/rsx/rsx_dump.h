@@ -1,4 +1,4 @@
-#ifndef RSX_DUMP_H
+﻿#ifndef RSX_DUMP_H
 #define RSX_DUMP_H
 
 #include <stdint.h>

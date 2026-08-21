@@ -1,4 +1,4 @@
-#ifndef __VB_INPUT_H
+﻿#ifndef __VB_INPUT_H
 #define __VB_INPUT_H
 
 #include "../mednafen-types.h"

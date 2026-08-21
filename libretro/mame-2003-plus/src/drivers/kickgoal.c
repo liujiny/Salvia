@@ -1,4 +1,4 @@
-/* Driver Info
+﻿/* Driver Info
 
 Action Hollywood (c)1995 TCH / Proyesel
 Kick Goal (c)1995 TCH / Proyesel

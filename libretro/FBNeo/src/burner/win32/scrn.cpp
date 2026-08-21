@@ -1,4 +1,4 @@
-// Screen Window
+﻿// Screen Window
 #include "burner.h"
 #include <process.h>
 #include <shlobj.h>

@@ -1,4 +1,4 @@
-/* XzEnc.h -- Xz Encode
+﻿/* XzEnc.h -- Xz Encode
 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_XZ_ENC_H

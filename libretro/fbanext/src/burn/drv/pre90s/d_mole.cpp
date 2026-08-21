@@ -1,4 +1,4 @@
-// Mole Attack FB Driver Module
+﻿// Mole Attack FB Driver Module
 // Based on MAME driver by Jason Nelson and Phil Stroffolino
 
 #include "burnint.h"

@@ -1,4 +1,4 @@
-// license:BSD-3-Clause
+﻿// license:BSD-3-Clause
 // copyright-holders:R. Belmont, superctr
 /*
     c352.c - Namco C352 custom PCM chip emulation

@@ -1,4 +1,4 @@
-#ifndef _SMSSHARED_H_
+﻿#ifndef _SMSSHARED_H_
 #define _SMSSHARED_H_
 
 #include "tiles_generic.h"

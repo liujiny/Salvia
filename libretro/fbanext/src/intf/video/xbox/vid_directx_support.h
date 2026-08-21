@@ -1,4 +1,4 @@
-#ifndef VID_DIRECTX_SUPPORT_H
+﻿#ifndef VID_DIRECTX_SUPPORT_H
 #define VID_DIRECTX_SUPPORT_H
 
 #define DIRECTDRAW_VERSION 0x0700		// Use this DirectDraw version

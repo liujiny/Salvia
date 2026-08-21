@@ -1,4 +1,4 @@
-/* Copyright  (C) 2018-2019 The RetroArch team
+﻿/* Copyright  (C) 2018-2019 The RetroArch team
 *
 * ---------------------------------------------------------------------------------------
 * The following license statement only applies to this file (uwp_async.h).

@@ -1,4 +1,4 @@
-#ifndef _GENERAL_H
+﻿#ifndef _GENERAL_H
 #define _GENERAL_H
 
 #include <stddef.h>

@@ -1,24 +1,24 @@
-// ---------------------------------------------------------------------------
+ï»¿// ---------------------------------------------------------------------------
 //	FM Sound Generator - Core Unit
 //	Copyright (C) cisc 1998, 2003.
 // ---------------------------------------------------------------------------
 //	$fmgen-Id: fmgen.cpp,v 1.49 2003/09/02 14:51:04 cisc Exp $
 // ---------------------------------------------------------------------------
-//	»²¹Í:
+//	ï¿½ï¿½ï¿½ï¿½:
 //		FM sound generator for M.A.M.E., written by Tatsuyuki Satoh.
 //
-// 	Ææ:
-//		OPNB ¤Î CSM ¥â¡¼¥É(»ÅÍÍ¤¬¤è¤¯¤ï¤«¤é¤Ê¤¤)
+// 	ï¿½ï¿½:
+//		OPNB ï¿½ï¿½ CSM ï¿½â¡¼ï¿½ï¿½(ï¿½ï¿½ï¿½Í¤ï¿½ï¿½è¤¯ï¿½ï¤«ï¿½ï¿½Ê¤ï¿½)
 //
-//	À©¸Â:
-//		¡¦AR!=31 ¤Ç SSGEC ¤ò»È¤¦¤ÈÇÈ·Á¤¬¼ÂºÝ¤È°Û¤Ê¤ë²ÄÇ½À­¤¢¤ê
+//	ï¿½ï¿½ï¿½ï¿½:
+//		ï¿½ï¿½AR!=31 ï¿½ï¿½ SSGEC ï¿½ï¿½È¤ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½ÂºÝ¤È°Û¤Ê¤ï¿½ï¿½Ç½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 //
-//	¼Õ¼­:
-//		Tatsuyuki Satoh ¤µ¤ó(fm.c)
-//		Hiromitsu Shioya ¤µ¤ó(ADPCM-A)
-//		DMP-SOFT. ¤µ¤ó(OPNB)
-//		KAJA ¤µ¤ó(test program)
-//		¤Û¤«·Ç¼¨ÈÄÅù¤ÇÍÍ¡¹¤Ê¤´½õ¸À¡¤¤´»Ù±ç¤ò¤ª´ó¤»¤¤¤¿¤À¤¤¤¿³§ÍÍ¤Ë
+//	ï¿½Õ¼ï¿½:
+//		Tatsuyuki Satoh ï¿½ï¿½ï¿½ï¿½(fm.c)
+//		Hiromitsu Shioya ï¿½ï¿½ï¿½ï¿½(ADPCM-A)
+//		DMP-SOFT. ï¿½ï¿½ï¿½ï¿½(OPNB)
+//		KAJA ï¿½ï¿½ï¿½ï¿½(test program)
+//		ï¿½Û¤ï¿½ï¿½Ç¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¡ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù±ï¿½ò¤ª´ó¤»¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¤ï¿½
 // ---------------------------------------------------------------------------
 
 #include <math.h>
@@ -175,7 +175,7 @@ namespace FM
 {
 
 // ---------------------------------------------------------------------------
-//	¥Æ¡¼¥Ö¥ëºîÀ®
+//	ï¿½Æ¡ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½
 //
 void MakeLFOTable()
 {
@@ -244,14 +244,14 @@ int Chip::StateAction(StateMem *sm, int load, int data_only)
 
 
 // ---------------------------------------------------------------------------
-//	¥Á¥Ã¥×Æâ¤Ç¶¦ÄÌ¤ÊÉôÊ¬
+//	ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½ï¿½Ç¶ï¿½ï¿½Ì¤ï¿½ï¿½ï¿½Ê¬
 //
 Chip::Chip()
 : ratio_(0), aml_(0), pml_(0), pmv_(0), optype_(TYPE_N)
 {
 }
 
-//	¥¯¥í¥Ã¥¯¡¦¥µ¥ó¥×¥ê¥ó¥°¥ì¡¼¥ÈÈæ¤Ë°ÍÂ¸¤¹¤ë¥Æ¡¼¥Ö¥ë¤òºîÀ®
+//	ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¥ï¿½ó¥°¥ì¡¼ï¿½ï¿½ï¿½ï¿½Ë°ï¿½Â¸ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½ï¿½
 void Chip::SetRatio(uint32_t ratio)
 {
 	if (ratio_ != ratio)
@@ -340,7 +340,7 @@ int Operator::StateAction(StateMem *sm, int load, int data_only, const char *sna
 	return ret;
 }
 
-//	¹½ÃÛ
+//	ï¿½ï¿½ï¿½ï¿½
 FM::Operator::Operator()
 : chip_(0)
 {
@@ -366,7 +366,7 @@ FM::Operator::Operator()
 //	Reset();
 }
 
-//	½é´ü²½
+//	ï¿½ï¿½ï¿½ï¿½ï¿½
 void FM::Operator::Reset()
 {
 	// EG part
@@ -387,7 +387,7 @@ void FM::Operator::Reset()
 
 void Operator::MakeTable()
 {
-	// ÂÐ¿ô¥Æ¡¼¥Ö¥ë¤ÎºîÀ®
+	// ï¿½Ð¿ï¿½Æ¡ï¿½ï¿½Ö¥ï¿½Îºï¿½ï¿½ï¿½
 	int* p = cltable;
 	int i;
 	for (i=0; i<256; i++)
@@ -403,7 +403,7 @@ void Operator::MakeTable()
 		p++;
 	}
 
-	// ¥µ¥¤¥ó¥Æ¡¼¥Ö¥ë¤ÎºîÀ®
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½ï¿½Ö¥ï¿½Îºï¿½ï¿½ï¿½
 	double log2 = log(2.);
 	for (i=0; i<FM_OPSINENTS/2; i++)
 	{
@@ -427,7 +427,7 @@ inline void FM::Operator::SetDPBN(uint32_t dp, uint32_t bn)
 }
 
 
-//	½àÈ÷
+//	ï¿½ï¿½ï¿½ï¿½
 void Operator::Prepare()
 {
    int min_y;
@@ -480,7 +480,7 @@ void Operator::Prepare()
       EGUpdate();
    }
 }
-//	envelop ¤Î eg_phase_ ÊÑ¹¹
+//	envelop ï¿½ï¿½ eg_phase_ ï¿½Ñ¹ï¿½
 void Operator::ShiftPhase(EGPhase nextphase)
 {
 	switch (nextphase)
@@ -563,13 +563,13 @@ void Operator::SetFNum(uint32_t f)
 	param_changed_ = true;
 }
 
-//	£±¥µ¥ó¥×¥ë¹çÀ®
+//	ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½
 
-//	ISample ¤ò envelop count (2¦Ð) ¤ËÊÑ´¹¤¹¤ë¥·¥Õ¥ÈÎÌ
+//	ISample ï¿½ï¿½ envelop count (2ï¿½ï¿½) ï¿½ï¿½ï¿½Ñ´ï¿½ï¿½ï¿½ï¿½ë¥·ï¿½Õ¥ï¿½ï¿½ï¿½
 #define IS2EC_SHIFT		((20 + FM_PGBITS) - 13)
 
 
-// ÆþÎÏ: s = 20+FM_PGBITS = 29
+// ï¿½ï¿½ï¿½ï¿½: s = 20+FM_PGBITS = 29
 #define Sine(s)	sinetable[((s) >> (20+FM_PGBITS-FM_OPSINBITS))&(FM_OPSINENTS-1)]
 #define SINE(s) sinetable[(s) & (FM_OPSINENTS-1)]
 
@@ -598,10 +598,10 @@ inline void Operator::SetEGRate(uint32_t rate)
 	eg_count_diff_ = decaytable2[rate / 4] * chip_->GetRatio();
 }
 
-//	EG ·×»»
+//	EG ï¿½×»ï¿½
 void FM::Operator::EGCalc()
 {
-   eg_count_ = (2047 * 3) << FM_RATIOBITS;				// ##¤³¤Î¼êÈ´¤­¤ÏºÆ¸½À­¤òÄã²¼¤µ¤»¤ë
+   eg_count_ = (2047 * 3) << FM_RATIOBITS;				// ##ï¿½ï¿½ï¿½Î¼ï¿½È´ï¿½ï¿½ï¿½ÏºÆ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ã²¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
    if (eg_phase_ == ATTACK)
    {
@@ -655,12 +655,12 @@ inline void FM::Operator::EGStep()
 {
 	eg_count_ -= eg_count_diff_;
 
-	// EG ¤ÎÊÑ²½¤ÏÁ´¥¹¥í¥Ã¥È¤ÇÆ±´ü¤·¤Æ¤¤¤ë¤È¤¤¤¦±½¤â¤¢¤ë
+	// EG ï¿½ï¿½ï¿½Ñ²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥È¤ï¿½Æ±ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½È¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â¤¢ï¿½ï¿½
 	if (eg_count_ <= 0)
 		EGCalc();
 }
 
-//	PG ·×»»
+//	PG ï¿½×»ï¿½
 //	ret:2^(20+PGBITS) / cycle
 inline uint32_t FM::Operator::PGCalc()
 {
@@ -676,8 +676,8 @@ inline uint32_t FM::Operator::PGCalcL()
 	return ret /* + pmv * pg_diff_;*/;
 }
 
-//	OP ·×»»
-//	in: ISample (ºÇÂç 8¦Ð)
+//	OP ï¿½×»ï¿½
+//	in: ISample (ï¿½ï¿½ï¿½ï¿½ 8ï¿½ï¿½)
 inline FM::ISample FM::Operator::Calc(ISample in)
 {
 	EGStep();
@@ -704,14 +704,14 @@ inline FM::ISample FM::Operator::CalcN(uint32_t noise)
 	EGStep();
 	int y  = 0x3ff - (tl_out_ + eg_level_);
 	int lv = FMGEN_MAX(0, y) << 1;
-	// noise & 1 ? lv : -lv ¤ÈÅù²Á 
+	// noise & 1 ? lv : -lv ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 
 	noise  = (noise & 1) - 1;
 	out_   = (lv + noise) ^ noise;
 	return out_;
 }
 
-//	OP (FB) ·×»»
-//	Self Feedback ¤ÎÊÑÄ´ºÇÂç = 4¦Ð
+//	OP (FB) ï¿½×»ï¿½
+//	Self Feedback ï¿½ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ = 4ï¿½ï¿½
 inline FM::ISample FM::Operator::CalcFB(uint32_t fb)
 {
 	EGStep();
@@ -806,7 +806,7 @@ void Channel4::MakeTable()
 	}
 }
 
-// ¥ê¥»¥Ã¥È
+// ï¿½ê¥»ï¿½Ã¥ï¿½
 void Channel4::Reset()
 {
 	op[0].Reset();
@@ -815,7 +815,7 @@ void Channel4::Reset()
 	op[3].Reset();
 }
 
-//	Calc ¤ÎÍÑ°Õ
+//	Calc ï¿½ï¿½ï¿½Ñ°ï¿½
 int Channel4::Prepare()
 {
 	op[0].Prepare();
@@ -829,14 +829,14 @@ int Channel4::Prepare()
 	return key | lfo;
 }
 
-//	F-Number/BLOCK ¤òÀßÄê
+//	F-Number/BLOCK ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 void Channel4::SetFNum(uint32_t f)
 {
 	for (int i=0; i<4; i++)
 		op[i].SetFNum(f);
 }
 
-//	KC/KF ¤òÀßÄê
+//	KC/KF ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 void Channel4::SetKCKF(uint32_t kc, uint32_t kf)
 {
 	static const uint32_t kctable[16] = 
@@ -860,7 +860,7 @@ void Channel4::SetKCKF(uint32_t kc, uint32_t kf)
 	op[3].SetDPBN(dp, bn);
 }
 
-//	¥­¡¼À©¸æ
+//	ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 void Channel4::KeyControl(uint32_t key)
 {
 	if (key & 0x1) op[0].KeyOn(); else op[0].KeyOff();
@@ -869,7 +869,7 @@ void Channel4::KeyControl(uint32_t key)
 	if (key & 0x8) op[3].KeyOn(); else op[3].KeyOff();
 }
 
-//	¥¢¥ë¥´¥ê¥º¥à¤òÀßÄê
+//	ï¿½ï¿½ï¿½ë¥´ï¿½ê¥ºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 void Channel4::SetAlgorithm(uint32_t algo)
 {
 	static const uint8_t table1[8][6] = 
@@ -892,7 +892,7 @@ void Channel4::SetAlgorithm(uint32_t algo)
 	algo_       = algo;
 }
 
-//  ¹çÀ®
+//  ï¿½ï¿½ï¿½ï¿½
 ISample Channel4::Calc()
 {
 	int r = 0;
@@ -950,7 +950,7 @@ ISample Channel4::Calc()
 	return r;
 }
 
-//  ¹çÀ®
+//  ï¿½ï¿½ï¿½ï¿½
 ISample Channel4::CalcL()
 {
 	chip_->SetPMV(pms[chip_->GetPML()]);
@@ -1010,7 +1010,7 @@ ISample Channel4::CalcL()
 	return r;
 }
 
-//  ¹çÀ®
+//  ï¿½ï¿½ï¿½ï¿½
 ISample Channel4::CalcN(uint32_t noise)
 {
 	buf[1] = buf[2] = buf[3] = 0;
@@ -1023,7 +1023,7 @@ ISample Channel4::CalcN(uint32_t noise)
 	return *out[2] + o;
 }
 
-//  ¹çÀ®
+//  ï¿½ï¿½ï¿½ï¿½
 ISample Channel4::CalcLN(uint32_t noise)
 {
 	chip_->SetPMV(pms[chip_->GetPML()]);

@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup Error
 
     \brief This function stores the error string for a particular error code

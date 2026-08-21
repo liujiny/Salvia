@@ -1,4 +1,4 @@
-// FBA DWM API HANDLING FOR WINDOWS 7 (by CaptainCPS-X / Jezer Andino)
+﻿// FBA DWM API HANDLING FOR WINDOWS 7 (by CaptainCPS-X / Jezer Andino)
 #include "burner.h"
 //#include "dwmapi_core.h"
 

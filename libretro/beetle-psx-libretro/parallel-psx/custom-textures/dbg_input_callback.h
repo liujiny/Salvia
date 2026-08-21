@@ -1,4 +1,4 @@
-#ifndef DBG_INPUT_CALLBACK_H
+﻿#ifndef DBG_INPUT_CALLBACK_H
 #define DBG_INPUT_CALLBACK_H
 
 #include "libretro.h"

@@ -1,4 +1,4 @@
-/* lpc_18xx_port.c
+﻿/* lpc_18xx_port.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

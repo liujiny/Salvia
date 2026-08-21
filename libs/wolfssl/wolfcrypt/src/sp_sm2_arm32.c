@@ -1,4 +1,4 @@
-/* sp_sm2_arm32.c
+﻿/* sp_sm2_arm32.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

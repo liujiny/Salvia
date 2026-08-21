@@ -1,4 +1,4 @@
-#ifndef HEADER_TOOLX_TOOL_TIME_H
+﻿#ifndef HEADER_TOOLX_TOOL_TIME_H
 #define HEADER_TOOLX_TOOL_TIME_H
 /***************************************************************************
  *                                  _   _ ____  _

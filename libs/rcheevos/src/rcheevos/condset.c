@@ -1,4 +1,4 @@
-#include "rc_internal.h"
+﻿#include "rc_internal.h"
 
 #include <string.h> /* memcpy */
 

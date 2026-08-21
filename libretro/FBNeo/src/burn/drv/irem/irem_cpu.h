@@ -1,4 +1,4 @@
-extern const UINT8 gunforce_decryption_table[];
+﻿extern const UINT8 gunforce_decryption_table[];
 extern const UINT8 bomberman_decryption_table[];
 extern const UINT8 lethalth_decryption_table[];
 extern const UINT8 dynablaster_decryption_table[];

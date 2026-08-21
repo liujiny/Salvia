@@ -1,4 +1,4 @@
-/* wolfssl-arduino.cpp
+﻿/* wolfssl-arduino.cpp
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

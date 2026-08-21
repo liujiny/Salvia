@@ -1,4 +1,4 @@
-/* VisualBoyAdvance - Nintendo Gameboy/GameboyAdvance (TM) emulator. */
+﻿/* VisualBoyAdvance - Nintendo Gameboy/GameboyAdvance (TM) emulator. */
 /* Copyright (C) 2008 VBA-M development team */
 
 /* This program is free software; you can redistribute it and/or modify */

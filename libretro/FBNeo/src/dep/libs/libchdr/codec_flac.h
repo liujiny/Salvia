@@ -1,4 +1,4 @@
-#ifndef LIBCHDR_CODEC_FLAC_H
+﻿#ifndef LIBCHDR_CODEC_FLAC_H
 #define LIBCHDR_CODEC_FLAC_H
 
 #include <stdint.h>

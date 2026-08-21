@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Copyright (C) 2020-2021 Bernhard Schelling
  *
  *  This program is free software; you can redistribute it and/or modify

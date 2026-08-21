@@ -1,4 +1,4 @@
-// FinalBurn Neo Gladiator driver module
+﻿// FinalBurn Neo Gladiator driver module
 // Based on MAME driver by Victor Trucco, Steve Ellenoff, Phil Stroffolino, Tatsuyuki Satoh, Tomasz Slanina, Nicola Salmoria, Vas Crabb
 
 #include "tiles_generic.h"

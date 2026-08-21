@@ -1,4 +1,4 @@
-// simple timer system -dink 2019-2022, v2.1.2 (2022-upgreydde ver.)
+﻿// simple timer system -dink 2019-2022, v2.1.2 (2022-upgreydde ver.)
 
 /*
 

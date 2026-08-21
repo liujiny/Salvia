@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Convoluted Cosine Resampler
  * Copyright (C) 2014 - Bouhlel Ali ( aliaspider@gmail.com )
  *

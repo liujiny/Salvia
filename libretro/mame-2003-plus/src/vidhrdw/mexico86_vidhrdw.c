@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 
 unsigned char *mexico86_videoram,*mexico86_objectram;
 size_t mexico86_objectram_size;

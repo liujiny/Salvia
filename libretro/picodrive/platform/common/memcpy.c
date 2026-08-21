@@ -1,4 +1,4 @@
-/*
+﻿/*
  * (C) 2018 Kai-Uwe Bloem <derkub@gmail.com>
  *
  * 32bit ARM/MIPS optimized C implementation of memcpy and memove, designed for

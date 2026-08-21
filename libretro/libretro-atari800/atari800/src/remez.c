@@ -1,4 +1,4 @@
-/*
+﻿/*
  * remez.c - Parks-McClellan algorithm for FIR filter design (C version)
  *
  * Copyright (C) 1995,1998 Jake Janovetz

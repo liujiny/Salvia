@@ -1,4 +1,4 @@
-/* test_ed448.h
+﻿/* test_ed448.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-#ifdef DEBUGGER
+﻿#ifdef DEBUGGER
 #include "../../../snes9x.h"
 #include "../../../debug.h"
 char tmp[1024];

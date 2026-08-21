@@ -1,4 +1,4 @@
-/* arm_startup.c
+﻿/* arm_startup.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * sdl/sound.c - SDL library specific port code - sound output
  *
  * Copyright (c) 2001-2002 Jacek Poplawski

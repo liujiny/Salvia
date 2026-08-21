@@ -1,4 +1,4 @@
-/*
+﻿/*
  * async.c - async I/O code
  *
  * Copyright (c) 2000 Sebastian Bauer

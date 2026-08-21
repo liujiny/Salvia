@@ -1,4 +1,4 @@
-#include "langmanager.h"
+﻿#include "langmanager.h"
 
 #include <fstream>
 #include <sstream>

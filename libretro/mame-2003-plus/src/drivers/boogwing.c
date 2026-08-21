@@ -1,4 +1,4 @@
-/*
+﻿/*
     Boogie Wings (aka The Great Ragtime Show)
     Data East, 1992
     PCB No: DE-0379-1

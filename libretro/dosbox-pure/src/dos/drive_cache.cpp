@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -143,7 +143,7 @@ void DOS_Drive_Cache::SetBaseDir(const char* baseDir, DOS_Label& label) {
 
 	// Get Volume Label
 #if defined(_XBOX)
-	// --- SECCIÓN PARA XBOX 360 ---
+	// --- SECCIï¿½N PARA XBOX 360 ---
 	bool cdrom = false;
 	// Comprobar si la ruta empieza por 'd' (de dvd:\ o cdrom)
 	if (basePath[0] == 'd' || basePath[0] == 'D') cdrom = true;
@@ -152,7 +152,7 @@ void DOS_Drive_Cache::SetBaseDir(const char* baseDir, DOS_Label& label) {
 	label.SetLabel("XBOX_DRIVE", cdrom, true);
 
 #elif defined (WIN32) || defined (OS2)
-	// --- SECCIÓN PARA WINDOWS PC / OS2 ---
+	// --- SECCIï¿½N PARA WINDOWS PC / OS2 ---
 	bool cdrom = false;
 	char labellocal[256]={ 0 };
 	char drive[4] = "C:\\";

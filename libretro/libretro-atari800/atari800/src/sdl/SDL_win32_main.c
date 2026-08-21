@@ -1,4 +1,4 @@
-/*
+﻿/*
     SDL_main.c, placed in the public domain by Sam Lantinga  4/13/98
 
     The WinMain function -- calls your program's main() function

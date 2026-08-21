@@ -1,4 +1,4 @@
-// TC0480SCP
+﻿// TC0480SCP
 // Based on MAME sources by Nicola Salmoria
 
 #include "tiles_generic.h"

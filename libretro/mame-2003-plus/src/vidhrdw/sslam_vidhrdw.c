@@ -1,4 +1,4 @@
-/* Super Slam - Video Hardware */
+﻿/* Super Slam - Video Hardware */
 
 #include "driver.h"
 

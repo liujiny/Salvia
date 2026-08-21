@@ -1,4 +1,4 @@
-// T6W28_Snd_Emu
+﻿// T6W28_Snd_Emu
 
 #ifndef SMS_APU_H
 #define SMS_APU_H

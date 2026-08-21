@@ -1,4 +1,4 @@
-/*
+﻿/*
  * gzlog.c
  * Copyright (C) 2004, 2008, 2012, 2016, 2019 Mark Adler, all rights reserved
  * For conditions of distribution and use, see copyright notice in gzlog.h

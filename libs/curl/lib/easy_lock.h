@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_EASY_LOCK_H
+﻿#ifndef HEADER_CURL_EASY_LOCK_H
 #define HEADER_CURL_EASY_LOCK_H
 /***************************************************************************
  *                                  _   _ ____  _

@@ -1,4 +1,4 @@
-#ifndef __MDFN_PSX_IRQ_H
+﻿#ifndef __MDFN_PSX_IRQ_H
 #define __MDFN_PSX_IRQ_H
 
 #include <stdint.h>

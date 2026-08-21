@@ -1,4 +1,4 @@
-#include <QtWidgets>
+﻿#include <QtWidgets>
 #include "romdirsdialog.h"
 #include "ui_romdirsdialog.h"
 #include "burner.h"

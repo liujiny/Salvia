@@ -1,4 +1,4 @@
-/* fitblk.c contains minimal changes required to be compiled with zlibWrapper:
+﻿/* fitblk.c contains minimal changes required to be compiled with zlibWrapper:
  * - #include "zlib.h" was changed to #include "zstd_zlibwrapper.h"
  * - writing block to stdout was disabled                          */
 

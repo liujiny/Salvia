@@ -1,4 +1,4 @@
-/*
+﻿/*
     Open questions:
 
 	- In f1en, the scrolling text in attract mode is very jumpy. Whatever

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * file_export.c - low level interface for saving to various file formats
  *
  * Copyright (C) 1995-1998 David Firth

@@ -1,4 +1,4 @@
-// Warp Warp emu-layer for FB Neo by dink, based on Mirko & Chris Hardy's MAME driver & sound core code by Juergen Buchmueller
+﻿// Warp Warp emu-layer for FB Neo by dink, based on Mirko & Chris Hardy's MAME driver & sound core code by Juergen Buchmueller
 
 // todo: fix coctail mode
 

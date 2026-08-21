@@ -1,4 +1,4 @@
-/*
+﻿/*
  * altirraos_800.c - 400/800 OS ROM replacement
  *
  * Compiled from the sources in the emuos folder.

@@ -1,4 +1,4 @@
-void exidy440_init(UINT8 *samples_rom, INT32 samples_len, INT32 (*pCPUCyclesCB)(), INT32 nCPUMhz);
+﻿void exidy440_init(UINT8 *samples_rom, INT32 samples_len, INT32 (*pCPUCyclesCB)(), INT32 nCPUMhz);
 void exidy440_update(INT16 *output, INT32 samples_len);
 void exidy440_exit();
 void exidy440_reset();

@@ -1,4 +1,4 @@
-#ifndef LIBATARI800_MAIN_H_
+﻿#ifndef LIBATARI800_MAIN_H_
 #define LIBATARI800_MAIN_H_
 
 #include <stdio.h>

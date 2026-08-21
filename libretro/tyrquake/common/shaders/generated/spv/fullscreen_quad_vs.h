@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Auto-generated SPIR-V bytecode for the tyrquake Vulkan
  * backend.  Do not edit by hand -- run
  * tools/shaders_regen.sh to regenerate from the GLSL

@@ -1,4 +1,4 @@
-// DirectD3D blitter
+﻿// DirectD3D blitter
 
 // #define USE_D3D_REFERENCE_DEVICE
 

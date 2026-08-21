@@ -1,4 +1,4 @@
-/*#define DR_FLAC_NO_CRC*/
+﻿/*#define DR_FLAC_NO_CRC*/
 /*#define DR_FLAC_NO_SIMD*/
 /*#define DR_FLAC_BUFFER_SIZE 4096*/
 #include "dr_flac_common.c"

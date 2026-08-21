@@ -1,4 +1,4 @@
-//
+﻿//
 // FB Alpha Seibu sound hardware module
 // 
 // Games using this hardware:

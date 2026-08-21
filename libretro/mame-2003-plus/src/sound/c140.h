@@ -1,4 +1,4 @@
-/* C140.h */
+﻿/* C140.h */
 
 #ifndef _NAMCO_C140_
 #define _NAMCO_C140_

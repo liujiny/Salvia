@@ -1,4 +1,4 @@
-void es8712Write(INT32 device, INT32 offset, UINT8 data);
+﻿void es8712Write(INT32 device, INT32 offset, UINT8 data);
 void es8712Play(INT32 device);
 
 void es8712SetBankBase(INT32 device, INT32 base);

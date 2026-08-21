@@ -1,4 +1,4 @@
-/*
+﻿/*
  * gpu_duck_types.h
  *
  * VS2010-compatible rewrite of SwanStation's src/common/types.h.

@@ -1,4 +1,4 @@
-#ifndef ROMSCANDIALOG_H
+﻿#ifndef ROMSCANDIALOG_H
 #define ROMSCANDIALOG_H
 
 #include <QDialog>

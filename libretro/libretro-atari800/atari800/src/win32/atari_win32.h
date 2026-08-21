@@ -1,4 +1,4 @@
-#ifndef _ATARI_WIN32_H_
+﻿#ifndef _ATARI_WIN32_H_
 #define _ATARI_WIN32_H_
 
 #define DIRECTINPUT_VERSION	    0x0500

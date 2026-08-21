@@ -1,4 +1,4 @@
-// FB Alpha V-Five & Grind Stormer driver module
+﻿// FB Alpha V-Five & Grind Stormer driver module
 // Driver and emulation by Jan Klaassen
 
 #include "toaplan.h"

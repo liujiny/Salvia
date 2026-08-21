@@ -1,4 +1,4 @@
-/* wolfssl_dummy.c
+﻿/* wolfssl_dummy.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

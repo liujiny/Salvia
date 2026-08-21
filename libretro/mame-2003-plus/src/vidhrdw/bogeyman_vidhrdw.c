@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 #include "vidhrdw/generic.h"
 
 UINT8 *bogeyman_videoram2, *bogeyman_colorram2;

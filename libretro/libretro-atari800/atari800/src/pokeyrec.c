@@ -1,4 +1,4 @@
-/*
+﻿/*
  * pokeyrec.c - record pokey registers to a file
  *
  * Copyright (C) 2015 Ivo van Poorten

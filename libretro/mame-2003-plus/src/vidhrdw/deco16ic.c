@@ -1,4 +1,4 @@
-/********************************************************************************
+﻿/********************************************************************************
 
     Data East video emulation & information by Bryan McPhail, mish@tendril.co.uk (c) 2000-2005 Bryan McPhail
     Please send me any additions to the table below.

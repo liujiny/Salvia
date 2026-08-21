@@ -1,4 +1,4 @@
-/* pkcs12.c
+﻿/* pkcs12.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

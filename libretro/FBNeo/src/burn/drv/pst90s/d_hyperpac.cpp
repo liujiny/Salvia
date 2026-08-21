@@ -1,4 +1,4 @@
-// FB Neo Snow Bros. driver module
+﻿// FB Neo Snow Bros. driver module
 // Based on MAME driver by David Haywood, Mike Coates
 
 // Todo:

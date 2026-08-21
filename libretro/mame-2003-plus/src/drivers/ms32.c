@@ -1,4 +1,4 @@
-/* Jaleco MegaSystem 32 (Preliminary Driver)
+﻿/* Jaleco MegaSystem 32 (Preliminary Driver)
 
 
 Used by Jaleco in the Mid-90's this system, based on the V70 processor consisted

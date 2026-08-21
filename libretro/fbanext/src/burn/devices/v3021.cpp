@@ -1,4 +1,4 @@
-/* v3021 Calendar Emulation */
+﻿/* v3021 Calendar Emulation */
 
 #include "burnint.h"
 

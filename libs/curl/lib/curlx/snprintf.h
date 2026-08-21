@@ -1,4 +1,4 @@
-#ifndef HEADER_CURLX_SNPRINTF_H
+﻿#ifndef HEADER_CURLX_SNPRINTF_H
 #define HEADER_CURLX_SNPRINTF_H
 /***************************************************************************
  *                                  _   _ ____  _

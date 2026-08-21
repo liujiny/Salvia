@@ -1,4 +1,4 @@
-
+﻿
 // additional stuff for PSP mp3 decoder implementation
 extern int mp3_last_error;
 

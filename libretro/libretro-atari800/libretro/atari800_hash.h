@@ -1,4 +1,4 @@
-/* 	This file is no longer used.
+﻿/* 	This file is no longer used.
 	It is only for differences between commits.
 	This file should be removed in the next commit.
 */

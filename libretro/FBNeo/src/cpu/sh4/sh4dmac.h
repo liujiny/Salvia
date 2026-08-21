@@ -1,4 +1,4 @@
-/* SHA3/4 DMA Controller */
+﻿/* SHA3/4 DMA Controller */
 
 /* bit definitions */
 #define CHCR_SSA    0xe0000000

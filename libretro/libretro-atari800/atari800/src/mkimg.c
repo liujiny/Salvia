@@ -1,4 +1,4 @@
-/*
+﻿/*
  * mkimg.c - Make an image or .h file from a binary
  *
  * Copyright (C) 1995-1998 David Firth

@@ -1,4 +1,4 @@
-/* rvp8 -- self-contained VP8 key-frame (intra) decoder for libretro-common.
+﻿/* rvp8 -- self-contained VP8 key-frame (intra) decoder for libretro-common.
  *
  * Extracted from the WebP decoder (formats/webp/rwebp.c), where it decodes
  * the lossy VP8 image chunk.  VP8 key frames are exactly what WebP carries,

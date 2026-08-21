@@ -1,4 +1,4 @@
-/* Alloc.c -- Memory allocation functions
+﻿/* Alloc.c -- Memory allocation functions
 2008-09-24
 Igor Pavlov
 Public domain */

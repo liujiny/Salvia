@@ -1,4 +1,4 @@
-#ifndef __GSTRIKER_H
+﻿#ifndef __GSTRIKER_H
 #define __GSTRIKER_H
 
 #include "driver.h"

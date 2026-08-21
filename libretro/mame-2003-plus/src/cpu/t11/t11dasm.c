@@ -1,4 +1,4 @@
-/*
+﻿/*
  *   A T11 disassembler
  *
  *   Note: this is probably not the most efficient disassembler in the world :-)

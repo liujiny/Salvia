@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PicoDrive
  * (C) notaz, 2008
  * (C) irixxxx, 2024

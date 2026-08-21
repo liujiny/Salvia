@@ -1,4 +1,4 @@
-
+﻿
 #ifndef _zfstream_h
 #define _zfstream_h
 

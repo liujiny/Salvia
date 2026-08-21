@@ -1,4 +1,4 @@
-#ifndef CARTRIDGE_H_
+﻿#ifndef CARTRIDGE_H_
 #define CARTRIDGE_H_
 
 #include "config.h"

@@ -1,4 +1,4 @@
-#include "rsx_dump.h"
+﻿#include "rsx_dump.h"
 
 static FILE *file;
 

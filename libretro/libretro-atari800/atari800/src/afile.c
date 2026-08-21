@@ -1,4 +1,4 @@
-/*
+﻿/*
  * afile.c - Detection and opening of different Atari file types.
  *
  * Copyright (c) 1998-2008 Atari800 development team (see DOC/CREDITS)

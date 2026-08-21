@@ -1,4 +1,4 @@
-#include "upd7810.h"
+﻿#include "upd7810.h"
 
 void upd7810SetAnfunc(INT32 select, UINT8 (*func)());
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
 ** File: tms9928a.c -- software implementation of the Texas Instruments
 **                     TMS9918(A), TMS9928(A) and TMS9929(A), used by the Coleco, MSX and
 **                     TI99/4(A).

@@ -1,4 +1,4 @@
-/* vidhrdw/shangkid */
+﻿/* vidhrdw/shangkid */
 
 #include "driver.h"
 #include "vidhrdw/generic.h"

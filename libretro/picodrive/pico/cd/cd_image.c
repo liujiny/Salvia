@@ -1,4 +1,4 @@
-/*
+﻿/*
  * CD image handler
  * (C) notaz, 2007,2013
  *

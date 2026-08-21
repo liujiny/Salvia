@@ -1,4 +1,4 @@
-/* md2.c
+﻿/* md2.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

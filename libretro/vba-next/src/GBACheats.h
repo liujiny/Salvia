@@ -1,4 +1,4 @@
-#ifndef GBA_CHEATS_H
+﻿#ifndef GBA_CHEATS_H
 #define GBA_CHEATS_H
 
 #ifndef __cplusplus

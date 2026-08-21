@@ -1,4 +1,4 @@
-// Video rendering module for Psikyo SH2 games
+﻿// Video rendering module for Psikyo SH2 games
 // Lots of code here and there ripped directly from MAME
 // Thanks to David Haywood for the initial MAME driver
 // as well as some other valuable pointers.

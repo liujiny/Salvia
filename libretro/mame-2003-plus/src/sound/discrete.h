@@ -1,4 +1,4 @@
-#ifndef _discrete_h_
+﻿#ifndef _discrete_h_
 #define _discrete_h_
 
 /***********************************************************************

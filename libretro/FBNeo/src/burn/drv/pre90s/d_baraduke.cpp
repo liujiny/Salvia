@@ -1,4 +1,4 @@
-// FinalBurn Neo Baraduke driver module
+﻿// FinalBurn Neo Baraduke driver module
 // Based on MAME driver by Manuel Abadia and various others
 
 #include "tiles_generic.h"

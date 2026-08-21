@@ -1,4 +1,4 @@
-// FB Neo redclash/zerohour driver module
+﻿// FB Neo redclash/zerohour driver module
 // Based on MAME driver by David Haywood
 
 // Zero Hour sample pack created by Otto_Pylotte October 2020

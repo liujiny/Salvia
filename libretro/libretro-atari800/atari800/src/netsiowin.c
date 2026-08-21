@@ -1,4 +1,4 @@
-/*
+﻿/*
  * netsiowin.c - NetSIO Windows implementation for FujiNet-PC <-> Atari800 Emulator
  *
  * Complete Win32 replacement for netsio.c: Winsock2, CreateThread, ring-buffer FIFO.

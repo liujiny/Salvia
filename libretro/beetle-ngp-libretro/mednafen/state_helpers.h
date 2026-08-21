@@ -1,4 +1,4 @@
-#ifndef _STATE_HELPERS_H
+﻿#ifndef _STATE_HELPERS_H
 #define _STATE_HELPERS_H
 
 #include <stdint.h>

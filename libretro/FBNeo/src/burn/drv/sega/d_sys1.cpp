@@ -1,4 +1,4 @@
-// FB Neo Sega System 1/2 driver module
+﻿// FB Neo Sega System 1/2 driver module
 // Based on MAME driver by Jarek Parchanski, Nicola Salmoria, Mirko Buffoni
 
 #include "tiles_generic.h"

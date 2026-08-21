@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 #include "vidhrdw/generic.h"
 
 #define get_gfx_pointer(gfxelement,c,line) (gfxelement->gfxdata + (c*gfxelement->height+line) * gfxelement->line_modulo)

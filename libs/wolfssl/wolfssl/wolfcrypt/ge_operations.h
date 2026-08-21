@@ -1,4 +1,4 @@
-/* ge_operations.h
+﻿/* ge_operations.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

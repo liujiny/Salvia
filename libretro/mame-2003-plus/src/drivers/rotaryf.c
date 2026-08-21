@@ -1,4 +1,4 @@
-/* Rotary Fighter
+﻿/* Rotary Fighter
 
 driver by Barry Rodewald
  based on Initial work by David Haywood

@@ -1,4 +1,4 @@
-/*
+﻿/*
 ** File: tms9928a.h -- software implementation of the TMS9928A VDP.
 **
 ** By Sean Young 1999 (sean@msxnet.org).

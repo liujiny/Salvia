@@ -1,4 +1,4 @@
-/*
+﻿/*
  * common code for base/cd/32x
  * (C) notaz, 2007-2009,2013
  * (C) irixxxx, 2020-2024

@@ -1,4 +1,4 @@
-#include "rc_api_info.h"
+﻿#include "rc_api_info.h"
 
 #include "../src/rapi/rc_api_common.h"
 #include "../test_framework.h"

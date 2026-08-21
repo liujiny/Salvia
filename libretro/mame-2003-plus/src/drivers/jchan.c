@@ -1,4 +1,4 @@
-/* Jackie Chan - Kung Fu Master
+﻿/* Jackie Chan - Kung Fu Master
 
 (c) Kaneko 1995
 

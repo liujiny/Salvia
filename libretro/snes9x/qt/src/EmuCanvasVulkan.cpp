@@ -1,4 +1,4 @@
-#include <QGuiApplication>
+﻿#include <QGuiApplication>
 #include <qpa/qplatformnativeinterface.h>
 #include <QTimer>
 #include <QtEvents>

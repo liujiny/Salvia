@@ -1,4 +1,4 @@
-#include <algorithm> // Imprescindible para std::sort
+﻿#include <algorithm> // Imprescindible para std::sort
 #include <math.h>
 #include <sstream>
 

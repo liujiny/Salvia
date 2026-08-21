@@ -1,4 +1,4 @@
-// license:BSD-3-Clause
+﻿// license:BSD-3-Clause
 // copyright-holders:Juergen Buchmueller, Roberto Fresca, Grull Osgo
 // thanks-to:Marcel De Kogel
 /*****************************************************************************

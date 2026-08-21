@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (C) 2003 Maxim Stepin ( maxst@hiend3d.com )
  *
  * Copyright (C) 2010 Cameron Zemek ( grom@zeminvaders.net)

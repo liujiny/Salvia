@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup Base_Encoding
 
     \brief This function decodes the given Base64 encoded input, in, and

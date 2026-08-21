@@ -1,4 +1,4 @@
-#ifndef __MDFN_CDROM_CDUTILITY_H
+﻿#ifndef __MDFN_CDROM_CDUTILITY_H
 #define __MDFN_CDROM_CDUTILITY_H
 
 #include <string.h>

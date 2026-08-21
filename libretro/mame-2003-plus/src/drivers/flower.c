@@ -1,4 +1,4 @@
-/* Flower (c)1986 Komax
+﻿/* Flower (c)1986 Komax
  - Driver by InsideOutBoy
 
 todo:

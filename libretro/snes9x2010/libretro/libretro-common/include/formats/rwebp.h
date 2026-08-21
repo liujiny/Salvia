@@ -1,4 +1,4 @@
-/* Copyright  (C) 2010-2024 The RetroArch team
+﻿/* Copyright  (C) 2010-2024 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (rwebp.h).

@@ -1,4 +1,4 @@
-/* ext_xmss.c
+﻿/* ext_xmss.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

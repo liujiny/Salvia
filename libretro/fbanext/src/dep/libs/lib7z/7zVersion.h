@@ -1,4 +1,4 @@
-#define MY_VER_MAJOR 9
+﻿#define MY_VER_MAJOR 9
 #define MY_VER_MINOR 22
 #define MY_VER_BUILD 00
 #define MY_VERSION "9.22 beta"

@@ -1,4 +1,4 @@
-void K053260Reset(INT32 chip);
+﻿void K053260Reset(INT32 chip);
 void K053260Update(INT32 chip, INT16 *pBuf, INT32 length);
 void K053260Init(INT32 chip, INT32 clock, UINT8 *rom, INT32 nLen);
 void K053260SetRoute(INT32 chip, INT32 nIndex, double nVolume, INT32 nRouteDir);

@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup wolfCrypt
 
     \brief Used to initialize resources used by wolfCrypt.

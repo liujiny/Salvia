@@ -1,4 +1,4 @@
-// FinalBurn Neo Fairchild Channel F driver module
+ï»¿// FinalBurn Neo Fairchild Channel F driver module
 // Based on MAME driver by Juergen Buchmueller, Frank Palazzolo, Sean Riddle
 
 #include "tiles_generic.h"
@@ -1055,7 +1055,7 @@ struct BurnDriver BurnDrvCHF_hangman = {
 };
 
 
-// Ordtävling (Swe)
+// Ordtï¿½vling (Swe)
 
 static struct BurnRomInfo CHF_ordtvlngRomDesc[] = {
 	{ "ordtvlng.bin",	0x00c00, 0x3a386e79, BRF_PRG | BRF_ESS },

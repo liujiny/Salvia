@@ -1,4 +1,4 @@
-#include "SoundPanel.hpp"
+﻿#include "SoundPanel.hpp"
 #include "EmuApplication.hpp"
 #include "EmuConfig.hpp"
 

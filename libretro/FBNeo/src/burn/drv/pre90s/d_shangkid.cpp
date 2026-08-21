@@ -1,4 +1,4 @@
-// FB Alpha Shanghai Kid / Chinese Hero / Dynamic Ski driver module
+﻿// FB Alpha Shanghai Kid / Chinese Hero / Dynamic Ski driver module
 // Based on MAME driver by Phil Stroffolino
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * perf_timing.c -- see perf_timing.h for design notes.
  *
  * Implementation detail: the libretro frontend's

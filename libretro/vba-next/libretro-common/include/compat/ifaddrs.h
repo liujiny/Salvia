@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 1995, 1999
  *	Berkeley Software Design, Inc.  All rights reserved.
  *

@@ -1,4 +1,4 @@
-// Wave log module
+﻿// Wave log module
 #include "burner.h"
 #include "neocdlist.h"
 

@@ -1,4 +1,4 @@
-/* Not all environments have a working getenv()/putenv() */
+﻿/* Not all environments have a working getenv()/putenv() */
 
 #if defined(macintosh) || defined(_WIN32_WCE)
 #define NEED_SDL_GETENV

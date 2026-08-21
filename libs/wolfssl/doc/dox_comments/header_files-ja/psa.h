@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup PSA
     \brief  この関数は、与えられたコンテキストでのPSAサポートを可能にします。
     \param ctx  PSAサポートを有効にする必要があるWOLFSSL_CTXオブジェクトへのポインタ

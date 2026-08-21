@@ -1,4 +1,4 @@
-#ifndef __MultiPCM_H__
+﻿#ifndef __MultiPCM_H__
 #define __MultiPCM_H__
 
 #define MAX_MULTIPCM	(2)	/* max # of multipcm chips*/

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Some mp3 related code for Sega/Mega CD.
  * Uses Libav/FFmpeg libavcodec
  * (C) notaz, 2013

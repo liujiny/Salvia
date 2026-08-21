@@ -1,4 +1,4 @@
-#include "gamemenu.h"
+ï»¿#include "gamemenu.h"
 
 #include <gfx/SDL_gfxPrimitives.h>
 #include <gfx/SDL_rotozoom.h>
@@ -686,7 +686,7 @@ std::string GameMenu::reduceWords(const std::string &sentence1, const std::strin
         lastWordHits = (sortedWords[i].count > 1) ? 1 : 0;
     }
 
-	// CORRECCION: Forzar la primera letra a mayúscula si el texto no esta vacio
+	// CORRECCION: Forzar la primera letra a mayï¿½scula si el texto no esta vacio
     if (!finalSentence.empty()) {
         finalSentence[0] = static_cast<char>(::toupper(static_cast<unsigned char>(finalSentence[0])));
     }

@@ -1,4 +1,4 @@
-/* compat_types.h
+﻿/* compat_types.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

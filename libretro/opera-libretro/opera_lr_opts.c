@@ -1,4 +1,4 @@
-/*
+﻿/*
   ISC License
 
   Copyright (c) 2021, Antonio SJ Musumeci <trapexit@spawn.link>

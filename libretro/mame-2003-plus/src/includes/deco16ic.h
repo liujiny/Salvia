@@ -1,4 +1,4 @@
-extern data16_t *deco16_pf1_data,*deco16_pf2_data;
+﻿extern data16_t *deco16_pf1_data,*deco16_pf2_data;
 extern data16_t *deco16_pf3_data,*deco16_pf4_data;
 extern data16_t *deco16_pf1_rowscroll,*deco16_pf2_rowscroll;
 extern data16_t *deco16_pf3_rowscroll,*deco16_pf4_rowscroll;

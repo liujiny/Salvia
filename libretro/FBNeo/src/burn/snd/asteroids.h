@@ -1,4 +1,4 @@
-void asteroid_sound_init();
+﻿void asteroid_sound_init();
 void asteroid_sound_exit();
 void asteroid_sound_reset();
 void asteroid_sound_scan();

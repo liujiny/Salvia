@@ -1,4 +1,4 @@
-/* kcapi_ecc.h
+﻿/* kcapi_ecc.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

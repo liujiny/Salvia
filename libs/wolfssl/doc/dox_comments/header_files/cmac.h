@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup CMAC
     \brief Initialize the Cmac structure with defaults
     \return 0 on success

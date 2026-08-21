@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 
 #define SHA1_BLOCK_SIZE 64
 #define SHA1_HASH_SIZE 20

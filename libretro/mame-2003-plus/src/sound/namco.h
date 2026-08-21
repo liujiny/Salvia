@@ -1,4 +1,4 @@
-#ifndef namco_h
+﻿#ifndef namco_h
 #define namco_h
 
 struct namco_interface

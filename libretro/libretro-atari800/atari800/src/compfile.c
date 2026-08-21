@@ -1,4 +1,4 @@
-/*
+﻿/*
  * compfile.c - File I/O and ZLIB compression
  *
  * Copyright (C) 1995-1998 David Firth

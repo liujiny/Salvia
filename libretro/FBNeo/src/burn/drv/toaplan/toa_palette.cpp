@@ -1,4 +1,4 @@
-#include "toaplan.h"
+﻿#include "toaplan.h"
 // Toaplan -- palette functions
 
 UINT8* ToaPalSrc;			// Pointer to input palette

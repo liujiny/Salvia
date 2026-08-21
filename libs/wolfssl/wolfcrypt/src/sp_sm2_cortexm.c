@@ -1,4 +1,4 @@
-/* sp_sm2_cortexm.c
+﻿/* sp_sm2_cortexm.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * artifact.c - management of video artifacting settings
  *
  * Copyright (C) 2013 Tomasz Krasuski

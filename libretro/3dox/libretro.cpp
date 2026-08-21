@@ -1,4 +1,4 @@
-/*
+﻿/*
   libretro wrapper for the 3DOplay / libFreeDO core (the Xbox 360 build with
   DSP threading and the shift/mask CEL engine).
 

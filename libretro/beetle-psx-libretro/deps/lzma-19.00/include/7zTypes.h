@@ -1,4 +1,4 @@
-/* 7zTypes.h -- Basic types
+﻿/* 7zTypes.h -- Basic types
 2018-08-04 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_TYPES_H

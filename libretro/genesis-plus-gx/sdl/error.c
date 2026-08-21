@@ -1,4 +1,4 @@
-/*
+﻿/*
     error.c --
     Error logging 
 */

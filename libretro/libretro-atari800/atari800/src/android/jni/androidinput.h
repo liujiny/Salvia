@@ -1,4 +1,4 @@
-#include "atari.h"
+﻿#include "atari.h"
 
 struct RECT
 {

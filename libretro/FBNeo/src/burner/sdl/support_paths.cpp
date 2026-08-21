@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 
 TCHAR szAppPreviewsPath[MAX_PATH]	= _T("support/previews/");
 TCHAR szAppTitlesPath[MAX_PATH]		= _T("support/titles/");

@@ -1,4 +1,4 @@
-// Sets up common environment for Shay Green's libraries.
+﻿// Sets up common environment for Shay Green's libraries.
 // To change configuration options, modify blargg_config.h, not this file.
 
 // snes_spc 0.9.0

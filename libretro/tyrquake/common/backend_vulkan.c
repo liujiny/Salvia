@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vulkan renderer backend.
  *
  * Single-TU implementation.  All internal state is file-static;

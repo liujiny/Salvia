@@ -1,4 +1,4 @@
-/* Got it from Bochs */
+﻿/* Got it from Bochs */
 
 //
 // iodev/scsidefs.h

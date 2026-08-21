@@ -1,4 +1,4 @@
-
+﻿
 // call this when resetting the watchdog timer on writes
 // the watchdog will never trigger if the timer hasn't been reset once
 void BurnWatchdogWrite();

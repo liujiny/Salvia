@@ -1,4 +1,4 @@
-#ifndef _neocdlist_
+﻿#ifndef _neocdlist_
 #define _neocdlist_
 
 struct NGCDGAME

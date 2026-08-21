@@ -1,4 +1,4 @@
-/* HQ2x Look-Up Table - 256x64 ARGB (auto-generated from hq2x.png) */
+﻿/* HQ2x Look-Up Table - 256x64 ARGB (auto-generated from hq2x.png) */
 /* Original by Maxim Stepin, Cameron Zemek, Jules Blok - LGPL 2.1 */
 #define HQ2X_LUT_WIDTH 256
 #define HQ2X_LUT_HEIGHT 64

@@ -1,4 +1,4 @@
-//SDL_inprint (c) driedfruit https://github.com/driedfruit/SDL_inprint
+﻿//SDL_inprint (c) driedfruit https://github.com/driedfruit/SDL_inprint
 // modified for use in FBNeo
 
 #include "burner.h"

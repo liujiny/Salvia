@@ -1,4 +1,4 @@
-/*
+﻿/*
  * upscale.h		image upscaling
  *
  * This file contains upscalers for picodrive.

@@ -1,4 +1,4 @@
-/*****************************************************************************\
+ï»¿/*****************************************************************************\
      Snes9x - Portable Super Nintendo Entertainment System (TM) emulator.
                 This file is licensed under the Snes9x License.
    For further information, consult the LICENSE file in the root directory.
@@ -61,7 +61,7 @@ struct CMemory
 	uint8   *ROM;
 	static const size_t SRAM_SIZE = 0x80000;
 	static const size_t ROM_TOTAL_SIZE = MAX_ROM_SIZE + 0x200 + 0x8000;
-	// Arrays estáticos (se alojan en el segmento BSS, inicializados a 0)
+	// Arrays estï¿½ticos (se alojan en el segmento BSS, inicializados a 0)
 	static uint8_t ROM_Storage[ROM_TOTAL_SIZE];
 	static uint8_t SRAM_Storage[SRAM_SIZE];
 

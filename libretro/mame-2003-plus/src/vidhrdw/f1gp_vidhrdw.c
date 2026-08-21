@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 #include "vidhrdw/konamiic.h"
 #include "f1gp.h"
 

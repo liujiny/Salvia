@@ -1,4 +1,4 @@
-#include "osd.h"
+﻿#include "osd.h"
 
 t_config config;
 

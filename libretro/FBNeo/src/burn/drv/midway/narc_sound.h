@@ -1,4 +1,4 @@
-UINT16 narc_sound_response_read();
+﻿UINT16 narc_sound_response_read();
 void narc_sound_write(UINT16 data);
 void narc_sound_reset_write(INT32 state);
 void narc_sound_reset();

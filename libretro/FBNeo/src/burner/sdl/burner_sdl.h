@@ -1,4 +1,4 @@
-// Header for SDL 1.2 & SDL2
+﻿// Header for SDL 1.2 & SDL2
 #include <SDL.h>
 
 #ifdef BUILD_SDL2

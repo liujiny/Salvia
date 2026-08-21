@@ -1,4 +1,4 @@
-#ifndef _TIME_HELPER_H
+﻿#ifndef _TIME_HELPER_H
 /*
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

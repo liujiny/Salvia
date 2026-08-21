@@ -1,4 +1,4 @@
-/* tls_bench.h
+﻿/* tls_bench.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

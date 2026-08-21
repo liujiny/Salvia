@@ -1,4 +1,4 @@
-#if __WORDSIZE == 64
+﻿#if __WORDSIZE == 64
 #define JIT_INSTR_MAX 116
     0,	/* data */
     0,	/* live */

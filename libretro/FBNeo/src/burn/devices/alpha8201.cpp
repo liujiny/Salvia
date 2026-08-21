@@ -1,4 +1,4 @@
-// FB Neo Alpha Denshi 8201 MCU device
+﻿// FB Neo Alpha Denshi 8201 MCU device
 // Based on MAME device by hap
 
 #include "burnint.h"

@@ -1,4 +1,4 @@
-// Psikyo hardware tilemaps
+﻿// Psikyo hardware tilemaps
 
 #include "psikyo.h"
 

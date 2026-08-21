@@ -1,4 +1,4 @@
-// Yamaha YMZ280B module
+﻿// Yamaha YMZ280B module
 #include <math.h>
 #include "burnint.h"
 #include "ymz280b.h"

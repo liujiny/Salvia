@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 #include <wininet.h>
 #include <shlobj.h>
 

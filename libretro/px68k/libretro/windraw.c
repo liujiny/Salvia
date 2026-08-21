@@ -1,4 +1,4 @@
-/* 
+ï»¿/* 
  * Copyright (c) 2003 NONAKA Kimihiro
  * All rights reserved.
  *
@@ -355,7 +355,7 @@ void WinDraw_DrawLine(void)
 		{
 			if ( (VCReg2[0]&0x10)&&(VCReg2[1]&1) )
 			{
-				Grp_DrawLine4SP((VCReg1[1]   )&3/*, 1*/);			/* È¾Æ©ÌÀ¤Î²¼½àÈ÷ */
+				Grp_DrawLine4SP((VCReg1[1]   )&3/*, 1*/);			/* È¾Æ©ï¿½ï¿½ï¿½Î²ï¿½ï¿½ï¿½ï¿½ï¿½ */
 				pron = tron = 1;
 			}
 			opaq = 1;
@@ -393,11 +393,11 @@ void WinDraw_DrawLine(void)
 	case 1:	
 	case 2:	
 		opaq = 1; /* 256 colors */
-		if ( (VCReg1[1]&3) <= ((VCReg1[1]>>4)&3) ) /* Æ±¤¸ÃÍ¤Î»þ¤Ï¡¢GRP0¤¬Í¥Àè¡Ê¥É¥é¥¹¥Ô¡Ë */
+		if ( (VCReg1[1]&3) <= ((VCReg1[1]>>4)&3) ) /* Æ±ï¿½ï¿½ï¿½Í¤Î»ï¿½ï¿½Ï¡ï¿½GRP0ï¿½ï¿½Í¥ï¿½ï¿½Ê¥É¥é¥¹ï¿½Ô¡ï¿½ */
 		{
 			if ( (VCReg2[0]&0x10)&&(VCReg2[1]&1) )
 			{
-				Grp_DrawLine8SP(0); /* È¾Æ©ÌÀ¤Î²¼½àÈ÷ */
+				Grp_DrawLine8SP(0); /* È¾Æ©ï¿½ï¿½ï¿½Î²ï¿½ï¿½ï¿½ï¿½ï¿½ */
 				tron = pron = 1;
 			}
 			if (VCReg2[1]&4)
@@ -424,7 +424,7 @@ void WinDraw_DrawLine(void)
 		{
 			if ( (VCReg2[0]&0x10)&&(VCReg2[1]&1) )
 			{
-				Grp_DrawLine8SP(1); /* È¾Æ©ÌÀ¤Î²¼½àÈ÷ */
+				Grp_DrawLine8SP(1); /* È¾Æ©ï¿½ï¿½ï¿½Î²ï¿½ï¿½ï¿½ï¿½ï¿½ */
 				tron = pron = 1;
 			}
 			if (VCReg2[1]&4)
@@ -468,7 +468,7 @@ void WinDraw_DrawLine(void)
 
 
 	if ( ((VCReg1[0]&0x30)>>2) < (VCReg1[0]&0x0c) )
-	{						/* BG¤ÎÊý¤¬¾å */
+	{						/* BGï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 		if ((VCReg2[1]&0x20)&&(Debug_Text))
 		{
 			Text_DrawLine(1);
@@ -491,7 +491,7 @@ void WinDraw_DrawLine(void)
 		}
 	}
 	else
-	{						/* Text¤ÎÊý¤¬¾å */
+	{						/* Textï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 		if ((VCReg2[1]&0x40)&&(BG_Regs[8]&2)&&(!(BG_Regs[0x11]&2))&&(Debug_Sp))
 		{
 			int s1, s2;
@@ -512,7 +512,7 @@ void WinDraw_DrawLine(void)
 				int i;
 				for (i = 16; i < TextDotX + 16; ++i)
 					BG_LineBuf[i] = TextPal[0];
-			} else {		/* 20010120 ¡Êàèàá¿§¡Ë */
+			} else {		/* 20010120 ï¿½ï¿½ï¿½ï¿½ï¿½á¿§ï¿½ï¿½ */
 				memset(&BG_LineBuf[16], 0, TextDotX * 2);
 			}
 			memset(Text_TrFlag, 0, TextDotX+16);
@@ -528,12 +528,12 @@ void WinDraw_DrawLine(void)
 
 	opaq = 1;
 
-	/* Pri = 2 or 3¡ÊºÇ²¼°Ì¡Ë¤ËÀßÄê¤µ¤ì¤Æ¤¤¤ë²èÌÌ¤òÉ½¼¨
-	 * ¥×¥é¥¤¥ª¥ê¥Æ¥£¤¬Æ±¤¸¾ì¹ç¤Ï¡¢GRP<SP<TEXT¡©¡Ê¥É¥é¥¹¥Ô¡¢ÅíÅÁ¡¢YsIIIÅù¡Ë
+	/* Pri = 2 or 3ï¿½ÊºÇ²ï¿½ï¿½Ì¡Ë¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ï¿½Æ¤ï¿½ï¿½ï¿½ï¿½ï¿½Ì¤ï¿½É½ï¿½ï¿½
+	 * ï¿½×¥é¥¤ï¿½ï¿½ï¿½ï¿½Æ¥ï¿½ï¿½ï¿½Æ±ï¿½ï¿½ï¿½ï¿½ï¿½Ï¡ï¿½GRP<SP<TEXTï¿½ï¿½ï¿½Ê¥É¥é¥¹ï¿½Ô¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½YsIIIï¿½ï¿½ï¿½ï¿½
 
-	 * Grp¤è¤êText¤¬¾å¤Ë¤¢¤ë¾ì¹ç¤ËText¤È¤ÎÈ¾Æ©ÌÀ¤ò¹Ô¤¦¤È¡¢SP¤Î¥×¥é¥¤¥ª¥ê¥Æ¥£¤â
-	 * Text¤Ë°ú¤­¤º¤é¤ì¤ë¡©¡Ê¤Ä¤Þ¤ê¡¢Grp¤è¤ê²¼¤Ë¤¢¤Ã¤Æ¤âSP¤¬É½¼¨¤µ¤ì¤ë¡©¡Ë
-	 * KnightArms¤È¤«¤ò¸«¤ë¤È¡¢È¾Æ©ÌÀ¤Î¥Ù¡¼¥¹¥×¥ì¡¼¥ó¤Ï°ìÈÖ¾å¤Ë¤Ê¤ë¤ß¤¿¤¤¡Ä¡£
+	 * Grpï¿½ï¿½ï¿½Textï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Textï¿½È¤ï¿½È¾Æ©ï¿½ï¿½ï¿½ï¿½Ô¤ï¿½ï¿½È¡ï¿½SPï¿½Î¥×¥é¥¤ï¿½ï¿½ï¿½ï¿½Æ¥ï¿½ï¿½ï¿½
+	 * Textï¿½Ë°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡©ï¿½Ê¤Ä¤Þ¤ê¡¢Grpï¿½ï¿½ê²¼ï¿½Ë¤ï¿½ï¿½Ã¤Æ¤ï¿½SPï¿½ï¿½É½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡©ï¿½ï¿½
+	 * KnightArmsï¿½È¤ï¿½ï¿½ò¸«¤ï¿½È¡ï¿½È¾Æ©ï¿½ï¿½ï¿½Î¥Ù¡ï¿½ï¿½ï¿½ï¿½×¥ì¡¼ï¿½ï¿½Ï°ï¿½ï¿½Ö¾ï¿½Ë¤Ê¤ï¿½ß¤ï¿½ï¿½ï¿½ï¿½Ä¡ï¿½
 	 */
 
 	if ( (VCReg1[0]&0x02) )
@@ -577,7 +577,7 @@ void WinDraw_DrawLine(void)
 		tdrawed = 1;
 	}
 
-	/* Pri = 1¡Ê2ÈÖÌÜ¡Ë¤ËÀßÄê¤µ¤ì¤Æ¤¤¤ë²èÌÌ¤òÉ½¼¨ */
+	/* Pri = 1ï¿½ï¿½2ï¿½ï¿½ï¿½Ü¡Ë¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ï¿½Æ¤ï¿½ï¿½ï¿½ï¿½ï¿½Ì¤ï¿½É½ï¿½ï¿½ */
 	if ( ((VCReg1[0]&0x03)==0x01)&&(gon) )
 	{
 		WinDraw_DrawGrpLine(opaq);
@@ -630,7 +630,7 @@ void WinDraw_DrawLine(void)
 		tdrawed = 1;
 	}
 
-	/* Pri = 0¡ÊºÇÍ¥Àè¡Ë¤ËÀßÄê¤µ¤ì¤Æ¤¤¤ë²èÌÌ¤òÉ½¼¨ */
+	/* Pri = 0ï¿½Êºï¿½Í¥ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ï¿½Æ¤ï¿½ï¿½ï¿½ï¿½ï¿½Ì¤ï¿½É½ï¿½ï¿½ */
 	if ( (!(VCReg1[0]&0x03))&&(gon) )
 	{
 		WinDraw_DrawGrpLine(opaq);
@@ -664,13 +664,13 @@ void WinDraw_DrawLine(void)
 		opaq = 0;
 	}
 
-	/* ÆÃ¼ì¥×¥é¥¤¥ª¥ê¥Æ¥£»þ¤Î¥°¥é¥Õ¥£¥Ã¥¯ */
-	if ( ((VCReg2[0]&0x5c)==0x14)&&(pron) )	/* ÆÃ¼ìPri»þ¤Ï¡¢ÂÐ¾Ý¥×¥ì¡¼¥ó¥Ó¥Ã¥È¤Ï°ÕÌ£¤¬Ìµ¤¤¤é¤·¤¤¡Ê¤Ä¤¤¤ó¤Ó¡¼¡Ë */
+	/* ï¿½Ã¼ï¿½×¥é¥¤ï¿½ï¿½ï¿½ï¿½Æ¥ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½Ã¥ï¿½ */
+	if ( ((VCReg2[0]&0x5c)==0x14)&&(pron) )	/* ï¿½Ã¼ï¿½Priï¿½ï¿½ï¿½Ï¡ï¿½ï¿½Ð¾Ý¥×¥ì¡¼ï¿½ï¿½Ó¥Ã¥È¤Ï°ï¿½Ì£ï¿½ï¿½Ìµï¿½ï¿½ï¿½é¤·ï¿½ï¿½ï¿½Ê¤Ä¤ï¿½ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½ */
 	{
 		WinDraw_DrawPriLine();
 	}
-	else if ( ((VCReg2[0]&0x5d)==0x1c)&&(tron) )	/* È¾Æ©ÌÀ»þ¤ËÁ´¤Æ¤¬Æ©ÌÀ¤Ê¥É¥Ã¥È¤ò¥Ï¡¼¥Õ¥«¥é¡¼¤ÇËä¤á¤ë */
-	{						/* ¡ÊAQUALES¡Ë */
+	else if ( ((VCReg2[0]&0x5d)==0x1c)&&(tron) )	/* È¾Æ©ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½Æ©ï¿½ï¿½ï¿½Ê¥É¥Ã¥È¤ï¿½Ï¡ï¿½ï¿½Õ¥ï¿½ï¿½é¡¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
+	{						/* ï¿½ï¿½AQUALESï¿½ï¿½ */
 #define _DL_SUB(SUFFIX)                                    \
 	{                                                      \
 		w = Grp_LineBufSP[i];                              \
@@ -692,7 +692,7 @@ void WinDraw_DrawLine(void)
 	}
 }
 
-/********** menu ´ØÏ¢¥ë¡¼¥Á¥ó **********/
+/********** menu ï¿½ï¿½Ï¢ï¿½ë¡¼ï¿½ï¿½ï¿½ï¿½ **********/
 
 struct _px68k_menu
 {
@@ -705,7 +705,7 @@ struct _px68k_menu
 	int mfs;      /* menu font size; */
 } p6m;
 
-/* sjis¢ªjis¥³¡¼¥ÉÊÑ´¹ */
+/* sjisï¿½ï¿½jisï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½ */
 static uint16_t sjis2jis(uint16_t w)
 {
 	uint8_t wh = w / 256;
@@ -726,8 +726,8 @@ static uint16_t sjis2jis(uint16_t w)
 	return (wh * 256 + wl);
 }
 
-/* JIS¥³¡¼¥É¤«¤é0 origin¤Îindex¤ËÊÑ´¹¤¹¤ë */
-/* ¤¿¤À¤·0x2921-0x2f7e¤ÏX68K¤ÎROM¾å¤Ë¤Ê¤¤¤Î¤ÇÈô¤Ð¤¹ */
+/* JISï¿½ï¿½ï¿½ï¿½ï¿½É¤ï¿½ï¿½ï¿½0 originï¿½ï¿½indexï¿½ï¿½ï¿½Ñ´ï¿½ï¿½ï¿½ï¿½ï¿½ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0x2921-0x2f7eï¿½ï¿½X68Kï¿½ï¿½ROMï¿½ï¿½Ë¤Ê¤ï¿½ï¿½Î¤ï¿½ï¿½ï¿½Ð¤ï¿½ */
 static uint16_t jis2idx(uint16_t jc)
 {
 	if (jc >= 0x3000)
@@ -743,8 +743,8 @@ static uint16_t jis2idx(uint16_t jc)
 #define MENU_WIDTH 800
 
 /* fs : font size : 16 or 24
- * È¾³ÑÊ¸»ú¤Î¾ì¹ç¤Ï16bit¤Î¾å°Ì8bit¤Ë¥Ç¡¼¥¿¤òÆþ¤ì¤Æ¤ª¤¯¤³¤È
- * (È¾³ÑorÁ´³Ñ¤ÎÈ½ÃÇ¤¬¤Ç¤­¤ë¤è¤¦¤Ë)
+ * È¾ï¿½ï¿½Ê¸ï¿½ï¿½ï¿½Î¾ï¿½ï¿½ï¿½16bitï¿½Î¾ï¿½ï¿½8bitï¿½Ë¥Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * (È¾ï¿½ï¿½orï¿½ï¿½ï¿½Ñ¤ï¿½È½ï¿½Ç¤ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½è¤¦ï¿½ï¿½)
  */
 static uint32_t get_font_addr(uint16_t sjis, int fs)
 {
@@ -752,7 +752,7 @@ static uint32_t get_font_addr(uint16_t sjis, int fs)
 	uint8_t jhi;
 	int fsb; /* file size in bytes */
 
-	/* È¾³ÑÊ¸»ú */
+	/* È¾ï¿½ï¿½Ê¸ï¿½ï¿½ */
 	if (isHankaku(sjis >> 8)) {
 		switch (fs) {
 		case 8:
@@ -766,7 +766,7 @@ static uint32_t get_font_addr(uint16_t sjis, int fs)
 		}
 	}
 
-	/* Á´³ÑÊ¸»ú */
+	/* ï¿½ï¿½ï¿½ï¿½Ê¸ï¿½ï¿½ */
 	if (fs == 16)
 		fsb = 2 * 16;
 	else if (fs == 24)
@@ -778,19 +778,19 @@ static uint32_t get_font_addr(uint16_t sjis, int fs)
 	j_idx = (uint32_t)jis2idx(jis);
 	jhi   = (uint8_t)(jis >> 8);
 
-	/* Èó´Á»ú */
+	/* ï¿½ï¿½ï¿½ï¿½ï¿½ */
 	if (jhi >= 0x21 && jhi <= 0x28)
 		return  ((fs == 16)? 0x0 : 0x40000) + j_idx * fsb;
-	/* Âè°ì¿å½à/ÂèÆó¿å½à */
+	/* ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 	else if (jhi >= 0x30 && jhi <= 0x74)
 		return  ((fs == 16)? 0x5e00 : 0x4d380) + j_idx * fsb;
-	/* ¤³¤³¤Ë¤¯¤ë¤³¤È¤Ï¤Ê¤¤¤Ï¤º */
+	/* ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ë¤³ï¿½È¤Ï¤Ê¤ï¿½ï¿½Ï¤ï¿½ */
 	return -1;
 }
 
 /* RGB565 */
 
-/* ¥­¥ã¥é¥¯¥¿Ê¸»ú¤ÎºÂÉ¸ (²£¼´¤Ï1ºÂÉ¸¤¬È¾³ÑÊ¸»úÉý¤Ë¤Ê¤ë) */
+/* ï¿½ï¿½ï¿½ï¿½é¥¯ï¿½ï¿½Ê¸ï¿½ï¿½ï¿½Îºï¿½É¸ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½É¸ï¿½ï¿½È¾ï¿½ï¿½Ê¸ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤Ê¤ï¿½) */
 static void set_mlocateC(int x, int y)
 {
 	p6m.ml_x = x * p6m.mfs / 2, p6m.ml_y = y * p6m.mfs;
@@ -802,9 +802,9 @@ static uint16_t *get_ml_ptr(void)
 	return p6m.mlp;
 }
 
-/* ¡¦È¾³ÑÊ¸»ú¤Î¾ì¹ç¤Ï16bit¤Î¾å°Ì8bit¤Ë¥Ç¡¼¥¿¤òÆþ¤ì¤Æ¤ª¤¯¤³¤È
- *   (È¾³ÑorÁ´³Ñ¤ÎÈ½ÃÇ¤¬¤Ç¤­¤ë¤è¤¦¤Ë)
- * ¡¦É½¼¨¤·¤¿Ê¬cursor¤ÏÀè¤Ë°ÜÆ°¤¹¤ë
+/* ï¿½ï¿½È¾ï¿½ï¿½Ê¸ï¿½ï¿½ï¿½Î¾ï¿½ï¿½ï¿½16bitï¿½Î¾ï¿½ï¿½8bitï¿½Ë¥Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ *   (È¾ï¿½ï¿½orï¿½ï¿½ï¿½Ñ¤ï¿½È½ï¿½Ç¤ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½è¤¦ï¿½ï¿½)
+ * ï¿½ï¿½É½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¬cursorï¿½ï¿½ï¿½ï¿½Ë°ï¿½Æ°ï¿½ï¿½ï¿½ï¿½
  */
 static void draw_char(uint16_t sjis)
 {
@@ -818,7 +818,7 @@ static void draw_char(uint16_t sjis)
 	if (f < 0)
 		return;
 
-	/* h=8¤ÏÈ¾³Ñ¤Î¤ß */
+	/* h=8ï¿½ï¿½È¾ï¿½Ñ¤Î¤ï¿½ */
 	w = (h == 8)? 8 : (isHankaku(sjis >> 8)? h / 2 : h);
 
 	for (i = 0; i < h; i++) {
@@ -850,8 +850,8 @@ static void draw_str(char *cp)
 
 	for (i = 0; i < len; i++) {
 		if (isHankaku(*s)) {
-			/* ºÇ½é¤Î8bit¤ÇÈ¾Á´³Ñ¤òÈ½ÃÇ¤¹¤ë¤Î¤ÇÈ¾³Ñ¤Î¾ì¹ç¤Ï
-			 * ¤¢¤é¤«¤¸¤á8bitº¸¥·¥Õ¥È¤·¤Æ¤ª¤¯ */
+			/* ï¿½Ç½ï¿½ï¿½8bitï¿½ï¿½È¾ï¿½ï¿½ï¿½Ñ¤ï¿½È½ï¿½Ç¤ï¿½ï¿½ï¿½Î¤ï¿½È¾ï¿½Ñ¤Î¾ï¿½ï¿½ï¿½
+			 * ï¿½ï¿½ï¿½é¤«ï¿½ï¿½ï¿½ï¿½8bitï¿½ï¿½ï¿½ï¿½ï¿½Õ¥È¤ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½ */
 			draw_char((uint16_t)*s << 8);
 			s++;
 		} else {
@@ -860,7 +860,7 @@ static void draw_str(char *cp)
 			s += 2;
 			i++;
 		}
-		/* 8x8ÉÁ²è(¥½¥Õ¥È¥­¡¼¥Ü¡¼¥É¤ÎFUNC¥­¡¼¤ÏÊ¸»úÉý¤ò½Ì¤á¤ë) */
+		/* 8x8ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½Õ¥È¥ï¿½ï¿½ï¿½ï¿½Ü¡ï¿½ï¿½É¤ï¿½FUNCï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¤ï¿½ï¿½) */
 		if (p6m.mfs == 8) {
 			p6m.ml_x -= 3;
 		}
@@ -893,7 +893,7 @@ void WinDraw_DrawMenu(int menu_state, int mkey_pos, int mkey_y, int *mval_y)
 	p6m.sbp     = menu_buffer;
 	p6m.mfs     = Config.MenuFontSize ? 24 : 16;
 
-	/* ¥¿¥¤¥È¥ë */
+	/* ï¿½ï¿½ï¿½ï¿½ï¿½È¥ï¿½ */
 	p6m.mcolor  = 0x07ff; /* cyan */
 	set_mlocateC(0, 0);
 	draw_str(twaku_str);
@@ -909,9 +909,9 @@ void WinDraw_DrawMenu(int menu_state, int mkey_pos, int mkey_y, int *mval_y)
 	draw_str(tmp);
 
 	
-	p6m.mcolor  = 0xffff; /* ¿¿¤óÃæ */
+	p6m.mcolor  = 0xffff; /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 
-	/* ¿¿¤óÃæÏÈ */
+	/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 	p6m.mcolor  = 0xffe0; /* yellow */
 	set_mlocateC(1, 4);
 	draw_str(waku_str);
@@ -923,7 +923,7 @@ void WinDraw_DrawMenu(int menu_state, int mkey_pos, int mkey_y, int *mval_y)
 	set_mlocateC(1, 10);
 	draw_str(waku3_str);
 
-	/* ¥¢¥¤¥Æ¥à/¥­¡¼¥ï¡¼¥É */
+	/* ï¿½ï¿½ï¿½ï¿½ï¿½Æ¥ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¡¼ï¿½ï¿½ */
 	p6m.mcolor = 0xffff;
 	for (i = 0; i < 5; i++)
 	{
@@ -941,7 +941,7 @@ void WinDraw_DrawMenu(int menu_state, int mkey_pos, int mkey_y, int *mval_y)
 		draw_str(menu_item_key[i + mkey_pos]);
 	}
 
-	/* ¥¢¥¤¥Æ¥à/¸½ºßÃÍ */
+	/* ï¿½ï¿½ï¿½ï¿½ï¿½Æ¥ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 	p6m.mcolor  = 0xffff;
 	p6m.mbcolor = 0x0;
 	for (i = 0; i < 5; i++)
@@ -974,7 +974,7 @@ void WinDraw_DrawMenu(int menu_state, int mkey_pos, int mkey_y, int *mval_y)
 				draw_str(" -- no disk --");
 			else
 			{
-				/* ÀèÆ¬¤Î¥«¥ì¥ó¥È¥Ç¥£¥ì¥¯¥È¥êÌ¾¤òÉ½¼¨¤·¤Ê¤¤ */
+				/* ï¿½ï¿½Æ¬ï¿½Î¥ï¿½ï¿½ï¿½ï¿½È¥Ç¥ï¿½ï¿½ì¥¯ï¿½È¥ï¿½Ì¾ï¿½ï¿½É½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ */
 				if (!strncmp(cur_dir_str, p, cur_dir_slen))
 					strncpy(ptr, p + cur_dir_slen, sizeof(ptr));
 				else
@@ -987,7 +987,7 @@ void WinDraw_DrawMenu(int menu_state, int mkey_pos, int mkey_y, int *mval_y)
 		}
 	}
 
-	/* ²¼ÏÈ */
+	/* ï¿½ï¿½ï¿½ï¿½ */
 	p6m.mcolor  = 0x07ff; /* cyan */
 	p6m.mbcolor = 0x0;
 	set_mlocateC(0, 11);
@@ -997,7 +997,7 @@ void WinDraw_DrawMenu(int menu_state, int mkey_pos, int mkey_y, int *mval_y)
 	set_mlocateC(0, 13);
 	draw_str(swaku3_str);
 
-	/* ¥­¥ã¥×¥·¥ç¥ó */
+	/* ï¿½ï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ */
 	p6m.mcolor  = 0xffff;
 	p6m.mbcolor = 0x0;
 	set_mlocateC(2, 12);

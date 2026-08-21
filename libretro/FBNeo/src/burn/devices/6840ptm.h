@@ -1,4 +1,4 @@
-void ptm6840_init(INT32 clock);
+﻿void ptm6840_init(INT32 clock);
 void ptm6840_set_irqcb(void (*irqcb)(INT32));
 void ptm6840_exit();
 void ptm6840_reset();

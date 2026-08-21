@@ -1,4 +1,4 @@
-#ifndef HEADER_FAKE_ADDRINFO_H
+﻿#ifndef HEADER_FAKE_ADDRINFO_H
 #define HEADER_FAKE_ADDRINFO_H
 /***************************************************************************
  *                                  _   _ ____  _

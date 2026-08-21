@@ -1,4 +1,4 @@
-#ifndef __MDFN_CDACCESS_CCD_H
+﻿#ifndef __MDFN_CDACCESS_CCD_H
 #define __MDFN_CDACCESS_CCD_H
 
 #include "CDAccess.h"

@@ -1,4 +1,4 @@
-#ifndef __VIDGU_H__
+﻿#ifndef __VIDGU_H__
 #define __VIDGU_H__
 #ifdef __cplusplus
 extern "C" {

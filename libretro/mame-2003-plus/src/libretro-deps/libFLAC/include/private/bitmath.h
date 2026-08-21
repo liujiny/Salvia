@@ -1,4 +1,4 @@
-/* libFLAC - Free Lossless Audio Codec library
+ï»¿/* libFLAC - Free Lossless Audio Codec library
  * Copyright (C) 2001-2009  Josh Coalson
  * Copyright (C) 2011-2013  Xiph.Org Foundation
  *
@@ -42,17 +42,17 @@
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 #ifdef _XBOX
 #include <ppcintrinsics.h>
-    // En lugar de redefinir _BitScanReverse, creamos macros o funciones con nombres únicos
+    // En lugar de redefinir _BitScanReverse, creamos macros o funciones con nombres ï¿½nicos
     // para que FLAC__clz_uint32 pueda usarlas sin conflicto.
     #ifndef BITSCAN_XBOX_DEFINED
     #define BITSCAN_XBOX_DEFINED
     
     static __inline unsigned int Xbox_BitScanReverse(unsigned long v) {
-        // _CountLeadingZeros es el intrínseco nativo de PPC (cntlzw)
+        // _CountLeadingZeros es el intrï¿½nseco nativo de PPC (cntlzw)
         return 31U - _CountLeadingZeros(v);
     }
     #endif
-    // Luego, modifica o sobrecarga la función de FLAC para usar esta versión
+    // Luego, modifica o sobrecarga la funciï¿½n de FLAC para usar esta versiï¿½n
     #define _BitScanReverse_XBOX_WORKAROUND(idx, v) (*(idx) = Xbox_BitScanReverse(v), 1)
 #else
 #include <intrin.h> /* for _BitScanReverse* */

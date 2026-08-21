@@ -1,4 +1,4 @@
-// Run module
+﻿// Run module
 #include "burner.h"
 #ifdef BUILD_SDL2
 #include "sdl2_gui_common.h"

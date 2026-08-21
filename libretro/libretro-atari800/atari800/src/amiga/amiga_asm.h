@@ -1,4 +1,4 @@
-#ifndef _AMIGA_ASM_H_
+﻿#ifndef _AMIGA_ASM_H_
 #define _AMIGA_ASM_H_
 
 ASM void ScreenData28bit( register __a0 UBYTE *screen,

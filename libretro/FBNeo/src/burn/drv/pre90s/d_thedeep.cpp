@@ -1,4 +1,4 @@
-// FinalBurn Neo The Deep driver module
+﻿// FinalBurn Neo The Deep driver module
 // Based on MAME driver by Luca Elia
 
 #include "tiles_generic.h"

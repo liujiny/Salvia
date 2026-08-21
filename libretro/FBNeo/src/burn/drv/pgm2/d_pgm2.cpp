@@ -1,4 +1,4 @@
-// d_pgm2.cpp - IGS PGM2 (IGS036) driver definitions for FBNeo
+﻿// d_pgm2.cpp - IGS PGM2 (IGS036) driver definitions for FBNeo
 
 #include "pgm2.h"
 #include "pgm2_crypt.h"

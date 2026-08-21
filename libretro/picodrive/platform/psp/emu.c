@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PicoDrive PSP frontend
  *
  * (C) notaz, 2007,2008

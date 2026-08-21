@@ -1,4 +1,4 @@
-// FB Neo Jaleco Field Combat driver module
+﻿// FB Neo Jaleco Field Combat driver module
 // Based on MAME driver by Tomasz Slanina
 // Color fixes (sprite & bg/terrain) by hap (Oct. 2022)
 

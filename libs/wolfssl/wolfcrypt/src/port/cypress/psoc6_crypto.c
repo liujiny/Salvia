@@ -1,4 +1,4 @@
-/* psoc6_crypto.c
+﻿/* psoc6_crypto.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

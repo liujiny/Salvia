@@ -1,4 +1,4 @@
-#include "tiles_generic.h"
+ï»¿#include "tiles_generic.h"
 #include "z80_intf.h"
 #include "s2650_intf.h"
 #include "samples.h"
@@ -363,7 +363,7 @@ static struct BurnDIPInfo PestplceDIPList[]=
 	{0x0e, 0x01, 0xc0, 0x00, "20000"		},
 	{0x0e, 0x01, 0xc0, 0x40, "30000"		},
 	{0x0e, 0x01, 0xc0, 0x80, "40000"		},
-	{0x0e, 0x01, 0xc0, 0xc0, "×"			},
+	{0x0e, 0x01, 0xc0, 0xc0, "ï¿½"			},
 };
 
 STDDIPINFO(Pestplce)

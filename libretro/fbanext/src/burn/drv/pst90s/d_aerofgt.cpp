@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Aero Fighters driver for FB Alpha 0.2.96.71
  * Port by OopsWare. 2007
  * http://oopsware.googlepages.com

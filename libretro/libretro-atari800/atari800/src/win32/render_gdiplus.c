@@ -1,4 +1,4 @@
-#include "config.h"
+﻿#include "config.h"
 #include "render_gdiplus.h"
 #include "screen.h"
 

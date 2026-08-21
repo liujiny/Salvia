@@ -1,4 +1,4 @@
-/*
+﻿/*
  * libatari800/main.c - Atari800 as a library - exit/monitor interface
  *
  * Copyright (c) 2001-2002 Jacek Poplawski

@@ -1,4 +1,4 @@
-/* user_settings_wolfssh.h
+﻿/* user_settings_wolfssh.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

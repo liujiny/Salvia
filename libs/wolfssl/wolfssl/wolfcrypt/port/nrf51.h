@@ -1,4 +1,4 @@
-/* nrf51.h
+﻿/* nrf51.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

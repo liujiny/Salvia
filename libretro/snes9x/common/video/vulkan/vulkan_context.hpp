@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 #include <X11/Xlib.h>

@@ -1,4 +1,4 @@
-#include <windows.h>
+﻿#include <windows.h>
 #include <richedit.h>
 
 #ifndef IDC_STATIC

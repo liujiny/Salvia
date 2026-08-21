@@ -1,4 +1,4 @@
-// input encoder for replay.cpp  dink aug.2022
+﻿// input encoder for replay.cpp  dink aug.2022
 
 #include <stdio.h>
 #include "burner.h"

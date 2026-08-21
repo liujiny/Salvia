@@ -1,4 +1,4 @@
-// thready spent most of the 1900's in a little old lady's sewing basket..
+﻿// thready spent most of the 1900's in a little old lady's sewing basket..
 // thready had big dreams, this is one of them!                    - dink 2022
 
 #define THREADY_WINDOWS		1 // we're on Windows

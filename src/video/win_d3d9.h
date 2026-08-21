@@ -1,4 +1,4 @@
-/*
+﻿/*
  * win_d3d9.h - Capa de video D3D9 para Windows (Opcion B).
  *
  * Reproduce a nivel de aplicacion lo que el driver SDL de Xbox 360

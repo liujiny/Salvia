@@ -1,4 +1,4 @@
-void csd_data_write(UINT16 data);
+﻿void csd_data_write(UINT16 data);
 UINT8 csd_status_read();
 void csd_reset_write(int state);
 

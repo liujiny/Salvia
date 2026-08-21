@@ -1,4 +1,4 @@
-#ifndef _H_MSM5232_
+﻿#ifndef _H_MSM5232_
 #define _H_MSM5232_
 
 #define MAX_MSM5232 2

@@ -1,4 +1,4 @@
-/* This file provides a series of functions for integrating RetroAchievements with libretro.
+﻿/* This file provides a series of functions for integrating RetroAchievements with libretro.
  * These functions will be called by a libretro frontend to validate certain expected behaviors
  * and simplify mapping core data to the RAIntegration DLL.
  * 

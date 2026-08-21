@@ -1,4 +1,4 @@
-#ifndef _INFFIXED_H
+﻿#ifndef _INFFIXED_H
 #define _INFFIXED_H
 
 /* inffixed.h -- table for decoding fixed codes

@@ -1,4 +1,4 @@
-#define FN(a) RenderTile ## a
+﻿#define FN(a) RenderTile ## a
 #define FUNCTIONNAME(a) FN(a)
 
 #define ISOPAQUE 0

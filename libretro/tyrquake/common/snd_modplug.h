@@ -1,4 +1,4 @@
-/* module tracker decoding support using libmodplug */
+﻿/* module tracker decoding support using libmodplug */
 #if !defined(_SND_MODPLUG_H_)
 #define _SND_MODPLUG_H_
 

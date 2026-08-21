@@ -1,4 +1,4 @@
-#include "gal.h"
+﻿#include "gal.h"
 
 // FB Neo Galaxian driver module
 // Based on MAME driver by Aaron Giles, Couriersud,Stephane Humbert

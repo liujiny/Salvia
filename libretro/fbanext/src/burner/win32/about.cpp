@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 #include "version.h"
 #include "build_details.h"
 #include <richedit.h>

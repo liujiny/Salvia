@@ -1,4 +1,4 @@
-/*
+﻿/*
  * special 286 protected mode instructions missing
  * at the time the same like table186.h
  */

@@ -1,4 +1,4 @@
-#ifndef __MDFN_PCE_ARCADE_CARD_H
+﻿#ifndef __MDFN_PCE_ARCADE_CARD_H
 #define __MDFN_PCE_ARCADE_CARD_H
 
 typedef struct

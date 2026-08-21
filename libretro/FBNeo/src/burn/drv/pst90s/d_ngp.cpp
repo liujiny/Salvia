@@ -1,4 +1,4 @@
-// FB Neo NeoGeo Pocket[color] driver module
+﻿// FB Neo NeoGeo Pocket[color] driver module
 // Based on MESS driver by Wilbert Pol
 
 #include "tiles_generic.h"

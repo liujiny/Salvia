@@ -1,4 +1,4 @@
-#include "vulkan_pipeline_image.hpp"
+﻿#include "vulkan_pipeline_image.hpp"
 #include "slang_helpers.hpp"
 
 namespace Vulkan

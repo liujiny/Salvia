@@ -1,4 +1,4 @@
-/* max3266x-cryptocb.h
+﻿/* max3266x-cryptocb.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

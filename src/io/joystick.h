@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <map>
 #include <vector>
@@ -8,9 +8,9 @@
 #include <io/hotkeys.h>
 #include <beans/structures.h>
 
-//El comportamiento de un hat está estandarizado por el propio API: todos los hats 
-//se tratan como interruptores de posición de 8 direcciones (más la posición centrada), 
-//independientemente de cómo sea físicamente el dispositivo.
+//El comportamiento de un hat estï¿½ estandarizado por el propio API: todos los hats 
+//se tratan como interruptores de posiciï¿½n de 8 direcciones (mï¿½s la posiciï¿½n centrada), 
+//independientemente de cï¿½mo sea fï¿½sicamente el dispositivo.
 #define MAX_HAT_POSITIONS 9
 
 static int FRONTEND_BTN_VAL[] = {JOY_BUTTON_UP, JOY_BUTTON_DOWN, JOY_BUTTON_LEFT, JOY_BUTTON_RIGHT, JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_Y,
@@ -79,7 +79,7 @@ extern t_rom_paths romPaths;
 
 struct t_controller_port {
 	int current_device_id;			// ID seleccionado actualmente (ej. RETRO_DEVICE_JOYPAD)
-	std::string current_desc;       // Descripción amigable (ej. "SuperScope")
+	std::string current_desc;       // Descripciï¿½n amigable (ej. "SuperScope")
 	// Lista de opciones que el core nos dio para este puerto
 	std::vector<std::pair<unsigned, std::string>> available_types; 
 	t_controller_port(){

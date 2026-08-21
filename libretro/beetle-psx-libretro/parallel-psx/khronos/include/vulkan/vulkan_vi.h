@@ -1,4 +1,4 @@
-#ifndef VULKAN_VI_H_
+﻿#ifndef VULKAN_VI_H_
 #define VULKAN_VI_H_ 1
 
 #ifdef __cplusplus

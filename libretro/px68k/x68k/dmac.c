@@ -1,4 +1,4 @@
-#include "common.h"
+﻿#include "common.h"
 #include "winx68k.h"
 #include "m68000.h"
 #include "x68kmemory.h"

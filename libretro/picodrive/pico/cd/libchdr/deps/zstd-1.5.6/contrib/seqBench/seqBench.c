@@ -1,4 +1,4 @@
-#define ZSTD_STATIC_LINKING_ONLY
+﻿#define ZSTD_STATIC_LINKING_ONLY
 #include <zstd.h>
 #include <stdio.h>
 #include <stdlib.h>

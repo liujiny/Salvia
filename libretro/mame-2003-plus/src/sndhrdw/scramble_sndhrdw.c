@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 
   This file contains functions to emulate the sound hardware found on
   Scramble type boards.

@@ -1,4 +1,4 @@
-// FinalBurn Neo Gals Panic driver module
+﻿// FinalBurn Neo Gals Panic driver module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

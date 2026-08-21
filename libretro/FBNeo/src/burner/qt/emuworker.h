@@ -1,4 +1,4 @@
-#ifndef EMUWORKER_H
+﻿#ifndef EMUWORKER_H
 #define EMUWORKER_H
 
 #include <QObject>

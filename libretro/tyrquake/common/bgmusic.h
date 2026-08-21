@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Background music handling for Quakespasm (adapted from uHexen2)
  * Handles streaming music as raw sound samples and runs the midi driver
  *

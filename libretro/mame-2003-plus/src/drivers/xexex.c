@@ -1,4 +1,4 @@
-#define XE_DEBUG 0
+﻿#define XE_DEBUG 0
 #define XE_SKIPIDLE 1
 #define XE_DMADELAY (256)
 

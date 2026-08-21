@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Provides copies of structures and constants from
  * https://github.com/libretro/RetroArch/blob/master/libretro-common/include/libretro.h
  * for unit testing without pulling in the entire libretro project.

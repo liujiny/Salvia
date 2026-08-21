@@ -1,4 +1,4 @@
-#define SAMPLE_IGNORE		(1<<0) // don't ever play this sample
+﻿#define SAMPLE_IGNORE		(1<<0) // don't ever play this sample
 #define SAMPLE_AUTOLOOP		(1<<1) // start the looping on start
 #define SAMPLE_NOLOOP		(1<<2) // don't allow this to loop
 

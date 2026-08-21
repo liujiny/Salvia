@@ -1,4 +1,4 @@
-#include "ShaderParametersDialog.hpp"
+﻿#include "ShaderParametersDialog.hpp"
 #include <QLayout>
 #include <QTableWidget>
 #include <QLabel>

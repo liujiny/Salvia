@@ -1,4 +1,4 @@
-/* sp_int.h
+﻿/* sp_int.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

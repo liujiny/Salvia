@@ -1,4 +1,4 @@
-/* z80_ed.c: Z80 CBxx opcodes
+﻿/* z80_ed.c: Z80 CBxx opcodes
    Copyright (c) 1999-2003 Philip Kendall
 
    This program is free software; you can redistribute it and/or modify

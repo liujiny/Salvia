@@ -1,4 +1,4 @@
-/* get_thread_size.c -- trivial program to determine stack frame size
+﻿/* get_thread_size.c -- trivial program to determine stack frame size
  * for a Linux kernel thread, given a configured source tree.
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.

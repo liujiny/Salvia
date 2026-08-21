@@ -1,4 +1,4 @@
-/* bsdkm_wc_port.h
+﻿/* bsdkm_wc_port.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-/* gzguts.h contains minimal changes required to be compiled with zlibWrapper:
+﻿/* gzguts.h contains minimal changes required to be compiled with zlibWrapper:
  * - #include "zlib.h" was changed to #include "zstd_zlibwrapper.h"
  * - gz_statep was converted to union to work with -Wstrict-aliasing=1      */
 

@@ -1,4 +1,4 @@
-
+﻿
 /* AM2 Functions (for ReadAMAddress) */
 /* ********************************* */
 

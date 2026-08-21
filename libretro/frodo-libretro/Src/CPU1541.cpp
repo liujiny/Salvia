@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  CPU1541.cpp - 6502 (1541) emulation (line based)
  *
  *  Frodo (C) 1994-1997,2002-2005 Christian Bauer

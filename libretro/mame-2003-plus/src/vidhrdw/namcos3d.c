@@ -1,4 +1,4 @@
-#include "namcos3d.h"
+﻿#include "namcos3d.h"
 #include "matrix3d.h"
 #include "vidhrdw/poly.h"
 #include "includes/namcos22.h"

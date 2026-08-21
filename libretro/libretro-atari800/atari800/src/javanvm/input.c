@@ -1,4 +1,4 @@
-/*
+﻿/*
  * javanvm/input.c - NestedVM-specific port code - input device support
  *
  * Copyright (c) 2001-2002 Jacek Poplawski (original atari_sdl.c)

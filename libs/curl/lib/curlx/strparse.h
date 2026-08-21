@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_STRPARSE_H
+﻿#ifndef HEADER_CURL_STRPARSE_H
 #define HEADER_CURL_STRPARSE_H
 /***************************************************************************
  *                                  _   _ ____  _

@@ -1,4 +1,4 @@
-#ifndef RC_COMPAT_H
+﻿#ifndef RC_COMPAT_H
 #define RC_COMPAT_H
 
 #ifdef _WIN32

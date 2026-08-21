@@ -1,4 +1,4 @@
-#include "DisplayPanel.hpp"
+﻿#include "DisplayPanel.hpp"
 #include "EmuMainWindow.hpp"
 #include "EmuConfig.hpp"
 #include <QFileDialog>

@@ -1,4 +1,4 @@
-case 0xbc: {
+﻿case 0xbc: {
   op_io();
   regs.B.a = op_inc(regs.B.a);
   break;

@@ -1,4 +1,4 @@
-#ifndef __NX_GLSYM_H__
+﻿#ifndef __NX_GLSYM_H__
 #define __NX_GLSYM_H__
 
 #ifdef __cplusplus

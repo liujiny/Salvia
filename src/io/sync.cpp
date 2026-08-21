@@ -1,4 +1,4 @@
-#include "sync.h"
+﻿#include "sync.h"
 #include <SDL.h>
 
 #ifdef _XBOX

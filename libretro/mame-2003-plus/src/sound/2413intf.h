@@ -1,4 +1,4 @@
-#ifndef YM2413INTF_H
+﻿#ifndef YM2413INTF_H
 #define YM2413INTF_H
 
 #define MAX_2413 	(4)

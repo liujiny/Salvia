@@ -1,4 +1,4 @@
-/*
+﻿/*
  * picorestore - clean up after an omapfb program crash
  *
  * Copyright (c) Gražvydas "notaz" Ignotas, 2010

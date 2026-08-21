@@ -1,4 +1,4 @@
-#ifndef _GLOBAL_H_
+﻿#ifndef _GLOBAL_H_
 #define _GLOBAL_H_ 1
 
 /* POINTER defines a generic pointer type */

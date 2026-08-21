@@ -1,4 +1,4 @@
-/*********************************************************
+﻿/*********************************************************
 Sega hardware based on their SG-1000 console
 Driver by Tomasz Slanina  dox@space.pl
 

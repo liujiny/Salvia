@@ -1,4 +1,4 @@
-case 0x2f: {
+﻿case 0x2f: {
   rd = op_readpc();
   if(0){ break; }
   op_io(2);

@@ -1,4 +1,4 @@
-// FB Neo Taxi "Driver Driver" Module
+﻿// FB Neo Taxi "Driver Driver" Module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

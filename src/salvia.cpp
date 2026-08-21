@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "salvia.h"
 #include <http/httputil.h>

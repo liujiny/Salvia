@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Fuzz tester for dr_flac.h
  *
  * compile with

@@ -1,4 +1,4 @@
-/*  Copyright 2003-2004 Stephane Dallongeville
+﻿/*  Copyright 2003-2004 Stephane Dallongeville
 
     This file is part of Yabause.
 

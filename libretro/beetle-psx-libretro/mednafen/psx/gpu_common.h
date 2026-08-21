@@ -1,4 +1,4 @@
-extern enum dither_mode psx_gpu_dither_mode;
+﻿extern enum dither_mode psx_gpu_dither_mode;
 
 /* Return a pixel from VRAM */
 #define vram_fetch(gpu, x, y)  ((gpu)->vram[((y) << (10 + (gpu)->upscale_shift)) | (x)])

@@ -1,4 +1,4 @@
-/*
+﻿/*
     TODO:
     - bonkadv_mcu_43: extract data from MCU (dumped eeprom data for now)
     - bloodwar: verify all extracted data against real board (WIP)

@@ -1,4 +1,4 @@
-// FB Neo Data East 8-bit driver module
+﻿// FB Neo Data East 8-bit driver module
 // Based on MAME driver by Bryan McPhail and Stephane Humbert
 
 #include "tiles_generic.h"

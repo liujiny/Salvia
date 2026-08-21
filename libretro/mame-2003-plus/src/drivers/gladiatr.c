@@ -1,4 +1,4 @@
-/*
+﻿/*
 Taito Gladiator (1986)
 Known ROM SETS: Golden Castle, Ohgon no Siro
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * javanvm/javanvm.h - NestedVM-specific port code - C<->Java interface
  *
  * Copyright (c) 2001-2002 Jacek Poplawski (original atari_sdl.c)

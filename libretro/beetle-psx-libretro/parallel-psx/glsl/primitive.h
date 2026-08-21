@@ -1,4 +1,4 @@
-#ifndef PRIMITIVE_H
+﻿#ifndef PRIMITIVE_H
 #define PRIMITIVE_H
 
 layout(location = 0) in mediump vec4 vColor;

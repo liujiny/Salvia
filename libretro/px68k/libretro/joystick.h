@@ -1,4 +1,4 @@
-#ifndef _WINX68K_JOY_H
+﻿#ifndef _WINX68K_JOY_H
 #define _WINX68K_JOY_H
 
 #include <stdint.h>

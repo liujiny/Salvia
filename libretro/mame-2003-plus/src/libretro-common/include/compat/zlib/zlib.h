@@ -1,4 +1,4 @@
-#ifndef _COMPAT_ZLIB_H
+﻿#ifndef _COMPAT_ZLIB_H
 #define _COMPAT_ZLIB_H
 
 /* zlib.h -- interface of the 'zlib' general purpose compression library

@@ -1,4 +1,4 @@
-// FinalBurn Neo Playmark Super Derby Hardware Driver Module
+﻿// FinalBurn Neo Playmark Super Derby Hardware Driver Module
 // Based on MAME driver by David Haywood, Roberto Fresca
 
 #include "tiles_generic.h"

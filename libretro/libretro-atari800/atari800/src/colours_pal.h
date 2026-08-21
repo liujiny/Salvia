@@ -1,4 +1,4 @@
-#ifndef COLOURS_PAL_H_
+﻿#ifndef COLOURS_PAL_H_
 #define COLOURS_PAL_H_
 
 #include "colours.h"

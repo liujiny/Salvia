@@ -1,4 +1,4 @@
-void K005289Reset();
+﻿void K005289Reset();
 void K005289Init(INT32 clock, UINT8 *prom);
 void K005289Exit();
 

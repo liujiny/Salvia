@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 #include "vidhrdw/generic.h"
 #include "system16.h"
 #include "vidhrdw/segaic16.h"

@@ -1,4 +1,4 @@
-// Timers (for Yamaha FM cips and generic)
+﻿// Timers (for Yamaha FM cips and generic)
 #include "burnint.h"
 #include "timer.h"
 #include "m68000_intf.h"

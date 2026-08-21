@@ -1,4 +1,4 @@
-#include "../libretro-common/include/retro_timers.h"
+﻿#include "../libretro-common/include/retro_timers.h"
 #define DBP_STACK_SIZE (2*1024*1024) //2 MB
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN

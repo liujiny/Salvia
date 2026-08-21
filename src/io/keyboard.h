@@ -1,4 +1,4 @@
-#include <string>
+ï»¿#include <string>
 #include <vector>
 
 #include <libretro.h>
@@ -311,7 +311,7 @@ struct t_keyboard {
             {"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "", "", "HOME", "INS", "SUPR"},
             {"ESC", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "\\", "BS"},
             {"TAB", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "[", "]", "ENTER", ""}, 
-            {"CTRL", "A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "´", "`", "", ""},      
+            {"CTRL", "A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "ï¿½", "`", "", ""},      
             {"SHIFT", "Z", "X", "C", "V", "B", "N", "M", ",", ".", "/", "'", "SHIFT", "\xE2\x86\x91", ""},
             {"", "", "CAPS", "GRAPH", "SPACE", "", "", "", "", "SELECT", "CODE", "STOP", "\xE2\x86\x90", "\xE2\x86\x93", "\xE2\x86\x92"}
         };

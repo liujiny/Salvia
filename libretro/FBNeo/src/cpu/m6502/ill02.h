@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef __ILL02_H__
 #define __ILL02_H__

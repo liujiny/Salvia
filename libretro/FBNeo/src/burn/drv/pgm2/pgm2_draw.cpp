@@ -1,4 +1,4 @@
-// PGM2 Draw - Video rendering (IGS037 video chip)
+﻿// PGM2 Draw - Video rendering (IGS037 video chip)
 // Direct pixel rendering: sprites, BG 32x32 tiles (7bpp), FG 8x8 tiles (4bpp)
 // Based on MAME pgm2_v.cpp (David Haywood) adapted to FBNeo conventions
 // API: pgm2InitDraw / pgm2ExitDraw / pgm2DoDraw / pgm2SnapshotOam / pgm2SnapshotScroll / pgm2ScanDraw

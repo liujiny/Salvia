@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup Compression
 
     \brief This function compresses the given input data using Huffman coding

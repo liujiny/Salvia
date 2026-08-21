@@ -1,4 +1,4 @@
-// Based on MAME sources by Phil Stroffolino
+﻿// Based on MAME sources by Phil Stroffolino
 
 #include "tiles_generic.h"
 

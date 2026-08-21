@@ -1,4 +1,4 @@
-/*----------------------------------------------------------------
+﻿/*----------------------------------------------------------------
    Psikyo PS3/PS5/PS5v2 SH-2 Based Systems
    driver by David Haywood (+ Paul Priest)
    thanks to Farfetch'd for information about the sprite zoom table.

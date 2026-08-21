@@ -1,4 +1,4 @@
-/*  PPF Patch Support for PCSX-Reloaded
+﻿/*  PPF Patch Support for PCSX-Reloaded
  *  Copyright (c) 2009, Wei Mingzhi <whistler_wmz@users.sf.net>.
  *
  *  This program is free software; you can redistribute it and/or modify

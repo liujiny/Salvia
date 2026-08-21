@@ -1,4 +1,4 @@
-extern UINT8 SpecDips[2];
+﻿extern UINT8 SpecDips[2];
 extern UINT8 SpecInput[0x10];
 extern UINT8 SpecReset;
 extern UINT8 SpecRecalc;

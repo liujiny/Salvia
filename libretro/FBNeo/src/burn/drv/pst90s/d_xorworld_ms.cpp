@@ -1,4 +1,4 @@
-// FinalBurn Neo Xor World Modular System Prototype driver module
+﻿// FinalBurn Neo Xor World Modular System Prototype driver module
 // Based on MAME driver by ?
 
 // Notes:

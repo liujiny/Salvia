@@ -1,4 +1,4 @@
-#ifndef ARTIFACT_H_
+﻿#ifndef ARTIFACT_H_
 #define ARTIFACT_H_
 
 #include <stdio.h>

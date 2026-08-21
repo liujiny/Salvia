@@ -1,4 +1,4 @@
-#ifndef __COMPRESSION_BITCODER_H
+﻿#ifndef __COMPRESSION_BITCODER_H
 #define __COMPRESSION_BITCODER_H
 
 #include "rngcoder.h"

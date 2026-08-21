@@ -1,4 +1,4 @@
-#ifndef __OTL_GSUB_H__
+﻿#ifndef __OTL_GSUB_H__
 #define __OTL_GSUB_H__
 
 #include "otlayout.h"

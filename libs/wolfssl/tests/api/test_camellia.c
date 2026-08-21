@@ -1,4 +1,4 @@
-/* test_camellia.c
+﻿/* test_camellia.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

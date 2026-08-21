@@ -1,4 +1,4 @@
-#ifndef TIA_H
+﻿#ifndef TIA_H
 #define TIA_H
 
 #define TIA_DEFAULT_GAIN 16

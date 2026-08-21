@@ -1,4 +1,4 @@
-#include "psx.h"
+﻿#include "psx.h"
 #include "../../rsx/rsx_intf.h"
 
 #include <float.h>

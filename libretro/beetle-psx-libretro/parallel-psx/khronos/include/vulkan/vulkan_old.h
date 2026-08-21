@@ -1,4 +1,4 @@
-#ifndef __vulkan_h_
+﻿#ifndef __vulkan_h_
 #define __vulkan_h_ 1
 
 #ifdef __cplusplus

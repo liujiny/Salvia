@@ -1,4 +1,4 @@
-void vlm5030Reset(INT32 nChip);
+﻿void vlm5030Reset(INT32 nChip);
 void vlm5030Init(INT32 nChip, INT32 clock, UINT32 (*pSyncCallback)(INT32 sample_rate), UINT8 *rom, INT32 rom_size, INT32 nAdd);
 void vlm5030Update(INT32 nChip, INT16 *buf, INT32 samples);
 void vlm5030SetRoute(INT32 chip, INT32 nIndex, double nVolume, INT32 nRouteDir);

@@ -1,4 +1,4 @@
-// FinalBurn Neo Zaccaria driver module
+﻿// FinalBurn Neo Zaccaria driver module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

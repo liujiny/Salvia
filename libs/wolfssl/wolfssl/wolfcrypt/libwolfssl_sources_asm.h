@@ -1,4 +1,4 @@
-/* libwolfssl_sources_asm.h
+﻿/* libwolfssl_sources_asm.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

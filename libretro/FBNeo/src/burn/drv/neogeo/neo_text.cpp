@@ -1,4 +1,4 @@
-#include "neogeo.h"
+﻿#include "neogeo.h"
 
 UINT8* NeoTextROMBIOS;
 UINT8* NeoTextROM[MAX_SLOT];

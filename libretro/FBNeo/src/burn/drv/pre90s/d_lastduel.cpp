@@ -1,4 +1,4 @@
-// FB Alpha Last Duel driver module
+﻿// FB Alpha Last Duel driver module
 // Based on MAME driver by Bryan McPhail
 
 #include "tiles_generic.h"

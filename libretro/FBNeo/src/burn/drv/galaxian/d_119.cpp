@@ -1,4 +1,4 @@
-// FinalBurn Neo Sega 119 driver module
+﻿// FinalBurn Neo Sega 119 driver module
 // Based on MAME driver by David Haywood
 
 #ifdef _MSC_VER

@@ -1,4 +1,4 @@
-/*
+﻿/*
   libco.x86 (2009-10-12)
   author: byuu
   license: public domain

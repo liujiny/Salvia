@@ -1,4 +1,4 @@
-/*
+﻿/*
   SDL_ttf:  A companion library to SDL for working with TrueType (tm) fonts
   Copyright (C) 2001-2012 Sam Lantinga <slouken@libsdl.org>
 

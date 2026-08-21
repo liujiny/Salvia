@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 
 void readsample(struct GameSample *SampleInfo, int channel, struct GameSamples *SamplesData, int load);
 

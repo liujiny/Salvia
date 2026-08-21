@@ -1,4 +1,4 @@
-/* Kick Goal - Vidhrdw */
+﻿/* Kick Goal - Vidhrdw */
 
 #include "driver.h"
 #include "vidhrdw/generic.h"

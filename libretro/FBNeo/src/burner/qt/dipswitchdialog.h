@@ -1,4 +1,4 @@
-#ifndef DIPSWITCHDIALOG_H
+﻿#ifndef DIPSWITCHDIALOG_H
 #define DIPSWITCHDIALOG_H
 
 #include <QDialog>

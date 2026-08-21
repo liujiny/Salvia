@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 
 	Dark Seal (Rev 3)    (c) 1990 Data East Corporation (World version)
 	Dark Seal (Rev 1)    (c) 1990 Data East Corporation (World version)

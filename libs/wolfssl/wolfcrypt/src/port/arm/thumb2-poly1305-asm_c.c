@@ -1,4 +1,4 @@
-/* thumb2-poly1305-asm
+﻿/* thumb2-poly1305-asm
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

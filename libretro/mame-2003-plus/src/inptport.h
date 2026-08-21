@@ -1,4 +1,4 @@
-#ifndef INPTPORT_H
+﻿#ifndef INPTPORT_H
 #define INPTPORT_H
 
 #include "memory.h"

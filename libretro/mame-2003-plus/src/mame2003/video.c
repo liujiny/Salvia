@@ -1,4 +1,4 @@
-#include "libretro.h"
+﻿#include "libretro.h"
 #include "libretro_perf.h"
 #include "retro_inline.h"
 #include "mame2003.h"

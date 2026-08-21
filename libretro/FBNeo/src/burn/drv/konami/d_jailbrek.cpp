@@ -1,4 +1,4 @@
-// FB Alpha Jailbreak driver module
+﻿// FB Alpha Jailbreak driver module
 // Based on MAME driver by Ernesto Corvi
 
 #include "tiles_generic.h"

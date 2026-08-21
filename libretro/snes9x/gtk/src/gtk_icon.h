@@ -1,4 +1,4 @@
-/* GdkPixbuf RGBA C-Source image dump 1-byte-run-length-encoded */
+﻿/* GdkPixbuf RGBA C-Source image dump 1-byte-run-length-encoded */
 
 #ifdef __SUNPRO_C
 #pragma align 4 (app_icon)

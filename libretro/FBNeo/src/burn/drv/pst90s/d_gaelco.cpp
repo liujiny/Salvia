@@ -1,4 +1,4 @@
-// FB Alpha Gaelco hardware driver module
+﻿// FB Alpha Gaelco hardware driver module
 // Based on MAME driver by Manuel Abadia with various bits by Nicola Salmoria and Andreas Naive
 
 // thanks to research by Haze & peterferrie, thoop stg. 4 crash is fixed!

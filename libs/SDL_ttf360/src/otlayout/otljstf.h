@@ -1,4 +1,4 @@
-#ifndef __OTL_JSTF_H__
+﻿#ifndef __OTL_JSTF_H__
 #define __OTL_JSTF_H__
 
 #include "otlayout.h"

@@ -1,4 +1,4 @@
-#ifndef __LIBRETRO_CBS_H
+﻿#ifndef __LIBRETRO_CBS_H
 #define __LIBRETRO_CBS_H
 
 #include "libretro.h"

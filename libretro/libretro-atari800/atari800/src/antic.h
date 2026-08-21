@@ -1,4 +1,4 @@
-#ifndef ANTIC_H_
+﻿#ifndef ANTIC_H_
 #define ANTIC_H_
 
 #include "atari.h"

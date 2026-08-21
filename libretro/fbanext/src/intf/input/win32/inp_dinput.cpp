@@ -1,4 +1,4 @@
-// DirectInput module
+﻿// DirectInput module
 // updated to dinput8 by regret
 
 #include "burner.h"

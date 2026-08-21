@@ -1,4 +1,4 @@
-/* test_ossl_ecx.c
+﻿/* test_ossl_ecx.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

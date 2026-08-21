@@ -1,4 +1,4 @@
-
+﻿
 extern int g_layer_cx, g_layer_cy;
 extern int g_layer_cw, g_layer_ch;
 extern int saved_start_line, saved_line_count;

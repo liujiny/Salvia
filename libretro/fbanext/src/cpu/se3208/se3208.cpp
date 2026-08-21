@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "driver.h"
 #include "se3208_intf.h"
 

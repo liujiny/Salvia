@@ -1,4 +1,4 @@
-/*
+﻿/*
 Snem 0.1 by Tom Walker
 PPU emulation
 */

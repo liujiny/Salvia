@@ -1,4 +1,4 @@
-// FB Alpha Pirate Ship Higemaru Module
+﻿// FB Alpha Pirate Ship Higemaru Module
 // Based on MAME driver by Mirko Buffoni
 
 #include "tiles_generic.h"

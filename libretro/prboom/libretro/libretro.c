@@ -1,4 +1,4 @@
-#ifndef PSX
+﻿#ifndef PSX
 #include <sys/stat.h>
 #else
 #include <psx.h>

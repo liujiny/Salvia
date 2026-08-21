@@ -1,4 +1,4 @@
-#ifndef _RENDER_GDIPLUS_H_
+﻿#ifndef _RENDER_GDIPLUS_H_
 #define _RENDER_GDIPLUS_H_
 
 #ifdef __cplusplus 

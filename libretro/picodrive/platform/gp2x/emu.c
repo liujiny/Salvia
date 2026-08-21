@@ -1,4 +1,4 @@
-/*
+﻿/*
  * (c) Copyright 2006-2010 notaz, All rights reserved.
  * (c) Copyright 2019-2024 irixxxx
  *

@@ -1,4 +1,4 @@
-/*
+﻿/*
     HidMouseShared.h — contrato compartido entre el plugin residente de DashLaunch
     (hidmouse.xex) y el consumidor (Salvia / libSDLx360).
 

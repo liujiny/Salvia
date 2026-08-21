@@ -1,4 +1,4 @@
-#ifndef __WSWAN_INTERRUPT_H
+﻿#ifndef __WSWAN_INTERRUPT_H
 #define __WSWAN_INTERRUPT_H
 
 #include "../mednafen-types.h"

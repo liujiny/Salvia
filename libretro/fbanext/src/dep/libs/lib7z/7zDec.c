@@ -1,4 +1,4 @@
-/* 7zDec.c -- Decoding from 7z folder
+﻿/* 7zDec.c -- Decoding from 7z folder
 2010-11-02 : Igor Pavlov : Public domain */
 
 #include <string.h>

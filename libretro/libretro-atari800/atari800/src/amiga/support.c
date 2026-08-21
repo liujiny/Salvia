@@ -1,4 +1,4 @@
-/*
+﻿/*
  * support.c - user interface support code
  *
  * Copyright (c) 2000 Sebastian Bauer

@@ -1,4 +1,4 @@
-// Cheat module
+﻿// Cheat module
 
 #include "burnint.h"
 

@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup ASN
     \brief  この関数はCert構造体をデフォルトの値で初期化します。デフォルトのオプション：version = 3（0x2）、sigtype = sha_with_rsa、issuer =空白、dayValid = 500、selfsigned = 1（true）発行者としての件名=空白
     \return 成功した場合0を返します。

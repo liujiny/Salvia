@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  1541d64.h - 1541 emulation in disk image files (.d64/.x64/zipcode)
  *
  *  Frodo (C) 1994-1997,2002-2005 Christian Bauer

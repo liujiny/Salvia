@@ -1,4 +1,4 @@
-/*
+﻿/*
  *   A TMS34010 disassembler
  *
  *   This code written by Zsolt Vasvari for the MAME project

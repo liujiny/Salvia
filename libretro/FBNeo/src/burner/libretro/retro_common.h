@@ -1,4 +1,4 @@
-#ifndef __RETRO_COMMON__
+﻿#ifndef __RETRO_COMMON__
 #define __RETRO_COMMON__
 
 #include <string>

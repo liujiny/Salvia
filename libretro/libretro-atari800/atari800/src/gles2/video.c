@@ -1,4 +1,4 @@
-/*
+﻿/*
  * video.c - Raspberry Pi suport by djdron
  *
  * Copyright (c) 2013 Atari800 development team (see DOC/CREDITS)

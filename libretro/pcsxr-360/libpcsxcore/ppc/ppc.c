@@ -1,4 +1,4 @@
-/*
+﻿/*
  * ix86 core v0.5.1
  *  Authors: linuzappz <linuzappz@pcsx.net>
  *           alexey silinov

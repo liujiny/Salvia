@@ -1,4 +1,4 @@
-/*
+﻿/*
  * bin_to_cso_mp3
  * originally written by Exophase as "bin_to_iso_ogg"
  * updated for cso/mp3 by notaz

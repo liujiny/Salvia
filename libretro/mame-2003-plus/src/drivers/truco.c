@@ -1,4 +1,4 @@
-/*
+﻿/*
 
   Truco-Tron - (c) 198? Playtronic SRL, Argentina
 

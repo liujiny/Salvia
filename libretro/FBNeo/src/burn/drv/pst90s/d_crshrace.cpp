@@ -1,4 +1,4 @@
-// FinalBurn Neo Lethal Crash Race driver module
+﻿// FinalBurn Neo Lethal Crash Race driver module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-/* XzEnc.c -- Xz Encode
+﻿/* XzEnc.c -- Xz Encode
 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"

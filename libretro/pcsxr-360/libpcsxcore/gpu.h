@@ -1,4 +1,4 @@
-#ifndef __GPU_H__
+﻿#ifndef __GPU_H__
 #define __GPU_H__
 
 #include "../plugins/xbox_soft/peops_prof.h"

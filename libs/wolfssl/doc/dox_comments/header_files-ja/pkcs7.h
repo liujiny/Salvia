@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup PKCS7
     \brief  この関数は、DERフォーマットの証明書を使用してPKCS7構造を初期化します。空のPKCS7構造を初期化するには、NULL CERTとCERTSZの場合は0を渡すことができます。
     \return 0  PKCS7構造の初期化に成功しました

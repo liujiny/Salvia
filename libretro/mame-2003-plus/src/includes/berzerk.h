@@ -1,4 +1,4 @@
-/* defined in machine/berzerk.c */
+﻿/* defined in machine/berzerk.c */
 
 MACHINE_INIT( berzerk );
 INTERRUPT_GEN( berzerk_interrupt );

@@ -1,4 +1,4 @@
-#include "toaplan.h"
+﻿#include "toaplan.h"
 
 /*
  * Some games write to addresses outside of VRAM. It looks like the hardware masks bit 15-12.

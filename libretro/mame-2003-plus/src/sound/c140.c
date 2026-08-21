@@ -1,4 +1,4 @@
-/*
+﻿/*
 C140.c
 
 Simulator based on AMUSE sources.

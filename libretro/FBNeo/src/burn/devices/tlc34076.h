@@ -1,4 +1,4 @@
-void tlc34076_reset(INT32 dacwidth);
+﻿void tlc34076_reset(INT32 dacwidth);
 UINT8 tlc34076_read(UINT32 offset);
 void tlc34076_write(UINT32 offset, UINT8 data);
 UINT8 tlc34076_read16(UINT32 address);

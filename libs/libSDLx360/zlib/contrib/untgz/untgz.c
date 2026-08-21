@@ -1,4 +1,4 @@
-/*
+﻿/*
  * untgz.c -- Display contents and/or extract file from
  * a gzip'd TAR file
  * written by "Pedro A. Aranda Guti\irrez" <paag@tid.es>

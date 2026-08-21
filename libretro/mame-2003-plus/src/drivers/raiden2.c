@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 Raiden 2 Preliminary Driver
 based on Bryan McPhail's driver

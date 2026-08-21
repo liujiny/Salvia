@@ -1,4 +1,4 @@
-#ifndef __MACH_KONAMIGX_H
+﻿#ifndef __MACH_KONAMIGX_H
 #define __MACH_KONAMIGX_H
 
 void tms57002_init(void);

@@ -1,4 +1,4 @@
-// FinalBurn Neo Super Shanghai Dragon's Eye driver module
+﻿// FinalBurn Neo Super Shanghai Dragon's Eye driver module
 // Based on MAME driver by Bryan McPhail, Charles MacDonald, David Haywood
 
 #include "tiles_generic.h"

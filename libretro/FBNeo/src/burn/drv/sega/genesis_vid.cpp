@@ -1,4 +1,4 @@
-#include "genesis_vid.h"
+﻿#include "genesis_vid.h"
 #include "burnint.h"
 
 INT32 GenesisScreenNumber;

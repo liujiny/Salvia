@@ -1,4 +1,4 @@
-/* gzclose.c contains minimal changes required to be compiled with zlibWrapper:
+﻿/* gzclose.c contains minimal changes required to be compiled with zlibWrapper:
  * - gz_statep was converted to union to work with -Wstrict-aliasing=1      */
 
 /* gzclose.c -- zlib gzclose() function

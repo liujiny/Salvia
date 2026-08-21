@@ -1,4 +1,4 @@
-/*----------------
+﻿/*----------------
 Stuff to finish:
 redo config stuff + add support for per game config files
 decide how to add the sound code via the sound interface

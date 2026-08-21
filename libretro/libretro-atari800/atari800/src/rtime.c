@@ -1,4 +1,4 @@
-/*
+﻿/*
  * rtime.c - Emulate ICD R-Time 8 cartridge
  *
  * Copyright (C) 2000 Jason Duerstock

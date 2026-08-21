@@ -1,4 +1,4 @@
-void PSxInputReadPort(PadDataS* pad, int port);
+﻿void PSxInputReadPort(PadDataS* pad, int port);
 
 /* Vibration control from the SIO PAD command path (DualShock cmd 0x4D).
  *

@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  SASI.C - Shugart Associates System Interface (SASI HDD)
  */
 

@@ -1,4 +1,4 @@
-class SMP : public Processor {
+﻿class SMP : public Processor {
 public:
   static const uint8 iplrom[64];
   uint8 *apuram;

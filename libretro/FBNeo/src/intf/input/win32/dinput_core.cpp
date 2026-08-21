@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 #include "dinput_core.h"
 
 #ifndef DIDFT_OPTIONAL

@@ -1,4 +1,4 @@
-/* srp.c SRP unit tests
+﻿/* srp.c SRP unit tests
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

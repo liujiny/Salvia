@@ -1,4 +1,4 @@
-/*
+ï»¿/*
 **
 ** software implementation of Yamaha FM sound generator (YM2612/YM3438)
 **
@@ -1927,7 +1927,7 @@ void YM2612Init(void)
 void YM2612ResetChip(void)
 {
   int i;
-  // Al inicio de la función, antes de reset_channels:
+  // Al inicio de la funciï¿½n, antes de reset_channels:
   log_cb(RETRO_LOG_DEBUG, "connect1[0] antes de reset: %p\n", ym2612.CH[0].connect1);
   
   ym2612.OPN.eg_timer     = 0;

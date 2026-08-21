@@ -1,4 +1,4 @@
-/* header created automatically with -DGEN_TREES_H */
+﻿/* header created automatically with -DGEN_TREES_H */
 #ifndef _TREES_H
 #define _TREES_H
 

@@ -1,4 +1,4 @@
-// Software blitter effects
+﻿// Software blitter effects
 
 #include "burner.h"
 #include "vid_softfx.h"

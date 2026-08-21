@@ -1,4 +1,4 @@
-// K051316 and K053936 are now standalone devices (src/burn/devices); their
+﻿// K051316 and K053936 are now standalone devices (src/burn/devices); their
 // declarations live in k051316.h / k053936.h. Included here so existing konami
 // drivers keep getting the API (and the SetRenderTarget hook) through konamiic.h.
 #include "k051316.h"

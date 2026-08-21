@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "vulkan_context.hpp"
 #include "slang_preset.hpp"
 #include "vulkan_slang_pipeline.hpp"

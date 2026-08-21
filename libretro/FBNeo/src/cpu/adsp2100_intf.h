@@ -1,4 +1,4 @@
-#ifndef ADSP2100_INTF
+﻿#ifndef ADSP2100_INTF
 #define ADSP2100_INTF
 
 #include "adsp2100/adsp2100_defs.h"

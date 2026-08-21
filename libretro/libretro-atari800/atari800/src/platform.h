@@ -1,4 +1,4 @@
-#ifndef PLATFORM_H_
+﻿#ifndef PLATFORM_H_
 #define PLATFORM_H_
 
 #include "config.h"

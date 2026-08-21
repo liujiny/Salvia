@@ -1,4 +1,4 @@
-/**
+﻿/**
  * volk
  *
  * Copyright (C) 2018, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)

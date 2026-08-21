@@ -1,10 +1,10 @@
-/****************************************************************************/
+ï»¿/****************************************************************************/
 /* FAME (Fast and Accurate Motorola 68000 Emulation Library)                */
 /* Emulador de 68000 en C                                                   */
 /* Autor: Oscar Orallo Pelaez                                               */
 /* Fecha de comienzo: 03-10-2006                                            */
 /* Ultima actualizacion: 08-10-2006                                         */
-/* Based on the excellent C68K emulator by Stèphane Dallongueville          */
+/* Based on the excellent C68K emulator by Stï¿½phane Dallongueville          */
 /****************************************************************************/
 
 #include <stdio.h>
@@ -957,7 +957,7 @@ init_jump_table:
 #else
 }
 
-#pragma optimize("", off) // Desactiva TODA optimización a partir de aquí
+#pragma optimize("", off) // Desactiva TODA optimizaciï¿½n a partir de aquï¿½
 static int init_jump_table(void)
 #endif
 {

@@ -1,4 +1,4 @@
-static struct {
+﻿static struct {
 	struct {
 		WREGS w[256];
 		BREGS b[256];

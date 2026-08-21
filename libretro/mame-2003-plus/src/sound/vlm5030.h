@@ -1,4 +1,4 @@
-#ifndef VLM5030_h
+﻿#ifndef VLM5030_h
 #define VLM5030_h
 
 struct VLM5030interface

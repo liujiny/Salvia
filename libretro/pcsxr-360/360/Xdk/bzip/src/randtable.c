@@ -1,4 +1,4 @@
-
+﻿
 /*-------------------------------------------------------------*/
 /*--- Table for randomising repetitive blocks               ---*/
 /*---                                           randtable.c ---*/

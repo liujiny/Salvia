@@ -1,4 +1,4 @@
-// FB Neo Route 16 driver module
+﻿// FB Neo Route 16 driver module
 // Based on MAME driver by Zsolt Vasvari
 
 // Todo: revise route16 protection

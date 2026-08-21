@@ -1,4 +1,4 @@
-// Burner Config file module
+﻿// Burner Config file module
 #include "burner.h"
 int nIniVersion = 0;
 

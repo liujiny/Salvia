@@ -1,4 +1,4 @@
-// FB Alpha Chelnov / Karnov / Wonder Planet driver module
+﻿// FB Alpha Chelnov / Karnov / Wonder Planet driver module
 // Based on MAME driver by Bryan McPhail
 
 // Karnov: Game has a bug (weird!) - dink

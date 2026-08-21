@@ -1,4 +1,4 @@
-/* Xz.c - Xz
+﻿/* Xz.c - Xz
 2009-04-15 : Igor Pavlov : Public domain */
 
 #include "7zCrc.h"

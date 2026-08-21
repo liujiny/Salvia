@@ -1,4 +1,4 @@
-//
+﻿//
 //  SUExport.h
 //  Sparkle
 //

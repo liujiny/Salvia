@@ -1,4 +1,4 @@
-// This file is based on the MAME source code (see http://www.mame.net/)
+﻿// This file is based on the MAME source code (see http://www.mame.net/)
 
 /***************************************************************************
 

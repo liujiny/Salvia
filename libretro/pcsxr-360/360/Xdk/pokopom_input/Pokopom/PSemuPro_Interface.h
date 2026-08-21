@@ -1,4 +1,4 @@
-/*
+﻿/*
 	PSEmu Plugin Developer Kit Header definition
 
 	(C)1998 Vision Thing

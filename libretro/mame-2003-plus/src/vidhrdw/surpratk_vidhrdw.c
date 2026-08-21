@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 #include "vidhrdw/konamiic.h"
 
 static int layer_colorbase[3],sprite_colorbase,bg_colorbase;

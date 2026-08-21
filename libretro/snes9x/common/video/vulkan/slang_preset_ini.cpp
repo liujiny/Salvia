@@ -1,4 +1,4 @@
-#include "slang_preset_ini.hpp"
+﻿#include "slang_preset_ini.hpp"
 #include "slang_helpers.hpp"
 #include <fstream>
 #include <cstring>

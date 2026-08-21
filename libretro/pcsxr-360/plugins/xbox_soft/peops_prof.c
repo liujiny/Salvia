@@ -1,4 +1,4 @@
-/*
+﻿/*
  * peops_prof.c - storage and QPC helpers for the PEOPS soft-rasteriser
  * profiling buckets.  See peops_prof.h for the per-bucket model and the
  * inline classifier.

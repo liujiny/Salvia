@@ -1,4 +1,4 @@
-#ifndef CYCLE_MAP_H_
+﻿#ifndef CYCLE_MAP_H_
 #define CYCLE_MAP_H_
 
 #define CYCLE_MAP_SIZE (114 + 9)

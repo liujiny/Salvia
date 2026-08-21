@@ -1,4 +1,4 @@
-/* tropic01.h
+﻿/* tropic01.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

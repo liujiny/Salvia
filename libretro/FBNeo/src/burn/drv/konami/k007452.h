@@ -1,4 +1,4 @@
-void K007452Init();
+﻿void K007452Init();
 void K007452Exit();
 void K007452Scan(INT32 nAction);
 void K007452Reset();

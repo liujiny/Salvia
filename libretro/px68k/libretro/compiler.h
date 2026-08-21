@@ -1,4 +1,4 @@
-#ifndef	__NP2_WIN32EMUL_H__
+﻿#ifndef	__NP2_WIN32EMUL_H__
 #define	__NP2_WIN32EMUL_H__
 
 #ifndef _WIN32

@@ -1,4 +1,4 @@
-//
+﻿//
 //  FakeResources.c
 //  ReClassicfication
 //

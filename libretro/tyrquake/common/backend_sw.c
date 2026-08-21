@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Software renderer backend.
  *
  * Wraps the existing r_*.c / d_*.c span-rasterizer behind

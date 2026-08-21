@@ -1,4 +1,4 @@
-#ifndef __FT_OBJECT_H__
+﻿#ifndef __FT_OBJECT_H__
 #define __FT_OBJECT_H__
 
 #include <ft2build.h>

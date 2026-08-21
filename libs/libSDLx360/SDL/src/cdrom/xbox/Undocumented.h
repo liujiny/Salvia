@@ -1,4 +1,4 @@
-// Thanks and credit to everlame, Team Evox, and Woodoo.
+﻿// Thanks and credit to everlame, Team Evox, and Woodoo.
 //
 // This file contains declarations for accessing the internal NT API.
 // Some calls have changed from NT, so be careful!

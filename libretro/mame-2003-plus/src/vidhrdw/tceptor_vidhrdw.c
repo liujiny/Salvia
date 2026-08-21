@@ -1,4 +1,4 @@
-/*
+﻿/*
  *	Thunder Ceptor board
  *	emulate video hardware
  */

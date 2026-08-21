@@ -1,4 +1,4 @@
-#include "EmuSettingsWindow.hpp"
+﻿#include "EmuSettingsWindow.hpp"
 #include "EmuMainWindow.hpp"
 #include "EmuConfig.hpp"
 

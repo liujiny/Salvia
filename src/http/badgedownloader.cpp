@@ -1,4 +1,4 @@
-#include "badgedownloader.h"
+ï»¿#include "badgedownloader.h"
 
 void BadgeDownloader::start() {
     if (!running) {
@@ -6,7 +6,7 @@ void BadgeDownloader::start() {
         hThread = CreateThread(NULL, 0, thread_func, this, CREATE_SUSPENDED, NULL);
         if (hThread) {
 			#ifdef _XBOX
-			// Forzar la ejecución en el núcleo especificado
+			// Forzar la ejecuciï¿½n en el nï¿½cleo especificado
 			XSetThreadProcessor(hThread, IO_THREAD); 
 			#endif
 			// Bajar prioridad para no afectar el rendimiento del juego/emulador
@@ -20,16 +20,16 @@ void BadgeDownloader::start() {
 void BadgeDownloader::stop() {
     if (!running) return;
 
-    running = false; // Señalizamos al hilo que debe salir del bucle while
+    running = false; // Seï¿½alizamos al hilo que debe salir del bucle while
     
     if (hThread != NULL) {
-        // Esperamos un máximo de 2 segundos (2000 ms)
+        // Esperamos un mï¿½ximo de 2 segundos (2000 ms)
         DWORD result = WaitForSingleObject(hThread, 2000);
 
         if (result == WAIT_TIMEOUT) {
-            // El hilo se quedó bloqueado (probablemente en un socket de red)
-            // En Xbox 360, podrías optar por TerminateThread si es crítico, 
-            // aunque lo ideal es que tu función de red tenga su propio timeout.
+            // El hilo se quedï¿½ bloqueado (probablemente en un socket de red)
+            // En Xbox 360, podrï¿½as optar por TerminateThread si es crï¿½tico, 
+            // aunque lo ideal es que tu funciï¿½n de red tenga su propio timeout.
             LOG_DEBUG("BadgeDownloader: Timeout al detener el hilo. Forzando cierre.");
             // Opcional: TerminateThread(hThread, 0); // Solo si es estrictamente necesario
         }
@@ -71,7 +71,7 @@ DWORD WINAPI BadgeDownloader::thread_func(LPVOID data) {
         BadgeDownloadTask currentTask;
         bool hasTask = false;
 
-        // --- BLOQUE DE PROTECCIÓN CORTO ---
+        // --- BLOQUE DE PROTECCIï¿½N CORTO ---
         {
             ScopedLock lock(self->mutex); 
             if (!self->colaDescarga.empty()) {
@@ -79,11 +79,11 @@ DWORD WINAPI BadgeDownloader::thread_func(LPVOID data) {
                 self->colaDescarga.pop_front();
                 hasTask = true;
             }
-        } // <--- EL MUTEX SE LIBERA JUSTO AQUÍ AUTOMÁTICAMENTE
+        } // <--- EL MUTEX SE LIBERA JUSTO AQUï¿½ AUTOMï¿½TICAMENTE
 
         // --- PROCESAMIENTO FUERA DEL MUTEX ---
         if (hasTask) {
-            // Ahora la descarga ocurre sin bloquear a nadie más
+            // Ahora la descarga ocurre sin bloquear a nadie mï¿½s
             Achievements::instance()->download_and_cache_image(currentTask.achievement, currentTask.w, currentTask.h, true);
         } else {
             // Dormimos sin bloquear el mutex

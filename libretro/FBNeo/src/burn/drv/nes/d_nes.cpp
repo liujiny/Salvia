@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "nes.h"
 
 static struct BurnInputInfo NESInputList[] =

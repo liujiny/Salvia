@@ -1,4 +1,4 @@
-//
+﻿//
 //  SPUDownloaderDeprecated.h
 //  Sparkle
 //

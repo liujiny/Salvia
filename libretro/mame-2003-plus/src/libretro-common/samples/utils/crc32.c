@@ -1,4 +1,4 @@
-/* gcc -O3 -o crc32 crc32.c -lz */
+﻿/* gcc -O3 -o crc32 crc32.c -lz */
 
 #include <stdio.h>
 #include <errno.h>

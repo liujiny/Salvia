@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  FDC.C - Floppy Disk Controller (uPD72065)
  *  ToDo: Review of unimplemented commands, suspicious parts (numerous), review of the link with DMAC
  *    The error handling in D88 should have gotten better... but it's also messy...

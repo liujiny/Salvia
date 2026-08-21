@@ -1,4 +1,4 @@
-// FinalBurn Neo Quiz & Variety Sukusuku Inufuku and 3 On 3 Dunk Madness driver module
+﻿// FinalBurn Neo Quiz & Variety Sukusuku Inufuku and 3 On 3 Dunk Madness driver module
 // Based on MAME driver by Takahiro Nogi
 
 #include "tiles_generic.h"

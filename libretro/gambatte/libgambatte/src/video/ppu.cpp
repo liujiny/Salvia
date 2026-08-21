@@ -1,4 +1,4 @@
-//
+﻿//
 //   Copyright (C) 2010 by sinamas <sinamas at users.sourceforge.net>
 //
 //   This program is free software; you can redistribute it and/or modify

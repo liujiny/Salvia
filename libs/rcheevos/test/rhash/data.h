@@ -1,4 +1,4 @@
-#ifndef RHASH_TEST_DATA_H
+﻿#ifndef RHASH_TEST_DATA_H
 #define RHASH_TEST_DATA_H
 
 #include "rc_export.h"

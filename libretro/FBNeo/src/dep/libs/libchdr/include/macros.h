@@ -1,4 +1,4 @@
-#ifndef LIBCHDR_MACROS_H
+﻿#ifndef LIBCHDR_MACROS_H
 #define LIBCHDR_MACROS_H
 
 #undef ARRAY_LENGTH

@@ -1,4 +1,4 @@
-// FB Alpa Dragon Ball Z driver module
+﻿// FB Alpa Dragon Ball Z driver module
 // Based on MAME driver by David Haywood, R. Belmont and Pierpaolo Prazzoli
 
 #include "tiles_generic.h"

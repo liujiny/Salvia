@@ -1,4 +1,4 @@
-#ifndef _XBR_H
+﻿#ifndef _XBR_H
 #define _XBR_H
 
 void xbr2x_a(unsigned char * pIn,  unsigned int srcPitch, unsigned char * pOut, unsigned int dstPitch, int Xres, int Yres);

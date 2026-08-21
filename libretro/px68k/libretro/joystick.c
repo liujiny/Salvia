@@ -1,4 +1,4 @@
-/* JOYSTICK.C - joystick support for WinX68k */
+﻿/* JOYSTICK.C - joystick support for WinX68k */
 
 #include "common.h"
 #include "prop.h"

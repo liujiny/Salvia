@@ -1,4 +1,4 @@
-/*
+﻿/*
  * sdl/video.c - SDL library specific port code - video display
  *
  * Copyright (c) 2001-2002 Jacek Poplawski

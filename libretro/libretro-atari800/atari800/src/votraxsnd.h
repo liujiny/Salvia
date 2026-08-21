@@ -1,4 +1,4 @@
-#ifndef VOTRAXSND_H_
+﻿#ifndef VOTRAXSND_H_
 #define VOTRAXSND_H_
 
 #include "atari.h"

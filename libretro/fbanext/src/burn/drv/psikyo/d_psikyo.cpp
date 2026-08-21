@@ -1,4 +1,4 @@
-// Psikyo MC68EC020 based hardware
+﻿// Psikyo MC68EC020 based hardware
 #include "psikyo.h"
 #include "burn_ym2610.h"
 #include "burn_ymf278b.h"

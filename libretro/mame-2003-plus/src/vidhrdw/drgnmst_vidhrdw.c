@@ -1,4 +1,4 @@
-/* remaining gfx glitches*/
+﻿/* remaining gfx glitches*/
 
 /* layer priority register not fully understood*/
 

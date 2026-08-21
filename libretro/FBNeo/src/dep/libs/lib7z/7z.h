@@ -1,4 +1,4 @@
-/* 7z.h -- 7z interface
+﻿/* 7z.h -- 7z interface
 2023-04-02 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_7Z_H

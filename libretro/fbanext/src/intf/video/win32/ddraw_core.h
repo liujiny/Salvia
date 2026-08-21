@@ -1,4 +1,4 @@
-#ifndef _DDRAW_CORE_
+﻿#ifndef _DDRAW_CORE_
 #define _DDRAW_CORE_
 
 #include <ddraw.h>

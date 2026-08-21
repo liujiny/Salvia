@@ -1,4 +1,4 @@
-/* sha1.c : Implementation of the Secure Hash Algorithm */
+﻿/* sha1.c : Implementation of the Secure Hash Algorithm */
 
 /* SHA: NIST's Secure Hash Algorithm */
 

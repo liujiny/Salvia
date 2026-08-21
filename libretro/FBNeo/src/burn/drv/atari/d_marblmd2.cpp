@@ -1,4 +1,4 @@
-// FB Neo Marble Madness 2 driver module
+﻿// FB Neo Marble Madness 2 driver module
 // Based on MAME driver by David Haywood
 
 #include "tiles_generic.h"

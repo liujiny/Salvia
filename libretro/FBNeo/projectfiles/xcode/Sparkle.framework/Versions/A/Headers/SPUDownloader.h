@@ -1,4 +1,4 @@
-//
+﻿//
 //  SPUDownloader.h
 //  Downloader
 //

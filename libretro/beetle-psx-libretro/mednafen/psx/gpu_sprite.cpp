@@ -1,4 +1,4 @@
-
+﻿
 template<bool textured, int BlendMode, bool TexMult, uint32_t TexMode_TA,
    bool MaskEval_TA, bool FlipX, bool FlipY>
 static void DrawSprite(PS_GPU *gpu, int32_t x_arg, int32_t y_arg, int32_t w, int32_t h,

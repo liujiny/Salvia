@@ -1,4 +1,4 @@
-/* This program is based on DIS68k by Aaron Giles */
+﻿/* This program is based on DIS68k by Aaron Giles */
 
 #include "osd_cpu.h"
 static UINT8 *filebuf;

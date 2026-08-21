@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef __M37710IL_H__
 #define __M37710IL_H__

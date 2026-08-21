@@ -1,4 +1,4 @@
-/*
+﻿/*
  * video_stub.cpp - Minimal video stubs for libretro adaptation
  *
  * Replaces gui_video.cpp and video.cpp. Provides the extern "C" functions

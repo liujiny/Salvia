@@ -1,4 +1,4 @@
-// (also appears in k054539.cpp, d_spectrum.cpp c/o dink)
+﻿// (also appears in k054539.cpp, d_spectrum.cpp c/o dink)
 // direct form II(transposed) biquadradic filter, needed for delay(echo) effect's filter taps -dink
 enum { FILT_HIGHPASS = 0, FILT_LOWPASS = 1, FILT_LOWSHELF = 2, FILT_HIGHSHELF = 3, FILT_PEAK = 4, FILT_NOTCH = 5, FILT_BANDPASS };
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
   header file for software emulation for FM sound generator
 
 */

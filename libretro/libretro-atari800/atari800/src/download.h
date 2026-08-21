@@ -1,4 +1,4 @@
-#ifndef DOWNLOAD_H_
+﻿#ifndef DOWNLOAD_H_
 #define DOWNLOAD_H_
 
 #include "config.h"

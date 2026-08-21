@@ -1,4 +1,4 @@
-#ifndef DATAFILE_H
+﻿#ifndef DATAFILE_H
 #define DATAFILE_H
 
 struct tDatafileIndex

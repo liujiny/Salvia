@@ -1,4 +1,4 @@
-
+﻿
 /*
   libretro-Frodo - dlgSnapshot.c
 */

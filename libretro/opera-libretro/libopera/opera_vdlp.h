@@ -1,4 +1,4 @@
-#ifndef LIBOPERA_VDLP_H_INCLUDED
+﻿#ifndef LIBOPERA_VDLP_H_INCLUDED
 #define LIBOPERA_VDLP_H_INCLUDED
 
 #include "extern_c.h"

@@ -1,4 +1,4 @@
-/* Fit of Fighting Video Hardware */
+﻿/* Fit of Fighting Video Hardware */
 
 #include "driver.h"
 

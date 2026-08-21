@@ -1,4 +1,4 @@
-#ifndef INPUTSETDIALOG_H
+﻿#ifndef INPUTSETDIALOG_H
 #define INPUTSETDIALOG_H
 
 #include <QDialog>

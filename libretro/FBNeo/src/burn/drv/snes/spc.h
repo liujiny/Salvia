@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SPC_H
 #define SPC_H
 

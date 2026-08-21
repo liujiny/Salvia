@@ -1,4 +1,4 @@
-#ifndef TABLARGB
+﻿#ifndef TABLARGB
 #define TABLARGB
 
 #include <beans/structures.h>

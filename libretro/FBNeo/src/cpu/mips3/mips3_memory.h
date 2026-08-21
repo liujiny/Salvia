@@ -1,4 +1,4 @@
-
+﻿
 #ifndef MEMORY
 #define MEMORY
 

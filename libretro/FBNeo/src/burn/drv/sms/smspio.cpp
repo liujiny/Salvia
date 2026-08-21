@@ -1,4 +1,4 @@
-/*
+﻿/*
     pio.c --
     I/O chip and peripheral emulation.
 */

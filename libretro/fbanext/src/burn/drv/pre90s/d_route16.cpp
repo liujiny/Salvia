@@ -1,4 +1,4 @@
-// FB Alpha Route 16 driver module
+﻿// FB Alpha Route 16 driver module
 // Based on code by Zsolt Vasvari
 
 #include "burnint.h"

@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "arm7_intf.h"
 
 //#define DEBUG_LOG

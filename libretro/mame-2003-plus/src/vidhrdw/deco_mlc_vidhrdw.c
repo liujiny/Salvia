@@ -1,4 +1,4 @@
-/*
+﻿/*
 	The MLC graphics hardware is quite complicated - the usual method of having 'object ram' that
 	controls sprites is expanded into object ram that controls sprite blocks that may be stored
 	in RAM or ROM.  Each tile in a block may be specified explicitly via a display list in ROM or

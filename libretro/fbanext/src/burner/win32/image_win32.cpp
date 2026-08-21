@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 #include "png.h"
 
 HBITMAP ImageToBitmap(HWND hwnd, IMAGE* img)

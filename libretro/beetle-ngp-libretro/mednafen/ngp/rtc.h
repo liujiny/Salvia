@@ -1,4 +1,4 @@
-#ifndef __NGP_RTC_H
+﻿#ifndef __NGP_RTC_H
 #define __NGP_RTC_H
 
 #include <stdint.h>

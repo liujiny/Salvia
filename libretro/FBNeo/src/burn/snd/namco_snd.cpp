@@ -1,4 +1,4 @@
-// copyright-holders:Nicola Salmoria,Aaron Giles
+﻿// copyright-holders:Nicola Salmoria,Aaron Giles
 
 #include "burnint.h"
 #include "namco_snd.h"

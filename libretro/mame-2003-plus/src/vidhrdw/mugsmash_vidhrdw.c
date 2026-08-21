@@ -1,4 +1,4 @@
-/* vidhrdw/mugsmash.c - see drivers/mugsmash.c for more info */
+﻿/* vidhrdw/mugsmash.c - see drivers/mugsmash.c for more info */
 
 #include "driver.h"
 

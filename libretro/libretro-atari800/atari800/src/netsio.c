@@ -1,4 +1,4 @@
-/*
+﻿/*
 * netsio.c - NetSIO interface for FujiNet-PC <-> Atari800 Emulator
 *
 * fujinet_rx_thread receives from FujiNet-PC, responds to pings/alives,

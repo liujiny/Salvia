@@ -1,4 +1,4 @@
-// FinalBurn Neo Gottlieb Exterminator hardware driver module
+﻿// FinalBurn Neo Gottlieb Exterminator hardware driver module
 // Based on MAME driver by Alex Pasadyn, Zsolt Vasvari, Aaron Giles
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-void sc01_init(INT32 clock, void (*ar_cb)(INT32), INT32 reva);
+﻿void sc01_init(INT32 clock, void (*ar_cb)(INT32), INT32 reva);
 void sc01_exit();
 void sc01_set_buffered(INT32 (*pCPUCyclesCB)(), INT32 nCPUMhz);
 void sc01_reset();

@@ -1,4 +1,4 @@
-
+﻿
 typedef UINT8 (*ior_in_functs)(UINT16 address);
 typedef void (*ior_out_functs)(UINT16 address, UINT8 data);
 

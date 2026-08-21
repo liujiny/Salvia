@@ -1,4 +1,4 @@
-#include "discdata.h"
+﻿#include "discdata.h"
 #include "linkedmemblock.h"
 
 #include "opera_mem.h"

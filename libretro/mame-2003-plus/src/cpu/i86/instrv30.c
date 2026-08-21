@@ -1,4 +1,4 @@
-static void PREFIXV30(_0fpre) (void)	/* Opcode 0x0f */
+﻿static void PREFIXV30(_0fpre) (void)	/* Opcode 0x0f */
 {
 	unsigned Opcode = FETCH;
 	unsigned ModRM;

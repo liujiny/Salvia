@@ -1,4 +1,4 @@
-// FB Alpha Irem M58 driver module
+﻿// FB Alpha Irem M58 driver module
 // Based on MAME driver by Lee Taylor
 
 #include "tiles_generic.h"

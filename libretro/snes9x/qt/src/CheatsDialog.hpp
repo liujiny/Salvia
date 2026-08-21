@@ -1,4 +1,4 @@
-#include "ui_CheatsDialog.h"
+﻿#include "ui_CheatsDialog.h"
 
 class EmuApplication;
 

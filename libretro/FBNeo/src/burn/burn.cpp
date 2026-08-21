@@ -1,4 +1,4 @@
-// Burn - Drivers module
+ï»¿// Burn - Drivers module
 
 #include "version.h"
 #include "burnint.h"
@@ -124,7 +124,7 @@ static void BurnGameListInit()
 
     if (pszShortName && pszFullNameA && pszFullNameW) {
         for (UINT32 i = 0; i < nBurnDrvCount; i++) {
-            // Asignación con calloc es más limpia (inicializa a 0)
+            // Asignaciï¿½n con calloc es mï¿½s limpia (inicializa a 0)
             pszShortName[i] = (char*)calloc(100, sizeof(char));
             pszFullNameA[i] = (char*)calloc(MAX_PATH, sizeof(char));
             pszFullNameW[i] = (wchar_t*)calloc(MAX_PATH, sizeof(wchar_t));
@@ -154,7 +154,7 @@ static void BurnGameListExit()
         if (pszFullNameW && pszFullNameW[i]) free(pszFullNameW[i]);
     }
 
-    // AHORA SÍ, ponemos a NULL fuera del bucle
+    // AHORA Sï¿½, ponemos a NULL fuera del bucle
     if (pszShortName) { free(pszShortName); pszShortName = NULL; }
     if (pszFullNameA) { free(pszFullNameA); pszFullNameA = NULL; }
     if (pszFullNameW) { free(pszFullNameW); pszFullNameW = NULL; }

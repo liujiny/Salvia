@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 
 This driver contains several Konami 68000 based games. For the most part they
 run on incompatible boards, but since 90% of the work is done by the custom

@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 Dragon Master (c)1994 Unico
 

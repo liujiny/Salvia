@@ -1,4 +1,4 @@
-/* engine.h for libcurl */
+﻿/* engine.h for libcurl */
 
 #include <wolfssl/openssl/err.h>
 

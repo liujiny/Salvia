@@ -1,1 +1,1 @@
-/* SH3/4 Timer Unit */
+﻿/* SH3/4 Timer Unit */

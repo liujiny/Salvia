@@ -1,4 +1,4 @@
-#ifndef FUSE_Z80_TYPES_H
+﻿#ifndef FUSE_Z80_TYPES_H
 #define FUSE_Z80_TYPES_H
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-// FinalBurn Neo Oriental Soft G-Stream driver module
+﻿// FinalBurn Neo Oriental Soft G-Stream driver module
 // Based on MAME driver by David Haywood
 
 #include "tiles_generic.h"

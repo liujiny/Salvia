@@ -1,4 +1,4 @@
-#include "cps.h"
+﻿#include "cps.h"
 
 // CPS Scroll2 with Row scroll - Draw
 static INT32 nKnowBlank=-1;	// The tile we know is blank

@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * SMS emulation
  * (C) notaz, 2009-2010
  * (C) irixxxx, 2021-2025
@@ -179,16 +179,16 @@ static u8 vdp_hcounter(int cycles)
 static unsigned char kbd_matrix[12];
 
 // row | col
-/* 1. Declaración del array (Ajusta el tamaño si tus constantes superan 256) */
+/* 1. Declaraciï¿½n del array (Ajusta el tamaï¿½o si tus constantes superan 256) */
 static unsigned char kbd_map[256];
 
-/* 2. Función de inicialización compatible con VS2010 */
+/* 2. Funciï¿½n de inicializaciï¿½n compatible con VS2010 */
 void init_kbd_map(void) 
 {
     /* Limpiamos el array con ceros por si acaso */
     memset(kbd_map, 0, sizeof(kbd_map));
 
-    /* Fila de números */
+    /* Fila de nï¿½meros */
     kbd_map[PEVB_KBD_1]         = 0x00;
     kbd_map[PEVB_KBD_2]         = 0x01;
     kbd_map[PEVB_KBD_3]         = 0x02;
@@ -910,14 +910,14 @@ static void write_bank_x32k(unsigned short a, unsigned char d)
   z80_map_set(z80_write_map, a, a+0x7fff, PicoMem.vram+0x4000, 0);
 }
 
-/* 1. Declaración del array de punteros */
-/* Ajusta el tamaño (ej. 16 o 32) según el valor máximo de tus constantes PMS_MAP */
+/* 1. Declaraciï¿½n del array de punteros */
+/* Ajusta el tamaï¿½o (ej. 16 o 32) segï¿½n el valor mï¿½ximo de tus constantes PMS_MAP */
 static char *mappers[16]; 
 
-/* 2. Función de inicialización */
+/* 2. Funciï¿½n de inicializaciï¿½n */
 void init_mappers_names(void)
 {
-    /* Limpiamos el array para que los índices no usados sean NULL */
+    /* Limpiamos el array para que los ï¿½ndices no usados sean NULL */
     memset(mappers, 0, sizeof(mappers));
 
     mappers[PMS_MAP_SEGA]    = "Sega";

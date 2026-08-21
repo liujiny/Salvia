@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * VS2010 Compatibility Header
  *
  * Visual Studio 2010 (MSVC 16.0, _MSC_VER 1600) does not fully support C++11.
@@ -76,7 +76,7 @@
 
 	static inline unsigned char _BitScanReverse(unsigned long* Index, unsigned long Mask) {
         if (Mask == 0) return 0;
-        // _CountLeadingZeros es el intrínseco oficial del XDK
+        // _CountLeadingZeros es el intrï¿½nseco oficial del XDK
         *Index = 31 - _CountLeadingZeros(Mask);
         return 1;
     }
@@ -84,7 +84,7 @@
     static inline unsigned char _BitScanForward(unsigned long* Index, unsigned long Mask) {
 		unsigned long val;
         if (Mask == 0) return 0;
-        // Lógica para encontrar el bit menos significativo
+        // Lï¿½gica para encontrar el bit menos significativo
         val = Mask & (unsigned long)(-(long)Mask);
         *Index = 31 - _CountLeadingZeros(val);
         return 1;

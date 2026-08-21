@@ -1,4 +1,4 @@
-#include "opera_bios.h"
+﻿#include "opera_bios.h"
 
 static const opera_bios_t BIOSES[] =
   {

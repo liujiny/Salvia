@@ -1,4 +1,4 @@
-#ifndef _L_EC_H
+﻿#ifndef _L_EC_H
 #define _L_EC_H
 
 #include <stdint.h>

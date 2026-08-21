@@ -1,4 +1,4 @@
-/*
+﻿/*
 	IGS Asic25 + (Asic12, Asic22, or Asic28) emulation
 
 	Used by:

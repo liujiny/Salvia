@@ -1,4 +1,4 @@
-/*
+﻿/*
  * amiga.c - Amiga specific port code
  *
  * Copyright (c) 2000 Sebastian Bauer

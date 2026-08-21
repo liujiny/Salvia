@@ -1,4 +1,4 @@
-#ifndef __MDFN_VB_TIMER_H
+﻿#ifndef __MDFN_VB_TIMER_H
 #define __MDFN_VB_TIMER_H
 
 #include "../state.h"

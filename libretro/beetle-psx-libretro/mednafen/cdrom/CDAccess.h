@@ -1,4 +1,4 @@
-#ifndef __MDFN_CDROMFILE_H
+﻿#ifndef __MDFN_CDROMFILE_H
 #define __MDFN_CDROMFILE_H
 
 #include <stdint.h>

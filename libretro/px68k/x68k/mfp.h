@@ -1,4 +1,4 @@
-#ifndef _WINX68K_MFP_H
+﻿#ifndef _WINX68K_MFP_H
 #define _WINX68K_MFP_H
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-/* sms_ntsc 0.2.3. http://www.slack.net/~ant/ */
+﻿/* sms_ntsc 0.2.3. http://www.slack.net/~ant/ */
 
 /* Modified for use with Genesis Plus GX -- EkeEke */
 

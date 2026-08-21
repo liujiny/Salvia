@@ -1,4 +1,4 @@
-/*** konami: Portable Konami cpu emulator ******************************************
+﻿/*** konami: Portable Konami cpu emulator ******************************************
 
 	Copyright (C) The MAME Team 1999
 

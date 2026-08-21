@@ -1,4 +1,4 @@
-#include "CheatsDialog.hpp"
+﻿#include "CheatsDialog.hpp"
 #include "EmuApplication.hpp"
 #include "EmuConfig.hpp"
 #include "fscompat.h"

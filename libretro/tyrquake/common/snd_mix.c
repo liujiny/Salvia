@@ -1,4 +1,4 @@
-
+﻿
 /*
 Copyright (C) 1996-2001 Id Software, Inc.
 Copyright (C) 2010-2011 O. Sezer <sezero@users.sourceforge.net>

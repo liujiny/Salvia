@@ -1,4 +1,4 @@
-#ifndef _BURNER_LIBRETRO_H
+﻿#ifndef _BURNER_LIBRETRO_H
 #define _BURNER_LIBRETRO_H
 
 #include "gameinp.h"

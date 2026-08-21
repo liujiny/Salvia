@@ -1,4 +1,4 @@
-/*
+﻿/*
 * SCSI.C - External SCSI board (CZ-6BS1)
 * Supported by taking over SCSI IOCS (SPC is not emulated)
 * Built-in SCSI (dummy) IPL is defined in winx68k.c

@@ -1,4 +1,4 @@
-#ifndef _WIN68_OPM_FMGEN_H
+﻿#ifndef _WIN68_OPM_FMGEN_H
 #define _WIN68_OPM_FMGEN_H
 
 #include <stdint.h>

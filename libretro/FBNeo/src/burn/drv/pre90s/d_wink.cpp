@@ -1,4 +1,4 @@
-// FinalBurn Neo Wink driver module
+﻿// FinalBurn Neo Wink driver module
 // Based on MAME driver by Nicola Salmoria, Pierpaolo Prazzoli
 
 #include "tiles_generic.h"

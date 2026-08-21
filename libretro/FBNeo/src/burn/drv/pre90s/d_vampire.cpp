@@ -1,4 +1,4 @@
-// Final Burn Neo Vampire driver module
+﻿// Final Burn Neo Vampire driver module
 // Based on MAME driver by Tomasz Slanina
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2004-2006 NSRT Team ( http://nsrt.edgeemu.com )
 Copyright (C) 2002 Andrea Mazzoleni ( http://advancemame.sf.net )
 

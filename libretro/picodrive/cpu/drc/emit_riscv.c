@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Basic macros to emit RISC-V RV64IM instructions and some utils
  * Copyright (C) 2019-2024 irixxxx
  *

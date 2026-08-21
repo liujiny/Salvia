@@ -1,4 +1,4 @@
-void snes_sa1_init(void *mem, uint8_t *srom, int32_t sromsize, void *s_ram, int32_t s_ram_size);
+﻿void snes_sa1_init(void *mem, uint8_t *srom, int32_t sromsize, void *s_ram, int32_t s_ram_size);
 void snes_sa1_run();
 void snes_sa1_exit();
 void snes_sa1_reset();

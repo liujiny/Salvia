@@ -1,4 +1,4 @@
-/* xbox360_seed.c - wc_GenerateSeed for Xbox 360
+﻿/* xbox360_seed.c - wc_GenerateSeed for Xbox 360
  * Uses XNetRandom() for cryptographic entropy when available,
  * falls back to QueryPerformanceCounter-based PRNG.
  */

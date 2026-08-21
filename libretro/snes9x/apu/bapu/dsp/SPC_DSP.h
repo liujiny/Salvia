@@ -1,4 +1,4 @@
-// Highly accurate SNES SPC-700 DSP emulator
+﻿// Highly accurate SNES SPC-700 DSP emulator
 
 // snes_spc 0.9.0
 #ifndef SPC_DSP_H

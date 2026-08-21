@@ -1,4 +1,4 @@
-INT32 inputbuf_embed(FILE *fp);
+﻿INT32 inputbuf_embed(FILE *fp);
 void inputbuf_load();
 void inputbuf_save();
 void inputbuf_exit();

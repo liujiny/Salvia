@@ -1,4 +1,4 @@
-#include "EmuApplication.hpp"
+﻿#include "EmuApplication.hpp"
 #include "EmuConfig.hpp"
 #include "EmuMainWindow.hpp"
 #include "SDLInputManager.hpp"

@@ -1,4 +1,4 @@
-#ifndef AY8910_H
+﻿#ifndef AY8910_H
 #define AY8910_H
 
 #define MAX_8910 5

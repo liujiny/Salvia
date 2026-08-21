@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 
 static struct RomDataInfo RDI = { 0 };
 RomDataInfo* pRDI = &RDI;

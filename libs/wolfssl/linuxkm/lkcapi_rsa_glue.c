@@ -1,4 +1,4 @@
-/* lkcapi_rsa_glue.c -- glue logic to register RSA wolfCrypt implementations
+﻿/* lkcapi_rsa_glue.c -- glue logic to register RSA wolfCrypt implementations
  * with the Linux Kernel Cryptosystem
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.

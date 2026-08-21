@@ -1,4 +1,4 @@
-extern INT32 atarivad_scanline_timer;
+﻿extern INT32 atarivad_scanline_timer;
 extern INT32 atarivad_scanline_timer_enabled;
 extern INT32 atarivad_scanline; // external
 

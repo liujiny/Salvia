@@ -1,4 +1,4 @@
-#include "render_directdraw.h"
+﻿#include "render_directdraw.h"
 #include "main.h"
 #include "colours.h"
 #include "screen_win32.h"

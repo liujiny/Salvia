@@ -1,4 +1,4 @@
-#include "mednafen/tremor/codebook.c"
+﻿#include "mednafen/tremor/codebook.c"
 #include "mednafen/tremor/floor0.c"
 #include "mednafen/tremor/floor1.c"
 #include "mednafen/tremor/mdct.c"

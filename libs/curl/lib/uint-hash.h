@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_UINT_HASH_H
+﻿#ifndef HEADER_CURL_UINT_HASH_H
 #define HEADER_CURL_UINT_HASH_H
 /***************************************************************************
  *                                  _   _ ____  _

@@ -1,4 +1,4 @@
-/* SIMD Everywhere - https://github.com/simd-everywhere/simde
+﻿/* SIMD Everywhere - https://github.com/simd-everywhere/simde
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation

@@ -1,4 +1,4 @@
-// Pretty Soldier Sailor Moon & Air Gallet
+﻿// Pretty Soldier Sailor Moon & Air Gallet
 #include "cave.h"
 #include "msm6295.h"
 #include "burn_ym2151.h"

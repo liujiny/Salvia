@@ -1,4 +1,4 @@
-/* api.c API unit tests
+﻿/* api.c API unit tests
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

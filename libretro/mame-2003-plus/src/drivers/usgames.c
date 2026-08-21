@@ -1,4 +1,4 @@
-/* US Games - Trivia / Quiz / 'Amusement Only' Gambling Games */
+﻿/* US Games - Trivia / Quiz / 'Amusement Only' Gambling Games */
 
 /*
 

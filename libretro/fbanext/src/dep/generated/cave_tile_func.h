@@ -1,4 +1,4 @@
-#define XFLIP 0
+﻿#define XFLIP 0
 #define YFLIP 0
 #define ROT 0
 

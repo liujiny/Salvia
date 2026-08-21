@@ -1,4 +1,4 @@
-/* Variables needed by vidhrdw: */
+﻿/* Variables needed by vidhrdw: */
 
 extern int unico_has_lightgun;
 

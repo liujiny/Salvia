@@ -1,4 +1,4 @@
-#include "vulkan_texture.hpp"
+﻿#include "vulkan_texture.hpp"
 #include "vulkan/vulkan_enums.hpp"
 #include "slang_helpers.hpp"
 

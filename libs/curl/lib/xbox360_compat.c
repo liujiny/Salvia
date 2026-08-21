@@ -1,4 +1,4 @@
-/* xbox360_compat.c - Xbox 360 compatibility stubs for curl */
+﻿/* xbox360_compat.c - Xbox 360 compatibility stubs for curl */
 #include "curl_setup.h"
 
 #ifdef _XBOX

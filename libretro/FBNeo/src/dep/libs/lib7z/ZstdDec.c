@@ -1,4 +1,4 @@
-/* ZstdDec.c -- Zstd Decoder
+﻿/* ZstdDec.c -- Zstd Decoder
 2024-06-18 : the code was developed by Igor Pavlov, using Zstandard format
              specification and original zstd decoder code as reference code.
 original zstd decoder code: Copyright (c) Facebook, Inc. All rights reserved.

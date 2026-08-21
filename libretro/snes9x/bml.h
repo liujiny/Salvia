@@ -1,4 +1,4 @@
-#ifndef __BML_H
+﻿#ifndef __BML_H
 #define __BML_H
 #include <vector>
 #include <string>

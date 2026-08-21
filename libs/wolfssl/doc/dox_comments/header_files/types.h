@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup Memory
 
     \brief This is not actually a function, but rather a preprocessor macro,

@@ -1,4 +1,4 @@
-static int SDLtoFBK[512] = {
+﻿static int SDLtoFBK[512] = {
 	0,
 	-1,
 	-1,

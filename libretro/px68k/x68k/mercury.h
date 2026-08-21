@@ -1,4 +1,4 @@
-#ifndef _WINX68K_MERCURY_H
+﻿#ifndef _WINX68K_MERCURY_H
 #define _WINX68K_MERCURY_H
 
 #include <stdint.h>

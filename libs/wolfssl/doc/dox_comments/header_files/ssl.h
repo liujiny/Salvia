@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \brief This function initializes the DTLS v1.2 client method.
 
     \return pointer This function returns a pointer to a new

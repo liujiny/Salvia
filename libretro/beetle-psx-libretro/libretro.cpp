@@ -1,4 +1,4 @@
-#include "mednafen/mednafen.h"
+﻿#include "mednafen/mednafen.h"
 #include "mednafen/mempatcher.h"
 #include "mednafen/git.h"
 #include "mednafen/general.h"

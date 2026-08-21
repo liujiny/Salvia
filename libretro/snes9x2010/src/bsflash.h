@@ -1,4 +1,4 @@
-/***********************************************************************************
+﻿/***********************************************************************************
   Snes9x - Portable Super Nintendo Entertainment System (TM) emulator.
 
   BS Memory (Satellaview memory pack) flash-chip emulation.

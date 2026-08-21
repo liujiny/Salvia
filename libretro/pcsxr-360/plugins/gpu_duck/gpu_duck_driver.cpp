@@ -1,4 +1,4 @@
-/*
+﻿/*
  * gpu_duck_driver.cpp
  *
  * Bridge between xbox_soft's GP0 accumulator (gpu.c + primTableCX packet

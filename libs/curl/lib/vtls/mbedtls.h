@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_MBEDTLS_H
+﻿#ifndef HEADER_CURL_MBEDTLS_H
 #define HEADER_CURL_MBEDTLS_H
 /***************************************************************************
  *                                  _   _ ____  _

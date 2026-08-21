@@ -1,4 +1,4 @@
-#include "General.h"
+﻿#include "General.h"
 #include "Stuff.h"
 
 #ifdef __linux__

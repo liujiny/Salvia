@@ -1,4 +1,4 @@
-// Nec V20/V30/V33/V25/V35 interface
+﻿// Nec V20/V30/V33/V25/V35 interface
 // Written by OopsWare
 // http://oopsware.googlepages.com
 // Heavily modified by iq_132 (Nov, 2011)

@@ -1,4 +1,4 @@
-/* arm.c
+﻿/* arm.c
 
 	ARM 2/3/6 Emulation
 

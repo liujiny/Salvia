@@ -1,4 +1,4 @@
-#ifndef __EMU_CANVAS_OPENGL_HPP
+﻿#ifndef __EMU_CANVAS_OPENGL_HPP
 #define __EMU_CANVAS_OPENGL_HPP
 #include <QWindow>
 

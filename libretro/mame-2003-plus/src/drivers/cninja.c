@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 
   Edward Randy      (c) 1990 Data East Corporation (World version)
   Edward Randy      (c) 1990 Data East Corporation (Japanese version)

@@ -1,4 +1,4 @@
-#ifndef HATARI_UTYPE_H
+﻿#ifndef HATARI_UTYPE_H
 #define HATARI_UTYPE_H
 
 #include <stdint.h>

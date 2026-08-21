@@ -1,4 +1,4 @@
-// FinalBurn Neo Pocket Gal driver module
+﻿// FinalBurn Neo Pocket Gal driver module
 // Based on MAME driver by Bryan McPhail
 
 #include "tiles_generic.h"

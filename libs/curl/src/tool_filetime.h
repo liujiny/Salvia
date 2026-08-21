@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_TOOL_FILETIME_H
+﻿#ifndef HEADER_CURL_TOOL_FILETIME_H
 #define HEADER_CURL_TOOL_FILETIME_H
 /***************************************************************************
  *                                  _   _ ____  _

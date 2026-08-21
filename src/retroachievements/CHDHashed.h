@@ -1,4 +1,4 @@
-#ifndef CHD_HASHED_H
+﻿#ifndef CHD_HASHED_H
 #define CHD_HASHED_H
 
 #include <string>

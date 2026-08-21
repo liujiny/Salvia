@@ -1,4 +1,4 @@
-/* Cross Shooter (c) 1987 Seibu */
+﻿/* Cross Shooter (c) 1987 Seibu */
 
 /*
 

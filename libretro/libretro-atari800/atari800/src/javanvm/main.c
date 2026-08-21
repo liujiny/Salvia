@@ -1,4 +1,4 @@
-/*
+﻿/*
  * javanvm/main.c - NestedVM-specific port code - main interface
  *
  * Copyright (c) 2001-2002 Jacek Poplawski (original atari_sdl.c)

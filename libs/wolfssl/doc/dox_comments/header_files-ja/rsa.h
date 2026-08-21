@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup RSA
     \brief  この関数は提供されたRsaKey構造体を初期化します。また、ユーザー定義メモリオーバーライドで使用するためのヒープ識別子も取ります（XMALLOC、XFREE、XREALLOCを参照）。wc_rsa_blindingが有効な場合、キーはWC_RSASETRNGによってRNGに関連付けられなければなりません。
     \return 0  暗号化と復号化で使用するためのRSA構造の初期化に成功したときに返されます。

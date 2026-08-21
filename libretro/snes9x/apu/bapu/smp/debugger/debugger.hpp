@@ -1,4 +1,4 @@
-class SMPDebugger : public SMP, public ChipDebugger {
+﻿class SMPDebugger : public SMP, public ChipDebugger {
 public:
   bool property(unsigned id, string &name, string &value);
 

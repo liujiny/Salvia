@@ -1,4 +1,4 @@
-/*  RetroArch - A frontend for libretro.
+﻿/*  RetroArch - A frontend for libretro.
  *  Copyright (C) 2010-2014 - Hans-Kristian Arntzen
  * 
  *  RetroArch is free software: you can redistribute it and/or modify it under the terms

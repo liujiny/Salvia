@@ -1,4 +1,4 @@
-/*
+﻿/*
  * fLaC streaming music support, loosely based QuakeForge implementation
  * with modifications.  requires libFLAC >= 1.0.4 at compile and runtime.
  *

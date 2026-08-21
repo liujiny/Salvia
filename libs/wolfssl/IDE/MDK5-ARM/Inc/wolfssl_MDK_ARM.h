@@ -1,4 +1,4 @@
-/* wolfssl_MDK_ARM.h
+﻿/* wolfssl_MDK_ARM.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

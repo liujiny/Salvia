@@ -1,4 +1,4 @@
-/* lkcapi_dh_glue.c -- glue logic to register dh and ffdhe wolfCrypt
+﻿/* lkcapi_dh_glue.c -- glue logic to register dh and ffdhe wolfCrypt
  * implementations with the Linux Kernel Cryptosystem
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.

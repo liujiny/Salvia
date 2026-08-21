@@ -1,4 +1,4 @@
-// gcc drctest.c cpu/drc/cmn.c cpu/sh2/mame/sh2dasm.c platform/libpicofe/linux/host_dasm.c platform/libpicofe/linux/plat.c -I. -DDRC_SH2 -g -O -o drctest -lbfd-<ver>-multiarch -lopcodes-<ver>-multiarch -liberty -D<__platform__>
+﻿// gcc drctest.c cpu/drc/cmn.c cpu/sh2/mame/sh2dasm.c platform/libpicofe/linux/host_dasm.c platform/libpicofe/linux/plat.c -I. -DDRC_SH2 -g -O -o drctest -lbfd-<ver>-multiarch -lopcodes-<ver>-multiarch -liberty -D<__platform__>
 
 #include <stdarg.h>
 #include <stdio.h>

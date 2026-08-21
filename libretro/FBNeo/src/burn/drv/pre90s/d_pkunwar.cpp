@@ -1,4 +1,4 @@
-// FB Neo Penguin-Kun Wars Driver Module
+﻿// FB Neo Penguin-Kun Wars Driver Module
 // Based on MAME Driver by David Haywood and Phil Stroffolino
 
 #include "tiles_generic.h"

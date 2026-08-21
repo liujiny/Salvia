@@ -1,4 +1,4 @@
-#ifndef POKEY_H_
+﻿#ifndef POKEY_H_
 #define POKEY_H_
 
 #ifdef ASAP /* external project, see http://asap.sf.net */

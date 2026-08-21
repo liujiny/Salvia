@@ -1,4 +1,4 @@
-#ifndef _RECOVER_RAW_H
+﻿#ifndef _RECOVER_RAW_H
 #define _RECOVER_RAW_H
 
 #include <stdint.h>

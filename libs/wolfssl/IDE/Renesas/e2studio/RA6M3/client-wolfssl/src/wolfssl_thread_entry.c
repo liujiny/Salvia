@@ -1,4 +1,4 @@
-/* wolfssl_thread_entry.c
+﻿/* wolfssl_thread_entry.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <iostream>
 #include <vector>
@@ -18,7 +18,7 @@ const int WRITE_BUFFER_SIZE = 65536;
     #include <io.h> // Para _commit y _fileno
 #endif
 
-// Función auxiliar para separar las extensiones y normalizarlas
+// Funciï¿½n auxiliar para separar las extensiones y normalizarlas
 inline std::vector<std::string> splitExtensions(const std::string& extensions) {
     std::vector<std::string> list;
     std::stringstream ss(extensions);
@@ -38,9 +38,9 @@ inline int checkExtractionErrors(int result, std::size_t romsize){
 		const char* errorMsg;
 		switch (result) {
 			case UNZ_CRCERROR:      errorMsg = "Error de CRC (archivo corrupto)"; break;
-			case UNZ_BADZIPFILE:    errorMsg = "Archivo ZIP dañado"; break;
-			case UNZ_PARAMERROR:    errorMsg = "Error en los parámetros"; break;
-			default:                errorMsg = "Error desconocido en la extracción"; break;
+			case UNZ_BADZIPFILE:    errorMsg = "Archivo ZIP daï¿½ado"; break;
+			case UNZ_PARAMERROR:    errorMsg = "Error en los parï¿½metros"; break;
+			default:                errorMsg = "Error desconocido en la extracciï¿½n"; break;
 		}
 		LOG_DEBUG("Error al extraer (%d): %s\n", result, errorMsg);
 		return 1;
@@ -48,7 +48,7 @@ inline int checkExtractionErrors(int result, std::size_t romsize){
 		LOG_DEBUG("Error: Se leyeron %d bytes, pero se esperaban %lu\n", result, (unsigned long)romsize);
 		return 2;
 	} else {
-		LOG_DEBUG("Extracción completada con éxito.\n");
+		LOG_DEBUG("Extracciï¿½n completada con ï¿½xito.\n");
 		return 0;
 	}
 }
@@ -71,17 +71,17 @@ inline int getZipFileCount(const std::string& rompath) {
  * Optimizada para no consumir ciclos excesivos en el PowerPC de la Xbox 360.
  */
 inline bool isBiosFile(const std::string& filename) {
-    // 1. Convertir a minúsculas una sola vez
+    // 1. Convertir a minï¿½sculas una sola vez
     std::string name = filename;
     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
-    // 2. Filtros rápidos (Palabras clave universales)
+    // 2. Filtros rï¿½pidos (Palabras clave universales)
     if (name.find("bios") != std::string::npos) return true;
     if (name.find("boot") != std::string::npos) return true;
 
-    // 3. Patrones específicos de drivers de MAME 2003+
+    // 3. Patrones especï¿½ficos de drivers de MAME 2003+
     static const char* patterns[] = {
-        // Neo-Geo (Sistemas arcade más comunes)
+        // Neo-Geo (Sistemas arcade mï¿½s comunes)
         "neo-", "uni-b", "neodebug", "sp-", "usa_2slt", "asia-s3", "vs-bios",
         // Capcom / Sony PSX (Sistemas ZN1, ZN2, CPS3)
         "scph", "psx", "zn1", "zn2", "cpzn", "acpsx", "nocash",
@@ -95,7 +95,7 @@ inline bool isBiosFile(const std::string& filename) {
         "pgm", "3do", "cdi", "decocass", "alg_bios", "skns"
     };
 
-    // 4. Bucle de búsqueda (Sencillo para el compilador de VS2010)
+    // 4. Bucle de bï¿½squeda (Sencillo para el compilador de VS2010)
     const int numPatterns = sizeof(patterns) / sizeof(patterns[0]);
     for (int i = 0; i < numPatterns; ++i) {
         if (name.find(patterns[i]) != std::string::npos) {
@@ -103,8 +103,8 @@ inline bool isBiosFile(const std::string& filename) {
         }
     }
 
-    // 5. Filtro por extensión de firmware común en MAME
-    // Algunos firmwares no tienen nombre descriptivo pero sí estas extensiones
+    // 5. Filtro por extensiï¿½n de firmware comï¿½n en MAME
+    // Algunos firmwares no tienen nombre descriptivo pero sï¿½ estas extensiones
     if (name.size() > 4) {
         std::string ext = name.substr(name.size() - 4);
         if (ext == ".sp1" || ext == ".key" || ext == ".dat") {
@@ -127,7 +127,7 @@ inline int getZipFileCountFiltered(const std::string& rompath) {
         unzGetCurrentFileInfo(uf, &info, filename, sizeof(filename), NULL, 0, NULL, 0);
         
         std::string name = filename;
-        // Convertimos a minúsculas para comparar
+        // Convertimos a minï¿½sculas para comparar
         std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
         // FILTRO: Si NO contiene palabras clave de BIOS, lo contamos
@@ -151,7 +151,7 @@ inline unzippedFileInfo unzipOrLoad(const std::string& rompath, const std::strin
     std::vector<std::string> allowedExts = splitExtensions(extensions);
     const std::size_t MAX_MEM_SIZE = 52428800; // 50 MB
 
-    // 1. Detección de ZIP por Magic Number (Endian-Safe)
+    // 1. Detecciï¿½n de ZIP por Magic Number (Endian-Safe)
     FILE* fTest = fopen(rompath.c_str(), "rb");
     if (!fTest) {
         LOG_DEBUG("Unable to open file: %s\n", rompath.c_str());
@@ -162,7 +162,7 @@ inline unzippedFileInfo unzipOrLoad(const std::string& rompath, const std::strin
     fclose(fTest);
 
     // En Xbox (Big Endian), el magic de PKZip (0x50 0x4B 0x03 0x04) 
-    // se lee de forma distinta. Normalizamos para la comparación.
+    // se lee de forma distinta. Normalizamos para la comparaciï¿½n.
     #ifdef _XBOX
         magic = _byteswap_ulong(magic); 
     #endif
@@ -193,7 +193,7 @@ inline unzippedFileInfo unzipOrLoad(const std::string& rompath, const std::strin
         return ret;
     }
 
-    // --- CASO 2: ES UN ZIP (Extracción con Minizip) ---
+    // --- CASO 2: ES UN ZIP (Extracciï¿½n con Minizip) ---
     LOG_DEBUG("Zip detected. Searching for compatible extension...\n");
     unzFile uf = unzOpen(rompath.c_str());
     if (!uf) return ret;
@@ -213,7 +213,7 @@ inline unzippedFileInfo unzipOrLoad(const std::string& rompath, const std::strin
             std::transform(currentExt.begin(), currentExt.end(), currentExt.begin(), ::tolower);
         }
 
-        // Comprobación de extensión
+        // Comprobaciï¿½n de extensiï¿½n
         bool match = false;
         for (std::size_t i = 0; i < allowedExts.size(); ++i) {
             if (currentExt == allowedExts[i]) {
@@ -237,11 +237,11 @@ inline unzippedFileInfo unzipOrLoad(const std::string& rompath, const std::strin
                         }
                     }
                 } else {
-                    // Extracción a disco (Temp)
+                    // Extracciï¿½n a disco (Temp)
                     ret.extractedPath = tempDir + Constant::getFileSep() + "extractedRom" + currentExt;
                     FILE* fout = fopen(ret.extractedPath.c_str(), "wb");
                     if (fout) {
-                        // Buffer de 64KB: Óptimo para el DMA del HDD de Xbox 360
+                        // Buffer de 64KB: ï¿½ptimo para el DMA del HDD de Xbox 360
                         char writeBuf[WRITE_BUFFER_SIZE]; 
                         int bytesRead;
                         while ((bytesRead = unzReadCurrentFile(uf, writeBuf, WRITE_BUFFER_SIZE)) > 0) {
@@ -251,12 +251,12 @@ inline unzippedFileInfo unzipOrLoad(const std::string& rompath, const std::strin
 							}
 						}
 						if (bytesRead < 0) {
-							LOG_DEBUG("Error en la descompresión: %d\n", bytesRead);
+							LOG_DEBUG("Error en la descompresiï¿½n: %d\n", bytesRead);
 							found = false;
 						} else {
 							found = true;
 						}
-                        // SYNC CRÍTICO: Asegurar que el Core vea el archivo completo
+                        // SYNC CRï¿½TICO: Asegurar que el Core vea el archivo completo
                         fflush(fout);
                         #ifdef _XBOX
                             _commit(_fileno(fout)); 

@@ -1,4 +1,4 @@
-// FinalBurn Neo TCH Kick Goal / Action Hollywood driver module
+﻿// FinalBurn Neo TCH Kick Goal / Action Hollywood driver module
 // Based on MAME driver by David Haywood
 
 #include "tiles_generic.h"

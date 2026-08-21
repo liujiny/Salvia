@@ -1,4 +1,4 @@
-/*****************************************************************************\
+ï»¿/*****************************************************************************\
      Snes9x - Portable Super Nintendo Entertainment System (TM) emulator.
                 This file is licensed under the Snes9x License.
    For further information, consult the LICENSE file in the root directory.
@@ -22,7 +22,7 @@
 
 #ifdef _XBOX
 	#include <io.h>
-	// En el SDK de Xbox 360, _chsize es la función estándar para esto
+	// En el SDK de Xbox 360, _chsize es la funciï¿½n estï¿½ndar para esto
 	#define ftruncate(fd, size) _chsize(fd, (long)(size))
 #endif
 

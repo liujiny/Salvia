@@ -1,4 +1,4 @@
-#ifndef __UGUI_CONFIG_H
+﻿#ifndef __UGUI_CONFIG_H
 #define __UGUI_CONFIG_H
 
 /* -------------------------------------------------------------------------------- */

@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "z180_intf.h"
 
 static INT32 DebugCPU_Z180Initted = 0;

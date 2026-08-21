@@ -1,4 +1,4 @@
-#ifndef CODECS_IMAGE_H_
+﻿#ifndef CODECS_IMAGE_H_
 #define CODECS_IMAGE_H_
 
 #include "atari.h"

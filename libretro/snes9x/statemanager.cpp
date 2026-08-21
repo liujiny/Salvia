@@ -1,4 +1,4 @@
-#include "statemanager.h"
+﻿#include "statemanager.h"
 #include "snapshot.h"
 
 /*  State Manager Class that records snapshot data for rewinding

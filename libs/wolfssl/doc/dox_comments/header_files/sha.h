@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup SHA
 
     \brief This function initializes SHA. This is automatically called

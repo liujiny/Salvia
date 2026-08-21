@@ -1,4 +1,4 @@
-/*
+﻿/*
  * pal_blending.c - blitting functions that emulate PAL delay line accurately
  *
  * Copyright (C) 2013 Tomasz Krasuski

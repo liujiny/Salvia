@@ -1,4 +1,4 @@
-#ifndef DOSBOX_EMU_H
+﻿#ifndef DOSBOX_EMU_H
 #define DOSBOX_EMU_H
 
 

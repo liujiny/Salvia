@@ -1,4 +1,4 @@
-#include "retro_common.h"
+﻿#include "retro_common.h"
 
 #define MAX_LANGUAGES	3
 

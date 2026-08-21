@@ -1,4 +1,4 @@
-#include <QtWidgets>
+﻿#include <QtWidgets>
 #include <QVector>
 #include "SDL.h"
 #include "qinputinterface.h"

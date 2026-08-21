@@ -1,4 +1,4 @@
-#ifndef STATEMANAGER_H
+﻿#ifndef STATEMANAGER_H
 #define STATEMANAGER_H
 
 /*  State Manager Class that records snapshot data for rewinding

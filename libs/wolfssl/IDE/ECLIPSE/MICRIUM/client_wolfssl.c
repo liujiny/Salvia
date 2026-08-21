@@ -1,4 +1,4 @@
-/* client_wolfssl.c
+﻿/* client_wolfssl.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-/* example.c -- usage example of the zlib compression library
+﻿/* example.c -- usage example of the zlib compression library
  */
 /*
  Copyright (c) 1995-2006, 2011 Jean-loup Gailly

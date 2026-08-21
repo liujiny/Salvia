@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Copyright (C) 2002-2011  The DOSBox Team
  *  Copyright (C) 2022-2026  Bernhard Schelling
  *

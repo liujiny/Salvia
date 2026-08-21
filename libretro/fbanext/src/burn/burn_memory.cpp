@@ -1,4 +1,4 @@
-// FB Alpha memory management module
+﻿// FB Alpha memory management module
 
 // The purpose of this module is to offer replacement functions for standard C/C++ ones 
 // that allocate and free memory.  This should help deal with the problem of memory

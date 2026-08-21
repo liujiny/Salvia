@@ -1,4 +1,4 @@
-#ifndef TMS36XX_SOUND_H
+﻿#ifndef TMS36XX_SOUND_H
 #define TMS36XX_SOUND_H
 
 #define MAX_TMS36XX 4

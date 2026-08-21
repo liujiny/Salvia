@@ -1,4 +1,4 @@
-/* app_print.c
+﻿/* app_print.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

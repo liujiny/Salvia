@@ -1,4 +1,4 @@
-/* Space Bugger */
+﻿/* Space Bugger */
 
 /* is the rom mapping ok, are the roms good? it jumps to the 0x800 region and I don't have a rom for there,
 the only remaining rom has fixed bits, then the game crashes .. */

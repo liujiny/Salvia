@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 #include "png.h"
 
 #define PNG_SIG_CHECK_BYTES (8)

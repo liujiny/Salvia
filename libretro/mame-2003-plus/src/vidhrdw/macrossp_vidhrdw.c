@@ -1,4 +1,4 @@
-/* Macross Plus - Vidhrdw
+﻿/* Macross Plus - Vidhrdw
   see DRIVER file for notes */
 
 #include "driver.h"

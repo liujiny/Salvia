@@ -1,4 +1,4 @@
-/*
+﻿/*
  * mzpokeysnd.c - POKEY sound chip emulation, v1.6
  *
  * Copyright (C) 2002 Michael Borisov

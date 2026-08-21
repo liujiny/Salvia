@@ -1,4 +1,4 @@
-typedef struct {
+﻿typedef struct {
 	UINT8 opcode;
 	UINT32 flags;
 	void (*handler16)(void);

@@ -1,4 +1,4 @@
-// FinalBurn Neo Limenko Power System 2 hardware driver module
+﻿// FinalBurn Neo Limenko Power System 2 hardware driver module
 // Based on MAME driver by Pierpaolo Prazzoli, Tomasz Slanina
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-#ifndef QUTIL_H
+﻿#ifndef QUTIL_H
 #define QUTIL_H
 
 #include <QString>

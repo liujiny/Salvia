@@ -1,4 +1,4 @@
-
+﻿
 #include "burnint.h"
 #include "nmk004.h"
 #include "burn_ym2203.h"

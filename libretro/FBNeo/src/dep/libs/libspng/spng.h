@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: BSD-2-Clause */
+﻿/* SPDX-License-Identifier: BSD-2-Clause */
 #ifndef SPNG_H
 #define SPNG_H
 #define SPNG_STATIC

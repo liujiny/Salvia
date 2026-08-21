@@ -1,4 +1,4 @@
-#ifndef _SMSTMS_H_
+﻿#ifndef _SMSTMS_H_
 #define _SMSTMS_H_
 
 extern INT16 text_counter;

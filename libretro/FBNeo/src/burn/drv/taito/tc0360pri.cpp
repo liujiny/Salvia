@@ -1,4 +1,4 @@
-// TC0360PRI
+﻿// TC0360PRI
 // Based on MAME sources by Nicola Salmoria
 
 #include "burnint.h"

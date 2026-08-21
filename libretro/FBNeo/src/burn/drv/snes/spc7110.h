@@ -1,4 +1,4 @@
-#ifndef SPC7110_H
+﻿#ifndef SPC7110_H
 #define SPC7110_H
 
 #include "statehandler.h"

@@ -1,4 +1,4 @@
-// ------------ gfx options menu ------------
+﻿// ------------ gfx options menu ------------
 
 #include "../libpicofe/plat_sdl.h"
 

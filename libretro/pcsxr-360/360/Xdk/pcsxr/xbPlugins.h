@@ -1,4 +1,4 @@
-/*  Pcsx - Pc Psx Emulator
+﻿/*  Pcsx - Pc Psx Emulator
  *  Copyright (C) 1999-2002  Pcsx Team
  *
  *  This program is free software; you can redistribute it and/or modify

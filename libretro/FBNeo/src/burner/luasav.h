@@ -1,4 +1,4 @@
-#ifndef _LUASAV_H_
+﻿#ifndef _LUASAV_H_
 #define _LUASAV_H_
 
 struct LuaSaveData

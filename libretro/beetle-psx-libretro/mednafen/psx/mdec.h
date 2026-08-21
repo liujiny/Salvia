@@ -1,4 +1,4 @@
-#ifndef __MDFN_PSX_MDEC_H
+﻿#ifndef __MDFN_PSX_MDEC_H
 #define __MDFN_PSX_MDEC_H
 
 void MDEC_DMAWrite(uint32_t V);

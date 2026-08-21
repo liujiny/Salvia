@@ -1,4 +1,4 @@
-#include <uiobjects/image.h>
+﻿#include <uiobjects/image.h>
 
 #include <SDL_image.h>
 #include <gfx/SDL_rotozoom.h>

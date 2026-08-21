@@ -1,4 +1,4 @@
-#include <QProgressDialog>
+﻿#include <QProgressDialog>
 #include <QDebug>
 #include <QApplication>
 #include "burner.h"

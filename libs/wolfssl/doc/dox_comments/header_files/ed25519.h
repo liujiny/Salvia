@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup ED25519
 
     \brief This function generates the Ed25519 public key from the private key,

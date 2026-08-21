@@ -1,4 +1,4 @@
-//
+﻿//
 //  SUAppcast.h
 //  Sparkle
 //

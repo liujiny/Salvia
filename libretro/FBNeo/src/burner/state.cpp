@@ -1,4 +1,4 @@
-// Driver Save State module
+﻿// Driver Save State module
 #include "burner.h"
 
 #include "inputbuf.h"

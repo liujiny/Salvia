@@ -1,4 +1,4 @@
-#include <stdarg.h>
+﻿#include <stdarg.h>
 
 #include <retro_miscellaneous.h>
 #include <streams/file_stream.h>

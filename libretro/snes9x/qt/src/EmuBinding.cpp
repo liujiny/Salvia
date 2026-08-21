@@ -1,4 +1,4 @@
-#include "EmuBinding.hpp"
+﻿#include "EmuBinding.hpp"
 #include "SDL_joystick.h"
 #include <QString>
 #include <QKeySequence>

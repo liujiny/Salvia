@@ -1,4 +1,4 @@
-//ref: http://vba-rerecording.googlecode.com/svn/trunk/src/2xsai.cpp
+﻿//ref: http://vba-rerecording.googlecode.com/svn/trunk/src/2xsai.cpp
 
 typedef unsigned char u8;
 typedef unsigned short u16;

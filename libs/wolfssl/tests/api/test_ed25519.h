@@ -1,4 +1,4 @@
-/* test_ed25519.h
+﻿/* test_ed25519.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

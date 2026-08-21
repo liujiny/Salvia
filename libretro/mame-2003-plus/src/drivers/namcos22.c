@@ -1,4 +1,4 @@
-/**
+﻿/**
  * driver\namcos22.c
  *
  * This driver describes Namco's System22 and Super System 22 hardware.

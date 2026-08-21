@@ -1,4 +1,4 @@
-/* thumb2-aes-asm
+﻿/* thumb2-aes-asm
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

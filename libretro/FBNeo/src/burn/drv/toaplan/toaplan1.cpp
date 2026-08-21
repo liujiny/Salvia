@@ -1,4 +1,4 @@
-#include "toaplan.h"
+﻿#include "toaplan.h"
 
 // This function decodes the tile data for the GP9001 chip in place.
 INT32 ToaLoadTiles(UINT8* pDest, INT32 nStart, INT32 nROMSize)

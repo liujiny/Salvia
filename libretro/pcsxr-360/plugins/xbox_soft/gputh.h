@@ -1,4 +1,4 @@
-#ifdef __cplusplus
+﻿#ifdef __cplusplus
 extern "C" {
 #endif
 	typedef struct s_work{

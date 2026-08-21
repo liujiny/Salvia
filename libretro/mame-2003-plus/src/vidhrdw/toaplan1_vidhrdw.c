@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 
   Functions to emulate the video hardware of some Toaplan games,
   which use the BCU-2 tile controller, and the FCU-2 Sprite controller -

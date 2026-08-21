@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 
 Naughty Boy driver by Sal and John Bugliarisi.
 This driver is based largely on MAME's Phoenix driver, since Naughty Boy runs

@@ -1,4 +1,4 @@
-#ifndef __TAITO8741__
+﻿#ifndef __TAITO8741__
 #define __TAITO8741__
 
 #define MAX_TAITO8741 4

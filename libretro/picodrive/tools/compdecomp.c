@@ -1,4 +1,4 @@
-/*
+﻿/*
  * :make compdecomp CFLAGS=-Wall LDFLAGS=-lz
  */
 #include <stdio.h>

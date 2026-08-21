@@ -1,4 +1,4 @@
-void soundsgood_data_write(UINT16 data);
+﻿void soundsgood_data_write(UINT16 data);
 UINT8 soundsgood_status_read();
 void soundsgood_reset_write(int state);
 

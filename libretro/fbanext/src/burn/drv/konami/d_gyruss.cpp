@@ -1,4 +1,4 @@
-// FB Alpha Gyruss driver module
+﻿// FB Alpha Gyruss driver module
 // Based on MAME driver by Mirko Buffoni, Michael Cuddy, and Nicola Salmoria
 
 #include "tiles_generic.h"

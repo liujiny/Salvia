@@ -1,4 +1,4 @@
-// Millipede emu-layer for FB Neo by dink, inspired by Ivan Mackintosh's Millipede/Centipede emulator
+﻿// Millipede emu-layer for FB Neo by dink, inspired by Ivan Mackintosh's Millipede/Centipede emulator
 
 #include "tiles_generic.h"
 #include "m6502_intf.h"

@@ -1,4 +1,4 @@
-// Based on MESS driver by Charles MacDonald
+﻿// Based on MESS driver by Charles MacDonald
 
 #include "tiles_generic.h"
 #include "pce.h"

@@ -1,4 +1,4 @@
-// FinalBurn Neo Goori Goori driver module
+﻿// FinalBurn Neo Goori Goori driver module
 // Based on MAME driver by David Haywood
 
 #include "tiles_generic.h"

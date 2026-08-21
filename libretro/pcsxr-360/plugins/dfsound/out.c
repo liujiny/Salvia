@@ -1,4 +1,4 @@
-/* Output-driver glue for the cycle-driven SPU port.
+﻿/* Output-driver glue for the cycle-driven SPU port.
  *
  * The SPU plugin keeps an `out_current` pointer; pcsx_rearmed picks
  * one of OSS/ALSA/SDL/Pulse/none at SetupSound() time.  In our build

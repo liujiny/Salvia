@@ -1,4 +1,4 @@
-/* 7zBuf.c -- Byte Buffer
+﻿/* 7zBuf.c -- Byte Buffer
 2008-03-28
 Igor Pavlov
 Public domain */

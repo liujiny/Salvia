@@ -1,4 +1,4 @@
-/* SwapBytes.c -- Byte Swap conversion filter
+﻿/* SwapBytes.c -- Byte Swap conversion filter
 2024-03-01 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"

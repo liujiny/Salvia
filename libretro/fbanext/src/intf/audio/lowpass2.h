@@ -1,4 +1,4 @@
-#ifndef HIPASS_INCLUDED
+﻿#ifndef HIPASS_INCLUDED
 #define HIPASS_INCLUDED
 
 class LowPass2

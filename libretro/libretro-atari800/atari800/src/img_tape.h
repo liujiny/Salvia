@@ -1,4 +1,4 @@
-/*
+﻿/*
  * img_tape.h - support for CAS and raw tape images
  *
  * Copyright (C) 2011 Tomasz Krasuski

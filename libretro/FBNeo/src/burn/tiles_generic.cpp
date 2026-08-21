@@ -1,4 +1,4 @@
-/*================================================================================================
+﻿/*================================================================================================
 Generic Tile Rendering Module - Uses the Colour-Depth Independent Image Transfer Method
 
 Supports 8 x 8, 16 x 16 and 32 x 32 with or without masking and with full flipping. The functions fully

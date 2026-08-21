@@ -1,4 +1,4 @@
-// FinalBurn Neo Kyugo hardware driver module
+﻿// FinalBurn Neo Kyugo hardware driver module
 // Based on MAME driver by Ernesto Corvi
 
 #include "tiles_generic.h"

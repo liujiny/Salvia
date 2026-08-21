@@ -1,4 +1,4 @@
-/*
+﻿/*
  * MP3 decoding using minimp3
  * (C) irixxxx, 2020
  *

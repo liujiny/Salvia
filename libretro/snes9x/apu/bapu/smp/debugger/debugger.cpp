@@ -1,4 +1,4 @@
-#ifdef SMP_CPP
+﻿#ifdef SMP_CPP
 
 void SMPDebugger::op_step() {
   bool break_event = false;

@@ -1,4 +1,4 @@
-#ifndef RCHEEVOS_H
+﻿#ifndef RCHEEVOS_H
 #define RCHEEVOS_H
 
 #include "rc_runtime.h"

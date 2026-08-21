@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_MULTI_NTFY_H
+﻿#ifndef HEADER_CURL_MULTI_NTFY_H
 #define HEADER_CURL_MULTI_NTFY_H
 /***************************************************************************
  *                                  _   _ ____  _

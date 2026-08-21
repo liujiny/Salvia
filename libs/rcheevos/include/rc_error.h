@@ -1,4 +1,4 @@
-#ifndef RC_ERROR_H
+﻿#ifndef RC_ERROR_H
 #define RC_ERROR_H
 
 #include "rc_export.h"

@@ -1,4 +1,4 @@
-/***************************************************************************
+ï»¿/***************************************************************************
  *   Copyright (C) 2007 Ryan Schultz, PCSX-df Team, PCSX team              *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -398,7 +398,7 @@ __declspec( naked ) int asmADDI( int x, int y ) {
 		// y is in r4
 		add r3,r3,r4
 		// The return value is in r3
-		blr // Don’t forget the explicit ‘blr’
+		blr // Donï¿½t forget the explicit ï¿½blrï¿½
 	}
 }
 

@@ -1,4 +1,4 @@
-/*	$OpenBSD: rijndael.c,v 1.19 2008/06/09 07:49:45 djm Exp $ */
+﻿/*	$OpenBSD: rijndael.c,v 1.19 2008/06/09 07:49:45 djm Exp $ */
 
 /**
  * rijndael-alg-fst.c

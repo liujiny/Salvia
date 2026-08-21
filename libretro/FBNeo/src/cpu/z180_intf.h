@@ -1,4 +1,4 @@
-#include "z180.h"
+﻿#include "z180.h"
 
 void Z180SetWriteHandler(void (__fastcall *write)(UINT32, UINT8));
 void Z180SetReadHandler(UINT8 (__fastcall *read)(UINT32));

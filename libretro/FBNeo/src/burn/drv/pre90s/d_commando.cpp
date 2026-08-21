@@ -1,4 +1,4 @@
-// FB Neo Commando Driver module
+﻿// FB Neo Commando Driver module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

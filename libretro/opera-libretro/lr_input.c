@@ -1,4 +1,4 @@
-#include "lr_input.h"
+﻿#include "lr_input.h"
 #include "lr_input_crosshair.h"
 
 #include "opera_lr_callbacks.h"

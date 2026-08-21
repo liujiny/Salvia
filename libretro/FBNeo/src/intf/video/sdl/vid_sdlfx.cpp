@@ -1,4 +1,4 @@
-// Software blitter effects via SDL
+ï»¿// Software blitter effects via SDL
 #include "burner.h"
 #include "vid_support.h"
 #include "vid_softfx.h"
@@ -276,7 +276,7 @@ static int GetSettings(InterfaceInfo* pInfo)
 {
 	TCHAR szString[MAX_PATH] = _T("");
 
-	_sntprintf(szString, MAX_PATH, _T("Prescaling using %s (%i× zoom)"), VidSoftFXGetEffect(nUseBlitter), nSize);
+	_sntprintf(szString, MAX_PATH, _T("Prescaling using %s (%iï¿½ zoom)"), VidSoftFXGetEffect(nUseBlitter), nSize);
 	IntInfoAddStringModule(pInfo, szString);
 
 	if (nRotateGame) {

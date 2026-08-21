@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 struct NeoMediaInfo {
 	UINT8* p68KROM;

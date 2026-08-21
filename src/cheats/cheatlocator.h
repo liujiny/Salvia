@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Logica de red y resolucion de ficheros .cht (localizar / descargar el .cht correcto),
 // extraida de salvia.cpp para separar responsabilidades.

@@ -1,4 +1,4 @@
-#define RNG_DEBUG 0
+﻿#define RNG_DEBUG 0
 
 /*
    Run and Gun / Slam Dunk

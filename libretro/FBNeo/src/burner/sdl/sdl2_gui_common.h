@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define fbn_color           0xfe8a71
 #define select_color        0xffffff

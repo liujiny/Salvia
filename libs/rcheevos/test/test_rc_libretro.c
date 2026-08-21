@@ -1,4 +1,4 @@
-#include "../rc_libretro.h"
+﻿#include "../rc_libretro.h"
 
 #include "../rc_compat.h"
 #include "rc_consoles.h"

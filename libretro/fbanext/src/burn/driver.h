@@ -1,4 +1,4 @@
-/*
+﻿/*
  * For the MAME sound cores
  */
 

@@ -1,4 +1,4 @@
-/* NOTE: cmdline.c is #included by libretro-core.c (never compiled standalone),
+﻿/* NOTE: cmdline.c is #included by libretro-core.c (never compiled standalone),
    so the A5200_CART/A800_CART macros, RPATH, log_cb and the snprintf mapping
    are all already in scope from libretro-core.c's own includes. */
 #include <ctype.h>

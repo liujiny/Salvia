@@ -1,4 +1,4 @@
-#ifndef COUNTERDEF_H
+﻿#ifndef COUNTERDEF_H
 #define COUNTERDEF_H
 
 namespace gambatte {

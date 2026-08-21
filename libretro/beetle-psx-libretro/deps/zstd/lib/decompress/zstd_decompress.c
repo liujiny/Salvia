@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
@@ -53,19 +53,19 @@
 
 #ifdef _XBOX
 	#include <ppcintrinsics.h>
-	 // Implementación de BitScanReverse para PowerPC (Xbox 360)
+	 // Implementaciï¿½n de BitScanReverse para PowerPC (Xbox 360)
     unsigned char _BitScanReverse(unsigned long* index, unsigned long mask) {
         if (mask == 0) return 0;
-        // _CountLeadingZeros es el intrínseco oficial del XDK
+        // _CountLeadingZeros es el intrï¿½nseco oficial del XDK
         *index = 31 - _CountLeadingZeros(mask);
         return 1;
     }
 
-    // Implementación de BitScanForward para PowerPC (Xbox 360)
+    // Implementaciï¿½n de BitScanForward para PowerPC (Xbox 360)
     unsigned char _BitScanForward(unsigned long* index, unsigned long mask) {
 		unsigned long low_bit;
         if (mask == 0) return 0;
-        // Aislamiento del bit más bajo para contar desde la derecha
+        // Aislamiento del bit mï¿½s bajo para contar desde la derecha
         low_bit = mask & (-(long)mask);
         *index = 31 - _CountLeadingZeros(low_bit);
         return 1;

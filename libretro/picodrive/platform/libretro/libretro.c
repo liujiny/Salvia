@@ -1,4 +1,4 @@
-/*
+﻿/*
  * libretro core glue for PicoDrive
  * (C) notaz, 2013
  * (C) aliaspider, 2016

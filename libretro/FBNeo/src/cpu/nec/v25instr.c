@@ -1,4 +1,4 @@
-#define GetRB	\
+﻿#define GetRB	\
 	ModRM = FETCH();	\
 	if (ModRM >= 0xc0)	\
 		tmp = Wreg(Mod_RM.RM.w[ModRM]) & 0x7;	\

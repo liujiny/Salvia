@@ -1,4 +1,4 @@
-/*
+﻿/*
  * af80.c - Emulation of the Austin Franklin 80 column card.
  *
  * Copyright (C) 2009 Perry McFarlane

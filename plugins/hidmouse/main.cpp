@@ -1,4 +1,4 @@
-/*
+﻿/*
     hidmouse.xex — plugin residente de DashLaunch para Xbox 360 (RGH/JTAG).
 
     Lee un raton USB HID (boot protocol) hookeando la pila USB del kernel y PUBLICA

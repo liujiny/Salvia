@@ -1,4 +1,4 @@
-/*
+﻿/*
  * gpu_duck_c_api.h
  *
  * Pure-C surface that xbox_soft's gpu.c can include without dragging in

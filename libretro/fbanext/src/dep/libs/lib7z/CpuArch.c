@@ -1,4 +1,4 @@
-/* CpuArch.c -- CPU specific code
+﻿/* CpuArch.c -- CPU specific code
 2010-10-26: Igor Pavlov : Public domain */
 
 #include "CpuArch.h"

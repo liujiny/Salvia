@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 Jolly Jogger
 Taito, 1982

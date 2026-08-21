@@ -1,4 +1,4 @@
-#ifndef __OTLAYOUT_UTILS_H__
+﻿#ifndef __OTLAYOUT_UTILS_H__
 #define __OTLAYOUT_UTILS_H__
 
 #include "otlayout.h"

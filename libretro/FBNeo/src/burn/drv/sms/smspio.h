@@ -1,4 +1,4 @@
-#ifndef _SMSPIO_H_
+﻿#ifndef _SMSPIO_H_
 #define _SMSPIO_H_
 
 #define SIO_TXFL    (1 << 0)    /* 1= Transmit buffer full */

@@ -1,4 +1,4 @@
-#include "gal.h"
+﻿#include "gal.h"
 
 // This module is not accurate to the arcade hardware - it is ported from my previous Galaxian driver for FBA,
 // which was based on an old version of MAME. It is considered "good enough" for the purpose of giving the impression

@@ -1,4 +1,4 @@
-/*
+﻿/*
  *	Chack'n Pop (C) 1983 TAITO Corp.
  *	68705 MCU
 */

@@ -1,4 +1,4 @@
-#ifndef _8254PIT_H_
+﻿#ifndef _8254PIT_H_
 #define _8254PIT_H_
 
 #define MAX_8254 2

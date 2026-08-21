@@ -1,4 +1,4 @@
-/* 
+﻿/* 
 
 SDL_gfxBlitFunc.h: custom blitters
 

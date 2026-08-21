@@ -1,4 +1,4 @@
-#ifndef _S_CRC32_H
+﻿#ifndef _S_CRC32_H
 #define _S_CRC32_H
 
 #ifdef __cplusplus

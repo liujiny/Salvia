@@ -1,4 +1,4 @@
-// FinalBurn Neo Mega Phoenix driver module
+﻿// FinalBurn Neo Mega Phoenix driver module
 // Based on MAME driver by David Haywood, Dirk Best
 
 // note: tms overclocked by 1mhz (8mhz / 8) to mitigate flickering (megaphx)

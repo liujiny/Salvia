@@ -1,4 +1,4 @@
-void DACUpdate(INT16* Buffer, INT32 Length);
+﻿void DACUpdate(INT16* Buffer, INT32 Length);
 void DACWrite(INT32 Chip, UINT8 Data);
 void DACWrite16(INT32 Chip, INT16 Data);
 void DACWrite16Signed(INT32 Chip, UINT16 Data);

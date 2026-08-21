@@ -1,4 +1,4 @@
-#include "net_serial.h"
+﻿#include "net_serial.h"
 #include "libretro.h"
 #include "gambatte_log.h"
 #include <stdlib.h>

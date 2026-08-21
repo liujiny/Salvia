@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup BLAKE2
     \brief  この関数はBlake2 Hash関数で使用するためのBlake2b構造を初期化します。
     \return 0  Blake2B構造の初期化に成功し、ダイジェストサイズを設定したときに返されます。

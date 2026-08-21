@@ -1,4 +1,4 @@
-/*
+﻿/*
  Moero Pro Yakyuu Homerun - (c) 1988 Jaleco
  Driver by Tomasz Slanina
 	

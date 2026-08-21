@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Minimal C89 dirent shim for the VS2010 (C89) Windows build of this core.
  *
  * Salvia already ships a fuller dirent compat at src/compat/dirent.h, but that

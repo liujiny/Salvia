@@ -1,4 +1,4 @@
-// based on MESS/MAME driver by David Haywood
+﻿// based on MESS/MAME driver by David Haywood
 
 #include "tiles_generic.h"
 #include "z80_intf.h"

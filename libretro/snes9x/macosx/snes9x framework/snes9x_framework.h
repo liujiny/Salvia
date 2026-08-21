@@ -1,4 +1,4 @@
-//
+﻿//
 //  snes9x_framework.h
 //  snes9x framework
 //

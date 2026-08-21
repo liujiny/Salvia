@@ -1,4 +1,4 @@
-#include <sys/types.h>
+﻿#include <sys/types.h>
 
 int __kernel_rem_pio2(double *x, double *y, int e0, int nx, int prec, const int32_t *ipio2);
 double __kernel_sin(double x, double y, int iy);

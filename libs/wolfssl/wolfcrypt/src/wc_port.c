@@ -1,4 +1,4 @@
-/* port.c
+﻿/* port.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

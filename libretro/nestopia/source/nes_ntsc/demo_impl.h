@@ -1,4 +1,4 @@
-/* Simple shell used by demos. Uses SDL multimedia library. */
+﻿/* Simple shell used by demos. Uses SDL multimedia library. */
 
 #include <stdlib.h>
 #include <string.h>

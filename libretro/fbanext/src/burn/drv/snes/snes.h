@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "tiles_generic.h"
 #include "bitswap.h"

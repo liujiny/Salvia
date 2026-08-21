@@ -1,4 +1,4 @@
-#ifndef KEYBOARD_H_
+﻿#ifndef KEYBOARD_H_
 #define KEYBOARD_H_
 
 #define SHOWKBCODES	0

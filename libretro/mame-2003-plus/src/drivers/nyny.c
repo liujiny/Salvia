@@ -1,4 +1,4 @@
-/****
+﻿/****
 
 New York, New York (c) 1980 Sigma
 

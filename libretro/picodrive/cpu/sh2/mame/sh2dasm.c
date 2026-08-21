@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include "sh2dasm.h"
 
 typedef int INT32;

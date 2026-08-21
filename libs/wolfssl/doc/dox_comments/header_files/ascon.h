@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup ASCON
     \brief This function initializes the ASCON context for hashing.
 

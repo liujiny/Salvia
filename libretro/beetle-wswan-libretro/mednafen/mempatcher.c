@@ -1,4 +1,4 @@
-/* Mednafen memory patcher, reduced to the surface the libretro
+﻿/* Mednafen memory patcher, reduced to the surface the libretro
  * core actually uses: page-mapped RAM registration and periodic
  * 'R'-type (replace) cheat application fed by retro_cheat_set().
  *

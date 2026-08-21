@@ -1,4 +1,4 @@
-/*
+﻿/*
 	Polygonet Commanders (Konami, 1993)
 
 	Preliminary driver by R. Belmont

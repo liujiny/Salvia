@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  CPU1541_SC.cpp - Single-cycle 6502 (1541) emulation
  *
  *  Frodo Copyright (C) Christian Bauer

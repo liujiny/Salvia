@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2022 Jamiras
 
 This file is part of RALibretro.

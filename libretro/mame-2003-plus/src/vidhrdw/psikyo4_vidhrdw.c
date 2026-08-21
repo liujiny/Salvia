@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 Psikyo PS6807 (PS4):
 See src/drivers/psikyo4.c for more info

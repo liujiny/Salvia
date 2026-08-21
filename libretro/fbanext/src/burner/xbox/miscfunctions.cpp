@@ -1,4 +1,4 @@
-// misc win32 functions
+﻿// misc win32 functions
 #include "burner.h"
 
 int nScreenSize = 0;

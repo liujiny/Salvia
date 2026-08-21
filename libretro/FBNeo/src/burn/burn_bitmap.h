@@ -1,4 +1,4 @@
-// FB Alpha Bitmap Management System
+﻿// FB Alpha Bitmap Management System
 
 #ifndef BURNBITMAP
 

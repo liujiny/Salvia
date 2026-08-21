@@ -1,4 +1,4 @@
-/* test_pkcs12.c
+﻿/* test_pkcs12.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

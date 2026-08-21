@@ -1,4 +1,4 @@
-/* test_ossl_mac.c
+﻿/* test_ossl_mac.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

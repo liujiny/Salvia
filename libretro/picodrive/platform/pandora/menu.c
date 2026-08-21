@@ -1,4 +1,4 @@
-#include "plat.h"
+﻿#include "plat.h"
 
 static int min(int x, int y) { return x < y ? x : y; }
 static int max(int x, int y) { return x > y ? x : y; }

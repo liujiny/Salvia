@@ -1,4 +1,4 @@
-#include "psikyo.h"
+﻿#include "psikyo.h"
 
 UINT8* PsikyoPalSrc;
 UINT8 PsikyoRecalcPalette;	// Set to 1 to force recalculation of the entire palette

@@ -1,4 +1,4 @@
-/* HQ3x Look-Up Table - 256x144 ARGB (auto-generated from hq3x.png) */
+﻿/* HQ3x Look-Up Table - 256x144 ARGB (auto-generated from hq3x.png) */
 /* Original by Maxim Stepin, Cameron Zemek, Jules Blok - LGPL 2.1 */
 #define HQ3X_LUT_WIDTH 256
 #define HQ3X_LUT_HEIGHT 144

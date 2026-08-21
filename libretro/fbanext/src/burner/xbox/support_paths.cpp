@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
  
 
 TCHAR szAppPreviewsPath[MAX_PATH]	= _T("GAME:\\previews\\");

@@ -1,4 +1,4 @@
-// SA-1 mapper/simulator for LakeSnes, (c) 2024-25 dink
+﻿// SA-1 mapper/simulator for LakeSnes, (c) 2024-25 dink
 // License: MIT
 
 #include "snes.h"

@@ -1,4 +1,4 @@
-/* Emacs style mode select   -*- C++ -*-
+﻿/* Emacs style mode select   -*- C++ -*-
  *-----------------------------------------------------------------------------
  *
  *  PrBoom: a Doom port merged with LxDoom and LSDLDoom

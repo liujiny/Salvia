@@ -1,4 +1,4 @@
-// FB Neo Taito X driver
+﻿// FB Neo Taito X driver
 // Based on MAME drivers by Howie Cohen, Yochizo
 
 #include "tiles_generic.h"

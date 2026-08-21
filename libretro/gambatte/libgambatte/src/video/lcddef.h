@@ -1,4 +1,4 @@
-#ifndef LCDDEF_H
+﻿#ifndef LCDDEF_H
 #define LCDDEF_H
 
 namespace gambatte {

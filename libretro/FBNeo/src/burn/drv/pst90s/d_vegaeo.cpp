@@ -1,4 +1,4 @@
-// Eolith 32 bits hardware: Vega system
+﻿// Eolith 32 bits hardware: Vega system
 // driver by Pierpaolo Prazzoli
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-//
+﻿//
 //  SUUpdater.h
 //  Sparkle
 //

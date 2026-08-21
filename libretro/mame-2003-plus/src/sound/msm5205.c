@@ -1,4 +1,4 @@
-/*
+﻿/*
  *   streaming ADPCM driver
  *   by Aaron Giles
  *

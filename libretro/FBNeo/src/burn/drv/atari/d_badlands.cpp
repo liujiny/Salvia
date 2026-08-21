@@ -1,4 +1,4 @@
-// FB Alpha Bad Lands driver module
+﻿// FB Alpha Bad Lands driver module
 // Based on MAME driver by Aaron Giles
 
 #include "tiles_generic.h"

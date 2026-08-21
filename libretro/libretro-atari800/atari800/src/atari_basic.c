@@ -1,4 +1,4 @@
-/*
+﻿/*
  * atari_basic.c - Text-only specific port code
  *
  * Copyright (c) 1995-1998 David Firth

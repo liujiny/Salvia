@@ -1,4 +1,4 @@
-void K007232Update(INT32 chip, INT16* pSoundBuf, INT32 nLength);
+﻿void K007232Update(INT32 chip, INT16* pSoundBuf, INT32 nLength);
 UINT8 K007232ReadReg(INT32 chip, INT32 r);
 void K007232WriteReg(INT32 chip, INT32 r, INT32 v);
 void K007232SetPortWriteHandler(INT32 chip, void (*Handler)(INT32 v));

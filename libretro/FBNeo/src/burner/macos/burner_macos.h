@@ -1,4 +1,4 @@
-#ifndef BURNER_MACOS_H
+﻿#ifndef BURNER_MACOS_H
 #define BURNER_MACOS_H
 
 #define stricmp strcasecmp

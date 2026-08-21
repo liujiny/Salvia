@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Emulation routines for the RF5C164 PCM chip
  * (C) notaz, 2007, 2013
  *

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * pokeysnd.c - POKEY sound chip emulation, v2.4
  *
  * Copyright (C) 1996-1998 Ron Fries

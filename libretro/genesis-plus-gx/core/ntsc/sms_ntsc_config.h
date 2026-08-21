@@ -1,4 +1,4 @@
-/* Configure library by modifying this file */
+﻿/* Configure library by modifying this file */
 
 #ifndef SMS_NTSC_CONFIG_H
 #define SMS_NTSC_CONFIG_H

@@ -1,4 +1,4 @@
-#ifndef LIBOPERA_EXTERN_C_H_INCLUDED
+﻿#ifndef LIBOPERA_EXTERN_C_H_INCLUDED
 #define LIBOPERA_EXTERN_C_H_INCLUDED
 
 #ifdef __cplusplus

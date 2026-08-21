@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 
   Video Hardware for Championship V'ball by Paul Hampson
   Generally copied from China Gate by Paul Hampson

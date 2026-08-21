@@ -1,4 +1,4 @@
-#include <cheats/rdbreader.h>
+﻿#include <cheats/rdbreader.h>
 
 #include <cstdio>
 #include <cstring>

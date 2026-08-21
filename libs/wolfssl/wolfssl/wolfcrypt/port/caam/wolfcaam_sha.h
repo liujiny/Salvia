@@ -1,4 +1,4 @@
-/* wolfcaam_sha.h
+﻿/* wolfcaam_sha.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

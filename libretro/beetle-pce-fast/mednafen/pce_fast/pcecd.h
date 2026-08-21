@@ -1,4 +1,4 @@
-#ifndef __PCE_CDROM_H
+﻿#ifndef __PCE_CDROM_H
 #define __PCE_CDROM_H
 
 #include <boolean.h>

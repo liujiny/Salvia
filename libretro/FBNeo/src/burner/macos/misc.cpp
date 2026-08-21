@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 
 /* const */ TCHAR* ANSIToTCHAR(const char* pszInString, TCHAR* pszOutString, int nOutSize)
 {

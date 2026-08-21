@@ -1,4 +1,4 @@
-#include "toaplan.h"
+﻿#include "toaplan.h"
 
 #define REFRESHRATE 55.14
 #define VBLANK_LINES (32)

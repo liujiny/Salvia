@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup PKCS7
 
     \brief Callback used for a custom AES key wrap/unwrap operation.

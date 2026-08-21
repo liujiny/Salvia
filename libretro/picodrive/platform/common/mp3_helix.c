@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Some mp3 related code for Sega/Mega CD.
  * Uses the Helix Fixed-point MP3 decoder
  * (C) notaz, 2007-2009

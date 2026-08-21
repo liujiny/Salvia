@@ -1,4 +1,4 @@
-/*
+﻿/*
  * atari.c - main high-level routines
  *
  * Copyright (c) 1995-1998 David Firth

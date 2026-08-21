@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup DSA
 
     \brief This function initializes a DsaKey object in order to use it for

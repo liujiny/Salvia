@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <QWidget>
 #include <QImage>
 #include "common/video/std_chrono_throttle.hpp"

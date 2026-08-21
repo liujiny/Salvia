@@ -1,4 +1,4 @@
-#ifndef __EMU_BINDING_HPP
+﻿#ifndef __EMU_BINDING_HPP
 #define __EMU_BINDING_HPP
 #include <cstdint>
 #include <string>

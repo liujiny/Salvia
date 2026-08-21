@@ -1,4 +1,4 @@
-#ifndef EPSONRTC_H
+﻿#ifndef EPSONRTC_H
 #define EPSONRTC_H
 
 #include "statehandler.h"

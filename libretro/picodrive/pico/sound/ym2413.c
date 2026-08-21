@@ -1,4 +1,4 @@
-/* PicoDrive's wrapper for emu2413
+﻿/* PicoDrive's wrapper for emu2413
  */
 
 #include "emu2413/emu2413.c"

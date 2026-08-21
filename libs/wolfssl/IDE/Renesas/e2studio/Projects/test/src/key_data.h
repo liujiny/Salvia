@@ -1,4 +1,4 @@
-/* key_data.h
+﻿/* key_data.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

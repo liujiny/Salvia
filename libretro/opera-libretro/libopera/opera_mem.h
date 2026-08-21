@@ -1,4 +1,4 @@
-#ifndef LIBOPERA_MEM_H_INCLUDED
+﻿#ifndef LIBOPERA_MEM_H_INCLUDED
 #define LIBOPERA_MEM_H_INCLUDED
 
 #include "boolean.h"

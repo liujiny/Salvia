@@ -1,4 +1,4 @@
-#ifndef CUEFILE_H__
+﻿#ifndef CUEFILE_H__
 #define CUEFILE_H__
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-#include "GeneralPanel.hpp"
+﻿#include "GeneralPanel.hpp"
 #include "EmuApplication.hpp"
 #include "EmuConfig.hpp"
 

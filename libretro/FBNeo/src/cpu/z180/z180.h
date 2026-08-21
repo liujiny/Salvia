@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef __Z180_H__
 #define __Z180_H__

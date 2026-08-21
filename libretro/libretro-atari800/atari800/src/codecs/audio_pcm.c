@@ -1,4 +1,4 @@
-/*
+﻿/*
  * audio_pcm.c - Audio codec for raw PCM samples
  *
  * Copyright (C) 2021 Rob McMullen

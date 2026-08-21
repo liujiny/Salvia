@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 Xain'd Sleena (TECHNOS), Solar Warrior (TAITO).
 By Carlos A. Lozano & Rob Rosenbrock & Phil Stroffolino
 

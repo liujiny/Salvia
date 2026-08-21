@@ -1,4 +1,4 @@
-#ifndef TCHAR_H
+﻿#ifndef TCHAR_H
 #define TCHAR_H
 
 #ifdef _UNICODE

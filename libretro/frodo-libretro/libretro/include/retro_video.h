@@ -1,4 +1,4 @@
-#ifndef _retro_video_h
+﻿#ifndef _retro_video_h
 #define _retro_video_h
 
 typedef struct{

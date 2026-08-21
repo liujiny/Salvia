@@ -1,4 +1,4 @@
-/* test_ecc.c
+﻿/* test_ecc.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

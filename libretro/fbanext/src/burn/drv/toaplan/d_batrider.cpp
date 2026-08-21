@@ -1,4 +1,4 @@
-#include "toaplan.h"
+﻿#include "toaplan.h"
 // Batrider
 
 static UINT8 drvButton[8] = {0, 0, 0, 0, 0, 0, 0, 0};

@@ -1,4 +1,4 @@
-/* HuffEnc.h -- Huffman encoding
+﻿/* HuffEnc.h -- Huffman encoding
 Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_HUFF_ENC_H

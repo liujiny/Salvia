@@ -1,4 +1,4 @@
-/*
+﻿/*
  * atari_curses.c - Curses based port code
  *
  * Copyright (c) 1995-1998 David Firth

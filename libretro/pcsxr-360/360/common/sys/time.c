@@ -1,4 +1,4 @@
-#define EPOCHFILETIME (116444736000000000i64)
+﻿#define EPOCHFILETIME (116444736000000000i64)
 
 #include <xtl.h>
 #include "time.h"

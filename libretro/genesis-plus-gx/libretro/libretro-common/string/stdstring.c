@@ -1,4 +1,4 @@
-/* Copyright  (C) 2010-2018 The RetroArch team
+ï»¿/* Copyright  (C) 2010-2018 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (stdstring.c).
@@ -244,7 +244,7 @@ char *word_wrap(char* buffer, const char *string, int line_width, bool unicode, 
 extern "C" {
 #endif
 
-// Implementación de la función de duplicación de strings que busca RetroArch
+// Implementaciï¿½n de la funciï¿½n de duplicaciï¿½n de strings que busca RetroArch
 char *retro_strdup__(const char *str)
 {
    size_t len;
@@ -262,7 +262,7 @@ char *retro_strdup__(const char *str)
    return copy;
 }
 
-// Implementación de strlcpy_retro__
+// Implementaciï¿½n de strlcpy_retro__
 size_t strlcpy_retro__(char *dest, const char *src, size_t size) {
     size_t srclen = strlen(src);
     if (size > 0) {
@@ -273,7 +273,7 @@ size_t strlcpy_retro__(char *dest, const char *src, size_t size) {
     return srclen;
 }
 
-// Implementación de strlcat_retro__
+// Implementaciï¿½n de strlcat_retro__
 size_t strlcat_retro__(char *dest, const char *src, size_t size) {
     size_t destlen = strlen(dest);
     size_t srclen = strlen(src);
@@ -283,19 +283,19 @@ size_t strlcat_retro__(char *dest, const char *src, size_t size) {
     return destlen + srclen;
 }
 
-// Implementación de c99_snprintf_retro__
-// El XDK usa _vsnprintf, que es casi idéntico al estándar C99
+// Implementaciï¿½n de c99_snprintf_retro__
+// El XDK usa _vsnprintf, que es casi idï¿½ntico al estï¿½ndar C99
 int c99_snprintf_retro__(char *s, size_t n, const char *format, ...) {
     int res;
     va_list ap;
     va_start(ap, format);
     
     // En Xbox 360 _vsnprintf devuelve -1 si se trunca, 
-    // pero para el Linker esto será suficiente.
+    // pero para el Linker esto serï¿½ suficiente.
     res = _vsnprintf(s, n, format, ap);
     
     if (n > 0) {
-        s[n - 1] = '\0'; // Garantizar terminación nula
+        s[n - 1] = '\0'; // Garantizar terminaciï¿½n nula
     }
     
     va_end(ap);

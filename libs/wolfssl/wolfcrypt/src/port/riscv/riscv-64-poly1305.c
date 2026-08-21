@@ -1,4 +1,4 @@
-/* riscv-64-poly1305.c
+﻿/* riscv-64-poly1305.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

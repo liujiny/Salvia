@@ -1,4 +1,4 @@
-#include "libretro.h"
+﻿#include "libretro.h"
 #include "libretro-core.h"
 #include "retroscreen.h"
 #include "platform.h"

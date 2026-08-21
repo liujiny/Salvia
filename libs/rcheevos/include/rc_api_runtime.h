@@ -1,4 +1,4 @@
-#ifndef RC_API_RUNTIME_H
+﻿#ifndef RC_API_RUNTIME_H
 #define RC_API_RUNTIME_H
 
 #include "rc_api_request.h"

@@ -1,4 +1,4 @@
-// FB Neo Pacific Novelty games driver module
+﻿// FB Neo Pacific Novelty games driver module
 // Based on MAME driver by Victor Trucco, Mike Balfour, and Phil Stroffolino
 
 #include "tiles_generic.h"

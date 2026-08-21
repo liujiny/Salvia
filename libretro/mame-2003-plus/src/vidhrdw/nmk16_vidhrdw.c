@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 #include "vidhrdw/generic.h"
 
 data16_t *nmk_bgvideoram,*nmk_fgvideoram,*nmk_txvideoram;

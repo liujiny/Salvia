@@ -1,4 +1,4 @@
-#include "rc_hash.h"
+﻿#include "rc_hash.h"
 
 #include "../rc_compat.h"
 

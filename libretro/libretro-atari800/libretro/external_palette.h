@@ -1,4 +1,4 @@
-#ifndef EXTERNAL_PALETTE_H
+﻿#ifndef EXTERNAL_PALETTE_H
 #define EXTERNAL_PALETTE_H
 
 static const unsigned int default_palette_len = 768;

@@ -1,4 +1,4 @@
-// K051316 zoom/rotation tilemap generator.
+﻿// K051316 zoom/rotation tilemap generator.
 //
 // A standalone device (independent of konamiic.cpp). The index-color path draws
 // to pTransDraw; the high-color (32-bit) path composites into a render target

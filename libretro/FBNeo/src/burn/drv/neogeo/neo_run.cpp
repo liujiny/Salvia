@@ -1,4 +1,4 @@
-// NeoGeo CD-WIP - Jan 25, 2019 - present
+﻿// NeoGeo CD-WIP - Jan 25, 2019 - present
 
 // mit .bin/.cue & .ccd/.img (trurip) unterstutzung (feb.4.2019)
 // fix lastblade2 (cd) (feb.17.2019)

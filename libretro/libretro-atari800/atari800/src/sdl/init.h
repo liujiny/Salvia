@@ -1,4 +1,4 @@
-#ifndef SDL_INIT_H_
+﻿#ifndef SDL_INIT_H_
 #define SDL_INIT_H_
 
 int SDL_INIT_Initialise(void);

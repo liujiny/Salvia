@@ -1,4 +1,4 @@
-#include "BindingPanel.hpp"
+﻿#include "BindingPanel.hpp"
 #include "EmuApplication.hpp"
 #include <QStyleHints>
 #include <QTimer>

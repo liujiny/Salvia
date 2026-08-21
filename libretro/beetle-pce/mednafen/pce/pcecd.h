@@ -1,4 +1,4 @@
-#ifndef __MDFN_PCE_PCECD_H
+﻿#ifndef __MDFN_PCE_PCECD_H
 #define __MDFN_PCE_PCECD_H
 
 typedef struct

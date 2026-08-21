@@ -1,4 +1,4 @@
-#define ROT 0
+﻿#define ROT 0
 
 // 16-bit rendering functions.
 #define BPP 16

@@ -1,4 +1,4 @@
-#define UPD7759_STANDARD_CLOCK		640000
+﻿#define UPD7759_STANDARD_CLOCK		640000
 
 typedef void (*drqcallback)(INT32 param);
 

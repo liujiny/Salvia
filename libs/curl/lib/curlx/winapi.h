@@ -1,4 +1,4 @@
-#ifndef HEADER_CURLX_WINAPI_H
+﻿#ifndef HEADER_CURLX_WINAPI_H
 #define HEADER_CURLX_WINAPI_H
 /***************************************************************************
  *                                  _   _ ____  _

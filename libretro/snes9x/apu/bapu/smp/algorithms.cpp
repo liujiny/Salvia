@@ -1,4 +1,4 @@
-uint8 SMP::op_adc(uint8 x, uint8 y) {
+﻿uint8 SMP::op_adc(uint8 x, uint8 y) {
   int r = x + y + regs.p.c;
   regs.p.n = r & 0x80;
   regs.p.v = ~(x ^ y) & (x ^ r) & 0x80;

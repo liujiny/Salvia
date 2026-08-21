@@ -1,4 +1,4 @@
-// FB Alpha Lord of Gun driver module
+﻿// FB Alpha Lord of Gun driver module
 // Based on MAME driver by Luca Elia, XingXing, and David Haywood
 
 #include "tiles_generic.h"

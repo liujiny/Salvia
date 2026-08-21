@@ -1,4 +1,4 @@
-
+﻿
 
 #include "burner.h"
 #include "splash.h"

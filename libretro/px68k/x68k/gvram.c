@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  GVRAM.C - Graphic VRAM
  */
 

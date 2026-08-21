@@ -1,4 +1,4 @@
-
+﻿
 void cvsd_reset_write(INT32 state);
 void cvsd_data_write(UINT16 data);
 INT32 cvsd_reset_status();

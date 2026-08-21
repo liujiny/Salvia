@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 #include <ddeml.h>
 
 // #define PRINT_TRANSLATION_INFO

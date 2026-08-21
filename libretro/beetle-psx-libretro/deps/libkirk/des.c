@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  FIPS-46-3 compliant Triple-DES implementation
  *
  *  Copyright (C) 2006-2013, Brainspark B.V.

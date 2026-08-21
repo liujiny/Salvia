@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup Random
 
     \brief Init global Whitewood netRandom context

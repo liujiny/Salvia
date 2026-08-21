@@ -1,4 +1,4 @@
-/* DualShock state machine — port de Pokopom (KrossX, GPLv3).
+﻿/* DualShock state machine — port de Pokopom (KrossX, GPLv3).
  *
  * Implementacion del SIO state machine real del SCPH-1200 (DualShock).
  * Soporta poll normal (0x42), config mode (0x43), set mode (0x44),

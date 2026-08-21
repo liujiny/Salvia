@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 
 	Uses Data East custom chip 55 for backgrounds, with a special 8bpp mode
 	2 times custom chips 52/71 for sprites.

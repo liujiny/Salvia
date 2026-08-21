@@ -1,4 +1,4 @@
-// FB Alpha Sega Vic Dual driver module
+﻿// FB Alpha Sega Vic Dual driver module
 // Based on MAME driver by Zsolt Vasvari
 
 

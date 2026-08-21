@@ -1,4 +1,4 @@
-/*
+﻿/*
 	3DOplay sources v1.7.3 based on FreeDOcore
 	3doplay.do.am
 	Developer: Viktor Ivanov

@@ -1,4 +1,4 @@
-/* ssl_sess.c
+﻿/* ssl_sess.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

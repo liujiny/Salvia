@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "pce.h"
 
 static struct BurnInputInfo pceInputList[] = {

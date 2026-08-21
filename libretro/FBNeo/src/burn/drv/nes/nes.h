@@ -1,4 +1,4 @@
-#define SCREEN_WIDTH 256
+﻿#define SCREEN_WIDTH 256
 #define SCREEN_HEIGHT (240-16) // top and bottom 8px is overscan
 #define SCREEN_HEIGHT_PAL (SCREEN_HEIGHT + 8)
 

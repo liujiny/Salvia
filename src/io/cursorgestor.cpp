@@ -1,4 +1,4 @@
-#include <io/cursorgestor.h>
+﻿#include <io/cursorgestor.h>
 
 //https://wiki.libsdl.org/SDL_CreateCursor
 /* Stolen from the mailing list */

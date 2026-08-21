@@ -1,4 +1,4 @@
-/*
+﻿/*
  * video_mrle.c - Video codec for Microsoft Run-Length Encoding format
  *
  * Copyright (C) 2021 Rob McMullen

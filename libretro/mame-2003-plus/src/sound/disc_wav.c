@@ -1,4 +1,4 @@
-#include <math.h>
+﻿#include <math.h>
 /*fix for android */
 #ifndef PI
 #define PI 3.14159265358979323846

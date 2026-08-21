@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Unreal UMX container support.
  * UPKG parsing partially based on Unreal Media Ripper (UMR) v0.3
  * by Andy Ward <wardwh@swbell.net>, with additional updates

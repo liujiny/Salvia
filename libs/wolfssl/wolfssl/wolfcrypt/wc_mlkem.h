@@ -1,4 +1,4 @@
-/* wc_mlkem.h
+﻿/* wc_mlkem.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

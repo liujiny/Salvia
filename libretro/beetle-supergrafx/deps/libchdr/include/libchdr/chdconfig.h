@@ -1,4 +1,4 @@
-#ifndef __CHDCONFIG_H__
+﻿#ifndef __CHDCONFIG_H__
 #define __CHDCONFIG_H__
 
 /* Configure CHDR features here */

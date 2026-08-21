@@ -1,4 +1,4 @@
-
+﻿
 void tlcs90SetReadHandler(UINT8 (*pread)(UINT32));
 void tlcs90SetWriteHandler(void (*pwrite)(UINT32, UINT8));
 void tlcs90SetReadPortHandler(UINT8 (*pread)(UINT16));

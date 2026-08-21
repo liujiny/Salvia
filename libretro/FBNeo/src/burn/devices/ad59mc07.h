@@ -1,4 +1,4 @@
-
+﻿
 void AD59MC07Init(UINT8 *rom); // pass rom data
 void AD59MC07Reset();
 void AD59MC07Command(UINT8 data);

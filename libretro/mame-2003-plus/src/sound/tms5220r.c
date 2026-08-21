@@ -1,4 +1,4 @@
-/* TMS5220 ROM Tables */
+﻿/* TMS5220 ROM Tables */
 
 /* This is the energy lookup table (4-bits -> 10-bits) */
 

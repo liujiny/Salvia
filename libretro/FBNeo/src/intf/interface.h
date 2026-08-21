@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifdef FBNEO_DEBUG
  #define PRINT_DEBUG_INFO
 #endif

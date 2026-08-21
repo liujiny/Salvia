@@ -1,4 +1,4 @@
-// FinalBurn Neo Mighty Warrior / Steel Force / Twin Brats driver module
+﻿// FinalBurn Neo Mighty Warrior / Steel Force / Twin Brats driver module
 // Based on MAME drivers by Pierpaolo Prazzoli, David Haywood, and stephh
 
 #include "tiles_generic.h"

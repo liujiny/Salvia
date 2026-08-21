@@ -1,4 +1,4 @@
-#include "neogeo.h"
+﻿#include "neogeo.h"
 #include "burn_pal.h"
 #include "resnet.h"
 #include "bitswap.h"

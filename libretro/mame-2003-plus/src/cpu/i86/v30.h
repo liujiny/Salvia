@@ -1,4 +1,4 @@
-#define SetMD(x)		(I.MF = (x))	/* OB [19.07.99] Mode Flag V30 */
+﻿#define SetMD(x)		(I.MF = (x))	/* OB [19.07.99] Mode Flag V30 */
 
 #define MD		(I.MF!=0)
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * screen.c - Atari screen handling
  *
  * Copyright (c) 2001 Robert Golias and Piotr Fusik

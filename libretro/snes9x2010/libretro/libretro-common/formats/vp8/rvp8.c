@@ -1,4 +1,4 @@
-/* rvp8 -- self-contained VP8 decoder (key frame and inter frame) for
+﻿/* rvp8 -- self-contained VP8 decoder (key frame and inter frame) for
  * libretro-common.
  *
  * The intra path was extracted verbatim from the WebP decoder

@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * Copyright (C) 2012-2019  Free Software Foundation, Inc.
  *
  * This file is part of GNU lightning.
@@ -21,7 +21,7 @@
 #include <lightning/jit_private.h>
 #ifdef _XBOX
     #include <xtl.h>
-    // Definiciones básicas para evitar el error de compilación
+    // Definiciones bï¿½sicas para evitar el error de compilaciï¿½n
     #define PROT_READ  0x01
     #define PROT_WRITE 0x02
     #define PROT_EXEC  0x04

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * altirraos_xl.c - XL/XE/XEGS OS ROM replacement
  *
  * Compiled from the sources in the emuos folder.

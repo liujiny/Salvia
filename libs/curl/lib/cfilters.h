@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_CFILTERS_H
+﻿#ifndef HEADER_CURL_CFILTERS_H
 #define HEADER_CURL_CFILTERS_H
 /***************************************************************************
  *                                  _   _ ____  _

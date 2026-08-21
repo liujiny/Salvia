@@ -1,4 +1,4 @@
-// SDD-1 Decoder by Andreas Naive (Public Domain)
+﻿// SDD-1 Decoder by Andreas Naive (Public Domain)
 // Mapper, everything else by dink
 
 #include "snes.h"

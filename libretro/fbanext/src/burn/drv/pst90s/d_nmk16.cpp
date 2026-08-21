@@ -1,4 +1,4 @@
-// FB Alpha NMK16 driver module
+﻿// FB Alpha NMK16 driver module
 // Based on MAME driver by Mirko Buffoni, Richard Bush, Nicola Salmoria, Bryan McPhail, David Haywood, and R. Belmont
 // Also, a huge "thank you!" to JackC for helping bug test
 

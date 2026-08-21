@@ -1,4 +1,4 @@
-/* test_ripemd.h
+﻿/* test_ripemd.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

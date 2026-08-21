@@ -1,4 +1,4 @@
-#ifndef __FILTER_H
+﻿#ifndef __FILTER_H
 #define __FILTER_H
 
 #include "osd_cpu.h"

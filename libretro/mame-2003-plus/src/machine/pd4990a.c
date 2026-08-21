@@ -1,4 +1,4 @@
-/*
+﻿/*
  *	Emulation for the NEC PD4990A.
  *
  *	The PD4990A is a serial I/O Calendar & Clock IC used in the

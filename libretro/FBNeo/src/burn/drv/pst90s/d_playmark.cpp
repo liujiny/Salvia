@@ -1,4 +1,4 @@
-// FinalBurn Neo Playmark hardware driver module
+﻿// FinalBurn Neo Playmark hardware driver module
 // Based on MAME driver by Nicola Salmoria, Pierpaolo Prazzoli, Quench
 
 #include "tiles_generic.h"

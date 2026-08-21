@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 
 #define SSHOT_NOERROR 0
 #define SSHOT_ERROR_BPP_NOTSUPPORTED 1

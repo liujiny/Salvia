@@ -1,4 +1,4 @@
-#define CHANNEL_DEBUG 0
+﻿#define CHANNEL_DEBUG 0
 #define VERBOSE 0
 
 /*********************************************************

@@ -1,4 +1,4 @@
-/*  Copyright (c) 2010, shalma.
+﻿/*  Copyright (c) 2010, shalma.
  *  Portions Copyright (c) 2002, Pete Bernert.
  *
  *  This program is free software; you can redistribute it and/or modify

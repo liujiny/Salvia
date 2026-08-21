@@ -1,4 +1,4 @@
-#ifndef LIBRETRO_CORE_H
+﻿#ifndef LIBRETRO_CORE_H
 #define LIBRETRO_CORE_H 1
 
 #include <stdint.h>

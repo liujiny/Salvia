@@ -1,4 +1,4 @@
-#include <cstring>
+﻿#include <cstring>
 #include <cstdarg>
 #include "logdialog.h"
 #include "ui_logdialog.h"

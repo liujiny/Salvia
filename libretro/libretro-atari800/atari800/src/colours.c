@@ -1,4 +1,4 @@
-/*
+﻿/*
  * colours.c - Atari colour palette adjustment - functions common for NTSC and
  *             PAL palettes
  *

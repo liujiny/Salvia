@@ -1,4 +1,4 @@
-
+﻿
 void k1geInit(INT32 color, void (*vblank_pin_cb)(INT32,INT32), void (*hblank_pin_cb)(INT32,INT32));
 void k1geReset();
 void k1ge_hblank_on_timer_callback();

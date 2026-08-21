@@ -1,4 +1,4 @@
-
+﻿
 typedef struct _eeprom_interface eeprom_interface;
 struct _eeprom_interface
 {

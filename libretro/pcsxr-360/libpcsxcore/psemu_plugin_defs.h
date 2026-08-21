@@ -1,4 +1,4 @@
-#ifndef _PSEMU_PLUGIN_DEFS_H
+﻿#ifndef _PSEMU_PLUGIN_DEFS_H
 #define _PSEMU_PLUGIN_DEFS_H
 
 #ifdef __cplusplus

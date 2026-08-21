@@ -1,4 +1,4 @@
-// Burner Game Input
+ï»¿// Burner Game Input
 #include "burner.h"
 #include "inp_keys.h"
 
@@ -542,7 +542,7 @@ static void GameInpInitMacros()
 				if (_stricmp(" Right", bii.szName + 2) == 0) pArrow[3] = bii.pVal;
 
 				if ((SETS_VS) && pArrow[0] && pArrow[1] && pArrow[2] && pArrow[3]) {
-					sprintf(pgi->Macro.szName, "P%d %s", nPlayer + 1, "¨I");
+					sprintf(pgi->Macro.szName, "P%d %s", nPlayer + 1, "ï¿½I");
 					pgi->nInput = GIT_MACRO_AUTO;
 					pgi->nType = BIT_DIGITAL;
 					pgi->Macro.nMode = 0;
@@ -553,7 +553,7 @@ static void GameInpInitMacros()
 					nMacroCount++;
 					pgi++;
 
-					sprintf(pgi->Macro.szName, "P%d %s", nPlayer + 1, "¨J");
+					sprintf(pgi->Macro.szName, "P%d %s", nPlayer + 1, "ï¿½J");
 					pgi->nInput = GIT_MACRO_AUTO;
 					pgi->nType = BIT_DIGITAL;
 					pgi->Macro.nMode = 0;
@@ -564,7 +564,7 @@ static void GameInpInitMacros()
 					nMacroCount++;
 					pgi++;
 
-					sprintf(pgi->Macro.szName, "P%d %s", nPlayer + 1, "¨L");
+					sprintf(pgi->Macro.szName, "P%d %s", nPlayer + 1, "ï¿½L");
 					pgi->nInput = GIT_MACRO_AUTO;
 					pgi->nType = BIT_DIGITAL;
 					pgi->Macro.nMode = 0;
@@ -575,7 +575,7 @@ static void GameInpInitMacros()
 					nMacroCount++;
 					pgi++;
 
-					sprintf(pgi->Macro.szName, "P%d %s", nPlayer + 1, "¨K");
+					sprintf(pgi->Macro.szName, "P%d %s", nPlayer + 1, "ï¿½K");
 					pgi->nInput = GIT_MACRO_AUTO;
 					pgi->nType = BIT_DIGITAL;
 					pgi->Macro.nMode = 0;

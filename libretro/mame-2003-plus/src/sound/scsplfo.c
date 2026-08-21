@@ -1,4 +1,4 @@
-/*
+﻿/*
 	SCSP LFO handling
 
 	Part of the SCSP (YMF292-F) emulator package.

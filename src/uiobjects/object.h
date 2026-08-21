@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <SDL.h>
 #include <beans/structures.h>

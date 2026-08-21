@@ -1,4 +1,4 @@
-#ifndef SDL2_inprint_h
+﻿#ifndef SDL2_inprint_h
 #define SDL2_inprint_h
 
 #include "burner.h"

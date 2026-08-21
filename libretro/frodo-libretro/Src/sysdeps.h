@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  sysdeps.h - Try to include the right system headers and get other
  *              system-specific stuff right
  *

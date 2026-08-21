@@ -1,4 +1,4 @@
-
+﻿
 void menu_loop(void);
 int  menu_loop_tray(void);
 void menu_romload_prepare(const char *rom_name);

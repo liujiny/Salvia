@@ -1,4 +1,4 @@
-#include "cps.h"
+﻿#include "cps.h"
 #include "timekpr.h"
 #include "burn_gun.h" // forgottn optional spinner dev.
 

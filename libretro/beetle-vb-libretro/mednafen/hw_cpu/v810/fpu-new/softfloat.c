@@ -1,4 +1,4 @@
-
+﻿
 /*============================================================================
 
 This C source file is part of the SoftFloat IEC/IEEE Floating-point Arithmetic

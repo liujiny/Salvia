@@ -1,4 +1,4 @@
-#include <condefs.h>
+﻿#include <condefs.h>
 #pragma hdrstop
 //---------------------------------------------------------------------------
 USEUNIT("adler32.c");

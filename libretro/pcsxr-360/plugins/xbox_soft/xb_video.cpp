@@ -1,4 +1,4 @@
-#include <xtl.h>
+﻿#include <xtl.h>
 #include <xboxmath.h>
 #include "xb_video.h"
 

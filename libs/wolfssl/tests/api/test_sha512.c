@@ -1,4 +1,4 @@
-/* test_sha512.c
+﻿/* test_sha512.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

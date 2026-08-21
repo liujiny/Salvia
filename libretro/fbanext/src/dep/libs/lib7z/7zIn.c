@@ -1,4 +1,4 @@
-/* 7zIn.c -- 7z Input functions
+﻿/* 7zIn.c -- 7z Input functions
 2010-10-29 : Igor Pavlov : Public domain */
 
 #include <string.h>

@@ -1,4 +1,4 @@
-/* devcrypto_ecdsa.c
+﻿/* devcrypto_ecdsa.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-void beep_init(INT32 frequency);
+﻿void beep_init(INT32 frequency);
 void beep_exit();
 void beep_reset();
 void beep_scan(INT32 nAction, INT32 *pnMin);

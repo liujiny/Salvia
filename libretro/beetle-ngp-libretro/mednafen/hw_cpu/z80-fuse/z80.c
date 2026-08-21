@@ -1,4 +1,4 @@
-/* z80.c: z80 supplementary functions
+﻿/* z80.c: z80 supplementary functions
    Copyright (c) 1999-2003 Philip Kendall
 
    This program is free software; you can redistribute it and/or modify

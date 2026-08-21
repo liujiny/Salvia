@@ -1,4 +1,4 @@
-#include "constant.h"
+﻿#include "constant.h"
 
 std::string Constant::appDir;
 std::string Constant::appExecutable;

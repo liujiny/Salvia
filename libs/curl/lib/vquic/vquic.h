@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_VQUIC_QUIC_H
+﻿#ifndef HEADER_CURL_VQUIC_QUIC_H
 #define HEADER_CURL_VQUIC_QUIC_H
 /***************************************************************************
  *                                  _   _ ____  _

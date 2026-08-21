@@ -1,4 +1,4 @@
-#include "cps.h"
+ï»¿#include "cps.h"
 #include "burn_gun.h" // ecofght optional spinner dev.
 #include "bitswap.h"
 
@@ -16465,7 +16465,7 @@ struct BurnDriver BurnDrvCpsMshvsfcph = {
 };
 
 // Pocket Fighter (Simplified Chinese plot translation, Hack)
-// Modifier by: killme(·ï»Ë)
+// Modifier by: killme(ï¿½ï¿½ï¿½)
 // 20250528
 
 static struct BurnRomInfo PfghtscRomDesc[] = {

@@ -1,4 +1,4 @@
-#ifndef __MDFN_PSX_GTE_H
+﻿#ifndef __MDFN_PSX_GTE_H
 #define __MDFN_PSX_GTE_H
 
 #include "../state.h"

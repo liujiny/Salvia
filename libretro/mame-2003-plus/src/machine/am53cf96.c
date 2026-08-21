@@ -1,4 +1,4 @@
-/*
+﻿/*
  * am53cf96.c
  *
  * AMD/NCR/Symbios 53CF96 SCSI-2 controller.

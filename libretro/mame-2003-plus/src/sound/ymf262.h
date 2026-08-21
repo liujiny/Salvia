@@ -1,4 +1,4 @@
-#ifndef YMF262_H
+﻿#ifndef YMF262_H
 #define YMF262_H
 
 

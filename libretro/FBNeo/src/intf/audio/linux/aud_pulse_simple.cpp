@@ -1,4 +1,4 @@
-// C++11 simple pulse audio driver
+﻿// C++11 simple pulse audio driver
 #include <iostream>
 #include <thread>
 #include <chrono>

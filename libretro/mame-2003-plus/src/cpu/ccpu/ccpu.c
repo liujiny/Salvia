@@ -1,4 +1,4 @@
-/*** Glue Code (******************************************
+﻿/*** Glue Code (******************************************
 
 Glue code to hook up Retrocade's CCPU emulator to MAME's
 architecture.  Really, it's not so bad!

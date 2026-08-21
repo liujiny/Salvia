@@ -1,4 +1,4 @@
-/* armv8-sha3-asm
+﻿/* armv8-sha3-asm
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

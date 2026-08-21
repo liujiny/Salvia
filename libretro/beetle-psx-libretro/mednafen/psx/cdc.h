@@ -1,4 +1,4 @@
-#ifndef __MDFN_PSX_CDC_H
+﻿#ifndef __MDFN_PSX_CDC_H
 #define __MDFN_PSX_CDC_H
 
 #include "../cdrom/cdromif.h"

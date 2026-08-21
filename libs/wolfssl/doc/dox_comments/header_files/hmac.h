@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup HMAC
 
     \brief This function initializes an Hmac object, setting its

@@ -1,4 +1,4 @@
-#ifndef __FT_SYSTEM_MEMORY_H__
+﻿#ifndef __FT_SYSTEM_MEMORY_H__
 #define __FT_SYSTEM_MEMORY_H__
 
 #include <ft2build.h>

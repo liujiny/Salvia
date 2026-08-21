@@ -1,4 +1,4 @@
-#ifndef _SHADERS_COMMON
+﻿#ifndef _SHADERS_COMMON
 #define _SHADERS_COMMON
 
 #ifdef HAVE_OPENGLES3

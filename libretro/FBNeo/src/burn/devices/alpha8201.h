@@ -1,4 +1,4 @@
-void Alpha8201SetBusDir(INT32 state);
+﻿void Alpha8201SetBusDir(INT32 state);
 void Alpha8201Start(INT32 state);
 UINT8 Alpha8201ReadRam(INT32 address);
 void Alpha8201WriteRam(INT32 address, UINT8 data);

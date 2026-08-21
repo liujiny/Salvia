@@ -1,4 +1,4 @@
-/* z80_ops.c: Process the next opcode
+﻿/* z80_ops.c: Process the next opcode
    Copyright (c) 1999-2005 Philip Kendall, Witold Filipczyk
 
    $Id: z80_ops.c 4624 2012-01-09 20:59:35Z pak21 $

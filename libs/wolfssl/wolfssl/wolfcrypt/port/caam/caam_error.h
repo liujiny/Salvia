@@ -1,4 +1,4 @@
-/* caam_error.h
+﻿/* caam_error.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

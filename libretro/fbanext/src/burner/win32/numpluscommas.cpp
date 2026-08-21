@@ -1,4 +1,4 @@
-/*	------------------------------------------------------------------------------------------------
+﻿/*	------------------------------------------------------------------------------------------------
 	Description:	This module will add commas to a number and return it as TCHAR string
 	Author:			CaptainCPS-X
 	Last update:	Sep 18, 2008

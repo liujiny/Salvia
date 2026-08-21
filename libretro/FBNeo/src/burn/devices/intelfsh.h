@@ -1,4 +1,4 @@
-/*
+﻿/*
     Intel Flash ROM emulation
 */
 

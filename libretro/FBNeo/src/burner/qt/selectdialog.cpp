@@ -1,4 +1,4 @@
-#include <QtWidgets>
+﻿#include <QtWidgets>
 #include <QtAlgorithms>
 #include <QMap>
 #include "selectdialog.h"

@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  SCC.C - Z8530 SCC (mouse only)
  */
 

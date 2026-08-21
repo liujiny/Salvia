@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 #include <math.h>
 
 #define NEW_LFO 0

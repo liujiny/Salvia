@@ -1,4 +1,4 @@
-// Based on MAME driver by Nicola Salmoria
+﻿// Based on MAME driver by Nicola Salmoria
 
 #include "burnint.h"
 #include "sn76496.h"

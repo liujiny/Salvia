@@ -1,4 +1,4 @@
-/* Mednafen - Multi-system Emulator
+﻿/* Mednafen - Multi-system Emulator
  *
  *  Original skeleton write handler and PSG structure definition:
  *   Copyright (C) 2001 Charles MacDonald

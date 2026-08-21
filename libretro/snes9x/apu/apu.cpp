@@ -1,4 +1,4 @@
-/*****************************************************************************\
+ï»¿/*****************************************************************************\
      Snes9x - Portable Super Nintendo Entertainment System (TM) emulator.
                 This file is licensed under the Snes9x License.
    For further information, consult the LICENSE file in the root directory.
@@ -61,7 +61,7 @@ static Resampler resampler;
 	// ANTES:
     // static std::vector<int16_t> resampler_buffer;
 
-    // DESPUÉS: raw pointer gestionado explícitamente
+    // DESPUï¿½S: raw pointer gestionado explï¿½citamente
     static int16_t *resampler_buffer     = NULL;
     static int      resampler_buffer_cap = 0;
 } // namespace msu
@@ -93,7 +93,7 @@ bool8 S9xMixSamples(uint8 *dest, int sample_count)
 
     if (Settings.MSU1)
     {
-        // DESPUÉS:
+        // DESPUï¿½S:
 		if (msu::resampler_buffer_cap < sample_count)
 		{
 			delete[] msu::resampler_buffer;
@@ -246,7 +246,7 @@ void S9xDeinitAPU(void)
 {
     S9xMSU1DeInit();
     // ANTES: msu::resampler_buffer.clear();
-    // DESPUÉS:
+    // DESPUï¿½S:
     delete[] msu::resampler_buffer;
     msu::resampler_buffer     = NULL;
     msu::resampler_buffer_cap = 0;

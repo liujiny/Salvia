@@ -1,5 +1,5 @@
-/*
- Copyright (c) 2008 Francisco Muñoz 'Hermes' <www.elotrolado.net>
+ï»¿/*
+ Copyright (c) 2008 Francisco Muï¿½oz 'Hermes' <www.elotrolado.net>
  All rights reserved.
 
  Proper (standard) vorbis usage by Tantric, 2009

@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  TVRAM.C - Text VRAM
  *  TODO: Transparent color processing and more
  */

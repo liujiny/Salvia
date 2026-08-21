@@ -1,4 +1,4 @@
-#ifndef __VECTOR__
+﻿#ifndef __VECTOR__
 #define __VECTOR__
 
 #include "artwork.h"

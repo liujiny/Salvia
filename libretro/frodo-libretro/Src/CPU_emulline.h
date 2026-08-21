@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  CPU_emulline.h - 6510/6502 emulation core (body of
  *                   EmulateLine() function, the same for
  *                   both 6510 and 6502)

@@ -1,4 +1,4 @@
-/* maketree.c -- make inffixed.h table for decoding fixed codes
+﻿/* maketree.c -- make inffixed.h table for decoding fixed codes
  * Copyright (C) 1995-2002 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h 
  */

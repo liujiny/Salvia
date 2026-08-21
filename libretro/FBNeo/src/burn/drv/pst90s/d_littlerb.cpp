@@ -1,4 +1,4 @@
-// FinalBurn Neo Little Robin driver module
+﻿// FinalBurn Neo Little Robin driver module
 // Based on MAME driver by Pierpaolo Prazzoli and David Haywood
 
 #include "tiles_generic.h"

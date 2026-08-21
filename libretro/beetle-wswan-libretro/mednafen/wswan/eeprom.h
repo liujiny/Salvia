@@ -1,4 +1,4 @@
-#ifndef __WSWAN_EEPROM_H
+﻿#ifndef __WSWAN_EEPROM_H
 #define __WSWAN_EEPROM_H
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-/* vidhrdw/bosco.c */
+﻿/* vidhrdw/bosco.c */
 extern data8_t *bosco_videoram;
 extern data8_t *bosco_radarattr;
 extern unsigned char *bosco_sharedram;

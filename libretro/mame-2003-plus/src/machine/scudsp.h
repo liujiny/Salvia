@@ -1,4 +1,4 @@
-/*SCU DSP stuff*/
+﻿/*SCU DSP stuff*/
 
 extern void dsp_prg_ctrl(UINT32 data);
 extern void dsp_prg_data(UINT32 data);

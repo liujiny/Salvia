@@ -1,4 +1,4 @@
-// FB Alpha Cyber Tank driver module
+﻿// FB Alpha Cyber Tank driver module
 // Based on MAME driver by Angelo Salese and David Haywood
 
 #include "tiles_generic.h"

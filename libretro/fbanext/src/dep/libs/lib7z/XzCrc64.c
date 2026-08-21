@@ -1,4 +1,4 @@
-/* XzCrc64.c -- CRC64 calculation
+﻿/* XzCrc64.c -- CRC64 calculation
 2010-04-16 : Igor Pavlov : Public domain */
 
 #include "XzCrc64.h"

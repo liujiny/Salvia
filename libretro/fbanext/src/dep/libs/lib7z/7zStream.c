@@ -1,4 +1,4 @@
-/* 7zStream.c -- 7z Stream functions
+﻿/* 7zStream.c -- 7z Stream functions
 2010-03-11 : Igor Pavlov : Public domain */
 
 #include <string.h>

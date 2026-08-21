@@ -1,4 +1,4 @@
-/* user_settings.h
+﻿/* user_settings.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

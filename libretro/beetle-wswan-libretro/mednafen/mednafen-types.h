@@ -1,4 +1,4 @@
-#ifndef __MDFN_TYPES
+﻿#ifndef __MDFN_TYPES
 #define __MDFN_TYPES
 
 #include <stdint.h>

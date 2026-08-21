@@ -1,4 +1,4 @@
-/* chacha20_poly1305.h
+﻿/* chacha20_poly1305.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-// TMS34 - cpu interface for MAME 0.127 TMS340x0 cpu core
+﻿// TMS34 - cpu interface for MAME 0.127 TMS340x0 cpu core
 #include "burnint.h"
 #include "tms34/tms34010.h"
 #include "tms34_intf.h"

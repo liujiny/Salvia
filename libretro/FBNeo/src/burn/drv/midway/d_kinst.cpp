@@ -1,4 +1,4 @@
-// Based on MAME driver by Aaron Giles
+﻿// Based on MAME driver by Aaron Giles
 
 // coin up doesn't work - forcing freeplay dip for now
 // the hdd image get corrupted over time

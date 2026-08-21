@@ -1,4 +1,4 @@
-#ifndef LIBOPERA_BIOS_H_INCLUDED
+﻿#ifndef LIBOPERA_BIOS_H_INCLUDED
 #define LIBOPERA_BIOS_H_INCLUDED
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-#ifndef __LIBRETRO_SDK_CRT_STRING_H_
+﻿#ifndef __LIBRETRO_SDK_CRT_STRING_H_
 #define __LIBRETRO_SDK_CRT_STRING_H_
 
 #include <stdio.h>

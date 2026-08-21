@@ -1,4 +1,4 @@
-/* pem.h
+﻿/* pem.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

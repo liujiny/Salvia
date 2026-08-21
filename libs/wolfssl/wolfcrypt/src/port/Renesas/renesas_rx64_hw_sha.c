@@ -1,4 +1,4 @@
-/* renesas_rx64_hw_sha.c
+﻿/* renesas_rx64_hw_sha.c
  *
  * Contributed by Johnson Controls Tyco IP Holdings LLP.
  *

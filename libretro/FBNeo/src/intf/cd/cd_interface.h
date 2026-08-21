@@ -1,4 +1,4 @@
-#ifndef CD_INTERFACE_H_
+﻿#ifndef CD_INTERFACE_H_
 #define CD_INTERFACE_H_
 
 // ----------------------------------------------------------------------------

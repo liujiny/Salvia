@@ -1,4 +1,4 @@
-/* examples/configs/user_settings_platformio.h
+﻿/* examples/configs/user_settings_platformio.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

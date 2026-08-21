@@ -1,4 +1,4 @@
-// FB Neo Midway 68k-based driver module
+﻿// FB Neo Midway 68k-based driver module
 // Based on MAME driver by Aaron Giles, Bryan McPhail
 
 #include "tiles_generic.h"

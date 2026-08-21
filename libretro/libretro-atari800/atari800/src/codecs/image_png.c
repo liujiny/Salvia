@@ -1,4 +1,4 @@
-/*
+﻿/*
  * image_png.c - support for PNG images
  *
  * Copyright (C) 1995-1998 David Firth

@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 
 #ifndef HARDWARE_CAPCOM_CPS3
 	#define HARDWARE_CAPCOM_CPS3		HARDWARE_MISC_MISC

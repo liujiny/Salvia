@@ -1,4 +1,4 @@
-
+﻿
 #if __X32
 #define JIT_INSTR_MAX 42
     0,	/* data */

@@ -1,4 +1,4 @@
-/* Super Kaneko Nova System Sprites
+﻿/* Super Kaneko Nova System Sprites
 
    "CG24173 6186" & "CG24143 4181" (always used as a pair?)
 

@@ -1,4 +1,4 @@
-#ifndef DECLARE
+﻿#ifndef DECLARE
 
 #include "driver.h"
 

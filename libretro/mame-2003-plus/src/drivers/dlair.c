@@ -1,4 +1,4 @@
-/* the way I hooked up the CTC is most likely completely wrong */
+﻿/* the way I hooked up the CTC is most likely completely wrong */
 
 #include "driver.h"
 #include "vidhrdw/generic.h"

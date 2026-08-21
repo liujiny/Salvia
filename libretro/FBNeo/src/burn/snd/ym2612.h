@@ -1,4 +1,4 @@
-/*
+﻿/*
 **
 ** software implementation of Yamaha FM sound generator (YM2612/YM3438)
 **

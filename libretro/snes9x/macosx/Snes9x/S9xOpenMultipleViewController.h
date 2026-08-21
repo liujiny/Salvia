@@ -1,4 +1,4 @@
-//
+﻿//
 //  S9xOpenMultipleViewController.h
 //  Snes9x
 //

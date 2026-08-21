@@ -1,4 +1,4 @@
-/*
+﻿/*
  * upscale.c		image upscaling
  *
  * This file contains upscalers for picodrive.

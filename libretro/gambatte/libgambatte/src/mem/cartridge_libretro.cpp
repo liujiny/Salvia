@@ -1,4 +1,4 @@
-#include "cartridge.h"
+﻿#include "cartridge.h"
 #include "../savestate.h"
 #include <cstring>
 #include <fstream>

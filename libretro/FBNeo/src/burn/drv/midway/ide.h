@@ -1,4 +1,4 @@
-#ifndef IDE
+﻿#ifndef IDE
 #define IDE
 
 #include "burnint.h"

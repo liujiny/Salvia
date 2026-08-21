@@ -1,4 +1,4 @@
-#ifndef MIPS3_X64_BITOPS
+﻿#ifndef MIPS3_X64_BITOPS
 #define MIPS3_X64_BITOPS
 
 #include "../mips3.h"

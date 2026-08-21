@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "common/bitfield.h"
 #include "common/fifo_queue.h"
 #include "common/rectangle.h"

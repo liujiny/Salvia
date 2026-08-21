@@ -1,4 +1,4 @@
-// FinalBurn Neo Hyper Duel / Magical Error wo Sagase driver module
+﻿// FinalBurn Neo Hyper Duel / Magical Error wo Sagase driver module
 // Based on MAME driver by Lucia Elia / Hau
 
 #include "tiles_generic.h"

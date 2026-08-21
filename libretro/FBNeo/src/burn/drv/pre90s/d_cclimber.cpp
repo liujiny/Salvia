@@ -1,4 +1,4 @@
-// Crazy Climber FBNeo Driver
+﻿// Crazy Climber FBNeo Driver
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

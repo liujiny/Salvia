@@ -1,4 +1,4 @@
-//
+﻿//
 //  FakeResources.h
 //  ReClassicfication
 //

@@ -1,4 +1,4 @@
-#include "libretro.h"
+﻿#include "libretro.h"
 #include "libretro_core_options.h"
 #include <stdint.h>
 #include <string.h>

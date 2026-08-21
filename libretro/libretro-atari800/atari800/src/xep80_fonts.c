@@ -1,4 +1,4 @@
-/*
+﻿/*
  * xep80_fonts.c - XEP80 Font emulation
  *
  * Copyright (C) 2007 Mark Grebe

@@ -1,4 +1,4 @@
-/*
+﻿/*
 	Sega System 32 hardware
 
 	V60 + 4 zooming, source linescrolled, alpha blended tilemap planes +

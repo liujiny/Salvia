@@ -1,4 +1,4 @@
-
+﻿
 #include "3ds_utils.h"
 
 #define GET_VERSION_MAJOR(version)    ((version) >>24)

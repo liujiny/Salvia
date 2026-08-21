@@ -1,4 +1,4 @@
-/*
+﻿/*
     SDL - Simple DirectMedia Layer
     Copyright (C) 1997-2009 Sam Lantinga
 

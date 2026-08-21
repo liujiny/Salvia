@@ -1,4 +1,4 @@
-
+﻿
 /*
  * CMPC: What happens to _S flag if the strings are identical?
  *   I suppose that it will be cleared. And is it set or cleared

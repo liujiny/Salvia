@@ -1,4 +1,4 @@
-// FinalBurn Neo Incredible technologies / Strata 8 bit driver module
+﻿// FinalBurn Neo Incredible technologies / Strata 8 bit driver module
 // Based on MAME driver by Aaron Giles
 
 // Note: grmatch, if nvram is initted randomly (as mame), and the random

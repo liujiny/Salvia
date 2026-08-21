@@ -1,4 +1,4 @@
-#ifndef LIBATARI800_SOUND_H_
+﻿#ifndef LIBATARI800_SOUND_H_
 #define LIBATARI800_SOUND_H_
 
 #include <stdio.h>

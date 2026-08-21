@@ -1,4 +1,4 @@
-/* Xxh64.c -- XXH64 hash calculation
+﻿/* Xxh64.c -- XXH64 hash calculation
 original code: Copyright (c) Yann Collet.
 2023-08-18 : modified by Igor Pavlov.
 This source code is licensed under BSD 2-Clause License.

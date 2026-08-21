@@ -1,4 +1,4 @@
-// K007452 multiplier/divider, silicon-RE, code & (c) by furrtek (Sean Gonsalves) April 2021
+﻿// K007452 multiplier/divider, silicon-RE, code & (c) by furrtek (Sean Gonsalves) April 2021
 
 #include "burnint.h"
 

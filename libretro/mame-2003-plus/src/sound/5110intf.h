@@ -1,4 +1,4 @@
-#ifndef intf5110_h
+﻿#ifndef intf5110_h
 #define intf5110_h
 
 struct TMS5110interface

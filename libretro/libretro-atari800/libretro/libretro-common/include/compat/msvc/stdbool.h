@@ -1,4 +1,4 @@
-/* stdbool.h compatibility shim for MSVC 2010 (and earlier), which does not
+﻿/* stdbool.h compatibility shim for MSVC 2010 (and earlier), which does not
  * ship a C99 stdbool.h. Delegate to libretro-common's boolean.h so that every
  * TU gets the same definition of bool (unsigned char for _MSC_VER < 1800).
  *

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * rdevice.h - Atari850 emulation header file
  *
  * Copyright (c) ???? Tom Hunt, Chris Martin

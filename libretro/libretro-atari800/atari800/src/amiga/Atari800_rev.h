@@ -1,4 +1,4 @@
-#define VERSION		2
+﻿#define VERSION		2
 #define REVISION	1
 #define DATE		"30.03.2009"
 #define VERS		"Atari800 2.1.0"

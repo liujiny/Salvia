@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \defgroup 3DES Algorithms - 3DES
     \defgroup AES Algorithms - AES
     \defgroup ARC4 Algorithms - ARC4

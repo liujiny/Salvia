@@ -1,4 +1,4 @@
-#ifndef VKBD_H
+﻿#ifndef VKBD_H
 #define VKBD_H 1
 
 void virtual_kdb(char *pixels,int vx,int vy);

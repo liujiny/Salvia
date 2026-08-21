@@ -1,4 +1,4 @@
-/*
+﻿/*
 Dynamic Ski
 (c)1984 Taiyo
 

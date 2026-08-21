@@ -1,4 +1,4 @@
-#ifndef FILEPACKAGE_H_INCLUDED
+﻿#ifndef FILEPACKAGE_H_INCLUDED
 #define FILEPACKAGE_H_INCLUDED
 
 #include <string>

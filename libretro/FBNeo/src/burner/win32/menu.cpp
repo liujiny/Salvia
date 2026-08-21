@@ -1,4 +1,4 @@
-// Menu handling
+﻿// Menu handling
 
 #include "burner.h"
 

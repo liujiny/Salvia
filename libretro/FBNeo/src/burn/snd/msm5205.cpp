@@ -1,4 +1,4 @@
-// copyright-holders:Aaron Giles
+﻿// copyright-holders:Aaron Giles
 /*
  *   streaming ADPCM driver
  *   by Aaron Giles

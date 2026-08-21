@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 
   Functions to emulate the video hardware of some Toaplan games,
   which use one or more Toaplan L7A0498 GP9001 graphic controllers.

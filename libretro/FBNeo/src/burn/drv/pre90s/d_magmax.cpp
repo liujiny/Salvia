@@ -1,4 +1,4 @@
-// FinalBurn Neo Mag Max driver module
+﻿// FinalBurn Neo Mag Max driver module
 // Based on MAME driver by Takahiro Nogi
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-// TC0360PRI
+﻿// TC0360PRI
 
 #include "burnint.h"
 #include "taito_ic.h"

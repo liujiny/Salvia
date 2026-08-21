@@ -1,4 +1,4 @@
-#include "slang_preset.hpp"
+﻿#include "slang_preset.hpp"
 #include "external/SPIRV-Cross/spirv.hpp"
 #include "slang_helpers.hpp"
 #include "slang_preset_ini.hpp"

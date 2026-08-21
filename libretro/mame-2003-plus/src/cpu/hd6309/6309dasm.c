@@ -1,4 +1,4 @@
-/* this code was hacked out of the fully-featured 6809 disassembler by Sean Riddle */
+﻿/* this code was hacked out of the fully-featured 6809 disassembler by Sean Riddle */
 /* and then mutliated into a 6309 disassembler by tim lindner					   */
 
 /* 6309dasm.c - a 6309 opcode disassembler		*/

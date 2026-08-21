@@ -1,4 +1,4 @@
-#include "cfgloader.h"
+﻿#include "cfgloader.h"
 #include <utils/langmanager.h>
 #include <const/constant.h>
 #include <const/cfgconst.h>

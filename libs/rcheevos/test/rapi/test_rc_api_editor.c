@@ -1,4 +1,4 @@
-#include "rc_api_editor.h"
+﻿#include "rc_api_editor.h"
 #include "rc_api_runtime.h"
 
 #include "../src/rapi/rc_api_common.h"

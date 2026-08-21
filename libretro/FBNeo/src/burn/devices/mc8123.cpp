@@ -1,4 +1,4 @@
-// Based on MAME sources by Nicola Salmoria, David Widel
+﻿// Based on MAME sources by Nicola Salmoria, David Widel
 
 #include "burnint.h"
 #include "bitswap.h"

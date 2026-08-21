@@ -1,4 +1,4 @@
-extern void *gp2x_screens[4];
+﻿extern void *gp2x_screens[4];
 extern int gp2x_current_bpp;
 
 /* SoC specific functions */

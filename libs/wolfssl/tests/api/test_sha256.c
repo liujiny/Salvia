@@ -1,4 +1,4 @@
-/* test_sha256.c
+﻿/* test_sha256.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

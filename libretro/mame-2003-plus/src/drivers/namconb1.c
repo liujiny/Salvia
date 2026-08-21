@@ -1,4 +1,4 @@
-/*
+﻿/*
 Namco System NB-1
 
 Notes:

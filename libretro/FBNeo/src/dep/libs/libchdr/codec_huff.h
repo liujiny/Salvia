@@ -1,4 +1,4 @@
-#ifndef LIBCHDR_CODEC_HUFF_H
+﻿#ifndef LIBCHDR_CODEC_HUFF_H
 #define LIBCHDR_CODEC_HUFF_H
 
 #include <stdint.h>

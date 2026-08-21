@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  cheats.c
  * 
  *  Genesis Plus GX Cheats menu

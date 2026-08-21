@@ -1,4 +1,4 @@
-/* Sega Master System/Game Gear/TI 99/4A NTSC video filter */
+﻿/* Sega Master System/Game Gear/TI 99/4A NTSC video filter */
 
 /* sms_ntsc 0.2.3 */
 #ifndef SMS_NTSC_H

@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "burn_y8950.h"
 
 #define MAX_Y8950	2

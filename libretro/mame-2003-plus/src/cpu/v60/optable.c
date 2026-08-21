@@ -1,4 +1,4 @@
- static UINT32 (*OpCodeTable[256])(void) =
+﻿ static UINT32 (*OpCodeTable[256])(void) =
 /*static UINT32 (*const OpCodeTable[256])(void) = */
 {
 	/* 0x00 */ opHALT,

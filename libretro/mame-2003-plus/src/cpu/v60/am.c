@@ -1,4 +1,4 @@
-
+﻿
 /* NOTE for bit string/field addressing */
 /* ************************************ */
 /* modDim must be passed as 10 for bit string instructions, */

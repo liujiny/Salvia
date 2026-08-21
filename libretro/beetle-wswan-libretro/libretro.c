@@ -1,4 +1,4 @@
-#include <sys/types.h>
+﻿#include <sys/types.h>
 
 #include <libretro.h>
 #include <retro_math.h>

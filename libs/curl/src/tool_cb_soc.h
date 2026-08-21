@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_TOOL_CB_SOC_H
+﻿#ifndef HEADER_CURL_TOOL_CB_SOC_H
 #define HEADER_CURL_TOOL_CB_SOC_H
 /***************************************************************************
  *                                  _   _ ____  _

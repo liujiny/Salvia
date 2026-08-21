@@ -1,4 +1,4 @@
-/* joystick types for DOS port of David Firth's Atari800 emulator */
+﻿/* joystick types for DOS port of David Firth's Atari800 emulator */
 
 #define joy_off 0
 #define joy_analog 1

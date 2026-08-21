@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * PicoDrive
  * (c) Copyright Dave, 2004
  * (C) notaz, 2006-2009
@@ -1308,7 +1308,7 @@ void PicoVideoLoad(void *buf, int len)
 
   if (len) {
 		int i;
-		/* Casteamos buf a unsigned char* para permitir aritmética de punteros */
+		/* Casteamos buf a unsigned char* para permitir aritmï¿½tica de punteros */
 		unsigned char *p = (unsigned char *)buf;
 
 		if (len >= offsetof(struct VdpFIFO, fifo_slot))

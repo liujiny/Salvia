@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "dtimer.h"
 
 // dtimer subsystem (runs like a cpu, see d_exidy440.cpp, d_zaccaria.cpp)

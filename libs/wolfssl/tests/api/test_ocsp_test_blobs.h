@@ -1,4 +1,4 @@
-/*
+﻿/*
 * This file is generated automatically by running ./tests/api/create_ocsp_test_blobs.py.
 *
 * ocsp_test_blobs.h

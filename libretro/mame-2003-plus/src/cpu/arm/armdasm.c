@@ -1,4 +1,4 @@
-/*
+﻿/*
 	ARM 2/3 disassembler
 
 	(c) 2002 Bryan McPhail (bmcphail@tendril.co.uk) and Phil Stroffolino

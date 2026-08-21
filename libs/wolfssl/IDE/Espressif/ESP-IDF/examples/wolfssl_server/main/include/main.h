@@ -1,4 +1,4 @@
-/* wolfssl_server main.h
+﻿/* wolfssl_server main.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

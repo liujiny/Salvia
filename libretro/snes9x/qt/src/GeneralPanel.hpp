@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "ui_GeneralPanel.h"
 #include "EmuApplication.hpp"
 

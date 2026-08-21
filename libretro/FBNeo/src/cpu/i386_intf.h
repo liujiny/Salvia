@@ -1,4 +1,4 @@
-
+﻿
 INT32 i386Run(INT32 num_cycles);
 void i386SetIRQLine(INT32 irqline, INT32 state);
 void i386Exit();

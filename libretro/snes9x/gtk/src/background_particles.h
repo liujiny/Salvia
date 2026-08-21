@@ -1,4 +1,4 @@
-#ifndef __BACKGROUND_PARTICLES_H
+﻿#ifndef __BACKGROUND_PARTICLES_H
 #define __BACKGROUND_PARTICLES_H
 #include <vector>
 #include <list>

@@ -1,4 +1,4 @@
-/*
+﻿/*
     m68kmmu.h - PMMU implementation for 68851/68030/68040
 
     By R. Belmont

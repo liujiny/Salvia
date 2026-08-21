@@ -1,4 +1,4 @@
-#ifndef _SNES_H_
+﻿#ifndef _SNES_H_
 #define _SNES_H_
 
 /* Debug definitions */

@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup 3DES
 
     \brief This function sets the key and initialization vector (iv) for the

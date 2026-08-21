@@ -1,4 +1,4 @@
-/*
+﻿/*
 Taito 8741 emulation
 
 1.comminucation main and sub cpu

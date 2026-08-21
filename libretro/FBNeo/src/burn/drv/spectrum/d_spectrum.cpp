@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "spectrum.h"
 
 struct BurnInputInfo SpecInputList[] =

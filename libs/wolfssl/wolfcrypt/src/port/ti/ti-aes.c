@@ -1,4 +1,4 @@
-/* port/ti/ti-aes.c
+﻿/* port/ti/ti-aes.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

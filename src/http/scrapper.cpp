@@ -1,4 +1,4 @@
-#include "scrapper.h"
+﻿#include "scrapper.h"
 #include <http/pugixml.hpp>
 
 #define PICOJSON_USE_RVALUE_REFERENCE 0

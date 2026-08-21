@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  SID.cpp - 6581 emulation
  *
  *  Frodo Copyright (C) Christian Bauer

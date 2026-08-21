@@ -1,4 +1,4 @@
-/* armv8-curve25519
+﻿/* armv8-curve25519
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

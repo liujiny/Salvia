@@ -1,4 +1,4 @@
-/*
+﻿/*
  * (C) Gražvydas "notaz" Ignotas, 2009,2013
  *
  * This work is licensed under the terms of any of these licenses

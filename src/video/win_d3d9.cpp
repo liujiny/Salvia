@@ -1,4 +1,4 @@
-/*
+﻿/*
  * win_d3d9.cpp - Implementacion de la capa de video D3D9 para Windows.
  * Ver win_d3d9.h para la vision general. Port directo de la logica de
  * libs/libSDLx360/SDL/src/video/xbox/SDL_xboxvideo.c, adaptado a D3D9 PC:

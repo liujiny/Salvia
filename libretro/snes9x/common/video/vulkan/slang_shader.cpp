@@ -1,4 +1,4 @@
-#include "slang_shader.hpp"
+﻿#include "slang_shader.hpp"
 #include "slang_helpers.hpp"
 
 #include <ostream>

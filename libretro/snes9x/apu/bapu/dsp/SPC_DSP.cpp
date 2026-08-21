@@ -1,4 +1,4 @@
-// snes_spc 0.9.0. http://www.slack.net/~ant/
+﻿// snes_spc 0.9.0. http://www.slack.net/~ant/
 
 #include "../../../snes9x.h"
 

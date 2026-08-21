@@ -1,4 +1,4 @@
-// CPU Byte Order Utilities
+﻿// CPU Byte Order Utilities
 
 // snes_spc 0.9.0
 #ifndef BLARGG_ENDIAN

@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  CPU1541.h - 6502 (1541) emulation (line based)
  *
  *  Frodo Copyright (C) Christian Bauer

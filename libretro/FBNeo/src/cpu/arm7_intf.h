@@ -1,4 +1,4 @@
-
+﻿
 void Arm7WriteByte(UINT32 addr, UINT8 data);
 void Arm7WriteWord(UINT32 addr, UINT16 data);
 void Arm7WriteLong(UINT32 addr, UINT32 data);

@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup SHA
     \brief  この関数はSHAを初期化します。これは自動的にWC_Shahashによって呼び出されます。
     \return 0  初期化に成功したときに返されます

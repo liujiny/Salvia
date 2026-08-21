@@ -1,4 +1,4 @@
-#include "EmuApplication.hpp"
+﻿#include "EmuApplication.hpp"
 #include "EmuMainWindow.hpp"
 #include "SDLInputManager.hpp"
 #include "Snes9xController.hpp"

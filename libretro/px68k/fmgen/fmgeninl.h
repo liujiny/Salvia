@@ -1,4 +1,4 @@
-// ---------------------------------------------------------------------------
+ï»¿// ---------------------------------------------------------------------------
 //	FM Sound Generator
 //	Copyright (C) cisc 1998, 2003.
 // ---------------------------------------------------------------------------
@@ -8,17 +8,17 @@
 #define FM_GEN_INL_H
 
 // ---------------------------------------------------------------------------
-//	Äê¿ô¤½¤Î£²
+//	ï¿½ï¿½ï¿½ï¿½ï¿½Î£ï¿½
 //	
 #define FM_PI		3.14159265358979323846f
 
-#define FM_SINEPRESIS	2	// EG¤È¥µ¥¤¥óÇÈ¤ÎÀºÅÙ¤Îº¹  0(Äã)-2(¹â)
+#define FM_SINEPRESIS	2	// EGï¿½È¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½ï¿½ï¿½ï¿½Ù¤Îºï¿½  0(ï¿½ï¿½)-2(ï¿½ï¿½)
 
 
 #define FM_OPSINBITS	10
 #define FM_OPSINENTS	(1 << FM_OPSINBITS)
 
-#define FM_EGCBITS	18		// eg ¤Î count ¤Î¥·¥Õ¥ÈÃÍ
+#define FM_EGCBITS	18		// eg ï¿½ï¿½ count ï¿½Î¥ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½
 #define FM_LFOCBITS	14
 
 #ifdef FM_TUNEBUILD
@@ -26,7 +26,7 @@
  #define FM_RATIOBITS	0
 #else
  #define FM_PGBITS	9		
- #define FM_RATIOBITS	7			// 8-12 ¤¯¤é¤¤¤Þ¤Ç¡©
+ #define FM_RATIOBITS	7			// 8-12 ï¿½ï¿½ï¿½é¤¤ï¿½Þ¤Ç¡ï¿½
 #endif
 
 #define FM_EGBITS	16
@@ -34,7 +34,7 @@
 namespace FM
 {
 
-//	¥­¡¼¥ª¥ó
+//	ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline void Operator::KeyOn()
 {
 	if (!keyon_)
@@ -51,7 +51,7 @@ inline void Operator::KeyOn()
 	}
 }
 
-//	¥­¡¼¥ª¥Õ
+//	ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline void	Operator::KeyOff()
 {
 	if (keyon_)
@@ -61,7 +61,7 @@ inline void	Operator::KeyOff()
 	}
 }
 
-//	¥ª¥Ú¥ì¡¼¥¿¤Ï²ÔÆ¯Ãæ¤«¡©
+//	ï¿½ï¿½ï¿½Ú¥ì¡¼ï¿½ï¿½ï¿½Ï²ï¿½Æ¯ï¿½æ¤«ï¿½ï¿½
 inline int Operator::IsOn()
 {
 	return eg_phase_ - OFF;
@@ -165,20 +165,20 @@ inline void Operator::SetMS(uint32_t ms)
 // ---------------------------------------------------------------------------
 //	4-op Channel
 
-//	¥ª¥Ú¥ì¡¼¥¿¤Î¼ïÎà (LFO) ¤òÀßÄê
+//	ï¿½ï¿½ï¿½Ú¥ì¡¼ï¿½ï¿½ï¿½Î¼ï¿½ï¿½ï¿½ (LFO) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline void Channel4::SetType(OpType type)
 {
 	for (int i=0; i<4; i++)
 		op[i].type_ = type;
 }
 
-//	¥»¥ë¥Õ¡¦¥Õ¥£¡¼¥É¥Ð¥Ã¥¯¥ì¡¼¥È¤ÎÀßÄê (0-7)
+//	ï¿½ï¿½ï¿½ï¿½Õ¡ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½É¥Ð¥Ã¥ï¿½ï¿½ì¡¼ï¿½È¤ï¿½ï¿½ï¿½ï¿½ï¿½ (0-7)
 inline void Channel4::SetFB(uint32_t feedback)
 {
 	fb = fbtable[feedback];
 }
 
-//	OPNA ·Ï LFO ¤ÎÀßÄê
+//	OPNA ï¿½ï¿½ LFO ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline void Channel4::SetMS(uint32_t ms)
 {
 	op[0].SetMS(ms);
@@ -187,7 +187,7 @@ inline void Channel4::SetMS(uint32_t ms)
 	op[3].SetMS(ms);
 }
 
-//	¥Á¥ã¥ó¥Í¥ë¡¦¥Þ¥¹¥¯
+//	ï¿½ï¿½ï¿½ï¿½ï¿½Í¥ë¡¦ï¿½Þ¥ï¿½ï¿½ï¿½
 inline void Channel4::Mute(bool m)
 {
 	for (int i=0; i<4; i++)
@@ -208,13 +208,13 @@ inline void StoreSample(int16_t & dest, ISample data)
 
 
 // ---------------------------------------------------------------------------
-//	AM ¤Î¥ì¥Ù¥ë¤òÀßÄê
+//	AM ï¿½Î¥ï¿½Ù¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline void Chip::SetAML(uint32_t l)
 {
 	aml_ = l & (FM_LFOENTS - 1);
 }
 
-//	PM ¤Î¥ì¥Ù¥ë¤òÀßÄê
+//	PM ï¿½Î¥ï¿½Ù¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline void Chip::SetPML(uint32_t l)
 {
 	pml_ = l & (FM_LFOENTS - 1);

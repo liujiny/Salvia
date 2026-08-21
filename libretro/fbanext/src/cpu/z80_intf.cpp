@@ -1,4 +1,4 @@
-// Z80 (Zed Eight-Ty) Interface
+﻿// Z80 (Zed Eight-Ty) Interface
 #include "burnint.h"
 #include "z80_intf.h"
 

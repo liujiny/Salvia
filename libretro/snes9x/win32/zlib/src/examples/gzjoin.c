@@ -1,4 +1,4 @@
-/* gzjoin -- command to join gzip files into one gzip file
+﻿/* gzjoin -- command to join gzip files into one gzip file
 
   Copyright (C) 2004, 2005, 2012 Mark Adler, all rights reserved
   version 1.2, 14 Aug 2012

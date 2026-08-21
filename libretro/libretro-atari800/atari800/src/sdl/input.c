@@ -1,4 +1,4 @@
-/*
+﻿/*
  * sdl/input.c - SDL library specific port code - input device support
  *
  * Copyright (c) 2001-2002 Jacek Poplawski

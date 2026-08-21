@@ -1,4 +1,4 @@
-/*
+﻿/*
  * libatari800/input.c - Atari800 as a library - input device support
  *
  * Copyright (c) 2001-2002 Jacek Poplawski

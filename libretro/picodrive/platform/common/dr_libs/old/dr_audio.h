@@ -1,4 +1,4 @@
-// Audio playback, recording and mixing. Public domain. See "unlicense" statement at the end of this file.
+﻿// Audio playback, recording and mixing. Public domain. See "unlicense" statement at the end of this file.
 // dr_audio - v0.0 (unversioned) - Release Date TBD
 //
 // David Reid - mackron@gmail.com

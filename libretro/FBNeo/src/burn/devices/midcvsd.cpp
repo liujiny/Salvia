@@ -1,4 +1,4 @@
-
+﻿
 #include "burnint.h"
 #include "m6809_intf.h"
 #include "burn_ym2151.h"

@@ -1,4 +1,4 @@
-#include "shaders_common.h"
+﻿#include "shaders_common.h"
 
 #undef command_vertex_name_
 #if defined(FILTER_SABR) || defined(FILTER_XBR)

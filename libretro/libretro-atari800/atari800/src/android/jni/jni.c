@@ -1,4 +1,4 @@
-/*
+﻿/*
  * jni.c - native functions exported to java
  *
  * Copyright (C) 2014 Kostas Nakos

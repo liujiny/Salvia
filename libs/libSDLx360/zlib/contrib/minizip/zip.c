@@ -1,4 +1,4 @@
-/* zip.c -- IO on .zip files using zlib 
+﻿/* zip.c -- IO on .zip files using zlib 
    Version 0.15 beta, Mar 19th, 1998,
 
    Read zip.h for more info

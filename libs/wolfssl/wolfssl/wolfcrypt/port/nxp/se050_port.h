@@ -1,4 +1,4 @@
-/* se050_port.h
+﻿/* se050_port.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

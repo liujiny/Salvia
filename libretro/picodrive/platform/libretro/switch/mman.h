@@ -1,4 +1,4 @@
-#ifndef MMAN_H
+﻿#ifndef MMAN_H
 #define MMAN_H
 
 #ifdef __cplusplus

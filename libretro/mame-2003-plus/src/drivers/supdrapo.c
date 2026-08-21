@@ -1,4 +1,4 @@
-/*
+﻿/*
  Super Draw Poker (c) Stern 1983
 
  driver by Pierpaolo Prazzoli

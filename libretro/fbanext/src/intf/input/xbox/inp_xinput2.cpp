@@ -1,4 +1,4 @@
-// Module for DirectInput
+﻿// Module for DirectInput
 #include <xtl.h>
 #include "burner.h"
 #include <math.h>

@@ -1,4 +1,4 @@
-#ifndef intf5220_h
+﻿#ifndef intf5220_h
 #define intf5220_h
 
 struct TMS5220interface

@@ -1,4 +1,4 @@
-// konamiic.cpp
+﻿// konamiic.cpp
 //---------------------------------------------------------------------------------------------------------------
 extern UINT32 KonamiIC_K051960InUse;
 extern UINT32 KonamiIC_K052109InUse;

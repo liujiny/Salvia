@@ -1,4 +1,4 @@
-// FB Alpha Escape from the Planet of the Robot Monsters driver module
+﻿// FB Alpha Escape from the Planet of the Robot Monsters driver module
 // Based on MAME driver by Aaron Giles
 
 #include "tiles_generic.h"

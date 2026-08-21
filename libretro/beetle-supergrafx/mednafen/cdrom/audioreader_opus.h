@@ -1,4 +1,4 @@
-#ifndef __MDFN_AUDIOREADER_OPUS_H
+﻿#ifndef __MDFN_AUDIOREADER_OPUS_H
 #define __MDFN_AUDIOREADER_OPUS_H
 
 #include <opus/opusfile.h>

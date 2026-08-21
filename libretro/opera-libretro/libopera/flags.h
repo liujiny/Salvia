@@ -1,4 +1,4 @@
-#ifndef LIBOPERA_FLAGS_H_INCLUDED
+﻿#ifndef LIBOPERA_FLAGS_H_INCLUDED
 #define LIBOPERA_FLAGS_H_INCLUDED
 
 #define set_flag(V,F) ((V)|=(F))

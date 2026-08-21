@@ -1,4 +1,4 @@
-#include <QtWidgets>
+﻿#include <QtWidgets>
 #include "inputdialog.h"
 #include "ui_inputdialog.h"
 #include "burner.h"

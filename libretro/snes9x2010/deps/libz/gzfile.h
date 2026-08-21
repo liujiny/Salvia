@@ -1,4 +1,4 @@
-
+﻿
 #ifndef _GZFILE_H
 #define _GZFILE_H
 

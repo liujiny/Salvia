@@ -1,4 +1,4 @@
-/*****************************************************************************\
+ï»¿/*****************************************************************************\
      Snes9x - Portable Super Nintendo Entertainment System (TM) emulator.
                 This file is licensed under the Snes9x License.
    For further information, consult the LICENSE file in the root directory.
@@ -1029,7 +1029,7 @@ void CMemory::Deinit (void)
 
 	/*if (ROM_Storage){
 		#ifdef _XBOX
-			XPhysicalFree(ROM_Storage); // Limpiar si uno falló
+			XPhysicalFree(ROM_Storage); // Limpiar si uno fallï¿½
 		#else
 			free(ROM_Storage);
 		#endif
@@ -1037,7 +1037,7 @@ void CMemory::Deinit (void)
 	
 	if (SRAM_Storage){
 		#ifdef _XBOX
-			XPhysicalFree(SRAM_Storage); // Limpiar si uno falló
+			XPhysicalFree(SRAM_Storage); // Limpiar si uno fallï¿½
 		#else
 			free(SRAM_Storage);
 		#endif

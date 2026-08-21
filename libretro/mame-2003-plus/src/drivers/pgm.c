@@ -1,4 +1,4 @@
-/* PGM System (c)1997 IGS
+﻿/* PGM System (c)1997 IGS
 
 Based on Information from ElSemi
 

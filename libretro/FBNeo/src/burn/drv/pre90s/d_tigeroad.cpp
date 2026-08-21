@@ -1,4 +1,4 @@
-// FB Alpha Tiger Road driver module
+﻿// FB Alpha Tiger Road driver module
 // Based on MAME driver by Phil Stroffolino
 
 #include "tiles_generic.h"

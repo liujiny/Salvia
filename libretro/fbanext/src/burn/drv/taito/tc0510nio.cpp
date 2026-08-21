@@ -1,4 +1,4 @@
-// TC0510NIO
+﻿// TC0510NIO
 
 #include "burnint.h"
 #include "taito_ic.h"

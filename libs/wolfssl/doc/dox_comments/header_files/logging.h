@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup Logging
 
     \brief This function registers a logging callback that will be used to

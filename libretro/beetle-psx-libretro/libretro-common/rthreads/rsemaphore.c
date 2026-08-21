@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright 2005 Allen B. Downey
 
     This file contains an example program from The Little Book of

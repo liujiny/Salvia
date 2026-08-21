@@ -1,4 +1,4 @@
-// FBNeo Neo Geo driver module
+﻿// FBNeo Neo Geo driver module
 
 #include "neogeo.h"
 #include "bitswap.h"

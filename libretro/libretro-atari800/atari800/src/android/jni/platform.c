@@ -1,4 +1,4 @@
-/*
+﻿/*
  * platform.c - platform interface implementation for android
  *
  * Copyright (C) 2010 Kostas Nakos

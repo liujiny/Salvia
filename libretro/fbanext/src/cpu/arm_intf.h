@@ -1,4 +1,4 @@
-// use these in arm.cpp
+﻿// use these in arm.cpp
 void Arm_program_write_byte_32le(UINT32 addr, UINT8 data);
 void Arm_program_write_dword_32le(UINT32 addr, UINT32 data);
 UINT8  Arm_program_read_byte_32le(UINT32 addr);

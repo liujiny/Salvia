@@ -1,4 +1,4 @@
-/* MSP430 example main.c
+﻿/* MSP430 example main.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

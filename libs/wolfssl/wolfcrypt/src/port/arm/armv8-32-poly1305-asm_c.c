@@ -1,4 +1,4 @@
-/* armv8-32-poly1305-asm
+﻿/* armv8-32-poly1305-asm
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

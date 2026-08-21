@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_MQTT_H
+﻿#ifndef HEADER_CURL_MQTT_H
 #define HEADER_CURL_MQTT_H
 /***************************************************************************
  *                                  _   _ ____  _

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * perf_timing -- diagnostic per-frame CPU timing + work counters
  *
  * Gated by the r_perf cvar (default 0 = off, zero overhead).

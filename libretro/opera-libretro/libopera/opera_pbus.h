@@ -1,4 +1,4 @@
-#ifndef LIBOPERA_PBUS_H_INCLUDED
+﻿#ifndef LIBOPERA_PBUS_H_INCLUDED
 #define LIBOPERA_PBUS_H_INCLUDED
 
 #include <stdint.h>

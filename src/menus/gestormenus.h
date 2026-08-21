@@ -1,4 +1,4 @@
-#define NOMINMAX
+﻿#define NOMINMAX
 #include <uiobjects/object.h>
 #include <io/cfgloader.h>
 #include <io/joystick.h>

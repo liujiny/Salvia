@@ -1,4 +1,4 @@
-// pgm2_crypt.h - IGS036 (PGM2) ROM decryption
+﻿// pgm2_crypt.h - IGS036 (PGM2) ROM decryption
 // Based on MAME igs036crypt / pgm2.cpp research
 
 #pragma once

@@ -1,4 +1,4 @@
-/*
+﻿/*
     glfont:  An example of using the SDL_ttf library with OpenGL.
     Copyright (C) 1997-2004 Sam Lantinga
 

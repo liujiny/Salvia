@@ -1,4 +1,4 @@
-/*	Namco System NA1/2 Video Hardware */
+﻿/*	Namco System NA1/2 Video Hardware */
 
 #include "vidhrdw/generic.h"
 #include "namcona1.h"

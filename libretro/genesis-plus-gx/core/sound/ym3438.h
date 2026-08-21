@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (C) 2017-2021 Alexey Khokholov (Nuke.YKT)
  *
  * This file is part of Nuked OPN2.

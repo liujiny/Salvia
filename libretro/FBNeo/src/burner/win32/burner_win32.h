@@ -1,4 +1,4 @@
-#ifdef __GNUC__
+﻿#ifdef __GNUC__
 // silence warnings with GCC 4.6.1
 #undef _WIN32_WINDOWS
 #undef _WIN32_IE

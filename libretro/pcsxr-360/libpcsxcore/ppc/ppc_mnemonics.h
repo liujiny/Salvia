@@ -1,4 +1,4 @@
-// ppc_mnemonics.h
+﻿// ppc_mnemonics.h
 
 #define INSTR		(*(ppcPtr)++)
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Converts binary data into a C source file.  The C source file
  * defines a string with the file name of the source of data, and an
  * unsigned character array containing the binary data.

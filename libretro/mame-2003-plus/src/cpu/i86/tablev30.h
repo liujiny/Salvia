@@ -1,4 +1,4 @@
-/* special nec instructions missing*/
+﻿/* special nec instructions missing*/
 /* at the time the same like table186.h*/
 
 static void (*PREFIXV30(_instruction)[256])(void) =

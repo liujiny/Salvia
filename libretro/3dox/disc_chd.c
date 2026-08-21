@@ -1,4 +1,4 @@
-/*
+﻿/*
  * disc_chd.c - .chd reader for the 3dox libretro core.
  *
  * Uses opera-libretro's chd_stream.c (proven on Xbox 360) layered over the

@@ -1,4 +1,4 @@
-// FinalBurn Neo Blood Brothers Modular system driver emulator
+﻿// FinalBurn Neo Blood Brothers Modular system driver emulator
 // Emulation by IQ_132, dink
 
 // Notes:

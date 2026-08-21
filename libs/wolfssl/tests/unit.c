@@ -1,4 +1,4 @@
-/* unit.c API unit tests driver
+﻿/* unit.c API unit tests driver
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

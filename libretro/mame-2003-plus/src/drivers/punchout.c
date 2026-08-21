@@ -1,4 +1,4 @@
-/***************************************************************************
+﻿/***************************************************************************
 
 Punch Out memory map (preliminary)
 Arm Wrestling runs on about the same hardware, but the video board is different.

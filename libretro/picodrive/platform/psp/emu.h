@@ -1,4 +1,4 @@
-
+﻿
 extern int engineStateSuspend;
 
 void emu_handle_resume(void);

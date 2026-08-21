@@ -1,4 +1,4 @@
-#include "ShortcutsPanel.hpp"
+﻿#include "ShortcutsPanel.hpp"
 #include "EmuConfig.hpp"
 
 ShortcutsPanel::ShortcutsPanel(EmuApplication *app_)

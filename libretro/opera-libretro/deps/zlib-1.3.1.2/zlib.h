@@ -1,4 +1,4 @@
-/* zlib.h -- interface of the 'zlib' general purpose compression library
+﻿/* zlib.h -- interface of the 'zlib' general purpose compression library
   version 1.3.1.2, December 8th, 2025
 
   Copyright (C) 1995-2025 Jean-loup Gailly and Mark Adler

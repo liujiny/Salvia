@@ -1,4 +1,4 @@
-/*****************************************************************************/
+﻿/*****************************************************************************/
 /*                                                                           */
 /* Module:  TIA Chip Sound Simulator                                         */
 /* Purpose: To emulate the sound generation hardware of the Atari TIA chip.  */

@@ -1,4 +1,4 @@
-#include "shaders_common.h"
+﻿#include "shaders_common.h"
 
 static const char *image_load_fragment = GLSL_FRAGMENT(
       uniform sampler2D fb_texture;

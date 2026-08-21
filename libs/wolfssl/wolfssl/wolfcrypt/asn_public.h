@@ -1,4 +1,4 @@
-/* asn_public.h
+﻿/* asn_public.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

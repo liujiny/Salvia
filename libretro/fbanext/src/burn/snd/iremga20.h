@@ -1,4 +1,4 @@
-void iremga20_write(INT32 device, INT32 offset, INT32 data);
+﻿void iremga20_write(INT32 device, INT32 offset, INT32 data);
 UINT8 iremga20_read(INT32 device, INT32 offset);
 
 void iremga20_reset(INT32 device);

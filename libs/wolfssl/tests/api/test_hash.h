@@ -1,4 +1,4 @@
-/* test_hash.h
+﻿/* test_hash.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

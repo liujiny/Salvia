@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "ui_SoundPanel.h"
 #include "EmuApplication.hpp"
 #include <QMenu>

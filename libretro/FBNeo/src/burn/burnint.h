@@ -1,4 +1,4 @@
-#ifndef _BURNINT_H
+﻿#ifndef _BURNINT_H
 #define _BURNINT_H
 
 // Burn - Arcade emulator library - internal code

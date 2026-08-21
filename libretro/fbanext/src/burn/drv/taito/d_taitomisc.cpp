@@ -1,4 +1,4 @@
-// PC080SN & PC090OJ based games
+﻿// PC080SN & PC090OJ based games
 
 #include "tiles_generic.h"
 #include "m68000_intf.h"

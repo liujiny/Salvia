@@ -1,4 +1,4 @@
-// FB Alpha China Gate driver module
+﻿// FB Alpha China Gate driver module
 // Based on MAME driver by Paul Hampson
 
 #include "tiles_generic.h"

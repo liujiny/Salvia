@@ -1,4 +1,4 @@
-/* sp_sm2_x86_64.c
+﻿/* sp_sm2_x86_64.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

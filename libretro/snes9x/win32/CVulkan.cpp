@@ -1,4 +1,4 @@
-#include "CVulkan.h"
+﻿#include "CVulkan.h"
 #include "snes9x.h"
 #include <win32_display.h>
 #include <gfx.h>

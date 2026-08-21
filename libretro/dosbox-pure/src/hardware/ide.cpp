@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  IDE ATA/ATAPI and controller emulation for DOSBox-X
  *  Copyright (C) 2012-2022 Jonathan Campbell
  *

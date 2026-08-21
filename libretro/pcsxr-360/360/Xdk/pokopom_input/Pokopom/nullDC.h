@@ -1,4 +1,4 @@
-/*  Pokopom - Input Plugin for PSX/PS2 Emulators (now nullDC too)
+﻿/*  Pokopom - Input Plugin for PSX/PS2 Emulators (now nullDC too)
  *  - 2012  KrossX
  *	
  *	Content of this file is based on code from 

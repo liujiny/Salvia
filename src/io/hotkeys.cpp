@@ -1,4 +1,4 @@
-#include "hotkeys.h"
+ï»¿#include "hotkeys.h"
 #include <const/constant.h>
 #include <iostream>
 
@@ -34,18 +34,18 @@ HOTKEYS_LIST Hotkeys::procesarHotkeys(t_joy_state *inputs) {
     static Uint32 lastHotKey = 0;
 
 	int sdlBtnModif = inputs->mapperHotkeys.getSdlBtn(0, HK_MODIFIER);
-    // 1. "Early Exit": Si no hay modificador o estamos en cooldown, salimos rápido.
+    // 1. "Early Exit": Si no hay modificador o estamos en cooldown, salimos rï¿½pido.
     if (sdlBtnModif == -1 || !inputs->getSdlBtn(0, sdlBtnModif) || (now - lastHotKey < 300)) {
         return HK_MAX;
     }
 
     // 2. Buscamos el Hotkey
     for (size_t i = 1; i < HK_MAX; i++) {
-        // Obtenemos índices una sola vez
+        // Obtenemos ï¿½ndices una sola vez
         int sdlBtn = inputs->mapperHotkeys.getSdlBtn(0, i);
         int sdlHat = inputs->mapperHotkeys.getSdlHat(0, i);
 
-        // Comprobamos Botón
+        // Comprobamos Botï¿½n
         if (sdlBtn > -1 && inputs->getSdlBtn(0, sdlBtn)) {
             inputs->btn_state[0][sdlBtn] = false; // Consumir evento
             lastHotKey = now;
@@ -54,7 +54,7 @@ HOTKEYS_LIST Hotkeys::procesarHotkeys(t_joy_state *inputs) {
 
         // Comprobamos Hat
         if (sdlHat > -1 && inputs->getSdlHat(0, sdlHat)) {
-            inputs->hats_state[0][sdlHat] = false; // Consumir evento (Corregido índice sdlHat)
+            inputs->hats_state[0][sdlHat] = false; // Consumir evento (Corregido ï¿½ndice sdlHat)
             lastHotKey = now;
             return static_cast<HOTKEYS_LIST>(i);
         }

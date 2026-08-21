@@ -1,4 +1,4 @@
-#include "rc_api_runtime.h"
+﻿#include "rc_api_runtime.h"
 
 #include "rc_error.h"
 #include "rc_runtime_types.h"

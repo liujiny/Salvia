@@ -1,4 +1,4 @@
-#include "menuassetloader.h"
+ï»¿#include "menuassetloader.h"
 #include "gamemenu.h"
 
 #include <SDL_Image.h>
@@ -256,10 +256,10 @@ void MenuAssetLoader::run()
 
             #undef MAL_CANCELLED
 
-            // Si el usuario cambió de juego en el último milisegundo, repetimos para verificar
+            // Si el usuario cambiï¿½ de juego en el ï¿½ltimo milisegundo, repetimos para verificar
             if (m_seqSubmitted != mySeq) continue;
             
-            // Todo se cargó con éxito para este juego, salimos del bucle interno
+            // Todo se cargï¿½ con ï¿½xito para este juego, salimos del bucle interno
             break; 
         }
     }

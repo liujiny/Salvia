@@ -1,4 +1,4 @@
-/*
+﻿/*
  * MP3 decoding support using libmpg123, loosely based on an SDL_mixer
  * See: http://bubu.lv/changeset/4/public/libs/SDL/generated/SDL_mixer
  *

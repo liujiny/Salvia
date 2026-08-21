@@ -1,4 +1,4 @@
-/* module_hooks.c -- module load/unload hooks for libwolfssl.ko
+﻿/* module_hooks.c -- module load/unload hooks for libwolfssl.ko
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

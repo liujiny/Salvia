@@ -1,4 +1,4 @@
-// Based on MAME sources by Hiromitsu Shioya, Olivier Galibert
+﻿// Based on MAME sources by Hiromitsu Shioya, Olivier Galibert
 /*********************************************************/
 /*    SEGA 16ch 8bit PCM                                 */
 /*********************************************************/

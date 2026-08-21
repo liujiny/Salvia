@@ -1,4 +1,4 @@
-#define CPUTAG_T5182 "T5182"
+﻿#define CPUTAG_T5182 "T5182"
 
 MACHINE_DRIVER_EXTERN( t5182_audio );
 

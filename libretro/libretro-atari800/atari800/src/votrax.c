@@ -1,4 +1,4 @@
-/* License note by perry_m:
+﻿/* License note by perry_m:
 Permission has been granted by the authors Mike Coates and Tom Haukap
 to distribute this file under the terms of the GNU GPL license of Atari800.
 The original version written by Mike Coates is from MAME.

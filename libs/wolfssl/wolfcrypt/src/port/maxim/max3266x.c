@@ -1,4 +1,4 @@
-/* max3266x.c
+﻿/* max3266x.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

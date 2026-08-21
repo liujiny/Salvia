@@ -1,4 +1,4 @@
-/* File: report_openssl_version.c
+﻿/* File: report_openssl_version.c
  *
  * This file dynamically loads the OpenSSL shared image to report the
  * version string.

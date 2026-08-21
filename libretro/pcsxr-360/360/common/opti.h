@@ -1,4 +1,4 @@
-#include <xtl.h>
+﻿#include <xtl.h>
 
 #if 1
 #define memcpy XMemCpy

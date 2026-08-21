@@ -1,4 +1,4 @@
-#ifndef PICO_PORT_INCLUDED
+﻿#ifndef PICO_PORT_INCLUDED
 #define PICO_PORT_INCLUDED
 
 // provide size_t, uintptr_t

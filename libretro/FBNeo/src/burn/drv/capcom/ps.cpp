@@ -1,4 +1,4 @@
-// PSound (CPS1 sound)
+﻿// PSound (CPS1 sound)
 #include "cps.h"
 #include "driver.h"
 extern "C" {

@@ -1,4 +1,4 @@
-// A module to track if various support devices, cpus, sound modules are in use
+﻿// A module to track if various support devices, cpus, sound modules are in use
 
 #include "burnint.h"
 

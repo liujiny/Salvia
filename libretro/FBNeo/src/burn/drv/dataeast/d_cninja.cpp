@@ -1,4 +1,4 @@
-// FB Neo Caveman Ninja driver module
+﻿// FB Neo Caveman Ninja driver module
 // Based on MAME driver by Bryan McPhail
 
 #include "tiles_generic.h"

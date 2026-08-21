@@ -1,4 +1,4 @@
-#ifndef RC_HASH_H
+﻿#ifndef RC_HASH_H
 #define RC_HASH_H
 
 #include <stddef.h>

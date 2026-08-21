@@ -1,4 +1,4 @@
-// FBNeo sound-streams & re-sampler, dink sept. 2021
+﻿// FBNeo sound-streams & re-sampler, dink sept. 2021
 
 // usage?
 // -- examples by code / good working examples --

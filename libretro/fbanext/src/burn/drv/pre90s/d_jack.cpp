@@ -1,4 +1,4 @@
-// FB Alpha Jack the Giantkiller driver module
+﻿// FB Alpha Jack the Giantkiller driver module
 // Based on MAME driver by Brad Oliver
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-#ifdef HAVE_YM3438_CORE
+﻿#ifdef HAVE_YM3438_CORE
 /*
  * Copyright (C) 2017-2022 Alexey Khokholov (Nuke.YKT)
  *

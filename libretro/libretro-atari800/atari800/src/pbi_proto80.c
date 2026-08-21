@@ -1,4 +1,4 @@
-/*
+﻿/*
  * pbi_proto.c - Emulation of a prototype 80 column board for the
  * Atari 1090 expansion interface.
  *

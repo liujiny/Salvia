@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "burn_gun.h"
 #include <math.h>
 

@@ -1,4 +1,4 @@
-/* HuffEnc.c -- functions for Huffman encoding
+﻿/* HuffEnc.c -- functions for Huffman encoding
 Igor Pavlov : Public domain */
 
 #include "Precomp.h"

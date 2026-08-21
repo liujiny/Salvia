@@ -1,4 +1,4 @@
-/* Lzma86.h -- LZMA + x86 (BCJ) Filter
+﻿/* Lzma86.h -- LZMA + x86 (BCJ) Filter
 2023-03-03 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_LZMA86_H

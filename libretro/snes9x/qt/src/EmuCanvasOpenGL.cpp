@@ -1,4 +1,4 @@
-#include "EmuCanvasOpenGL.hpp"
+﻿#include "EmuCanvasOpenGL.hpp"
 #include <QtGui/QGuiApplication>
 #include <qpa/qplatformnativeinterface.h>
 #include <QTimer>

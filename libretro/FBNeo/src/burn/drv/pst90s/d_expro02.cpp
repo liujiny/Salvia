@@ -1,4 +1,4 @@
-// FinalBurn Neo Kaneko EXPRO-02 & clone hardware driver module
+﻿// FinalBurn Neo Kaneko EXPRO-02 & clone hardware driver module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

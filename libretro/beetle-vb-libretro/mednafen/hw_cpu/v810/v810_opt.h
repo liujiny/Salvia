@@ -1,4 +1,4 @@
-/*
+﻿/*
  * File:  v810_opt.h
  * 
  * Description:  Defines used in v810_dis.cpp

@@ -1,4 +1,4 @@
-/* wifi_connect.h
+﻿/* wifi_connect.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

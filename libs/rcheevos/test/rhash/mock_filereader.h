@@ -1,4 +1,4 @@
-#ifndef RHASH_MOCK_FILEREADER_H
+﻿#ifndef RHASH_MOCK_FILEREADER_H
 #define RHASH_MOCK_FILEREADER_H
 
 #include "rc_export.h"

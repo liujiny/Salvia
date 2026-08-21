@@ -1,4 +1,4 @@
-#include "rescap.h"
+﻿#include "rescap.h"
 
 #define FLT_RC_LOWPASS		0
 #define FLT_RC_HIGHPASS		1

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * pbi.c - Parallel bus emulation
  *
  * Copyright (C) 2002 Jason Duerstock <jason@cluephone.com>

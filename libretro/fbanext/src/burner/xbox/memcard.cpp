@@ -1,4 +1,4 @@
-// Memory card support module
+﻿// Memory card support module
 
 #include "burner.h"
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
 DJ Boy (c)1989 Kanako
 
 Hardware has many similarities to Airbusters.

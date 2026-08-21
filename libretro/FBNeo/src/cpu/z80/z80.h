@@ -1,4 +1,4 @@
-#ifndef _Z80_H_
+﻿#ifndef _Z80_H_
 #define _Z80_H_
 
 #define	CPUINFO_PTR_CPU_SPECIFIC	0x18000

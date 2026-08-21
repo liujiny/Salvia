@@ -1,4 +1,4 @@
-// FinalBurn Neo Taito Land Sea Air Squad / Storming Party driver module
+﻿// FinalBurn Neo Taito Land Sea Air Squad / Storming Party driver module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

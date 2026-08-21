@@ -1,4 +1,4 @@
-/* wolfssl-component include/user_settings.h
+﻿/* wolfssl-component include/user_settings.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

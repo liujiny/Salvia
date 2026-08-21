@@ -1,4 +1,4 @@
-#include <cstdint>
+﻿#include <cstdint>
 
 void S9xForceHires(void *buffer, int pitch, int &width, int &height)
 {

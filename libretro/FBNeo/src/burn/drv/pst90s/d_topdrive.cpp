@@ -1,4 +1,4 @@
-// FinalBurn Neo Proyesel Top Driving driver module
+﻿// FinalBurn Neo Proyesel Top Driving driver module
 // Based on MAME driver by David Haywood
 
 #include "tiles_generic.h"

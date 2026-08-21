@@ -1,4 +1,4 @@
-/*
+﻿/*
  * modified partly for xbox360 dynarec use by cory1492 for sasuke2911
  * "buffer ram" instead of "video ram"
  * a static buffer is allocated in the binary instead of alloc outside binary

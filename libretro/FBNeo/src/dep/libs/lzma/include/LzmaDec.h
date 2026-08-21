@@ -1,4 +1,4 @@
-/* Namespace some symbols to avoid linker errors in static libretro builds. */
+﻿/* Namespace some symbols to avoid linker errors in static libretro builds. */
 #define LzmaDec_InitDicAndState CHDR_LzmaDec_InitDicAndState
 #define LzmaDec_Init CHDR_LzmaDec_Init
 #define LzmaDec_DecodeToDic CHDR_LzmaDec_DecodeToDic

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * colours_pal.c - Atari PAL colour palette generation and adjustment
  *
  * Copyright (C) 2009-2014 Atari800 development team (see DOC/CREDITS)

@@ -1,4 +1,4 @@
-/* wolfssl_demo.h
+﻿/* wolfssl_demo.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

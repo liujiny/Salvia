@@ -1,4 +1,4 @@
-typedef UINT8 (*PPIPortRead)();
+﻿typedef UINT8 (*PPIPortRead)();
 typedef void (*PPIPortWrite)(UINT8 data);
 
 void ppi8255_init(INT32 num);

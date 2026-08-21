@@ -1,4 +1,4 @@
-/*
+﻿/*
    Run and Gun
    (c) 1993 Konami
 

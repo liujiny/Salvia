@@ -1,4 +1,4 @@
-/*
+ï»¿/*
     SDL - Simple DirectMedia Layer
     Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002  Sam Lantinga
 
@@ -33,7 +33,7 @@ static char rcsid =
 #define DEFAULT_CHOTX	0
 #define DEFAULT_CHOTY	0
 
-/* Added a real MacOS cursor, at the request of Luc-Olivier de Charrière */
+/* Added a real MacOS cursor, at the request of Luc-Olivier de Charriï¿½re */
 #define USE_MACOS_CURSOR
 
 #ifdef USE_MACOS_CURSOR

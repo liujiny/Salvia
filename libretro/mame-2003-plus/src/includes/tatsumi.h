@@ -1,4 +1,4 @@
-/* drivers/tatsumi.c */
+﻿/* drivers/tatsumi.c */
 extern data8_t* tatsumi_rom_sprite_lookup1;
 extern data8_t* tatsumi_rom_sprite_lookup2;
 extern data8_t* tatsumi_rom_clut0;

@@ -1,4 +1,4 @@
-// FinalBurn Neo Atari Missile Command driver module
+﻿// FinalBurn Neo Atari Missile Command driver module
 // Based on MAME driver by Aaron Giles
 
 #include "tiles_generic.h"

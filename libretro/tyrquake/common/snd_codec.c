@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Audio Codecs: Adapted from ioquake3 with changes.
  * For now, only handles streaming music, not sound effects.
  *

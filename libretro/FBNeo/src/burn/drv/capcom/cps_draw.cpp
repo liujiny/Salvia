@@ -1,4 +1,4 @@
-#include "cps.h"
+ï»¿#include "cps.h"
 // CPS - Draw
 
 UINT8 CpsRecalcPal = 0;			// Flag - If it is 1, recalc the whole palette
@@ -336,7 +336,7 @@ static void Cps2Layers()
 		if (LayerCont & CpsLayEn[3]) nDrawMask[nSlice] |= 8;
 		nDrawMask[nSlice] &= nBurnLayer;					// User choice of layers to display
 
-		// Determine layerö priority:
+		// Determine layerï¿½ priority:
 		Draw[nSlice][3] = (LayerCont >> 12) & 3;			// top layer
 		Draw[nSlice][2] = (LayerCont >> 10) & 3;
 		Draw[nSlice][1] = (LayerCont >> 8) & 3;

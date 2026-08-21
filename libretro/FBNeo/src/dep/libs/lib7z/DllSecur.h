@@ -1,4 +1,4 @@
-/* DllSecur.h -- DLL loading for security
+﻿/* DllSecur.h -- DLL loading for security
 2023-03-03 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_DLL_SECUR_H

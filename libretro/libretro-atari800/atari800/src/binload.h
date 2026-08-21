@@ -1,4 +1,4 @@
-#ifndef BINLOAD_H_
+﻿#ifndef BINLOAD_H_
 #define BINLOAD_H_
 
 #include <stdio.h> /* FILE */

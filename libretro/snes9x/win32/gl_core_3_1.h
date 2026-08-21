@@ -1,4 +1,4 @@
-#ifndef POINTER_C_GENERATED_HEADER_OPENGL_H
+﻿#ifndef POINTER_C_GENERATED_HEADER_OPENGL_H
 #define POINTER_C_GENERATED_HEADER_OPENGL_H
 
 #if defined(__glew_h__) || defined(__GLEW_H__)

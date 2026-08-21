@@ -1,4 +1,4 @@
-#ifndef _WINX68K_SRAM_H
+﻿#ifndef _WINX68K_SRAM_H
 #define _WINX68K_SRAM_H
 
 #include "common.h"

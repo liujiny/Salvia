@@ -1,4 +1,4 @@
-/* Mednafen - Multi-system Emulator
+﻿/* Mednafen - Multi-system Emulator
  *
  *  Subchannel Q CRC Code:  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
  *

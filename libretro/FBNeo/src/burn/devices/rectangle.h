@@ -1,4 +1,4 @@
-// some compilers are idiots so let's avoid having different struct for this
+﻿// some compilers are idiots so let's avoid having different struct for this
 
 struct rectangle
 {

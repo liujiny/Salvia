@@ -1,4 +1,4 @@
-extern UINT8* NamcoSoundProm;
+﻿extern UINT8* NamcoSoundProm;
 void NamcoSoundUpdate(INT16* pSoundBuf, INT32 Length);
 void NamcoSoundWrite(UINT32 offset, UINT8 data);
 void NamcoSoundInit(INT32 clock, INT32 num_voices, INT32 bAdd);

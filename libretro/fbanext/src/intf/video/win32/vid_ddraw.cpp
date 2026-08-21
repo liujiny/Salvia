@@ -1,4 +1,4 @@
-// DirectDraw blitter
+﻿// DirectDraw blitter
 
 #include "burner.h"
 

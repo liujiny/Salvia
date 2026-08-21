@@ -1,4 +1,4 @@
-// Sotfware effects
+﻿// Sotfware effects
 
 #ifdef BUILD_WIN32
  #define SOFTFX_ENABLE_DIRECTX

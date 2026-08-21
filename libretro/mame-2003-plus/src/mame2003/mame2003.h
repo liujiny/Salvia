@@ -1,4 +1,4 @@
-#ifndef MAME2003_H
+﻿#ifndef MAME2003_H
 #define MAME2003_H
 
 #include <stdio.h>

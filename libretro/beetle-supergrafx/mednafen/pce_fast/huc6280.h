@@ -1,4 +1,4 @@
-#ifndef _HuC6280H
+﻿#ifndef _HuC6280H
 
 #define HUC6280_CRAZY_VERSION
 //#define HUC6280_EXTRA_CRAZY

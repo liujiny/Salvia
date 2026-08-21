@@ -1,4 +1,4 @@
-#ifndef ASM_UNALIGNED_H
+﻿#ifndef ASM_UNALIGNED_H
 #define ASM_UNALIGNED_H
 
 #include <assert.h>

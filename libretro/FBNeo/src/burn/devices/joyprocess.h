@@ -1,4 +1,4 @@
-#ifndef JOYPROCESS
+﻿#ifndef JOYPROCESS
 #define JOYPROCESS
 
 // ---[ ProcessJoystick() Flags (grep ProcessJoystick in drv/pre90s for examples)

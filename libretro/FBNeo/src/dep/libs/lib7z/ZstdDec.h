@@ -1,4 +1,4 @@
-/* ZstdDec.h -- Zstd Decoder interfaces
+﻿/* ZstdDec.h -- Zstd Decoder interfaces
 2024-01-21 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_ZSTD_DEC_H

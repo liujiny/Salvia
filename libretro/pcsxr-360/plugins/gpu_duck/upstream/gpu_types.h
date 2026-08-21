@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "common/bitfield.h"
 #include "common/rectangle.h"
 #include "types.h"

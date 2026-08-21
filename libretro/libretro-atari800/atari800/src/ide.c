@@ -1,4 +1,4 @@
-/*
+﻿/*
  * ide.c - Emulate IDE interface
  *
  * Copyright (C) 2010 Ivo van Poorten

@@ -115,7 +115,7 @@ struct retro_core_option_v2_definition option_defs_tr[] = {
    {
       "snes9x_2010_overclock_cycles",
       "Yavaşlamayı Azalt (Hack, Güvensiz)",
-      "Yavaslamayi Azalt (G�vensiz)",
+      "Yavaslamayi Azalt (G�vensiz)",
       "SNES İşlemcisi için hız aşırtmadır. Oyunların çökmesine neden olabilir! Daha kısa yükleme süreleri için 'Hafif'i, yavaşlama gösteren oyunların çoğunda' Uyumlu 've yalnızca kesinlikle gerekliyse' Maks 'kullanın (Gradius 3, Süper R tipi ...).",
       NULL,
       NULL,

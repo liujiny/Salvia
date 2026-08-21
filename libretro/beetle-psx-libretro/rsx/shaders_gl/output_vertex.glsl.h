@@ -1,4 +1,4 @@
-#include "shaders_common.h"
+﻿#include "shaders_common.h"
 
 static const char *output_vertex = GLSL_VERTEX(
    // Vertex shader for rendering GPU draw commands in the framebuffer

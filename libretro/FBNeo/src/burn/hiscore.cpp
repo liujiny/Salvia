@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 //#include "hiscore.h"
 
 // A hiscore.dat support module for FB Neo - written by Barry Manilow, Feb 2009

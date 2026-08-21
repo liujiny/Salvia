@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup SHA
 
     \brief This function initializes SHA512. This is automatically called

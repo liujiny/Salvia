@@ -1,4 +1,4 @@
-/* Sha3.c -- SHA-3 Hash
+﻿/* Sha3.c -- SHA-3 Hash
 : Igor Pavlov : Public domain
 This code is based on public domain code from Wei Dai's Crypto++ library. */
 

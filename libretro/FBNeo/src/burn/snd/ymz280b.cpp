@@ -1,4 +1,4 @@
-// Yamaha YMZ280B module
+﻿// Yamaha YMZ280B module
 // Emulation by Jan Klaassen
 
 #include <math.h>

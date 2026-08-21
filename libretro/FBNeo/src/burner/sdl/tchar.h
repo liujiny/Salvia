@@ -1,4 +1,4 @@
-#include <stdint.h>
+﻿#include <stdint.h>
 #ifdef _UNICODE
 //TODO: bah
 #include <wchar.h>

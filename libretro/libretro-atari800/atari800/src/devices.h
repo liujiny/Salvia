@@ -1,4 +1,4 @@
-#ifndef DEVICES_H_
+﻿#ifndef DEVICES_H_
 #define DEVICES_H_
 
 #include <stdio.h> /* FILENAME_MAX */

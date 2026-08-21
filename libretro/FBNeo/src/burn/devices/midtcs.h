@@ -1,4 +1,4 @@
-void tcs_data_write(UINT16 data);
+﻿void tcs_data_write(UINT16 data);
 UINT8 tcs_status_read();
 void tcs_reset_write(int state);
 

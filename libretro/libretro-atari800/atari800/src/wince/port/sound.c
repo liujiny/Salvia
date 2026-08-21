@@ -1,4 +1,4 @@
-/*
+﻿/*
  * sound.c - WinCE port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel

@@ -1,4 +1,4 @@
-// FB Neo Lady Frog driver module
+﻿// FB Neo Lady Frog driver module
 // Based on MAME driver by Tomasz Slanina
 
 #include "tiles_generic.h"

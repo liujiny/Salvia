@@ -1,4 +1,4 @@
-#include "data.h"
+﻿#include "data.h"
 
 #include "../src/rc_compat.h"
 

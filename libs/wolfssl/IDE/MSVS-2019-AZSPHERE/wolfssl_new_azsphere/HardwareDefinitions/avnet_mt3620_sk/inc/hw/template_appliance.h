@@ -1,4 +1,4 @@
-/* template_appliance.h
+﻿/* template_appliance.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

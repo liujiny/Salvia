@@ -1,4 +1,4 @@
-/* opensslconf.h for openSSL */
+﻿/* opensslconf.h for openSSL */
 
 
 #ifndef OPENSSL_THREADS

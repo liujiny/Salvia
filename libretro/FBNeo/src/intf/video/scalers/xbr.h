@@ -1,4 +1,4 @@
-#ifndef _XBR_H
+﻿#ifndef _XBR_H
 #define _XBR_H
 
 // 16bit

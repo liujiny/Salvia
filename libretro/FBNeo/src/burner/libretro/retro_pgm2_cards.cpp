@@ -1,4 +1,4 @@
-// PGM2 Memory card selection for libretro: scan 'g_save_dir'/fbneo/pgm2_memcards/<drv>_pN_*.pg2|.bin
+﻿// PGM2 Memory card selection for libretro: scan 'g_save_dir'/fbneo/pgm2_memcards/<drv>_pN_*.pg2|.bin
 
 #ifndef NO_PGM2
 

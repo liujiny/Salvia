@@ -1,4 +1,4 @@
-/* Diver Boy - Video Hardware */
+﻿/* Diver Boy - Video Hardware */
 
 #include "driver.h"
 

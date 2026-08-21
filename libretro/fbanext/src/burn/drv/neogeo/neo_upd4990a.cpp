@@ -1,4 +1,4 @@
-// NEC uPD4990A module (real-time clock/calendar)
+﻿// NEC uPD4990A module (real-time clock/calendar)
 
 #include "neogeo.h"
 

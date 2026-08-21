@@ -1,4 +1,4 @@
-/*
+﻿/*
  * libretro_core.cpp - Libretro core implementation for PCSXR-360
  *
  * Execution model (libretro-native):

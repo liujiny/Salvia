@@ -1,4 +1,4 @@
-/*
+﻿/*
    GI SP0256 Narrator Speech Processor
    GI SPB640 Speech Buffer
 

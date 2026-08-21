@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2003,2008 NONAKA Kimihiro
  * All rights reserved.
  *

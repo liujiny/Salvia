@@ -1,4 +1,4 @@
-/* async-tls.c
+﻿/* async-tls.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

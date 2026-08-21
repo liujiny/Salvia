@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  VIC.cpp - 6569R5 emulation (line based)
  *
  *  Frodo Copyright (C) Christian Bauer

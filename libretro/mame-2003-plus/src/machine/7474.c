@@ -1,4 +1,4 @@
-/*****************************************************************************
+﻿/*****************************************************************************
 
   7474 positive-edge-triggered D-type flip-flop with preset, clear and
        complementary outputs.  There are 2 flip-flops per chips

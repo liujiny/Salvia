@@ -1,4 +1,4 @@
-/* wolfcrypt/test/test.h
+﻿/* wolfcrypt/test/test.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 #include "sdl2_gui_common.h"
 
 int color_result = 0;

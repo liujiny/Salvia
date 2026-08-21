@@ -1,4 +1,4 @@
-#include "opera_state.h"
+﻿#include "opera_state.h"
 
 #include "opera_log.h"
 

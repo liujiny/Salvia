@@ -1,4 +1,4 @@
-#ifndef M68KOPS__HEADER
+﻿#ifndef M68KOPS__HEADER
 #define M68KOPS__HEADER
 
 /* ======================================================================== */

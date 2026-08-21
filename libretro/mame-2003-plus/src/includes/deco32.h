@@ -1,4 +1,4 @@
-#ifndef DECO32_H
+﻿#ifndef DECO32_H
 #define DECO32_H
 
 VIDEO_START( captaven );

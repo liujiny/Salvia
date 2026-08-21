@@ -1,4 +1,4 @@
-/*
+﻿/*
  * libatari800/video.c - Atari800 as a library - video display
  *
  * Copyright (c) 2001-2002 Jacek Poplawski

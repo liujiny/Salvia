@@ -1,4 +1,4 @@
-#ifndef NAMCOIO_H
+﻿#ifndef NAMCOIO_H
 #define NAMCOIO_H
 
 enum

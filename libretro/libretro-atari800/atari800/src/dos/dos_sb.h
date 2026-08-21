@@ -1,4 +1,4 @@
-#ifndef DOS_SB_H_
+﻿#ifndef DOS_SB_H_
 #define DOS_SB_H_
 
 typedef void (*sbmix_t)(void *buffer, unsigned int size);

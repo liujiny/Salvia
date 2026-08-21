@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  ======== main.c ========
  *  Entry point to wolfcrypt Test Application
  */

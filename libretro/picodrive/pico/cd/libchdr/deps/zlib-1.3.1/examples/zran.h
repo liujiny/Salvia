@@ -1,4 +1,4 @@
-/* zran.h -- example of deflated stream indexing and random access
+﻿/* zran.h -- example of deflated stream indexing and random access
  * Copyright (C) 2005, 2012, 2018, 2023 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  * Version 1.3  18 Feb 2023  Mark Adler */

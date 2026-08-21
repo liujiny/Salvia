@@ -1,4 +1,4 @@
-// FB Alpha Asuka & Asuka driver module
+﻿// FB Alpha Asuka & Asuka driver module
 // Based on MAME driver by David Graves, Brian Troha, and 
 
 #include "tiles_generic.h"

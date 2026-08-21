@@ -1,4 +1,4 @@
-/*** t11: Portable DEC T-11 emulator ******************************************
+﻿/*** t11: Portable DEC T-11 emulator ******************************************
 
 	Copyright (C) Aaron Giles 1998
 

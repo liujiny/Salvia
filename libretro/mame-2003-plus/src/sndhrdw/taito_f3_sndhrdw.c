@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 
 static int counter,vector_reg,imr_status;
 static data16_t es5510_dsp_ram[0x200];

@@ -1,4 +1,4 @@
-// Neo Geo -- misc. support functions
+﻿// Neo Geo -- misc. support functions
 
 #include "neogeo.h"
 #include "bitswap.h"

@@ -1,4 +1,4 @@
-/* Ogg/Opus streaming music support. */
+﻿/* Ogg/Opus streaming music support. */
 
 #if !defined(_SND_OPUS_H_)
 #define _SND_OPUS_H_ 1

@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_SOCKETPAIR_H
+﻿#ifndef HEADER_CURL_SOCKETPAIR_H
 #define HEADER_CURL_SOCKETPAIR_H
 /***************************************************************************
  *                                  _   _ ____  _

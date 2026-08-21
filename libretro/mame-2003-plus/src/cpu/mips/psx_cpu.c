@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Sony CXD8530AQ/CXD8530BQ/CXD8530CQ/CXD8661R
  *
  * PSX CPU emulator for the MAME project written by smf

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * libatari800/api.c - Atari800 as a library - application programming interface
  *
  * Copyright (c) 2001-2002 Jacek Poplawski

@@ -1,4 +1,4 @@
-#ifndef __VB_VIP_H
+﻿#ifndef __VB_VIP_H
 #define __VB_VIP_H
 
 #include "../git.h"

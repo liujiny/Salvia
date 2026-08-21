@@ -1,4 +1,4 @@
-#include "burner.h"
+﻿#include "burner.h"
 
 /* todo implement barcade joystick(arcade panel support)  and ipac keyboad device mapping
 */

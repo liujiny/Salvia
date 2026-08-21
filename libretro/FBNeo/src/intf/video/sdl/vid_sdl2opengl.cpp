@@ -1,4 +1,4 @@
-// OpenGL via SDL2
+﻿// OpenGL via SDL2
 #include "burner.h"
 #include "vid_support.h"
 #include "vid_softfx.h"

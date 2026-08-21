@@ -1,4 +1,4 @@
-#ifndef __WSWAN_H
+﻿#ifndef __WSWAN_H
 #define __WSWAN_H
 
 #include "../mednafen-types.h"

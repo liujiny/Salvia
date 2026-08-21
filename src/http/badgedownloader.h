@@ -1,4 +1,4 @@
-#include <deque>
+ï»¿#include <deque>
 #include <string>
 
 #ifdef _XBOX
@@ -36,7 +36,7 @@ private:
         SDL_DestroyMutex(mutex);
     }
     
-    // El prototipo de función para CreateThread debe ser DWORD WINAPI
+    // El prototipo de funciï¿½n para CreateThread debe ser DWORD WINAPI
     static DWORD WINAPI thread_func(LPVOID data);
     
     HANDLE hThread;

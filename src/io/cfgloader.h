@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "beans/structures.h"
 #include "const/cfgconst.h"

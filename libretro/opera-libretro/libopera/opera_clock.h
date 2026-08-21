@@ -1,4 +1,4 @@
-#ifndef LIBOPERA_CLOCK_H_INCLUDED
+﻿#ifndef LIBOPERA_CLOCK_H_INCLUDED
 #define LIBOPERA_CLOCK_H_INCLUDED
 
 #include "extern_c.h"

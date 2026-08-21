@@ -1,4 +1,4 @@
-/* Photoy2k sprite offset "decryption"*/
+﻿/* Photoy2k sprite offset "decryption"*/
 /**/
 /* ASIC28 gets a sprite number and an encrypted sprite offset and returns*/
 /* a decrypted sprite offset.  Only bits 1, 3, 8 and 13 (0x210a) change.*/

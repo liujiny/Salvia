@@ -1,4 +1,4 @@
-#ifndef __TLCS900_H__
+﻿#ifndef __TLCS900_H__
 #define __TLCS900_H__
 
 enum tlcs900_inputs

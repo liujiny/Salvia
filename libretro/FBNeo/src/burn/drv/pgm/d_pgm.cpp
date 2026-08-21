@@ -1,4 +1,4 @@
-// FinalBurn Neo IGS PolyGame Master driver module
+﻿// FinalBurn Neo IGS PolyGame Master driver module
 // Original FB Neo port by OopsWare
 // Based on information from ElSemi, Haze (David Haywood), and XingXing
 

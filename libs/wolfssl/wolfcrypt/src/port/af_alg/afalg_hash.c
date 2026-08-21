@@ -1,4 +1,4 @@
-/* afalg_hash.c
+﻿/* afalg_hash.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

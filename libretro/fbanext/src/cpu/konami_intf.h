@@ -1,4 +1,4 @@
-// konami.cpp
+﻿// konami.cpp
 void konami_set_irq_line(INT32 irqline, INT32 state);
 void konami_init(INT32 (*irqcallback)(INT32));
 

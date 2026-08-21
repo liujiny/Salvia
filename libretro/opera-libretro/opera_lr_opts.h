@@ -1,4 +1,4 @@
-#ifndef OPERA_LR_OPTS_H_INCLUDED
+﻿#ifndef OPERA_LR_OPTS_H_INCLUDED
 #define OPERA_LR_OPTS_H_INCLUDED
 
 #include "libopera/opera_bios.h"

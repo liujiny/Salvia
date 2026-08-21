@@ -1,4 +1,4 @@
-#ifndef DS2404_H
+﻿#ifndef DS2404_H
 #define DS2404_H
 
 void ds2404Init(UINT8 *defaultNVRAM, int ref_year, int ref_month, int ref_day);

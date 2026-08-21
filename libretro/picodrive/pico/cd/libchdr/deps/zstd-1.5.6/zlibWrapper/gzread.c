@@ -1,4 +1,4 @@
-/* gzread.c contains minimal changes required to be compiled with zlibWrapper:
+﻿/* gzread.c contains minimal changes required to be compiled with zlibWrapper:
  * - gz_statep was converted to union to work with -Wstrict-aliasing=1      */
 
  /* gzread.c -- zlib functions for reading gzip files

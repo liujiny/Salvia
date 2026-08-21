@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  1541t64.cpp - 1541 emulation in archive-type files (.t64/LYNX/.p00)
  *
  *  Frodo (C) 1994-1997,2002-2005 Christian Bauer

@@ -1,4 +1,4 @@
-#include <QtWidgets>
+﻿#include <QtWidgets>
 #include "supportdirsdialog.h"
 #include "ui_supportdirsdialog.h"
 #include "burner.h"

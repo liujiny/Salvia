@@ -1,4 +1,4 @@
-#ifndef _YMF271_H_
+﻿#ifndef _YMF271_H_
 #define _YMF271_H_
 
 #define MAX_YMF271	(2)

@@ -1,4 +1,4 @@
-/*
+﻿/*
     tms.c --
     TMS9918 and legacy video mode support.
 */

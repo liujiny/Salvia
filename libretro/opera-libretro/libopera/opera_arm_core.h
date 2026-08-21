@@ -1,4 +1,4 @@
-#ifndef LIBOPERA_ARM_CORE_H_INCLUDED
+﻿#ifndef LIBOPERA_ARM_CORE_H_INCLUDED
 #define LIBOPERA_ARM_CORE_H_INCLUDED
 
 #include <stdint.h>

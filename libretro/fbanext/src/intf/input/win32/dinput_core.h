@@ -1,4 +1,4 @@
-#ifndef _DINPUT_CORE_
+﻿#ifndef _DINPUT_CORE_
 #define _DINPUT_CORE_
 
 #define DIRECTINPUT_VERSION 0x0800

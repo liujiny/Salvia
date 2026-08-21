@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 Psikyo PS6406B (PS3v1/PS5/PS5v2):
 See src/drivers/psikyosh.c for more info

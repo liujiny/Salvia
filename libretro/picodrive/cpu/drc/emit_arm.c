@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Basic macros to emit ARM instructions and some utils
  * Copyright (C) 2008,2009,2010 notaz
  * Copyright (C) 2019-2024 irixxxx

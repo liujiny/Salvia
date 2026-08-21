@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_CONFIG_H
+﻿#ifndef HEADER_CURL_CONFIG_H
 #define HEADER_CURL_CONFIG_H
 
 /* Xbox 360 build: redirect to our custom config */

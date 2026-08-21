@@ -1,4 +1,4 @@
-/* tls1.h
+﻿/* tls1.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

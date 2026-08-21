@@ -1,4 +1,4 @@
-#define DR_WAV_LIBSNDFILE_COMPAT
+﻿#define DR_WAV_LIBSNDFILE_COMPAT
 #include "dr_wav_common.c"
 
 #define FILE_NAME_WIDTH 40

@@ -1,4 +1,4 @@
-// h6280.cpp
+﻿// h6280.cpp
 void h6280_set_irq_line(INT32 irqline, INT32 state);
 void h6280_init(INT32 (*irqcallback)(INT32));
 

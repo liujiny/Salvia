@@ -1,4 +1,4 @@
-#ifndef OPERA_NVRAM_H_INCLUDED
+﻿#ifndef OPERA_NVRAM_H_INCLUDED
 #define OPERA_NVRAM_H_INCLUDED
 
 #include "boolean.h"

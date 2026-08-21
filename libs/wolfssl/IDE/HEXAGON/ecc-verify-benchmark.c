@@ -1,4 +1,4 @@
-/* ecc-verify-benchmark.c
+﻿/* ecc-verify-benchmark.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

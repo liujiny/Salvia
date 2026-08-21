@@ -1,4 +1,4 @@
-/* test_ossl_bio.h
+﻿/* test_ossl_bio.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

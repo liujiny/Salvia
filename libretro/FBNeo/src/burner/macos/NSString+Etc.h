@@ -1,4 +1,4 @@
-//
+﻿//
 //  FBMainThread.h
 //  Emulator
 // Copyright (c) Akop Karapetyan

@@ -1,4 +1,4 @@
-#include "../snes/snes.hpp"
+﻿#include "../snes/snes.hpp"
 #include <stdio.h>
 
 typedef struct spc_file {

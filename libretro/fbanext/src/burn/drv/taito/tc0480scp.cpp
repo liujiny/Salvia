@@ -1,4 +1,4 @@
-// TC0480SCP
+﻿// TC0480SCP
 
 #include "tiles_generic.h"
 #include "taito_ic.h"

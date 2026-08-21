@@ -1,4 +1,4 @@
-#ifndef GTIA_H_
+﻿#ifndef GTIA_H_
 #define GTIA_H_
 
 #include "atari.h"

@@ -1,4 +1,4 @@
-// blitter effects via PSP GE
+﻿// blitter effects via PSP GE
 #include "burner.h"
 #include "vid_support.h"
 #include "vid_psp.h"

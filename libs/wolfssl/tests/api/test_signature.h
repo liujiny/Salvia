@@ -1,4 +1,4 @@
-/* test_signature.h
+﻿/* test_signature.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

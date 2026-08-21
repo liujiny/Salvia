@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /// <summary>
 /// This identifier should be defined before including any of the networking-related header files.

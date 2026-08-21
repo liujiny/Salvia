@@ -1,4 +1,4 @@
-/************************************************************
+﻿/************************************************************
 
 	NEC UPD7759 ADPCM Speech Processor
 	by: Juergen Buchmueller, Mike Balfour, Howie Cohen,

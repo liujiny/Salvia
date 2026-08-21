@@ -1,4 +1,4 @@
-// FB Neo Cycle Maabou / Sky Destroyer driver module
+﻿// FB Neo Cycle Maabou / Sky Destroyer driver module
 // Based on MAME driver by Angelo Salese, Sasuke-Arcade
 
 // Not-a-Bug: red hindenburg (blimp) sometimes covers end-of-round

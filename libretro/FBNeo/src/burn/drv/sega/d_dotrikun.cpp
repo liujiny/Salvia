@@ -1,4 +1,4 @@
-// FB Neo Dottori Kun driver module
+﻿// FB Neo Dottori Kun driver module
 // Based on MAME driver by Takahiro Nogi
 
 #include "tiles_generic.h"

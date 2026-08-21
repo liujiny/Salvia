@@ -1,4 +1,4 @@
-#include "Snes9xController.hpp"
+﻿#include "Snes9xController.hpp"
 #include "EmuConfig.hpp"
 #include "SoftwareScalers.hpp"
 #include "fscompat.h"

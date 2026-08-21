@@ -1,4 +1,4 @@
-
+﻿
 extern const unsigned char gunforce_decryption_table[];
 extern const unsigned char bomberman_decryption_table[];
 extern const unsigned char lethalth_decryption_table[];

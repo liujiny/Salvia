@@ -1,4 +1,4 @@
-/*
+﻿/*
  * cartridge_info.c - cartridge information
  *
  * Copyright (C) 2001-2010 Piotr Fusik

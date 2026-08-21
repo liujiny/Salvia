@@ -1,4 +1,4 @@
-
+﻿
 #define JSA_CLOCK	1789773
 
 void AtariJSAInterrupt(); // 4x per frame

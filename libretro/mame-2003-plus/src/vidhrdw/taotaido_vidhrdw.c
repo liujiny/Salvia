@@ -1,4 +1,4 @@
-/* Tao Taido Video Hardware */
+﻿/* Tao Taido Video Hardware */
 
 /*
 

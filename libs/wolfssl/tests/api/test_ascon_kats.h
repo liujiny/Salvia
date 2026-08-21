@@ -1,4 +1,4 @@
-/* test_ascon_kats.h
+﻿/* test_ascon_kats.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

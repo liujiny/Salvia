@@ -1,4 +1,4 @@
-// WARNING WARNING WARNING:  ONLY use CanRead() method of BlitterFIFO, and NOT CanWrite(), since the FIFO is larger than the actual PS1 GPU FIFO to accommodate
+﻿// WARNING WARNING WARNING:  ONLY use CanRead() method of BlitterFIFO, and NOT CanWrite(), since the FIFO is larger than the actual PS1 GPU FIFO to accommodate
 // our lack of fancy superscalarish command sequencer.
 
 #ifndef __MDFN_PSX_GPU_H

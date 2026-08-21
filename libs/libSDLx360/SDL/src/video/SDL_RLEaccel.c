@@ -1,4 +1,4 @@
-/*
+ï»¿/*
     SDL - Simple DirectMedia Layer
     Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002  Sam Lantinga
 
@@ -30,7 +30,7 @@ static char rcsid =
  *
  * Original version by Sam Lantinga
  *
- * Mattias Engdegård (Yorick): Rewrite. New encoding format, encoder and
+ * Mattias Engdegï¿½rd (Yorick): Rewrite. New encoding format, encoder and
  * decoder. Added per-surface alpha blitter. Added per-pixel alpha
  * format, encoder and blitter.
  *

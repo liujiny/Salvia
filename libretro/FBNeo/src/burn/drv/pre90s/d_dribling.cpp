@@ -1,4 +1,4 @@
-// FB Alpha dribling driver module
+﻿// FB Alpha dribling driver module
 // Based on MAME driver by:Aaron Giles
 
 #include "tiles_generic.h"

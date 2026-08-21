@@ -1,4 +1,4 @@
-#define MAX_S2650	4
+﻿#define MAX_S2650	4
 extern INT32 nActiveS2650;
 extern INT32 s2650Count;
 

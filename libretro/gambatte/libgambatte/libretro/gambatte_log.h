@@ -1,4 +1,4 @@
-#ifndef _GAMBATTE_LOG_H
+﻿#ifndef _GAMBATTE_LOG_H
 #define _GAMBATTE_LOG_H
 
 #include <libretro.h>

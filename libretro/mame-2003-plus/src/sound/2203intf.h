@@ -1,4 +1,4 @@
-#ifndef YM2203INTF_H
+﻿#ifndef YM2203INTF_H
 #define YM2203INTF_H
 
 #include "ay8910.h"

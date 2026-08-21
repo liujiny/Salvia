@@ -1,4 +1,4 @@
-#ifndef _SUPPORT_H_
+﻿#ifndef _SUPPORT_H_
 #define _SUPPORT_H_
 
 #define InnerWidth(w) (w->Width - w->BorderLeft - w->BorderRight)

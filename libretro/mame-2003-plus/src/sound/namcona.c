@@ -1,4 +1,4 @@
-/*
+﻿/*
 	Namco NA1/2 Sound Hardware
 
 	PCM samples and sound sequencing metadata are written by the main CPU to

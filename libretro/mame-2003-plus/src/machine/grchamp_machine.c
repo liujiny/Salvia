@@ -1,4 +1,4 @@
-#include "driver.h"
+﻿#include "driver.h"
 
 extern UINT8 grchamp_videoreg0;
 extern UINT8 grchamp_vreg1[0x10];

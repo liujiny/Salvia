@@ -1,4 +1,4 @@
-/*
+﻿/*
 *	Video Driver for Forty-Love
 */
 

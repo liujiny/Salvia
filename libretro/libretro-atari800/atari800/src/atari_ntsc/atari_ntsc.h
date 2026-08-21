@@ -1,4 +1,4 @@
-/* Atari TIA, CTIA, GTIA and MARIA NTSC video filter */
+﻿/* Atari TIA, CTIA, GTIA and MARIA NTSC video filter */
 
 /* based on nes_ntsc 0.2.2 */
 #ifndef ATARI_NTSC_H

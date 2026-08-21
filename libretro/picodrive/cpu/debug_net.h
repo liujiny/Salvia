@@ -1,4 +1,4 @@
-typedef struct {
+﻿typedef struct {
   struct {
     unsigned char type;
     unsigned char cpuid;

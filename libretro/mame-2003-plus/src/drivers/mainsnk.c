@@ -1,4 +1,4 @@
-/* Main Event - SNK 
+﻿/* Main Event - SNK 
    driver by	David Haywood
    		Tomasz Slanina	
   

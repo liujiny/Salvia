@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 // Estructura de salida
 struct unzippedFileInfo {
     int errorCode;

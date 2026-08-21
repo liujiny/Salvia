@@ -1,4 +1,4 @@
-#ifndef LIBOPERA_3DO_H_INCLUDED
+﻿#ifndef LIBOPERA_3DO_H_INCLUDED
 #define LIBOPERA_3DO_H_INCLUDED
 
 #include "opera_core.h"

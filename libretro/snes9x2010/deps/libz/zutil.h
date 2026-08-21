@@ -1,4 +1,4 @@
-#ifndef _COMPAT_ZUTIL_H
+﻿#ifndef _COMPAT_ZUTIL_H
 #define _COMPAT_ZUTIL_H
 
 /* zutil.h -- internal interface and configuration of the compression library

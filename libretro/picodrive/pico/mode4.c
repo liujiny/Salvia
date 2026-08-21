@@ -1,4 +1,4 @@
-/*
+﻿/*
  * SMS renderer
  * (C) notaz, 2009-2010
  * (C) irixxxx, 2020-2024

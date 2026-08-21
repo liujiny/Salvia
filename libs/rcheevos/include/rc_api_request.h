@@ -1,4 +1,4 @@
-#ifndef RC_API_REQUEST_H
+﻿#ifndef RC_API_REQUEST_H
 #define RC_API_REQUEST_H
 
 #include "rc_error.h"

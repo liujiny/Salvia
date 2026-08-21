@@ -1,4 +1,4 @@
-/* routine to skip one 68K bus refresh cycle if instruction processing time is longer than refresh period (128 CPU cycles on Mega Drive / Genesis) */
+﻿/* routine to skip one 68K bus refresh cycle if instruction processing time is longer than refresh period (128 CPU cycles on Mega Drive / Genesis) */
 /* this fixes instructions timing test ROM (test_inst_speed.bin) when 68K bus refresh delay is emulated */
 #define SKIP_BUS_REFRESH() \
   if (m68k.cycles >= m68k.refresh_cycles) \

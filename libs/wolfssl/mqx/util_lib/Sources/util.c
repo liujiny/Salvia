@@ -1,4 +1,4 @@
-/* util.c */
+﻿/* util.c */
 
 #include <mqx.h>
 #include <bsp.h>

@@ -1,4 +1,4 @@
-#ifndef RETRO_PGM2_CARDS_H
+﻿#ifndef RETRO_PGM2_CARDS_H
 #define RETRO_PGM2_CARDS_H
 
 #pragma once

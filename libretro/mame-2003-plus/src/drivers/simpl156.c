@@ -1,4 +1,4 @@
-/*
+﻿/*
 
   "Simple" 156 based Data East Hardware
 

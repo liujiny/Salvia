@@ -1,4 +1,4 @@
-#ifndef __EMU_CONFIG_HPP
+﻿#ifndef __EMU_CONFIG_HPP
 #define __EMU_CONFIG_HPP
 
 #include <string>

@@ -1,4 +1,4 @@
-/***************************************************************************************
+﻿/***************************************************************************************
  *  Genesis Plus
  *  2-Buttons, 3-Buttons & 6-Buttons controller support
  *  with support for J-Cart, 4-Way Play & Master Tap adapters

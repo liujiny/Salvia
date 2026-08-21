@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup ChaCha20Poly1305
 
     \brief This function encrypts an input message, inPlaintext, using the

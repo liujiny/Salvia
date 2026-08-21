@@ -1,4 +1,4 @@
-/* config-FS.h
+﻿/* config-FS.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

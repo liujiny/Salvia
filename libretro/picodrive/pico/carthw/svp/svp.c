@@ -1,4 +1,4 @@
-/*
+﻿/*
  * The SVP chip emulator
  *
  * Copyright (c) Gražvydas "notaz" Ignotas, 2008

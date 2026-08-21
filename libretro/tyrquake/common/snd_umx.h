@@ -1,4 +1,4 @@
-/* Unreal UMX format support */
+﻿/* Unreal UMX format support */
 #if !defined(_SND_UMX_H_)
 #define _SND_UMX_H_
 

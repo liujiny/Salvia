@@ -1,4 +1,4 @@
-/* Field Combat (c)1985 Jaleco */
+﻿/* Field Combat (c)1985 Jaleco */
 
 /* todo:
 

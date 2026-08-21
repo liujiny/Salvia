@@ -1,4 +1,4 @@
-#include "vulkan_simple_output.hpp"
+﻿#include "vulkan_simple_output.hpp"
 #include "slang_shader.hpp"
 
 namespace Vulkan

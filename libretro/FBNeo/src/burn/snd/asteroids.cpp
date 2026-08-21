@@ -1,4 +1,4 @@
-/*****************************************************************************
+﻿/*****************************************************************************
  *
  * A (partially wrong) try to emulate Asteroid's analog sound
  * It's getting better but is still imperfect :/

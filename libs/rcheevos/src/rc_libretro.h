@@ -1,4 +1,4 @@
-#ifndef RC_LIBRETRO_H
+﻿#ifndef RC_LIBRETRO_H
 #define RC_LIBRETRO_H
 
 #include "rc_export.h"

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * sdl/video_gl.c - SDL library specific port code - OpenGL accelerated video display
  *
  * Copyright (c) 2010 Tomasz Krasuski

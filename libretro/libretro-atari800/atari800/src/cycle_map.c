@@ -1,4 +1,4 @@
-/*
+﻿/*
  * cycle_map.c - part of the ANTIC emulation
  *
  * Copyright (C) 1995-1998 Perry McFarlane

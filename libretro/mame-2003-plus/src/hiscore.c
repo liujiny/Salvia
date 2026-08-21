@@ -1,4 +1,4 @@
-/*	hiscore.c
+﻿/*	hiscore.c
 **	generalized high score save/restore support
 */
 

@@ -1,4 +1,4 @@
-/* wc_dsp.c
+﻿/* wc_dsp.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-#ifndef __V60_H
+﻿#ifndef __V60_H
 #define __V60_H
 
 #define HAS_V60		1

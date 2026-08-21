@@ -1,4 +1,4 @@
-#ifndef __EMU_CANVAS_QT_HPP
+﻿#ifndef __EMU_CANVAS_QT_HPP
 #define __EMU_CANVAS_QT_HPP
 
 #include "EmuCanvas.hpp"

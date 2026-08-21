@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  history.c
  *
  *   Generic ROM history list managment

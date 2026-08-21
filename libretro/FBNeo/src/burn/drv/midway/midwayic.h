@@ -1,4 +1,4 @@
-#ifndef SERIALPIC
+﻿#ifndef SERIALPIC
 #define SERIALPIC
 
 void MidwaySerialPicInit(int upper);

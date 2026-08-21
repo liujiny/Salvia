@@ -1,4 +1,4 @@
-
+﻿
 void c6280_init(double clk, INT32 bAdd);
 void c6280_set_route(INT32 nIndex, double nVolume, INT32 nRouteDir);
 void c6280_exit();

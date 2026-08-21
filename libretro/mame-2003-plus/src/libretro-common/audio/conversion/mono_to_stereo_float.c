@@ -1,4 +1,4 @@
-/* Copyright  (C) 2010-2023 The RetroArch team
+﻿/* Copyright  (C) 2010-2023 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (mono_to_stereo.c).

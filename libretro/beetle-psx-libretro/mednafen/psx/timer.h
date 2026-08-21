@@ -1,4 +1,4 @@
-#ifndef __MDFN_PSX_TIMER_H
+﻿#ifndef __MDFN_PSX_TIMER_H
 #define __MDFN_PSX_TIMER_H
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-/* kcapi_hmac.h
+﻿/* kcapi_hmac.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

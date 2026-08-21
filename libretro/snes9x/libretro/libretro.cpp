@@ -1,4 +1,4 @@
-#include "libretro.h"
+﻿#include "libretro.h"
 #include "libretro_core_options.h"
 
 #include "snes9x.h"

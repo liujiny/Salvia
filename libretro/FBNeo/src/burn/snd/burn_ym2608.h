@@ -1,4 +1,4 @@
-// burn_ym2608.h
+﻿// burn_ym2608.h
 #include "driver.h"
 extern "C" {
  #include "ay8910.h"

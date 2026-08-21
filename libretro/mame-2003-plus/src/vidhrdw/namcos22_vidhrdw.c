@@ -1,4 +1,4 @@
-/**
+﻿/**
  * video hardware for Namco System22
  *
  * TODO:

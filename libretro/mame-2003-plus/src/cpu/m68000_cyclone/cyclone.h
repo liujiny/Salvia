@@ -1,4 +1,4 @@
-
+﻿
 // Cyclone 68000 Emulator - Header File
 
 // Copyright (c) 2004,2011 FinalDave (emudave (at) gmail.com)

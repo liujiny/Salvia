@@ -1,4 +1,4 @@
-/*
+﻿/*
  * graphics.c - android drawing
  *
  * Copyright (C) 2010 Kostas Nakos

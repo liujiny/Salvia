@@ -1,4 +1,4 @@
-#ifndef _WIN_USER_SETTINGS_H_
+﻿#ifndef _WIN_USER_SETTINGS_H_
 #define _WIN_USER_SETTINGS_H_
 
 /* For FIPS 140-2 3389 build set to "#if 1" */

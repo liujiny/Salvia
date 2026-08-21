@@ -1,4 +1,4 @@
-#ifndef __FT_EXCEPT_H__
+﻿#ifndef __FT_EXCEPT_H__
 #define __FT_EXCEPT_H__
 
 #include <ft2build.h>

@@ -1,4 +1,4 @@
-#include "kailleraclient.h"
+﻿#include "kailleraclient.h"
 
 extern int Kaillera_Initialised;
 

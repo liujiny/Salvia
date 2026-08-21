@@ -1,4 +1,4 @@
-/*******************************************************************************************
+﻿/*******************************************************************************************
  NOTE: All registers are accessed directly, instead of using the SFR_R() function for speed
  Direct register access is availabe from the R_(register name) macros.. ex: ACC for the ACC
  with the exception of the PC

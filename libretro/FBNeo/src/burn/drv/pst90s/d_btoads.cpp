@@ -1,4 +1,4 @@
-// FB Alpha Battle Toads driver module
+﻿// FB Alpha Battle Toads driver module
 // Based on MAME driver by Aaron Giles
 
 // About the Bulkhead bug: *note, this bug is fixed with a hack*

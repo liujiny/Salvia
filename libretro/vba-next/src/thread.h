@@ -1,4 +1,4 @@
-#ifndef __THREAD_H__
+﻿#ifndef __THREAD_H__
 #define __THREAD_H__
 
 /* On Windows, retro_miscellaneous.h pulls in <windows.h> which already

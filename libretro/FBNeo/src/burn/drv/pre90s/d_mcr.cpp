@@ -1,4 +1,4 @@
-// FB Neo Midway MCR driver module
+﻿// FB Neo Midway MCR driver module
 // Based on MAME driver by Aaron Giles
 
 /*

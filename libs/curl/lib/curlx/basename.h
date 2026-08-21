@@ -1,4 +1,4 @@
-#ifndef HEADER_CURLX_BASENAME_H
+﻿#ifndef HEADER_CURLX_BASENAME_H
 #define HEADER_CURLX_BASENAME_H
 /***************************************************************************
  *                                  _   _ ____  _

@@ -1,4 +1,4 @@
-#include <QtWidgets>
+﻿#include <QtWidgets>
 #include "dipswitchdialog.h"
 #include "ui_dipswitchdialog.h"
 #include "burner.h"

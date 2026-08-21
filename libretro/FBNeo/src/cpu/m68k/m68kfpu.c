@@ -1,4 +1,4 @@
-#define fatalerror	printf
+﻿#define fatalerror	printf
 
 #define FPCC_N			0x08000000
 #define FPCC_Z			0x04000000

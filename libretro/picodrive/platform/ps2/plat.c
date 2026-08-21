@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PicoDrive platform interface for PS2
  *
  * (C) fjtrujy,irixxxx 2024

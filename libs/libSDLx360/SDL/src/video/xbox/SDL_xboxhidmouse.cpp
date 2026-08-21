@@ -1,4 +1,4 @@
-/*
+﻿/*
     SDL_xboxhidmouse.cpp — LECTOR del raton USB HID publicado por el plugin
     residente de DashLaunch `hidmouse.xex`.
 

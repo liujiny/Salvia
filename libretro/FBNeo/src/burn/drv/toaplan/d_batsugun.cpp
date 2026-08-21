@@ -1,4 +1,4 @@
-// FB Alpha Batsugun driver module
+﻿// FB Alpha Batsugun driver module
 // Driver and emulation by Jan Klaassen
 
 #include "toaplan.h"

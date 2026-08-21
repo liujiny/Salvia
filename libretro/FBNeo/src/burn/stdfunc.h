@@ -1,4 +1,4 @@
-// Standard ROM/input/DIP info functions
+﻿// Standard ROM/input/DIP info functions
 
 #ifndef ARRAY_SIZE
 #ifdef _MSC_VER

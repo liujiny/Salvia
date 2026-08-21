@@ -1,4 +1,4 @@
-// FBNeo SNES driver / interface to LakeSnes
+﻿// FBNeo SNES driver / interface to LakeSnes
 // By Kev, dink, Gab75
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-#ifndef __MDFN_PSX_INPUT_MULTITAP_H
+﻿#ifndef __MDFN_PSX_INPUT_MULTITAP_H
 #define __MDFN_PSX_INPUT_MULTITAP_H
 
 class InputDevice_Multitap : public InputDevice

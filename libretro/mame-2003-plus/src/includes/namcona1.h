@@ -1,4 +1,4 @@
-/* namcona1.h */
+﻿/* namcona1.h */
 
 enum
 {

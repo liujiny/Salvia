@@ -1,4 +1,4 @@
-#include "burnint.h"
+﻿#include "burnint.h"
 #include "burn_pal.h"
 
 UINT32 *BurnPalette = NULL;

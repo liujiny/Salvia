@@ -1,4 +1,4 @@
-/*!
+﻿/*!
     \ingroup ChaCha20Poly1305
     \brief  この関数は、Chacha20 Stream暗号を使用して、Output BufferTextに入力メッセージ、InPleaintextを暗号化します。
     また、Poly-1305認証（暗号テキスト）を実行し、生成した認証タグを出力バッファOutauthTagに格納します。

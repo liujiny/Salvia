@@ -1,4 +1,4 @@
-#ifndef MSM5205_H
+﻿#ifndef MSM5205_H
 #define MSM5205_H
 
 /* an interface for the MSM5205 and similar chips */

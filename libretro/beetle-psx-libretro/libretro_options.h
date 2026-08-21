@@ -1,4 +1,4 @@
-#ifndef LIBRETRO_OPTIONS_H__
+﻿#ifndef LIBRETRO_OPTIONS_H__
 #define LIBRETRO_OPTIONS_H__
 
 #ifdef HAVE_OPENGLES3

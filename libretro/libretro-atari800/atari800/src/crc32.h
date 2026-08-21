@@ -1,4 +1,4 @@
-#ifndef CRC32_H_
+﻿#ifndef CRC32_H_
 #define CRC32_H_
 
 #include <stdio.h>

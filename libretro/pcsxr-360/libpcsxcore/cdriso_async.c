@@ -1,4 +1,4 @@
-/*
+﻿/*
  * cdriso_async.c
  *
  * Implementation of the cdriso async prefetch layer.  See header for

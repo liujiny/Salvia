@@ -1,4 +1,4 @@
-/* Bcj2.c -- Converter for x86 code (BCJ2)
+﻿/* Bcj2.c -- Converter for x86 code (BCJ2)
 2008-10-04 : Igor Pavlov : Public domain */
 
 #include "Bcj2.h"

@@ -1,4 +1,4 @@
-/* silabs_ecc.h
+﻿/* silabs_ecc.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

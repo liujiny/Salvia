@@ -1,4 +1,4 @@
-// ****************************************************************************
+ï»¿// ****************************************************************************
 // * This file is part of the xBRZ project. It is distributed under           *
 // * GNU General Public License: https://www.gnu.org/licenses/gpl-3.0         *
 // * Copyright (C) Zenju (zenju AT gmx DOT de) - All Rights Reserved          *
@@ -48,7 +48,7 @@ Pix* byteAdvance(Pix* ptr, int bytes)
     // VS2010 no soporta 'using' para plantillas, usamos typedef
     // Tampoco soporta std::conditional o std::remove_cv de forma completa
     
-    // Forma clásica de avanzar punteros por bytes independientemente de la constancia:
+    // Forma clï¿½sica de avanzar punteros por bytes independientemente de la constancia:
     return reinterpret_cast<Pix*>(reinterpret_cast<char*>(const_cast<typename std::remove_const<Pix>::type*>(ptr)) + bytes);
 }
 

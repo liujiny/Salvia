@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <string>
 #include <map>
@@ -15,6 +15,6 @@ public:
     // Ahora recibe std::string (ej: "lang/es.ini")
     bool loadLanguage(const std::string& filename);
 
-    // Obtiene el texto en wstring para soportar tildes/ñ
+    // Obtiene el texto en wstring para soportar tildes/ï¿½
     std::string get(const std::string& key);
 };

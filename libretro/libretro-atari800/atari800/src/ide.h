@@ -1,4 +1,4 @@
-#ifndef IDE_H_
+﻿#ifndef IDE_H_
 #define IDE_H_
 
 #include "atari.h"

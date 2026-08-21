@@ -1,4 +1,4 @@
-#include "mcs51.h"
+﻿#include "mcs51.h"
 
 void qs1000_reset();
 void qs1000_init(UINT8 *program_rom, UINT8 *samples, INT32 samplesize);

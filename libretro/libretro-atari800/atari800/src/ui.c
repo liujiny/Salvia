@@ -1,4 +1,4 @@
-/*
+﻿/*
  * ui.c - main user interface
  *
  * Copyright (C) 1995-1998 David Firth

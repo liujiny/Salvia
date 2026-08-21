@@ -1,4 +1,4 @@
-#ifndef COMMON
+﻿#ifndef COMMON
 #define COMMON
 
 #include "stdint.h" // for the *int*_t types

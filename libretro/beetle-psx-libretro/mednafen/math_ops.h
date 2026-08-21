@@ -1,4 +1,4 @@
-#ifndef __MDFN_MATH_OPS_H
+ï»¿#ifndef __MDFN_MATH_OPS_H
 #define __MDFN_MATH_OPS_H
 
 
@@ -7,7 +7,7 @@
 
 
 
-/* Definición ultra-segura para Visual Studio */
+/* Definiciï¿½n ultra-segura para Visual Studio */
 #if defined(_XBOX)
     #include <ppcintrinsics.h>
 
@@ -18,7 +18,7 @@
     }
 #elif defined(_MSC_VER)
 	#include <intrin.h>
-    /* Entra aquí si es Visual Studio para Windows */
+    /* Entra aquï¿½ si es Visual Studio para Windows */
     static __inline uint32_t MDFN_clz_msvc(uint32_t x) {
         unsigned long index;
         if (_BitScanReverse(&index, x))

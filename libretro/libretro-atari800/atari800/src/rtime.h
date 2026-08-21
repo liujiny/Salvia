@@ -1,4 +1,4 @@
-#ifndef RTIME_H_
+﻿#ifndef RTIME_H_
 #define RTIME_H_
 /* Emulate ICD R-Time 8 cartridge
    Copyright 2000 Jason Duerstock <jason@cluephone.com>

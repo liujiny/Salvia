@@ -1,4 +1,4 @@
-// Burner Input module
+﻿// Burner Input module
 #include "burner.h"
 
 UINT32 nInputSelect = 0;

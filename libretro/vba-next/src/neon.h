@@ -1,4 +1,4 @@
-#ifndef __NEON_H__
+﻿#ifndef __NEON_H__
 #define __NEON_H__
 
 #if HAVE_NEON

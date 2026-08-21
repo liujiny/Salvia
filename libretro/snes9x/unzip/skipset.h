@@ -1,4 +1,4 @@
-// skipset.h -- set operations using a skiplist
+﻿// skipset.h -- set operations using a skiplist
 // Copyright (C) 2024 Mark Adler
 // See MiniZip_info.txt for the license.
 

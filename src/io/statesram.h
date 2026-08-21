@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <vector>
 #include <string>
@@ -192,13 +192,13 @@ void saveSram(const char* sram_path) {
 
     if (size == 0 || !data) return;
 
-    // 1. Comparación con nuestra copia persistente
+    // 1. Comparaciï¿½n con nuestra copia persistente
     bool needsSave = (g_sram_data_last == NULL) || 
                      (g_sram_size_last != size) || 
                      (memcmp(g_sram_data_last, data, size) != 0);
 
     if (needsSave) {
-        // 2. Actualizamos nuestra copia de comparación
+        // 2. Actualizamos nuestra copia de comparaciï¿½n
         if (g_sram_size_last != size) {
             if (g_sram_data_last) free(g_sram_data_last);
             g_sram_data_last = malloc(size);
@@ -212,7 +212,7 @@ void saveSram(const char* sram_path) {
             memcpy(hiloBuffer, data, size);
 
             SDL_mutexP(g_saveQueue.saveMutex);
-            // Si el hilo aún no ha terminado el anterior, liberamos para evitar leak
+            // Si el hilo aï¿½n no ha terminado el anterior, liberamos para evitar leak
             if (g_saveQueue.buffer) free(g_saveQueue.buffer); 
             
             g_saveQueue.buffer = hiloBuffer;
@@ -227,7 +227,7 @@ void saveSram(const char* sram_path) {
 }
 
 void saveState() {
-    // 1. Obtener tamaños de ambos estados
+    // 1. Obtener tamaï¿½os de ambos estados
     std::size_t core_state_size = retro_serialize_size();
     std::size_t ra_state_size = 0;
     
@@ -236,7 +236,7 @@ void saveState() {
         ra_state_size = rc_client_progress_size(ra_client);
     }
 
-    // 2. Calcular tamaño total del buffer: Core + Marcador(4) + TamañoRA(4) + DatosRA
+    // 2. Calcular tamaï¿½o total del buffer: Core + Marcador(4) + Tamaï¿½oRA(4) + DatosRA
     // Reservamos espacio extra para una cabecera de seguridad de RA
     std::size_t total_buffer_size = core_state_size + 8 + ra_state_size;
     void *buffer = malloc(total_buffer_size);
@@ -246,10 +246,10 @@ void saveState() {
     // 3. Serializar el Core de Libretro al principio del buffer
     if (retro_serialize(buffer, core_state_size)) {
         
-        // 4. Serializar datos de RetroAchievements a continuación
+        // 4. Serializar datos de RetroAchievements a continuaciï¿½n
         uint8_t* ra_ptr = (uint8_t*)buffer + core_state_size;
         
-        // Escribimos un marcador "RCHV" y el tamaño para poder leerlo luego de forma segura
+        // Escribimos un marcador "RCHV" y el tamaï¿½o para poder leerlo luego de forma segura
         std::memcpy(ra_ptr, "RCHV", 4);
         std::memcpy(ra_ptr + 4, &ra_state_size, 4);
         
@@ -275,7 +275,7 @@ void saveState() {
             g_saveQueue.targetPath = targetPath;
             g_saveQueue.slot = g_currentSlot;
 
-            // Gestión de la captura de pantalla para el Slot
+            // Gestiï¿½n de la captura de pantalla para el Slot
             g_saveQueue.width = action_postponed.width;
             g_saveQueue.height = action_postponed.height;
             g_saveQueue.bpp = action_postponed.bpp;
@@ -312,7 +312,7 @@ void loadState(){
 	}
 
     const std::string state_path = Constant::checkPath(getSlotPath(romPaths.savestate, g_currentSlot));
-    // 1. Obtener el tamaño que espera el núcleo (Core)
+    // 1. Obtener el tamaï¿½o que espera el nï¿½cleo (Core)
     std::size_t core_state_size = retro_serialize_size();
     if (core_state_size == 0) return;
 
@@ -324,18 +324,18 @@ void loadState(){
         return;
     }
 
-    // 3. Cargar el estado del Núcleo (Core)
+    // 3. Cargar el estado del Nï¿½cleo (Core)
     void* core_buffer = malloc(core_state_size);
     if (!core_buffer) {
         gzclose(file);
         return;
     }
 
-    // Leemos exactamente el tamaño que el core espera
+    // Leemos exactamente el tamaï¿½o que el core espera
     int bytesRead = gzread(file, core_buffer, (unsigned)core_state_size);
     
     if (bytesRead == (int)core_state_size) {
-        // Inyectamos los datos en el núcleo de emulación
+        // Inyectamos los datos en el nï¿½cleo de emulaciï¿½n
         retro_unserialize(core_buffer, core_state_size);
         
         // 4. Intentar cargar el bloque de RetroAchievements (Cabecera de 8 bytes)
@@ -343,7 +343,7 @@ void loadState(){
         uint32_t ra_data_size = 0;
         
 		uint8_t* ra_buffer = NULL;
-        // Intentamos leer el marcador "RCHV" y el tamaño de los datos
+        // Intentamos leer el marcador "RCHV" y el tamaï¿½o de los datos
         if (gzread(file, ra_marker, 4) == 4 && memcmp(ra_marker, "RCHV", 4) == 0) {
             if (gzread(file, &ra_data_size, 4) == 4 && ra_data_size > 0) {
                 ra_buffer = (uint8_t*)malloc(ra_data_size);
@@ -366,7 +366,7 @@ void loadState(){
 
         gameMenu->showSystemMessage(LanguageManager::instance()->get("msg.state.load") + Constant::TipoToStr(g_currentSlot), 3000);
     } else {
-        LOG_ERROR("Error de lectura: El archivo es más pequeño de lo esperado.");
+        LOG_ERROR("Error de lectura: El archivo es mï¿½s pequeï¿½o de lo esperado.");
     }
 
     // Limpieza final
@@ -389,7 +389,7 @@ bool guardar_archivo_raw(const char* path, void* buffer, std::size_t size) {
     }
 }
 
-// Función que ejecutará el hilo
+// Funciï¿½n que ejecutarï¿½ el hilo
 int SaveThreadFunc(void* data) {
     SaveData* sd = (SaveData*)data;
     while (sd->running) {
@@ -422,7 +422,7 @@ int SaveThreadFunc(void* data) {
 					SDL_mutexP(sd->saveMutex);
 					sd->buffer = NULL;
 					sd->bufferSize = 0;
-					sd->action = SAVE_NONE; // IMPORTANTE: Resetea la acción
+					sd->action = SAVE_NONE; // IMPORTANTE: Resetea la acciï¿½n
 					SDL_mutexV(sd->saveMutex);
 				}
 				break;
@@ -448,7 +448,7 @@ int SaveThreadFunc(void* data) {
 					SDL_mutexP(sd->saveMutex);
 					sd->buffer = NULL;
 					sd->bufferSize = 0;
-					sd->action = SAVE_NONE; // IMPORTANTE: Resetea la acción
+					sd->action = SAVE_NONE; // IMPORTANTE: Resetea la acciï¿½n
 					SDL_mutexV(sd->saveMutex);
 				}
 				break;

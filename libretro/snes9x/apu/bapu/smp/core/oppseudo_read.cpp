@@ -1,4 +1,4 @@
-case 0x88: {
+﻿case 0x88: {
   rd = op_readpc();
   regs.B.a = op_adc(regs.B.a, rd);
   break;

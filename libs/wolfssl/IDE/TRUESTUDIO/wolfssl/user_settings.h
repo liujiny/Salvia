@@ -1,4 +1,4 @@
-/* user_settings.h
+﻿/* user_settings.h
  *
  * Custom wolfSSL User Settings File
  *

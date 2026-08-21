@@ -1,4 +1,4 @@
-// Module for input
+﻿// Module for input
 #include "burner.h"
 
 #define MAX_JOYSTICKS (1)

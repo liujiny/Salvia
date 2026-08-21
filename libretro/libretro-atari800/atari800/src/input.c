@@ -1,4 +1,4 @@
-/*
+﻿/*
  * input.c - keyboard, joysticks and mouse emulation
  *
  * Copyright (C) 2001-2002 Piotr Fusik

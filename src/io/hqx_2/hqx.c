@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (C) 2010 Cameron Zemek ( grom@zeminvaders.net)
  *
  * This program is free software; you can redistribute it and/or

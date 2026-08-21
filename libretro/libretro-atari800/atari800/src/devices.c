@@ -1,4 +1,4 @@
-/*
+﻿/*
  * devices.c - emulation of H:, P:, E: and K: Atari devices
  *
  * Copyright (C) 1995-1998 David Firth

@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_VQUIC_CF_NGTCP2_CMN_H
+﻿#ifndef HEADER_CURL_VQUIC_CF_NGTCP2_CMN_H
 #define HEADER_CURL_VQUIC_CF_NGTCP2_CMN_H
 /***************************************************************************
  *                                  _   _ ____  _

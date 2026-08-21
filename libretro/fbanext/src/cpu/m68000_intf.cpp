@@ -1,4 +1,4 @@
-// 680x0 (Sixty Eight K) Interface
+﻿// 680x0 (Sixty Eight K) Interface
 #include "burnint.h"
 #include "m68000_intf.h"
 #include "m68000_debug.h"

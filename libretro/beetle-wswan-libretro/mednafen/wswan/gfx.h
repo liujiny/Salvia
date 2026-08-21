@@ -1,4 +1,4 @@
-#ifndef __WSWAN_GFX_H
+﻿#ifndef __WSWAN_GFX_H
 #define __WSWAN_GFX_H
 
 #include "../state.h"

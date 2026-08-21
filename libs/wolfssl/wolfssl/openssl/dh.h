@@ -1,4 +1,4 @@
-/* dh.h
+﻿/* dh.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

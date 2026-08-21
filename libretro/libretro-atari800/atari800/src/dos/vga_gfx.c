@@ -1,4 +1,4 @@
-/*
+﻿/*
  * vga_gfx.c - DOS VGA graphics routines
  *
  * Copyright (c) 2001 Robert Golias

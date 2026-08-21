@@ -1,4 +1,4 @@
-#include "slang_helpers.hpp"
+﻿#include "slang_helpers.hpp"
 
 #include <string>
 #include <vector>

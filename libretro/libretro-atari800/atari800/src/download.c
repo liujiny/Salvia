@@ -1,4 +1,4 @@
-#include "download.h"
+﻿#include "download.h"
 
 #ifdef HAVE_DOWNLOAD
 

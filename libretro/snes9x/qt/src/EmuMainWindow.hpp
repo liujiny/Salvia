@@ -1,4 +1,4 @@
-#ifndef __EMU_MAIN_WINDOW_HPP
+﻿#ifndef __EMU_MAIN_WINDOW_HPP
 #define __EMU_MAIN_WINDOW_HPP
 
 #include <QMainWindow>

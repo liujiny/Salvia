@@ -1,4 +1,4 @@
-/*** m6800: Portable 6800 class emulator *************************************/
+﻿/*** m6800: Portable 6800 class emulator *************************************/
 
 #ifndef _M6800_H
 #define _M6800_H

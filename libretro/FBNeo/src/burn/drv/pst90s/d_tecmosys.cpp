@@ -1,4 +1,4 @@
-// FB Neo Tecmo System driver module
+﻿// FB Neo Tecmo System driver module
 // Based on MAME driver by Farfetch, David Haywood, Tomasz Slanina, and nuapete
 
 #include "tiles_generic.h"

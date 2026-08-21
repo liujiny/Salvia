@@ -1,4 +1,4 @@
-#ifndef _MDFN_SETTINGS_COMMON_H
+﻿#ifndef _MDFN_SETTINGS_COMMON_H
 #define _MDFN_SETTINGS_COMMON_H
 typedef enum
 {

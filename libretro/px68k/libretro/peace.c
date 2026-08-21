@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2000 Masaru OKI
  * All rights reserved.
  *

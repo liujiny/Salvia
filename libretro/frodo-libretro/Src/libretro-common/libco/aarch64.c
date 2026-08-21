@@ -1,4 +1,4 @@
-/*
+﻿/*
   libco.aarch64 (2017-06-26)
   author: webgeek1234
   license: public domain

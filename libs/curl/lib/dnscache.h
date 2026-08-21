@@ -1,4 +1,4 @@
-#ifndef HEADER_CURL_DNSCACHE_H
+﻿#ifndef HEADER_CURL_DNSCACHE_H
 #define HEADER_CURL_DNSCACHE_H
 /***************************************************************************
  *                                  _   _ ____  _

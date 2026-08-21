@@ -1,4 +1,4 @@
-#ifndef LOG_H_
+﻿#ifndef LOG_H_
 #define LOG_H_
 
 #define Log_BUFFER_SIZE 8192

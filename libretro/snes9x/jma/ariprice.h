@@ -1,4 +1,4 @@
-#ifndef __COMPRESSION_ARIPRICE_H
+﻿#ifndef __COMPRESSION_ARIPRICE_H
 #define __COMPRESSION_ARIPRICE_H
 
 namespace NCompression {
