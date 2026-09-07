@@ -38,6 +38,7 @@
 #endif
 
 #include "midisynth.h"
+#include "mt32map.h"
 
 /* Tope de voces simultaneas.  Se renderiza en el hilo de emulacion, asi que cada
  * voz sale del presupuesto de frame del core; en la 360 ademas cada muestra
@@ -58,7 +59,8 @@ static inline uint8_t midiDataLen(uint8_t status)
 
 MidiSynth::MidiSynth()
 	: m_tsf(0), m_sampleRate(44100), m_volumePct(100), m_hasDrumBank(false), m_sawData(false),
-	  m_haveState(false), m_dbgBytes(0), m_dbgNotes(0)
+	  m_haveState(false), m_moduleOption(MODULE_AUTO), m_mt32(false),
+	  m_dbgBytes(0), m_dbgNotes(0)
 {
 	memset(m_ch, 0, sizeof(m_ch));
 	resetFraming();
@@ -184,6 +186,9 @@ void MidiSynth::close()
 	m_path.clear();
 	m_sawData     = false;
 	m_hasDrumBank = false;
+	/* El modulo detectado es del juego que se va, no del siguiente: en AUTO se
+	 * vuelve a GM y se deja que el core nuevo lo diga con su SysEx. */
+	m_mt32        = (m_moduleOption == MODULE_MT32);
 	resetFraming();
 }
 
@@ -207,6 +212,30 @@ void MidiSynth::setVolumePercent(int pct)
 	/* tsf_set_volume espera un FACTOR lineal (1.0 = 100%) y hace 1.0/factor por
 	 * dentro, asi que el cero hay que atajarlo antes de que divida. */
 	tsf_set_volume(m_tsf, (pct <= 0) ? 0.0001f : ((float)pct / 100.0f));
+}
+
+void MidiSynth::setModuleMode(int mode)
+{
+	m_moduleOption = mode;
+	/* Con AUTO no se decide nada aqui: manda lo que se haya detectado del SysEx
+	 * de reset (o lo que se detecte a partir de ahora). */
+	if      (mode == MODULE_GM)   setMt32Active(false);
+	else if (mode == MODULE_MT32) setMt32Active(true);
+}
+
+/* Cambia el modo efectivo.  Se deja en el log porque es un cambio de sonido
+ * grande y silencioso: sin traza, "esto suena raro" no tiene donde mirarse. */
+void MidiSynth::setMt32Active(bool on)
+{
+	if (m_mt32 == on) return;
+	m_mt32 = on;
+	LOG_INFO("MIDI: modulo %s (traduccion de programas MT-32 -> GM %s)",
+	         on ? "MT-32 / LA" : "General MIDI",
+	         on ? "activada" : "desactivada");
+	/* Los canales que ya estaban configurados hay que re-resolverlos con la
+	 * traduccion nueva, o siguen sonando con el instrumento de antes. */
+	if (m_tsf && m_haveState)
+		reapplyChannels();
 }
 
 void MidiSynth::panic()
@@ -339,13 +368,33 @@ void MidiSynth::writeByte(uint8_t b)
 void MidiSynth::applyChannelMessage(uint8_t st, uint8_t d0, uint8_t d1)
 {
 	const int ch = st & 0x0F;
+
+	/* Percusion en modo MT-32: la tecla pasa por el mapa de ritmo.
+	 *
+	 * Casi todo es la identidad -- la numeracion de teclas del MT-32 coincide
+	 * con la de GM en los rangos 35..51 y 60..75 -- pero las que NO tienen
+	 * equivalente se descartan, que es lo que hace la implementacion de
+	 * referencia de FreeSCI.  Tocarlas de todas formas daria un sonido de
+	 * percusion equivocado en su lugar, que es peor que el silencio.
+	 *
+	 * Se calcula una vez aqui y vale para el note on y para el note off: si se
+	 * tradujese solo el on, el off no casaria y la nota quedaria colgada. */
+	uint8_t key  = d0;
+	bool    drop = false;
+	if (m_mt32 && ch == DRUM_CHANNEL) {
+		const uint8_t mapped = MT32_RHYTHM_KEY[d0 & 0x7F];
+		if (mapped == MT32_RHYTHM_UNMAPPED) drop = true;
+		else                                key  = mapped;
+	}
+
 	switch (st & 0xF0) {
 		case 0x80:                                   /* note off */
-			tsf_channel_note_off(m_tsf, ch, d0);
+			if (!drop) tsf_channel_note_off(m_tsf, ch, key);
 			break;
 		case 0x90:                                   /* note on (velocidad 0 = note off) */
-			if (d1 == 0) tsf_channel_note_off(m_tsf, ch, d0);
-			else       { tsf_channel_note_on(m_tsf, ch, d0, (float)d1 / 127.0f); m_dbgNotes++; }
+			if (drop) break;
+			if (d1 == 0) tsf_channel_note_off(m_tsf, ch, key);
+			else       { tsf_channel_note_on(m_tsf, ch, key, (float)d1 / 127.0f); m_dbgNotes++; }
 			break;
 		case 0xA0:                                   /* aftertouch polifonico: TSF no lo modela */
 			break;
@@ -382,9 +431,22 @@ void MidiSynth::applyChannelMessage(uint8_t st, uint8_t d0, uint8_t d1)
 void MidiSynth::applyProgram(int ch, uint8_t program)
 {
 	if (ch < 0 || ch >= MIDI_CHANNELS) return;
+	/* Se guarda el programa CRUDO, tal como lo mando el juego: la traduccion se
+	 * hace al bajar al sintetizador, para que un cambio de modo la vuelva a
+	 * resolver bien desde reapplyChannels(). */
 	m_ch[ch].program = program;
 	m_haveState      = true;
-	tsf_channel_set_presetnumber(m_tsf, ch, program, m_ch[ch].isDrum ? 1 : 0);
+
+	{
+		/* En modo MT-32 los numeros de programa son del MT-32, que no coinciden
+		 * con los de GM (su 8 es un organo; el 8 de GM es una celesta).  La
+		 * percusion no se traduce: va por banco, no por programa -- y su mapa de
+		 * TECLAS tampoco esta traducido, ver mt32map.h. */
+		const uint8_t prog = (m_mt32 && !m_ch[ch].isDrum)
+			? MT32_TO_GM_PROGRAM[program & 0x7F]
+			: program;
+		tsf_channel_set_presetnumber(m_tsf, ch, prog, m_ch[ch].isDrum ? 1 : 0);
+	}
 }
 
 void MidiSynth::resetChannels(bool hardReset)
@@ -438,14 +500,38 @@ void MidiSynth::handleSysex()
 	const uint8_t* s = m_sysex;
 	const uint16_t n = m_sysexLen;
 
+	/* MT-32 / LA:  F0 41 <dev> 16 ... F7
+	 *
+	 * 0x41 es Roland y 0x16 es el ID de modelo del MT-32, asi que CUALQUIER
+	 * SysEx dirigido a ese modelo significa que el juego cree que tiene delante
+	 * un MT-32 -- no hace falta esperar al mensaje de reset concreto.  Es la
+	 * senal mas robusta que hay, y es la que hace que la opcion
+	 * px68k_midi_output_type = LA tenga por fin efecto real, sin que el frontend
+	 * sepa nada de px68k.
+	 *
+	 * Solo manda si el usuario ha dejado la opcion en AUTO. */
+	if (n >= 3 && s[0] == 0x41 && s[2] == 0x16) {
+		if (m_moduleOption == MODULE_AUTO)
+			setMt32Active(true);
+		/* El reset del MT-32 es F0 41 <dev> 16 12 7F 00 00 00 01 F7. */
+		if (n >= 6 && s[3] == 0x12 && s[4] == 0x7F)
+			resetChannels(true);
+		return;
+	}
+
 	/* GM1 / GM2 System On, GM System Off:  F0 7E <dev> 09 <01|02|03> F7 */
 	if (n >= 4 && s[0] == 0x7E && s[2] == 0x09) {
-		if (s[3] == 0x01 || s[3] == 0x02 || s[3] == 0x03) { resetChannels(true); return; }
+		if (s[3] == 0x01 || s[3] == 0x02 || s[3] == 0x03) {
+			if (m_moduleOption == MODULE_AUTO) setMt32Active(false);
+			resetChannels(true);
+			return;
+		}
 	}
 
 	/* Roland GS Reset:  F0 41 <dev> 42 12 40 00 7F 00 41 F7 */
 	if (n >= 9 && s[0] == 0x41 && s[2] == 0x42 && s[3] == 0x12 &&
 	    s[4] == 0x40 && s[5] == 0x00 && s[6] == 0x7F && s[7] == 0x00) {
+		if (m_moduleOption == MODULE_AUTO) setMt32Active(false);
 		resetChannels(true);
 		return;
 	}
@@ -466,6 +552,7 @@ void MidiSynth::handleSysex()
 	/* Yamaha XG System On:  F0 43 1<dev> 4C 00 00 7E 00 F7 */
 	if (n >= 7 && s[0] == 0x43 && (s[1] & 0xF0) == 0x10 && s[2] == 0x4C &&
 	    s[3] == 0x00 && s[4] == 0x00 && s[5] == 0x7E) {
+		if (m_moduleOption == MODULE_AUTO) setMt32Active(false);
 		resetChannels(true);
 		return;
 	}

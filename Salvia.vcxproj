@@ -7074,6 +7074,7 @@
     <ClInclude Include="src\audio\audiobuffer.h" />
     <ClInclude Include="src\audio\audiorate.h" />
     <ClInclude Include="src\audio\midisynth.h" />
+    <ClInclude Include="src\audio\mt32map.h" />
     <ClInclude Include="src\audio\musicplayer.h" />
     <ClInclude Include="libs\tinysoundfont\tsf.h" />
     <ClInclude Include="src\beans\structures.h" />

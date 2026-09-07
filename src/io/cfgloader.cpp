@@ -155,19 +155,28 @@ void CfgLoader::initMainConfig(){
 	 * falta un SoundFont para convertirlos en sonido. */
 	configMain[cfg::midiEnabled] = cfg::t_cfg_props("midiEnabled", true);
 	configMain[cfg::midiEnabled].desc = "#Enable the built-in General MIDI synthesizer."
-										"#Needs a .sf2 SoundFont in the system directory; without one it stays off.";
+										"\n#Needs a .sf2 SoundFont in the system directory; without one it stays off.";
 
 	/* Indice dentro de soundfontFiles, que se rellena escaneando el directorio
 	 * 'system' al arrancar.  0 = ninguno. */
 	configMain[cfg::midiSoundfont] = cfg::t_cfg_props("midiSoundfont", (int)0);
 	configMain[cfg::midiSoundfont].desc = "#Index of the .sf2 SoundFont to use, from the ones found"
-		"#in the system directory (0 = none)."
-		"#Keep it small on Xbox 360: samples are expanded to float,"
-		"#so a bank takes about twice its file size in RAM.";
+		"\n#in the system directory (0 = none)."
+		"\n#Keep it small on Xbox 360: samples are expanded to float,"
+		"\n#so a bank takes about twice its file size in RAM.";
 
 	configMain[cfg::midiVolume] = cfg::t_cfg_props("midiVolume", (int)8);
 	configMain[cfg::midiVolume].desc = "#MIDI synthesizer volume, in 10% steps"
-										"#0 = mute ... 10 = 100%";
+										"\n#0 = mute ... 10 = 100%";
+
+	/* Que modulo MIDI cree el juego que tiene delante.  En automatico se deduce
+	 * del SysEx de reset que manda el core, que es lo que quiere el 99% de los
+	 * casos; los otros dos valores son para juegos que no lo mandan. */
+	configMain[cfg::midiModule] = cfg::t_cfg_props("midiModule", (int)0);
+	configMain[cfg::midiModule].desc = "#MIDI module the game expects."
+										"\n#0 = auto-detect from the reset SysEx the core sends"
+										"\n#1 = General MIDI"
+										"\n#2 = Roland MT-32 / LA (translates MT-32 programs to GM)";
 
 	configMain[cfg::animBG] = cfg::t_cfg_props("animBG", (int)BG_TILES);
 	configMain[cfg::animBG].desc = "#Set the frontend background" 

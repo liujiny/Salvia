@@ -590,6 +590,25 @@ void GestorMenus::poblarMenuAudio(Menu* menuAudio, CfgLoader *refConfig){
 		listaMidiVol->callback = &GestorMenus::selectMidiVolume;
 		menuAudio->opciones.push_back(listaMidiVol);
 	}
+
+	{
+		/* Modulo que el juego espera.  Con "Auto" se deduce del SysEx de reset
+		 * que manda el core -- eso es lo que hace que px68k_midi_output_type = LA
+		 * tenga por fin efecto.  Los otros dos son para juegos que no lo mandan.
+		 *
+		 * El orden TIENE que coincidir con MidiSynth::ModuleMode, porque lo que
+		 * se persiste es el indice. */
+		std::vector<std::string> modules;
+		modules.push_back(trOrDefault("menu.options.midimodule.auto", "Auto-detect"));
+		modules.push_back(trOrDefault("menu.options.midimodule.gm",   "General MIDI"));
+		modules.push_back(trOrDefault("menu.options.midimodule.mt32", "Roland MT-32 / LA"));
+		OpcionLista *listaModule = new OpcionLista(
+			trOrDefault("menu.options.midimodule", "MIDI module"),
+			modules,
+			&refConfig->configMain[cfg::midiModule].getIntRef());
+		listaModule->callback = &GestorMenus::selectMidiModule;
+		menuAudio->opciones.push_back(listaModule);
+	}
 }
 
 void GestorMenus::checkMultipleSystemCore(CfgLoader *refConfig, Menu *menu, int coreIdx){
@@ -1030,6 +1049,14 @@ std::string GestorMenus::selectMidiVolume(void* inst, void *index, void *values)
 	 * sintetizador directamente porque la instancia vive en Engine y salvia.h no
 	 * se incluye desde aqui; ademas ese camino ya reaplica el volumen y, si el
 	 * banco es el que ya esta cargado, no relee nada. */
+	if (!index) return "";
+	applyMidiSoundfont();
+	return "";
+}
+
+std::string GestorMenus::selectMidiModule(void* inst, void *index, void *values) {
+	/* Igual que el volumen: se va por applyMidiSoundfont, que es quien tiene
+	 * acceso al sintetizador desde salvia.cpp. */
 	if (!index) return "";
 	applyMidiSoundfont();
 	return "";

@@ -1323,6 +1323,10 @@ void applyMidiSoundfont(bool loadNow) {
 		(int)cfg->soundfontFiles.size(), gameMenu->g_midi.isLoaded() ? 1 : 0,
 		path.c_str());
 
+	/* El modulo se aplica siempre, este cargado el banco o no: es estado del
+	 * sintetizador, no del fichero. */
+	gameMenu->g_midi.setModuleMode(cfg->configMain[cfg::midiModule].valueInt);
+
 	if (path.empty()) {
 		gameMenu->g_midi.close();
 		return;

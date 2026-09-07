@@ -76,6 +76,15 @@ public:
 	void setVolumePercent(int pct);   /* 0..100, aplicado como ganancia global */
 	int  getVolumePercent() const { return m_volumePct; }
 
+	/* Que modulo cree el juego que tiene delante.  Con AUTO se deduce del SysEx
+	 * de reset que manda el core (ver handleSysex): px68k envia el de MT-32
+	 * cuando px68k_midi_output_type = LA, y con eso esa opcion pasa a tener
+	 * efecto de verdad sin que el frontend sepa nada de ningun core.  Los otros
+	 * dos valores son para juegos que no mandan reset. */
+	enum ModuleMode { MODULE_AUTO = 0, MODULE_GM = 1, MODULE_MT32 = 2 };
+	void setModuleMode(int mode);
+	int  getModuleMode() const { return m_moduleOption; }
+
 	const std::string& getPath() const { return m_path; }
 	bool hasDrumBank() const { return m_hasDrumBank; }
 
@@ -120,6 +129,8 @@ private:
 	bool         m_hasDrumBank;   /* el banco trae bank 128 (percusion) */
 	bool         m_sawData;
 	bool         m_haveState;     /* la cancion ya ha configurado algun canal */
+	int          m_moduleOption;  /* lo que ha pedido el usuario (ModuleMode) */
+	bool         m_mt32;          /* modo efectivo: traducir programas de MT-32 */
 	ChannelState m_ch[MIDI_CHANNELS];
 
 	/* Estado de la maquina de trama del stream de bytes.  uint8_t en todos
@@ -144,6 +155,7 @@ private:
 	void reapplyChannels();       /* vuelca m_ch[] al sintetizador */
 	void applyChannelMessage(uint8_t status, uint8_t d0, uint8_t d1);
 	void applyProgram(int ch, uint8_t program);
+	void setMt32Active(bool on);  /* cambia el modo efectivo y lo deja en el log */
 	void handleSysex();
 
 	MidiSynth(const MidiSynth&);

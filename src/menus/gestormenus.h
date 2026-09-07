@@ -647,6 +647,7 @@ public:
 	static std::string toggleMidiEnabled(void* inst, void *value);
 	static std::string selectMidiSoundfont(void* inst, void *index, void *values);
 	static std::string selectMidiVolume(void* inst, void *index, void *values);
+	static std::string selectMidiModule(void* inst, void *index, void *values);
 	static std::string selectResolution(void* inst, void *index, void *values);
 
 	static void onUserText(const std::string& text, void* userData);
