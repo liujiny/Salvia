@@ -673,6 +673,10 @@ void initGameAudio(double sampleRate){
 
 	gameMenu->g_audioRate.init(BUFF_SIZE);
 	gameMenu->g_audioRate.setRates(sampleRate, (double)g_audio_device_rate);
+	/* El sintetizador MIDI se mezcla ANTES del resampler, o sea a la tasa del
+	 * core, no a la del dispositivo.  Si el juego nuevo declara otra, hay que
+	 * reafinarlo o sonaria a destiempo y desafinado. */
+	gameMenu->g_midi.setSampleRate((int)sampleRate);
 	LOG_INFO("Audio: core a %.1f Hz -> dispositivo a %d Hz (ratio %.4f)\n",
 		sampleRate, g_audio_device_rate, gameMenu->g_audioRate.getBaseRatio());
 }

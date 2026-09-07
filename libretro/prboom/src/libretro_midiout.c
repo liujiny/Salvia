@@ -120,10 +120,33 @@ static void lm_shutdown(void)
  * asked for (0..127). */
 static void lm_send_scaled_volume(int ch, int songvol)
 {
-   int v;
+   /* Compensacion de la curva de volumen del sintetizador de destino.
+    *
+    * CC7 no es amplitud lineal: todo sintetizador MIDI le aplica una curva (el
+    * del frontend de Salvia, TinySoundFont, eleva al cubo).  Al meter el
+    * volumen maestro de Doom DENTRO del propio CC7, esa curva se le aplicaba
+    * tambien al maestro y la atenuacion salia CUBICA: medido con la musica a
+    * 10/15, el volumen real del canal quedaba en 0.14 en vez de 0.32 -- 11 dB
+    * por debajo de lo que pide el usuario, y en la practica la musica se perdia
+    * bajo los efectos.
+    *
+    * Se premultiplica por la RAIZ CUBICA del maestro para que, despues de la
+    * curva del sintetizador, la atenuacion sea lineal respecto al ajuste.  Asi
+    * este reproductor se comporta como los demas (OPL, fluidsynth), que aplican
+    * el maestro como ganancia sobre el audio ya renderizado.
+    *
+    * La tabla esta en 1/1024 para no meter pow() ni coma flotante en esta ruta;
+    * mastercurve[i] = cbrt(i/15) * 1024.  A volumen maximo (15) vale 1024, o
+    * sea que no toca nada: el caso normal queda exactamente como estaba. */
+   static const int mastercurve[16] = {
+      0, 415, 523, 599, 659, 710, 754, 794, 830, 864, 895, 923, 951, 976, 1001, 1024
+   };
+   int v, master = lm_volume;
    if (songvol < 0)
       songvol = 100; /* GM default channel volume */
-   v = (songvol * lm_volume) / 15;
+   if (master < 0)  master = 0;
+   if (master > 15) master = 15;
+   v = (songvol * mastercurve[master]) / 1024;
    if (v > 127) v = 127;
    if (v < 0)   v = 0;
    I_LibretroMidiWrite((unsigned char)(0xb0 | (ch & 15)), 0);

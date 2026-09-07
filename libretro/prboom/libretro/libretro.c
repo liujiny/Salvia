@@ -785,11 +785,15 @@ static char *FindFileInDir(const char* dir, const char* wfname, const char* ext)
    if (ext && ext[0] != '\0')
       strcat(p, ext);
 
+   log_cb(RETRO_LOG_DEBUG, "FindFileInDir: openning %s\n", p);
+
    if (path_is_valid(p))
    {
       if (log_cb)
          log_cb(RETRO_LOG_DEBUG, "FindFileInDir: found %s\n", p);
       return p;
+   } else {
+	   log_cb(RETRO_LOG_DEBUG, "FindFileInDir: not valid -> %s\n", p);
    }
 
    /* Case-insensitive fallback for case-sensitive filesystems.  See

@@ -175,7 +175,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       "px68k_midi_output",
       "MIDI Output (Restart)",
       NULL,
-      "Emulate the CZ-6BM1 MIDI board. The frontend must provide a MIDI interface for anything to be heard; with no MIDI output available, games that detect the board will play their music silently instead of using the internal FM/ADPCM sound.",
+      "Emulate the CZ-6BM1 MIDI board. Needs a MIDI interface from the frontend (in Salvia: a .sf2 SoundFont in the system directory); with no MIDI output available, games that detect the board will play their music silently instead of using the internal FM/ADPCM sound.",
       NULL,
       "audio",
       {
@@ -183,7 +183,23 @@ struct retro_core_option_v2_definition option_defs_us[] = {
          { "enabled",  NULL},
          { NULL,       NULL },
       },
-      "disabled"
+      "enabled"
+   },
+   {
+      "px68k_midi_output_type",
+      "MIDI Output Type",
+      NULL,
+      "Selects which reset SysEx is sent to the MIDI module when the emulation starts.",
+      NULL,
+      "audio",
+      {
+         { "LA",       NULL },
+         { "GM",       NULL },
+         { "GS",       NULL },
+         { "XG",       NULL },
+         { NULL,       NULL },
+      },
+      "GM"
    },
    {
       "px68k_adpcm_vol",

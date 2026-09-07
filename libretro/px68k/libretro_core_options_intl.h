@@ -210,7 +210,23 @@ struct retro_core_option_v2_definition option_defs_fr[] = {
          { "enabled",  NULL},
          { NULL,       NULL },
       },
-      "disabled"
+      "enabled"
+   },
+   {
+      "px68k_midi_output_type",
+      "MIDI Output Type (Restart)",
+      NULL,
+      NULL,
+      NULL,
+      "audio",
+      {
+         { "LA",       NULL },
+         { "GM",       NULL },
+         { "GS",       NULL },
+         { "XG",       NULL },
+         { NULL,       NULL },
+      },
+      "GM"
    },
    {
       "px68k_adpcm_vol",
@@ -708,7 +724,7 @@ struct retro_core_option_v2_definition option_defs_es[] = {
       "px68k_midi_output",
       "Salida MIDI (reinicio)",
       NULL,
-      "Emula la placa MIDI CZ-6BM1. El frontend debe ofrecer una interfaz MIDI para que se oiga algo; sin salida MIDI, los juegos que detecten la placa reproducirán su música en silencio en lugar de usar el sonido FM/ADPCM interno.",
+      "Emula la placa MIDI CZ-6BM1. Necesita que el frontend ofrezca una interfaz MIDI (en Salvia: un SoundFont .sf2 en el directorio system); sin salida MIDI, los juegos que detecten la placa reproducirán su música en silencio en lugar de usar el sonido FM/ADPCM interno.",
       NULL,
       "audio",
       {
@@ -716,7 +732,23 @@ struct retro_core_option_v2_definition option_defs_es[] = {
          { "enabled",  NULL},
          { NULL,       NULL },
       },
-      "disabled"
+      "enabled"
+   },
+   {
+      "px68k_midi_output_type",
+      "Tipo de salida MIDI (reinicio)",
+      NULL,
+      "Elige qué SysEx de reinicio se envía al módulo MIDI al arrancar la emulación.",
+      NULL,
+      "audio",
+      {
+         { "LA",       NULL },
+         { "GM",       NULL },
+         { "GS",       NULL },
+         { "XG",       NULL },
+         { NULL,       NULL },
+      },
+      "GM"
    },
    {
       "px68k_adpcm_vol",

@@ -20,6 +20,32 @@
 extern "C" void salvia_dispatch_keyboard_event(bool down, unsigned retro_keycode,
                                                uint32_t character, uint16_t modifiers);
 
+/* Callbacks del retro_midi_interface.  Los llama el CORE desde su hilo de
+ * emulacion, dentro de retro_run, asi que van directos al sintetizador sin
+ * candados (ver el reparto de hilos en src/audio/midisynth.h).
+ *
+ * Solo salida: no hay MIDI de entrada, no tenemos de donde sacarlo. */
+static bool salvia_midi_input_enabled(void)  { return false; }
+static bool salvia_midi_output_enabled(void) { return gameMenu->g_midi.isLoaded(); }
+static bool salvia_midi_read(uint8_t* byte)  { (void)byte; return false; }
+
+static bool salvia_midi_write(uint8_t byte, uint32_t delta_time) {
+	/* delta_time se ignora: los eventos se aplican al sintetizador en el acto y
+	 * el audio del frame se renderiza despues, asi que la cuantizacion es de un
+	 * frame (~16 ms).  Se nota en arpegios muy rapidos y nada mas; partir el
+	 * render en segmentos por evento seria la mejora, pero no hace falta. */
+	(void)delta_time;
+	if (!gameMenu->g_midi.isLoaded())
+		return false;   /* el contrato es "true si se ha escrito el byte" */
+	gameMenu->g_midi.writeByte(byte);
+	return true;
+}
+
+static bool salvia_midi_flush(void) {
+	gameMenu->g_midi.flush();   /* no hay cola que vaciar */
+	return true;
+}
+
 /* Aplica el timing que declara el core: reconfigura el limitador de fps y el
  * ratio del resampler (sin reabrir el dispositivo) y refresca el aspect ratio.
  * Apunta lo aplicado en g_applied_core_* para que el recheck sepa si algo
@@ -29,6 +55,7 @@ static void applyCoreAvInfo(const struct retro_system_av_info& av) {
 	gameMenu->sync->init_fps_counter((float)av.timing.fps);
 	gameMenu->g_audioRate.reset();
 	gameMenu->g_audioRate.init(BUFF_SIZE);
+	gameMenu->g_midi.setSampleRate((int)av.timing.sample_rate);
 	/* Con el dispositivo fijo, un cambio de tasa no obliga a reabrir nada:
 	 * basta recalcular el ratio del resampler. */
 	if (av.timing.sample_rate > 0.0){
@@ -169,6 +196,47 @@ static bool retro_environment(unsigned cmd, void *data) {
 			// Al devolver true, le decimos al core: 
 			// "Si, puedes pedirme todos los botones de golpe".
 			return true;
+
+		/* Sintetizador MIDI del frontend (ver src/audio/midisynth.h).
+		 *
+		 * OJO con el tipo del payload: la cabecera de libretro documenta
+		 * "struct retro_midi_interface **", pero NO es asi.  RetroArch castea a
+		 * "struct retro_midi_interface *" y rellena la estructura EN SITIO, y
+		 * eso es lo que esperan los cores (px68k y dosbox-pure le pasan la
+		 * direccion de su propia struct).  Seguir el comentario de la cabecera
+		 * pisaria la primera
+		 * palabra de la estructura del core y reventaria en el primer write.
+		 *
+		 * SIEMPRE se entrega el interface, aunque en este momento no haya
+		 * soundfont cargado.  Devolver false aqui era un error: los cores
+		 * preguntan UNA sola vez (en su retro_init) y se quedan con la
+		 * respuesta para toda la sesion -- prboom guarda un midi_iface_valid
+		 * que ya nunca vuelve a revisar.  Con un false, activar el
+		 * sintetizador despues desde el menu no servia de nada.
+		 *
+		 * Para eso esta output_enabled(), que el core SI consulta cada vez
+		 * (prboom en cada I_RegisterSong): ahi es donde se dice "ahora mismo
+		 * no hay salida MIDI", y en cuanto se carga un banco la siguiente
+		 * cancion ya suena sin tener que recargar el juego. */
+		case RETRO_ENVIRONMENT_GET_MIDI_INTERFACE:{
+			struct retro_midi_interface* iface = (struct retro_midi_interface*)data;
+			if (!iface) return false;
+			/* Este es el momento exacto en que se sabe que el core va a usar
+			 * MIDI, y sigue siendo antes de que suene nada: aqui se abre el
+			 * banco si toca (ver la carga perezosa en midisynth.h). */
+			if (!gameMenu->g_midi.isLoaded())
+				applyMidiSoundfont(true);
+			iface->input_enabled  = salvia_midi_input_enabled;
+			iface->output_enabled = salvia_midi_output_enabled;
+			iface->read           = salvia_midi_read;
+			iface->write          = salvia_midi_write;
+			iface->flush          = salvia_midi_flush;
+			LOG_DEBUG("MIDI: interface entregado al core (soundfont: %s)",
+				gameMenu->g_midi.isLoaded()
+					? gameMenu->g_midi.getPath().c_str()
+					: "ninguno todavia; output_enabled lo dira cuando lo haya");
+			return true;
+		}
 
 		case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:{
 			std::string currentPath = gameMenu->getCfgLoader()->configMain[cfg::libretrosystem].valueStr;
@@ -490,8 +558,7 @@ static bool retro_environment(unsigned cmd, void *data) {
 			}
 
 			gameMenu->configMenus->poblarCoreOptions(gameMenu->getCfgLoader());
-			gameMenu->configMenus->resetIndexPos();
-
+			gameMenu->configMenus->volverMenuInicial();
 			return true;
 		}
 
@@ -1224,6 +1291,60 @@ static std::string resolveMenuMusicPath() {
  * ensureLoaded no hace nada si el fichero ya es el que suena, asi que llamar a
  * esto de mas es barato: al moverse entre cores que comparten musica no se corta
  * ni se reinicia la cancion. */
+/* Abre (o cierra) el SoundFont que toque segun la configuracion.
+ *
+ * Se llama al arrancar y cada vez que el usuario cambia la opcion en el menu.
+ * NUNCA con una partida en marcha: close() libera el tsf* que el hilo de
+ * emulacion estaria usando en render().  El menu de audio solo es accesible con
+ * el juego pausado o sin ROM, asi que la condicion se cumple sola, pero conviene
+ * tenerla escrita.
+ *
+ * El banco se queda residente toda la sesion, igual que la musica de menu: hay
+ * que tenerlo cargado ANTES de que el core pregunte por GET_MIDI_INTERFACE (que
+ * ocurre en retro_init, antes incluso de saber la tasa de audio del juego), y
+ * releerlo en cada carga seria un tiron notable en la 360. */
+void applyMidiSoundfont(bool loadNow) {
+	CfgLoader* cfg = gameMenu->getCfgLoader();
+	if (!cfg) return;
+
+	std::string path;
+	const int idx = cfg->configMain[cfg::midiSoundfont].valueInt;
+
+	/* El indice 0 es "ninguno" y es lo que apaga el sintetizador sin tocar el
+	 * interruptor general. */
+	if (cfg->configMain[cfg::midiEnabled].valueBool &&
+	    idx > 0 && (std::size_t)idx < cfg->soundfontFiles.size()) {
+		path = cfg->configMain[cfg::libretrosystem].valueStr +
+		       Constant::getFileSep() + cfg->soundfontFiles[idx];
+	}
+
+	LOG_DEBUG("MIDI: applyMidiSoundfont enabled=%d idx=%d listado=%d cargado=%d ruta='%s'",
+		cfg->configMain[cfg::midiEnabled].valueBool ? 1 : 0, idx,
+		(int)cfg->soundfontFiles.size(), gameMenu->g_midi.isLoaded() ? 1 : 0,
+		path.c_str());
+
+	if (path.empty()) {
+		gameMenu->g_midi.close();
+		return;
+	}
+	if (gameMenu->g_midi.isLoaded() && gameMenu->g_midi.getPath() == path) {
+		gameMenu->g_midi.setVolumePercent(cfg->configMain[cfg::midiVolume].valueInt * 10);
+		return;   /* ya es el que suena: no releer el fichero */
+	}
+
+	/* Carga perezosa (ver midisynth.h).  Desde el menu solo se abre si hay una
+	 * partida en marcha que pueda estar usandolo; si no la hay, el ajuste se
+	 * queda guardado en la configuracion y se aplicara cuando el proximo core
+	 * pida el interface.  Asi mover el volumen o mirar la lista de bancos no
+	 * reserva decenas de MB por las buenas. */
+	if (!loadNow && !gameMenu->romLoaded)
+		return;
+
+	gameMenu->g_midi.open(path, (int)g_applied_core_sample_rate > 0
+	                             ? (int)g_applied_core_sample_rate : 44100);
+	gameMenu->g_midi.setVolumePercent(cfg->configMain[cfg::midiVolume].valueInt * 10);
+}
+
 void applyMenuMusic() {
 	if (!g_music || !audio_opened) return;
 
@@ -1246,6 +1367,42 @@ void applyMenuMusic() {
 static int16_t     g_singleSampleBlock[RETRO_SAMPLE_BLOCK * 2];
 static std::size_t g_singleSampleFrames = 0;
 
+/* Buffer de trabajo para mezclar el sintetizador MIDI con el audio del core.
+ * Mismo presupuesto que el temporal del resampler (DRC_MAX_FRAMES): 2048 frames
+ * estereo son 8 KB. */
+#define MIDI_MIX_FRAMES 2048
+static int16_t g_midiMixBuf[MIDI_MIX_FRAMES * 2];
+
+/* Unico punto por el que el audio del core entra al resampler.
+ *
+ * Si el juego no usa MIDI (el caso normal) esto es una rama predecible y el
+ * audio va directo, sin copias.  Si lo usa, hay que copiar a un buffer propio
+ * porque el del core llega const, y ahi encima se renderiza el sintetizador:
+ * tsf_render_short con flag_mixing suma y satura, que es justo el mezclador que
+ * el frontend no tiene. */
+/* Flanco de entrada en fast-forward, para cortar el MIDI una sola vez. */
+static bool g_midiFastForwardCut = false;
+
+static void audioSubmit(const int16_t* data, std::size_t frames, bool blocking) {
+	MidiSynth& midi = gameMenu->g_midi;
+
+	g_midiFastForwardCut = false;   /* llegando audio normal: rearmado */
+
+	if (!midi.isActive()) {
+		gameMenu->g_audioRate.processAndWrite(gameMenu->g_audioBuffer, data, frames, blocking);
+		return;
+	}
+
+	while (frames) {
+		const std::size_t n = (frames > MIDI_MIX_FRAMES) ? (std::size_t)MIDI_MIX_FRAMES : frames;
+		memcpy(g_midiMixBuf, data, n * 2 * sizeof(int16_t));
+		midi.render(g_midiMixBuf, (int)n);
+		gameMenu->g_audioRate.processAndWrite(gameMenu->g_audioBuffer, g_midiMixBuf, n, blocking);
+		data   += n * 2;
+		frames -= n;
+	}
+}
+
 void retro_audio_sample(int16_t left, int16_t right) {
 	/* Ruta de muestra suelta: la usan pocos cores y entregan un frame por
 	 * llamada.  Se acumula un bloque antes de remuestrear por dos motivos:
@@ -1264,8 +1421,7 @@ void retro_audio_sample(int16_t left, int16_t right) {
 	if (g_singleSampleFrames >= RETRO_SAMPLE_BLOCK) {
 		const int mode = *gameMenu->current_sync;
 		if (mode != SYNC_FAST_FORWARD) {
-			gameMenu->g_audioRate.processAndWrite(gameMenu->g_audioBuffer,
-				g_singleSampleBlock, g_singleSampleFrames, mode == SYNC_TO_AUDIO);
+			audioSubmit(g_singleSampleBlock, g_singleSampleFrames, mode == SYNC_TO_AUDIO);
 		}
 		g_singleSampleFrames = 0;
 	}
@@ -1283,13 +1439,22 @@ std::size_t retro_audio_sample_batch(const int16_t * __restrict data, std::size_
              * hay que pasar igualmente por el resampler: el dispositivo esta
              * abierto a tasa fija y escribir crudo sonaria a destiempo. El
              * bloqueo se conserva -- processAndWrite lo propaga al buffer. */
-            gameMenu->g_audioRate.processAndWrite(gameMenu->g_audioBuffer, data, frames, true);
+            audioSubmit(data, frames, true);
             break;
         case SYNC_FAST_FORWARD:
+            /* No se renderiza, pero los eventos MIDI siguen llegando por
+             * salvia_midi_write, asi que las notas se acumularian y sonarian
+             * todas de golpe al volver a velocidad normal.  Se corta una vez, al
+             * entrar: panic() recorre los 16 canales y no interesa repetirlo en
+             * cada lote. */
+            if (!g_midiFastForwardCut) {
+                gameMenu->g_midi.panic();
+                g_midiFastForwardCut = true;
+            }
             return frames;
         default:
             // SYNC_TO_VIDEO / SYNC_NONE: DRC ajusta la tasa para evitar drift
-            gameMenu->g_audioRate.processAndWrite(gameMenu->g_audioBuffer, data, frames, false);
+            audioSubmit(data, frames, false);
             break;
     }
     return frames;
@@ -1471,6 +1636,13 @@ void closeGame(){
 		 * proximo juego empieza oyendo la cola del anterior. */
 		g_singleSampleFrames = 0;
 		gameMenu->g_audioRate.reset();
+		/* Notas MIDI colgadas: el core se va sin mandar los note-off, asi que si
+		 * no se cortan aqui el proximo juego arranca con el acorde del anterior.
+		 * El soundfont NO se descarga: es el mismo para toda la sesion y
+		 * releerlo en cada carga seria un tiron en la 360 (mismo criterio que la
+		 * musica de menu). */
+		gameMenu->g_midi.panic();
+		g_midiFastForwardCut = false;
 #ifndef NO_SRAM
 		saveSram(romPaths.sram.c_str());
 #endif
@@ -1491,6 +1663,11 @@ void closeGame(){
 		retro_unload_game();
 		retro_deinit();
 		gameMenu->romLoaded = false;
+
+		/* El banco MIDI se suelta con el core: el proximo juego lo volvera a
+		 * pedir si lo necesita.  Aqui ya no queda nadie del lado de la
+		 * emulacion que pueda estar dentro de render(). */
+		gameMenu->g_midi.close();
 
 		/* De vuelta al menu: reanudar el dispositivo, que el bloque de audio de
 		 * arriba dejo pausado.  No hay que recargar nada -- la musica sigue en
@@ -1819,6 +1996,9 @@ void closeResources() {
 		delete g_music;
 		g_music = NULL;
 	}
+	/* El sintetizador es miembro de Engine, no hace falta borrarlo; pero el
+	 * banco son varios MB y se suelta aqui, con el audio ya parado. */
+	gameMenu->g_midi.close();
 
 	Scrapper::ShutdownScrapper();
     if (conversion_buffer != NULL) {
@@ -1982,6 +2162,11 @@ int main(int argc, char *argv[]) {
 		 * general como respaldo; ya no hay ruta fija en el codigo. */
 		applyMenuMusic();
 	}
+
+	/* El SoundFont NO se abre aqui: se abre cuando un core pide el interface
+	 * MIDI (ver RETRO_ENVIRONMENT_GET_MIDI_INTERFACE).  Un banco ocupa en RAM el
+	 * doble de lo que pesa el fichero, y los hay de 50 MB: no se van a reservar
+	 * para una sesion que a lo mejor solo toca la Master System. */
 
 	listMenu = new ListMenu(gameMenu->overlay->w, gameMenu->overlay->h);
 	listMenu->setLayout(LAYBOXES, gameMenu->overlay->w, gameMenu->overlay->h);

@@ -4,6 +4,7 @@
 
 #include <menus/gestormenus.h>
 #include <audio/musicplayer.h>   /* g_music: volumen de la musica en caliente */
+#include <audio/midisynth.h>     /* applyMidiSoundfont: sintetizador MIDI desde el menu */
 #include <const/constant.h>
 #include <const/menuconst.h>
 #include <gfx/gfx_utils.h>
@@ -553,6 +554,42 @@ void GestorMenus::poblarMenuAudio(Menu* menuAudio, CfgLoader *refConfig){
 		listaVol->callback = &GestorMenus::selectMusicVolume;
 		menuAudio->opciones.push_back(listaVol);
 	}
+
+	/* Sintetizador General MIDI.  Los cores no sintetizan MIDI: px68k (placa
+	 * CZ-6BM1 del X68000), dosbox-pure y prboom mandan bytes MIDI crudos y sin
+	 * un SoundFont detras se pierden en silencio.  En Xbox 360 no hay
+	 * alternativa: el XDK no trae salida MIDI del sistema. */
+	{
+		OpcionBool *opcionMidi = new OpcionBool(
+			trOrDefault("menu.options.midienabled", "MIDI synthesizer"),
+			&refConfig->configMain[cfg::midiEnabled].getBoolRef());
+		opcionMidi->callback = &GestorMenus::toggleMidiEnabled;
+		menuAudio->opciones.push_back(opcionMidi);
+	}
+
+	{
+		/* La lista sale de escanear el directorio 'system' (el mismo que se les
+		 * anuncia a los cores como system dir), con "None" en el indice 0. */
+		OpcionLista *listaSf = new OpcionLista(
+			trOrDefault("menu.options.midisoundfont", "SoundFont (.sf2)"),
+			refConfig->soundfontFiles,
+			&refConfig->configMain[cfg::midiSoundfont].getIntRef());
+		listaSf->callback = &GestorMenus::selectMidiSoundfont;
+		menuAudio->opciones.push_back(listaSf);
+	}
+
+	{
+		std::vector<std::string> midiVolSteps;
+		for (int v = 0; v <= 100; v += 10){
+			midiVolSteps.push_back(Constant::intToString(v) + "%");
+		}
+		OpcionLista *listaMidiVol = new OpcionLista(
+			trOrDefault("menu.options.midivolume", "MIDI volume"),
+			midiVolSteps,
+			&refConfig->configMain[cfg::midiVolume].getIntRef());
+		listaMidiVol->callback = &GestorMenus::selectMidiVolume;
+		menuAudio->opciones.push_back(listaMidiVol);
+	}
 }
 
 void GestorMenus::checkMultipleSystemCore(CfgLoader *refConfig, Menu *menu, int coreIdx){
@@ -967,6 +1004,34 @@ std::string GestorMenus::toggleMusicEnabled(void* inst, void *value) {
 	 * para un interruptor explicito del usuario no parece necesario. */
 	if (!value) return "";
 	applyMenuMusic();
+	return "";
+}
+
+std::string GestorMenus::toggleMidiEnabled(void* inst, void *value) {
+	/* applyMidiSoundfont() resuelve los dos sentidos: apagado cierra el banco y
+	 * libera sus varios MB; encendido lo vuelve a abrir. */
+	if (!value) return "";
+	applyMidiSoundfont();
+	return "";
+}
+
+std::string GestorMenus::selectMidiSoundfont(void* inst, void *index, void *values) {
+	/* Cambiar de banco RELEE el fichero, asi que no es gratis (unos MB de disco
+	 * y la expansion de las muestras a float).  Es aceptable porque este menu
+	 * solo se alcanza con la partida parada: el hilo de emulacion no puede estar
+	 * dentro de render() mientras se libera el tsf*. */
+	if (!index) return "";
+	applyMidiSoundfont();
+	return "";
+}
+
+std::string GestorMenus::selectMidiVolume(void* inst, void *index, void *values) {
+	/* En vivo, en pasos de 10%.  Se va por applyMidiSoundfont y no por el
+	 * sintetizador directamente porque la instancia vive en Engine y salvia.h no
+	 * se incluye desde aqui; ademas ese camino ya reaplica el volumen y, si el
+	 * banco es el que ya esta cargado, no relee nada. */
+	if (!index) return "";
+	applyMidiSoundfont();
 	return "";
 }
 

@@ -750,7 +750,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_prboom|Xbox 360'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_mame|Xbox 360'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -1548,7 +1548,7 @@
     <OutDir>$(BUILD_DIR)</OutDir>
     <IntDir>$(BUILD_DIR)</IntDir>
     <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-    <ImageXexOutput>$(OutDir)$(EMU_LIB_NAME)$(ImageExt)</ImageXexOutput>
+    <ImageXexOutput>$(OutDir)$(EMU_LIB_PRBOOM)$(ImageExt)</ImageXexOutput>
     <RemoteRoot>usb0:\$(SolutionName)</RemoteRoot>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_mame|Xbox 360'">
@@ -4040,32 +4040,33 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>_XBOX;HAVE_CHD;EMU_LIB_NAME="$(EMU_LIB_NAME)";$(COMMON_PREPROCESSOR_RELEASE)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_XBOX;EMU_LIB_NAME="$(EMU_LIB_PRBOOM)";$(COMMON_PREPROCESSOR_RELEASE)</PreprocessorDefinitions>
       <CallAttributedProfiling>Disabled</CallAttributedProfiling>
       <AdditionalIncludeDirectories>$(ADDITIONAL_INCLUDE_DIRS_XBOX)</AdditionalIncludeDirectories>
       <UndefinePreprocessorDefinitions>_DEBUG</UndefinePreprocessorDefinitions>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <InlineAssemblyOptimization>true</InlineAssemblyOptimization>
-      <TrapIntegerDividesOptimization>true</TrapIntegerDividesOptimization>
-      <PreschedulingOptimization>true</PreschedulingOptimization>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <InlineAssemblyOptimization>false</InlineAssemblyOptimization>
+      <TrapIntegerDividesOptimization>false</TrapIntegerDividesOptimization>
+      <PreschedulingOptimization>false</PreschedulingOptimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
     </ClCompile>
     <Link>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>$(COMMON_LIBS_XBOX_RELEASE);Genesis-Plus-GX.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ADDITIONAL_LIB_DIRS_XBOX);$(ProjectDir)libretro\genesis-plus-gx\Release\Xbox 360</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(COMMON_LIBS_XBOX_RELEASE);prboom_libretro_xdk360.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ADDITIONAL_LIB_DIRS_XBOX);$(ProjectDir)libretro\prboom\msvc2010\bin\Xbox360\Debug</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
     <Deploy>
       <DeploymentType>CopyToHardDrive</DeploymentType>
@@ -6284,12 +6285,14 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <OmitFramePointers>true</OmitFramePointers>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <OmitFramePointers>false</OmitFramePointers>
+      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
       <FloatingPointModel>Fast</FloatingPointModel>
       <ExceptionHandling>Async</ExceptionHandling>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <StringPooling>true</StringPooling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(ADDITIONAL_LIB_DIRS_WIN);$(ProjectDir)libretro\prboom\msvc2010\bin\Win32\Release</AdditionalLibraryDirectories>
@@ -6297,7 +6300,7 @@
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib</IgnoreSpecificDefaultLibraries>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -6314,7 +6317,7 @@
       <ExceptionHandling>Async</ExceptionHandling>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN;DEBUG_LOG;$(COMMON_PREPROCESSOR_RELEASE);RELOAD_CORE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN;DEBUG_LOG;$(COMMON_PREPROCESSOR_RELEASE)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <CompileAs>CompileAsCpp</CompileAs>
       <AdditionalIncludeDirectories>$(ADDITIONAL_INCLUDE_DIRS_WIN)</AdditionalIncludeDirectories>
@@ -7057,6 +7060,7 @@
     <ClCompile Include="src\retroachievements\CHDHashed.cpp" />
     <ClCompile Include="src\retroachievements\HashCHD.cpp" />
     <ClCompile Include="src\salvia.cpp" />
+    <ClCompile Include="src\audio\midisynth.cpp" />
     <ClCompile Include="src\so\launcher.cpp" />
     <ClCompile Include="src\so\soutils.cpp" />
     <ClCompile Include="src\uiobjects\image.cpp" />
@@ -7069,7 +7073,9 @@
   <ItemGroup>
     <ClInclude Include="src\audio\audiobuffer.h" />
     <ClInclude Include="src\audio\audiorate.h" />
+    <ClInclude Include="src\audio\midisynth.h" />
     <ClInclude Include="src\audio\musicplayer.h" />
+    <ClInclude Include="libs\tinysoundfont\tsf.h" />
     <ClInclude Include="src\beans\structures.h" />
     <ClInclude Include="src\cheats\cheatmanager.h" />
     <ClInclude Include="src\cheats\rdbreader.h" />

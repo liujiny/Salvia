@@ -1,4 +1,25 @@
 /* TinySoundFont - v0.9 - SoundFont2 synthesizer - https://github.com/schellingb/TinySoundFont
+ *
+ * ===========================================================================
+ * FORK DE SALVIA -- soporte big-endian (Xbox 360, PowerPC).
+ *
+ * Upstream asume little-endian: lee los campos multi-byte del .sf2 crudos del
+ * fichero, sin convertir.  Los cambios estan todos entre TSF_BIG_ENDIAN y son
+ * VACIOS en little-endian, asi que la compilacion de Windows sale identica a
+ * la de upstream.  Al re-vendorizar hay que volver a aplicar estos cinco:
+ *
+ *   [BE-1] bloque TSF_BIG_ENDIAN / tsf_fixendian / TSF_FIXEND (tras los typedefs)
+ *   [BE-2] macro TSFR: swap por tamano tras cada lectura de campo
+ *   [BE-3] tsf_hydra_read_pgen / _igen: genAmount necesita despacho semantico
+ *   [BE-4] tsf_riffchunk_read: el tamano del chunk RIFF
+ *   [BE-5] tsf_load_samples: las muestras de 16 bits del chunk smpl
+ *   [BE-6] tsf_decode_sf3_samples: idem, en la rama SF3/Ogg.  OJO: [BE-5] y
+ *          [BE-6] son EXCLUYENTES -- tsf.h convierte las muestras en un sitio
+ *          o en el otro segun este definido STB_VORBIS_INCLUDE_STB_VORBIS_H.
+ *          dosbox-pure incluye stb_vorbis antes que tsf.h, asi que en su build
+ *          manda [BE-6]; en el del frontend, [BE-5].
+ * ===========================================================================
+ *
                                      no warranty implied; use at your own risk
    Do this:
       #define TSF_IMPLEMENTATION
@@ -325,6 +346,46 @@ typedef signed short tsf_s16;
 typedef unsigned int tsf_u32;
 typedef char tsf_char20[20];
 
+/* [BE-1] Deteccion de endianness y helper de swap.
+ *
+ * _XBOX ya viene definido en todas las configuraciones Xbox 360 del vcxproj,
+ * asi que no hace falta tocar el proyecto.  Se puede forzar desde fuera
+ * definiendo TSF_BIG_ENDIAN o TSF_LITTLE_ENDIAN. */
+#if !defined(TSF_BIG_ENDIAN) && !defined(TSF_LITTLE_ENDIAN)
+#  if defined(_XBOX) || defined(_XBOX_VER) || defined(__ppc__) || defined(__PPC__) ||       (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#    define TSF_BIG_ENDIAN 1
+#  endif
+#endif
+
+#ifdef TSF_BIG_ENDIAN
+/* Swap byte a byte a proposito: nada de castear a tsf_u16* o tsf_u32* sobre
+ * punteros que pueden venir sin alinear (en PPC eso es una excepcion de
+ * alineacion), y nada de intrinsecos que el CRT del XDK escribe de otra forma. */
+static void tsf_fixendian(void* p, unsigned int size)
+{
+	tsf_u8* b = (tsf_u8*)p, t;
+	if      (size == 2) { t = b[0]; b[0] = b[1]; b[1] = t; }
+	else if (size == 4) { t = b[0]; b[0] = b[3]; b[3] = t; t = b[1]; b[1] = b[2]; b[2] = t; }
+	/* Cualquier otro tamano se deja intacto: son los char[20] de los nombres y
+	 * los campos de un solo byte. */
+}
+#  define TSF_FIXEND(F) tsf_fixendian(&(F), (unsigned int)sizeof(F));
+
+/* Lee un short little-endian sin tocar el buffer de origen.  Hace falta donde
+ * las muestras se convierten LEYENDO del buffer crudo y no se puede swapear en
+ * sitio, porque el mismo tramo se puede recorrer dos veces (ver [BE-6]). */
+static short tsf_read_les16(const void* p)
+{
+	const tsf_u8* b = (const tsf_u8*)p;
+	tsf_u16 v = (tsf_u16)(b[0] | (b[1] << 8));
+	return (v & 0x8000) ? (short)((int)v - 0x10000) : (short)v;
+}
+#  define TSF_LES16(P) tsf_read_les16(P)
+#else
+#  define TSF_FIXEND(F)
+#  define TSF_LES16(P) (*(const short*)(P))
+#endif
+
 #define TSF_FourCCEquals(value1, value2) (value1[0] == value2[0] && value1[1] == value2[1] && value1[2] == value2[2] && value1[3] == value2[3])
 
 struct tsf
@@ -405,17 +466,37 @@ struct tsf_hydra_imod { tsf_u16 modSrcOper, modDestOper; tsf_s16 modAmount; tsf_
 struct tsf_hydra_igen { tsf_u16 genOper; union tsf_hydra_genamount genAmount; };
 struct tsf_hydra_shdr { tsf_char20 sampleName; tsf_u32 start, end, startLoop, endLoop, sampleRate; tsf_u8 originalPitch; tsf_s8 pitchCorrection; tsf_u16 sampleLink, sampleType; };
 
-#define TSFR(FIELD) stream->read(stream->data, &i->FIELD, sizeof(i->FIELD));
+/* [BE-2] Todos los campos de la hydra pasan por aqui.  El despacho por tamano
+ * es seguro para los 39 campos: los unicos que no son escalares de 2 o 4 bytes
+ * son los nombres (char[20]) y los de un byte, y tsf_fixendian los ignora. */
+#define TSFR(FIELD) stream->read(stream->data, &i->FIELD, sizeof(i->FIELD)); TSF_FIXEND(i->FIELD)
+
+/* [BE-3] La excepcion: genAmount es una union de 2 bytes cuyo significado
+ * depende del generador.  Para keyRange (43) y velRange (44) son DOS BYTES
+ * INDEPENDIENTES (lo, hi) y no se pueden swapear; para el resto es un valor de
+ * 16 bits y hay que swapearlo.  genOper se lee antes, asi que ya esta en el
+ * orden del host cuando se decide.
+ *
+ * Si esto se hace mal y se swapea siempre, los rangos de teclas quedan
+ * invertidos (hi..lo), casi ninguna region casa con ninguna nota y el banco
+ * suena en SILENCIO con alguna nota suelta en la octava equivocada.  Es un
+ * fallo silencioso y caro de encontrar: de ahi el comentario. */
+#ifdef TSF_BIG_ENDIAN
+#  define TSF_FIXGENAMOUNT(I) if ((I)->genOper != 43 && (I)->genOper != 44) tsf_fixendian(&(I)->genAmount, 2);
+#else
+#  define TSF_FIXGENAMOUNT(I)
+#endif
 static void tsf_hydra_read_phdr(struct tsf_hydra_phdr* i, struct tsf_stream* stream) { TSFR(presetName) TSFR(preset) TSFR(bank) TSFR(presetBagNdx) TSFR(library) TSFR(genre) TSFR(morphology) }
 static void tsf_hydra_read_pbag(struct tsf_hydra_pbag* i, struct tsf_stream* stream) { TSFR(genNdx) TSFR(modNdx) }
 static void tsf_hydra_read_pmod(struct tsf_hydra_pmod* i, struct tsf_stream* stream) { TSFR(modSrcOper) TSFR(modDestOper) TSFR(modAmount) TSFR(modAmtSrcOper) TSFR(modTransOper) }
-static void tsf_hydra_read_pgen(struct tsf_hydra_pgen* i, struct tsf_stream* stream) { TSFR(genOper) TSFR(genAmount) }
+static void tsf_hydra_read_pgen(struct tsf_hydra_pgen* i, struct tsf_stream* stream) { TSFR(genOper) stream->read(stream->data, &i->genAmount, sizeof(i->genAmount)); TSF_FIXGENAMOUNT(i) }
 static void tsf_hydra_read_inst(struct tsf_hydra_inst* i, struct tsf_stream* stream) { TSFR(instName) TSFR(instBagNdx) }
 static void tsf_hydra_read_ibag(struct tsf_hydra_ibag* i, struct tsf_stream* stream) { TSFR(instGenNdx) TSFR(instModNdx) }
 static void tsf_hydra_read_imod(struct tsf_hydra_imod* i, struct tsf_stream* stream) { TSFR(modSrcOper) TSFR(modDestOper) TSFR(modAmount) TSFR(modAmtSrcOper) TSFR(modTransOper) }
-static void tsf_hydra_read_igen(struct tsf_hydra_igen* i, struct tsf_stream* stream) { TSFR(genOper) TSFR(genAmount) }
+static void tsf_hydra_read_igen(struct tsf_hydra_igen* i, struct tsf_stream* stream) { TSFR(genOper) stream->read(stream->data, &i->genAmount, sizeof(i->genAmount)); TSF_FIXGENAMOUNT(i) }
 static void tsf_hydra_read_shdr(struct tsf_hydra_shdr* i, struct tsf_stream* stream) { TSFR(sampleName) TSFR(start) TSFR(end) TSFR(startLoop) TSFR(endLoop) TSFR(sampleRate) TSFR(originalPitch) TSFR(pitchCorrection) TSFR(sampleLink) TSFR(sampleType) }
 #undef TSFR
+#undef TSF_FIXGENAMOUNT
 
 struct tsf_riffchunk { tsf_fourcc id; tsf_u32 size; };
 struct tsf_envelope { float delay, attack, hold, decay, sustain, release, keynumToHold, keynumToDecay; };
@@ -486,6 +567,11 @@ static TSF_BOOL tsf_riffchunk_read(struct tsf_riffchunk* parent, struct tsf_riff
 	if (parent && sizeof(tsf_fourcc) + sizeof(tsf_u32) > parent->size) return TSF_FALSE;
 	if (!stream->read(stream->data, &chunk->id, sizeof(tsf_fourcc)) || *chunk->id <= ' ' || *chunk->id >= 'z') return TSF_FALSE;
 	if (!stream->read(stream->data, &chunk->size, sizeof(tsf_u32))) return TSF_FALSE;
+	/* [BE-4] El id son 4 chars y se compara elemento a elemento (TSF_FourCCEquals),
+	 * asi que ese no se toca.  El tamano si: alimenta aritmetica SIN SIGNO
+	 * (parent->size -= ...), y sin convertir se desborda a ~4G y el loader se
+	 * queda dando vueltas o pide un TSF_MALLOC absurdo. */
+	TSF_FIXEND(chunk->size)
 	if (parent && sizeof(tsf_fourcc) + sizeof(tsf_u32) + chunk->size > parent->size) return TSF_FALSE;
 	if (parent) parent->size -= sizeof(tsf_fourcc) + sizeof(tsf_u32) + chunk->size;
 	IsRiff = TSF_FourCCEquals(chunk->id, "RIFF"), IsList = TSF_FourCCEquals(chunk->id, "LIST");
@@ -960,8 +1046,13 @@ static int tsf_decode_sf3_samples(const void* rawBuffer, float** pFloatBuffer, u
 			}
 
 			// Convert the samples from short to float
-			for (out = res + oldResNum; in < inEnd;)
-				*(out++) = (float)(*(in++) / 32767.0);
+			/* [BE-6] Gemelo de [BE-5] para la rama SF3/Ogg: las muestras crudas
+			 * son shorts little-endian.  Aqui NO se puede swapear el buffer en
+			 * sitio como en [BE-5], porque el ajuste de indices de arriba
+			 * (in -= fix_offset) puede hacer que un mismo tramo se recorra dos
+			 * veces y quedaria swapeado dos veces, o sea sin swapear. */
+			for (out = res + oldResNum; in < inEnd; in++)
+				*(out++) = (float)(TSF_LES16(in) / 32767.0);
 		}
 	}
 
@@ -996,6 +1087,18 @@ static int tsf_load_samples(void** pRawBuffer, float** pFloatBuffer, unsigned in
 	*pSmplCount = chunkSmpl->size / (unsigned int)sizeof(short);
 	*pFloatBuffer = (float*)TSF_MALLOC(*pSmplCount * sizeof(float));
 	if (!*pFloatBuffer || !stream->read(stream->data, *pFloatBuffer, chunkSmpl->size)) return 0;
+	#ifdef TSF_BIG_ENDIAN
+	/* [BE-5] Las muestras llegan como shorts little-endian y se convierten a
+	 * float in situ justo debajo.  Se recorre con *pSmplCount y no con
+	 * chunkSmpl->size: si el chunk tuviera un tamano impar, el segundo se
+	 * pasaria un byte del ultimo sample completo. */
+	{
+		tsf_u8* b = (tsf_u8*)*pFloatBuffer;
+		tsf_u8* bEnd = b + (*pSmplCount * (unsigned int)sizeof(short));
+		tsf_u8 t;
+		for (; b != bEnd; b += 2) { t = b[0]; b[0] = b[1]; b[1] = t; }
+	}
+	#endif
 	for (res = *pFloatBuffer, out = res + *pSmplCount, in = (short*)res + *pSmplCount; out != res;)
 		*(--out) = (float)(*(--in) / 32767.0);
 	return 1;

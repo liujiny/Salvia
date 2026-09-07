@@ -3971,6 +3971,20 @@ bool fpath_nocase(std::string& pathstr, bool* out_is_dir)
 	for (char clast; ((clast = pathstr.back()) == '\\' || clast == '/') && pathstr.length() > (path[1] == ':' ? 3u : 1u); path = (char*)pathstr.c_str()) pathstr.pop_back(); 
 	// Paths that start with / or \ need to be prefixed with the drive letter from the content path
 	if ((path[0] == '/' || path[0] == '\\') && path[1] != '\\' && dbp_content_path.length() > 1 && dbp_content_path[1] == ':') { pathstr.insert(0, &dbp_content_path[0], 2); path = (char*)pathstr.c_str(); }
+	#ifdef _XBOX
+	// En Xbox 360 la unidad NO es una letra suelta: las rutas del host son
+	// game:\..., usb0:\..., hdd:\...  El check de abajo solo reconoce el
+	// formato X:\, asi que una ruta absoluta de la 360 se colaba como relativa y
+	// acababa con el directorio del contenido delante -> el fichero no se
+	// encontraba nunca.  Sintoma: el SoundFont de dosbox_pure_midi no cargaba y
+	// no habia MIDI, mientras que el driver del frontend si funcionaba porque no
+	// pasa por aqui.  Mismo caso que ya se contempla en Cross::MakePathAbsolute.
+	{
+		const char* colon = strchr(path, ':');
+		if (colon && colon != path && (colon[1] == '\\' || colon[1] == '/'))
+			return exists_utf8(path, out_is_dir);
+	}
+	#endif
 	// For absolute paths we can just return here because paths are not case sensitive on Windows
 	if ((path[1] == ':' && (path[2] == '/' || path[2] == '\\')) || (path[0] == '\\' && path[1] == '\\')) return exists_utf8(path, out_is_dir);
 	#else

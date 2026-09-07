@@ -34,6 +34,7 @@ CfgLoader::CfgLoader(){
 	const std::string mainLang = this->configMain[cfg::mainLang].valueStr;
 	LanguageManager::instance()->loadLanguage(Constant::getAppDir() + "\\assets\\i18n\\" + mainLang + ".ini");
 	findAllBgMusic();
+	findAllSoundfonts();
 }
 
 CfgLoader::~CfgLoader(){
@@ -148,6 +149,25 @@ void CfgLoader::initMainConfig(){
 	configMain[cfg::musicFile].desc = "#Menu music file, relative to the app directory."
 										"\n#Used when the active core does not define its own 'music_file'."
 										"\n#Leave empty for no music.";
+
+	/* Sintetizador MIDI del frontend.  Los cores no sintetizan MIDI: los que
+	 * tienen musica MIDI (px68k, dosbox-pure, prboom) mandan bytes crudos y hace
+	 * falta un SoundFont para convertirlos en sonido. */
+	configMain[cfg::midiEnabled] = cfg::t_cfg_props("midiEnabled", true);
+	configMain[cfg::midiEnabled].desc = "#Enable the built-in General MIDI synthesizer."
+										"#Needs a .sf2 SoundFont in the system directory; without one it stays off.";
+
+	/* Indice dentro de soundfontFiles, que se rellena escaneando el directorio
+	 * 'system' al arrancar.  0 = ninguno. */
+	configMain[cfg::midiSoundfont] = cfg::t_cfg_props("midiSoundfont", (int)0);
+	configMain[cfg::midiSoundfont].desc = "#Index of the .sf2 SoundFont to use, from the ones found"
+		"#in the system directory (0 = none)."
+		"#Keep it small on Xbox 360: samples are expanded to float,"
+		"#so a bank takes about twice its file size in RAM.";
+
+	configMain[cfg::midiVolume] = cfg::t_cfg_props("midiVolume", (int)8);
+	configMain[cfg::midiVolume].desc = "#MIDI synthesizer volume, in 10% steps"
+										"#0 = mute ... 10 = 100%";
 
 	configMain[cfg::animBG] = cfg::t_cfg_props("animBG", (int)BG_TILES);
 	configMain[cfg::animBG].desc = "#Set the frontend background" 
@@ -974,6 +994,33 @@ void CfgLoader::findAllBgMusic(){
 	musicFiles.push_back(autoOverrideTxt);
 	for (unsigned int i=0; i < files.size(); i++){
 		musicFiles.push_back(files[i]->filename);
+	}
+}
+
+/* SoundFonts disponibles para el sintetizador MIDI.  Se escanea el MISMO
+ * directorio que se le anuncia a los cores como system dir
+ * (RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY), que es donde el usuario ya deja las
+ * BIOS: un sitio menos que explicar.
+ *
+ * El indice 0 se reserva para "ninguno", que es lo que apaga el sintetizador
+ * sin tener que tocar midiEnabled. */
+void CfgLoader::findAllSoundfonts(){
+	dirutil dir;
+	std::vector<std::unique_ptr<FileProps>> files;
+
+	soundfontFiles.clear();
+	/* Los .ini de idioma no viven en el repo, asi que una clave nueva sale como
+	 * "[menu.options.midi.none]" hasta que alguien la anada.  Se detecta igual
+	 * que en GestorMenus::trOrDefault y se cae a un texto en ingles. */
+	{
+		std::string none = LanguageManager::instance()->get("menu.options.midi.none");
+		if (none.empty() || none[0] == '[') none = "None";
+		soundfontFiles.push_back(none);
+	}
+
+	dir.listFiles(configMain[cfg::libretrosystem].valueStr.c_str(), files, ".sf2", "", true, false);
+	for (unsigned int i = 0; i < files.size(); i++){
+		soundfontFiles.push_back(files[i]->filename);
 	}
 }
 

@@ -35,6 +35,10 @@ public:
 	// per-category submenus in the core options menu.
 	std::vector<std::pair<std::string, std::string> > libretroCategories;
 	std::vector<std::string> musicFiles;
+	/* SoundFonts (.sf2) encontrados en el directorio 'system'.  El primer
+	 * elemento es siempre "ninguno".  Runtime, no se persiste: lo que se guarda
+	 * es el indice elegido (cfg::midiSoundfont). */
+	std::vector<std::string> soundfontFiles;
 
 	std::string saveCoreParams();
 	void loadCoreParams();
@@ -52,6 +56,7 @@ public:
 	std::string saveMainParams();
 	std::string saveCoreOverrideParams(int emuIdx);
 	void findAllBgMusic();
+	void findAllSoundfonts();
 	
 	bool deleteCoreParams();
 	bool deleteGameParams(const std::string& gamePath);

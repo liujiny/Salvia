@@ -1423,6 +1423,21 @@ int I_RegisterSong(const void* data, size_t len)
      mem_fclose(outstream);
   }
 
+  /* Traza de diagnostico: quien acaba tocando de verdad.
+   *
+   * Hace falta porque el reproductor libretro NO renderiza audio (solo manda
+   * bytes MIDI crudos al frontend), asi que "se oye FM" o "se oye MIDI" es lo
+   * unico que delata el valor de current_player.  Y si un registersong declina,
+   * current_player CONSERVA el del anterior: por eso puede volver el FM a mitad
+   * de partida sin que nadie haya tocado la configuracion. */
+  lprintf(LO_INFO,
+          "I_RegisterSong: midi_player=%d elegido=%s -> activo=%s%s\n",
+          midi_player,
+          chosen_midi    ? chosen_midi->name()    : "ninguno",
+          current_player ? current_player->name() : "ninguno",
+          (music_handle && chosen_midi && current_player != chosen_midi)
+             ? "  <-- OJO: no es el elegido" : "");
+
   /* Failed to load */
   if (!music_handle)
      lprintf(LO_ERROR, "I_RegisterSong: couldn't load music song.\n");

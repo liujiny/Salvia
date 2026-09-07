@@ -349,11 +349,6 @@ static void update_variable_midi_interface(int running)
          Config.MIDI_SW = 1;
    }
 
-   /* Not exposed as a core option: the type only selects which reset
-    * SysEx is sent to an external module, and nothing is sent at all
-    * unless the frontend provides a MIDI interface. Kept here so the
-    * option can be re-declared without touching this code; while it is
-    * undeclared, Config.MIDI_Type stays at its default (GM). */
    var.key = "px68k_midi_output_type";
    var.value = NULL;
 

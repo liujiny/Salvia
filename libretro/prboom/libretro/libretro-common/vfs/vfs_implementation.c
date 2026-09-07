@@ -1546,6 +1546,53 @@ int retro_vfs_stat_64_impl(const char *path, int64_t *size)
 
       if ((stat_buf.st_mode & S_IFMT) == S_IFDIR)
          ret  |= RETRO_VFS_STAT_IS_DIRECTORY;
+#elif defined(_XBOX)
+      /* Xbox 360.
+       *
+       * El CRT del XDK no resuelve _stat64 sobre las rutas del sistema
+       * (game:, usb0:, hdd:...), asi que la rama de Windows de abajo devolvia
+       * SIEMPRE "ruta no valida".  Con eso path_is_directory era falso para
+       * todo y path_mkdir no podia crear nada: el core acababa escribiendo en
+       * el directorio de la ROM, o directamente no escribiendo.
+       *
+       * FindFirstFile si funciona aqui -- es lo que ya usa
+       * retro_vfs_opendir_impl en esta misma rama LEGACY_WIN32 -- y da los
+       * atributos y el tamano de una sola vez, sin pasar por el CRT. */
+      char path_buf[PATH_MAX_LENGTH];
+      WIN32_FIND_DATA find_data;
+      HANDLE find_handle;
+      size_t _len = strlcpy(path_buf, path, sizeof(path_buf));
+
+      /* FindFirstFile rechaza la barra final, pero la raiz de una unidad
+       * ("game:") no se puede recortar. */
+      while (_len > 1 && (path_buf[_len - 1] == '\\' || path_buf[_len - 1] == '/'))
+      {
+         if (path_buf[_len - 2] == ':')
+            break;
+         path_buf[--_len] = '\0';
+      }
+
+      /* La raiz de una unidad existe por definicion y FindFirstFile no la
+       * enumera.  Hay que contestar que si: path_mkdir sube por los padres
+       * hasta ella, y si no toca fondo no crea ningun directorio. */
+      if (     (_len > 0 && path_buf[_len - 1] == ':')
+            || (_len > 1 && path_buf[_len - 2] == ':'))
+      {
+         if (size)
+            *size = 0;
+         return ret | RETRO_VFS_STAT_IS_DIRECTORY;
+      }
+
+      if ((find_handle = FindFirstFile(path_buf, &find_data)) == INVALID_HANDLE_VALUE)
+         return 0;
+      FindClose(find_handle);
+
+      if (size)
+         *size = ((int64_t)find_data.nFileSizeHigh << 32)
+               | (int64_t)find_data.nFileSizeLow;
+
+      if (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+         ret |= RETRO_VFS_STAT_IS_DIRECTORY;
 #elif defined(_WIN32)
       /* Windows
        * Older MSVC _stat may fail on directory paths 
