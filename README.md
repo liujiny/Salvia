@@ -499,6 +499,53 @@ Options > Emulation > System Advanced Settings > [Megadrive, nes...]
 ```
 There is also a new menu option **Audio**, where you can disable the music or set a general volume.
 
+## MIDI music
+Some systems played their music on an external MIDI module instead of the internal sound chip: the X68000 with its CZ-6BM1 board, DOS games with a Roland module, and Doom. Salvia has a built-in MIDI synthesizer so that music can be heard.
+
+All you need is a **SoundFont** file (`.sf2`) copied into the system directory:
+
+```
+system/
+├── Roland_SC-55.sf2
+└── ... (your other bios files)
+```
+
+Then pick it in:
+
+```
+Options > Audio
+```
+
+| Option | What it does |
+| --- | --- |
+| **MIDI synthesizer** | Turns it on or off |
+| **SoundFont (.sf2)** | Which bank to use, from the ones found in `system` |
+| **MIDI volume** | Music volume, in 10% steps |
+| **MIDI module** | Leave it on *Auto-detect*. See the MT-32 note below |
+
+On Xbox 360 prefer a small bank. A SoundFont takes about **twice its file size in RAM** while you play, so a 50 MB one costs around 100 MB. It is only loaded when a game actually needs MIDI, so it costs nothing for the rest of the systems.
+
+### Turning it on in each core
+
+The synthesizer is only half of it: each core has to be told to send its music out as MIDI.
+
+**X68000 (px68k)** — set `MIDI Output` to `enabled` in the core options. Most games also need a key held down **while the game boots**:
+
+| Game | Hold while booting |
+| --- | --- |
+| Granada, Sol-Feace | **R2** on the pad (or ScrollLock) |
+| Atomic Robo-Kid | **F1** |
+| Gemini Wing | **F1** (MT-32) / **F2** (CM-64) |
+
+**Doom (prboom)** — in Doom's own menu, go to Options > Setup > General and set **MIDI Hardware** to the libretro option. It is remembered for next time.
+
+**DOS (DOSBox-Pure)** — set its `MIDI Output` core option to `Frontend MIDI driver`. Careful: if you leave it on a `.sf2`, it uses its own synthesizer instead of Salvia's, which also works fine.
+
+### A note about MT-32 games
+Most X68000 games, and many DOS ones, were written for a **Roland MT-32**, which is a different kind of synthesizer, not a General MIDI one. Salvia detects those games and translates their instruments to the closest General MIDI equivalents, so the music plays correctly and in tune, but it will not sound exactly like a real MT-32. Games that load their own custom instruments will differ the most.
+
+If a game sounds wrong and you know which module it expects, you can force it with the **MIDI module** option.
+
 ## Games artwork and titles
 ### Built-in scraper
 To be able to scrap your local games, you must first register into the following link: [screenscraper.fr](https://www.screenscraper.fr/membreinscription.php)
