@@ -1889,7 +1889,17 @@
     <ClCompile Include="src\cpu\i86\i286.c" />
     <ClCompile Include="src\cpu\i86\i86.c" />
     <!--<ClCompile Include="src\cpu\i86\i86dasm.c" />-->
-    <ClCompile Include="src\cpu\nec\nec.c" />
+    <ClCompile Include="src\cpu\nec\nec.c">
+      <!-- Xbox 360: avoid XDK PPC miscompilation of the legacy NEC register union. -->
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'">Disabled</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">Disabled</Optimization>
+      <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'">false</IntrinsicFunctions>
+      <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">false</IntrinsicFunctions>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'">Disabled</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">Disabled</InlineFunctionExpansion>
+      <EnableFiberSafeOptimizations Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">false</EnableFiberSafeOptimizations>
+      <PreschedulingOptimization Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">false</PreschedulingOptimization>
+    </ClCompile>
     <!--<ClCompile Include="src\cpu\nec\necdasm.c" />-->
     <ClCompile Include="src\cpu\v60\v60.c" />
     <ClCompile Include="src\cpu\v60\v60d.c" />
