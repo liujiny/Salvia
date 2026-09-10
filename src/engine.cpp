@@ -3,6 +3,7 @@
 #include <io/keyboard.h>
 #include <http/badgedownloader.h>
 #include <image/icons.h>
+#include <video/shaderpreset.h>
 
 #ifdef _XBOX
 	#include <xtl.h>
@@ -55,6 +56,11 @@ int Engine::initEngine(CfgLoader* cfgLoader){
 		LOG_ERROR("Error SDL_Init: %s\n", SDL_GetError());
 		return 1;
     }
+
+	/* Publish after SDL_Init (LUT decoding needs SDL_image), but before the
+	 * video backend creates its shader objects inside SDL_SetVideoMode. */
+	if (!ShaderRegistry::instance()->publish())
+		LOG_ERROR("No se pudo publicar la tabla de shaders; se usara el filtro integrado\n");
 
 	SDL_ShowCursor(SDL_DISABLE);
 
@@ -138,6 +144,10 @@ int Engine::initEngine(CfgLoader* cfgLoader){
 #else
 	overlay = gameScreen;
 #endif
+
+	/* SDL_SetVideoMode / WinD3D9_Init have copied shader sources and uploaded
+	 * LUTs, so their temporary CPU buffers can now be released safely. */
+	ShaderRegistry::instance()->freeTransientBuffers();
 
 	//Actualizar overscan en windows y xbox
 	SDL_XBOX_SetOverscan(cfgLoader->configMain[cfg::overscan_x].valueInt, cfgLoader->configMain[cfg::overscan_y].valueInt);

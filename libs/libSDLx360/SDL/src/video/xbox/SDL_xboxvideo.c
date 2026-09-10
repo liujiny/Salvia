@@ -2205,6 +2205,17 @@ void XBOX_SelectEffect(int effectID) {
     if (effectID < 0 || effectID >= g_presetCount) effectID = 0;
     g_current_effect = effectID;
 
+    /* The indexed-palette shader is valid only for effect 0 (Nearest).
+       Disable its draw-time override immediately when the menu selects any
+       filtered effect. The MAME core will use its existing RGB/PALTO565
+       fallback on the next current-frame callback. Do not call
+       SDL_XBOX_MameIndexedSetEnabled() here: that transition restores the
+       effect through XBOX_SelectEffect() and would recurse. */
+    if (effectID != 0 && g_mame_index_palette_enabled) {
+        g_mame_index_palette_enabled = 0;
+        g_mame_index_reason = "disabled: non-Nearest effect selected";
+    }
+
     pass = &g_presets[effectID].passes[g_presets[effectID].activePass];
 
     /* 1. Shader. Cachear el puntero (en vez de indexar por g_current_effect

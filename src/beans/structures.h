@@ -138,6 +138,7 @@ struct t_scale_props{
 		sw = sh = dw = dh = scale = 0;
 		ratio = .0f;
 		bpp = 16;
+		filter = -1;
 		integer_scale = false;
 		integer_scale_type = SCALE_INT_REDUCE;
 	}

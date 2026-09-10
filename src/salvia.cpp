@@ -10,6 +10,7 @@
 #include <http/picojson.h>
 #include <io/filelist.h>
 #include <cheats/cheatlocator.h>
+#include <video/shaderpreset.h>
 
 // Puente entre los eventos SDL del frontend y el callback de teclado que
 // el core ha registrado via RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK. La
@@ -1881,6 +1882,9 @@ static void __declspec(noinline) runGameLoop() {
 */
 int main(int argc, char *argv[]) {
 	initPathAndLog(argv);
+	/* Discover presets before CfgLoader resolves the saved filter selection.
+	 * LUT image decoding is deliberately deferred until SDL is initialized. */
+	ShaderRegistry::instance()->load();
 	cfgLoader = new CfgLoader();
 
 	if (cfgLoader->isDebug()){

@@ -6087,6 +6087,7 @@
     <ClCompile Include="src\menus\gamemenu.cpp" />
     <ClCompile Include="src\menus\menuassetloader.cpp" />
     <ClCompile Include="src\video\win_d3d9.cpp" />
+    <ClCompile Include="src\video\shaderpreset.cpp" />
     <ClCompile Include="src\gfx\SDL_gfxBlitFunc.c">
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
