@@ -15,6 +15,7 @@
 #include "cpuintrf.h"
 #include "mamedbg.h"
 #include "adsp2100.h"
+#include "../../round4p_profile.h"
 
 
 /*###################################################################################################
@@ -663,6 +664,11 @@ void adsp2100_exit(void)
 /* execute instructions on this CPU until icount expires */
 int adsp2100_execute(int cycles)
 {
+#if X360_MAME_PROFILE
+	UINT64 r4p_start = round4p_ticks();
+	round4p_profile.adsp_calls++;
+	round4p_profile.adsp_cycles += (UINT64)cycles;
+#endif
 	/* reset the core */
 	set_mstat(adsp2100.mstat);
 
@@ -1376,6 +1382,9 @@ int adsp2100_execute(int cycles)
 	adsp2100_icount -= adsp2100.interrupt_cycles;
 	adsp2100.interrupt_cycles = 0;
 
+#if X360_MAME_PROFILE
+	round4p_profile.adsp_ticks += round4p_ticks() - r4p_start;
+#endif
 	return cycles - adsp2100_icount;
 }
 

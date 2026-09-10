@@ -184,5 +184,21 @@ extern void r5000le_reset(void *param);
 void mips3drc_set_options(UINT8 cpunum, UINT32 opts);
 
 
+#if defined(_XBOX360)
+/* Xbox 360 portable-core direct-memory accelerator.
+   Register only fixed, non-bankswitched ranges; everything else falls back
+   to MAME's normal memory handlers. */
+#define MIPS3_X360_FASTMEM_READ  0x01
+#define MIPS3_X360_FASTMEM_WRITE 0x02
+#define MIPS3_X360_FASTMEM_RW    (MIPS3_X360_FASTMEM_READ | MIPS3_X360_FASTMEM_WRITE)
+
+void mips3_x360_fastmem_clear(void);
+int mips3_x360_fastmem_add(UINT32 start, UINT32 end, void *base, UINT32 flags);
+typedef int (*mips3_x360_fastio_read_handler)(UINT32 address, UINT32 width, UINT32 *result);
+void mips3_x360_fastio_set_handler(mips3_x360_fastio_read_handler handler);
+void mips3_x360_profile_reset(void);
+void mips3_x360_fastmem_profile_dump(void *file);
+#endif
+
 
 #endif /* _MIPS3_H */

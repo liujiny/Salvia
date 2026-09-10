@@ -114,6 +114,7 @@
 #include "harddisk.h"
 #include "driver.h"
 #include "mame.h"
+#include "round4p_profile.h"
 #include "bootstrap.h"
 
 
@@ -1076,8 +1077,15 @@ void force_partial_update(int scanline)
 	/* render if necessary */
 	if (clip.min_y <= clip.max_y)
 	{
+#if X360_MAME_PROFILE
+		UINT64 r4p_video_start = round4p_ticks();
+#endif
 		profiler_mark(PROFILER_VIDEO);
 		(*Machine->drv->video_update)(Machine->scrbitmap, &clip);
+#if X360_MAME_PROFILE
+		round4p_profile.video_update_ticks += round4p_ticks() - r4p_video_start;
+		round4p_profile.video_update_calls++;
+#endif
 		performance.partial_updates_this_frame++;
 		profiler_mark(PROFILER_END);
 	}

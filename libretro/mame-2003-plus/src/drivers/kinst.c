@@ -25,6 +25,16 @@
 /* constants */
 #define MASTER_CLOCK	50000000
 
+#ifndef X360_KI_FASTMEM
+#define X360_KI_FASTMEM 1
+#endif
+#ifndef X360_KI_FASTIO
+#define X360_KI_FASTIO 0
+#endif
+#ifndef X360_KI_SPIN_OPT
+#define X360_KI_SPIN_OPT 0
+#endif
+
 
 /* local variables */
 static data32_t *rombase, *rambase1, *rambase2;
@@ -33,6 +43,92 @@ static data32_t *kinst_speedup;
 
 static const UINT8 *control_map;
 
+
+#if defined(_XBOX360) && X360_KI_FASTIO
+static READ32_HANDLER(kinst_control_r);
+static READ32_HANDLER(ide_controller_r);
+static READ32_HANDLER(ide_controller_extra_r);
+
+/* Reproduce READBYTE32LE/READWORD32LE/READLONG32 exactly, after the generic
+   mapper has subtracted the mapping start. The original handlers remain the
+   sole owners of all control, DCS and IDE semantics. */
+static int kinst_x360_fastio_read(UINT32 address, UINT32 width, UINT32 *result)
+{
+	read32_handler handler;
+	UINT32 start;
+	UINT32 relative;
+	UINT32 shift;
+	UINT32 mem_mask;
+
+	if (address >= 0xb0000080 && address <= 0xb00000ff)
+	{
+		start = 0xb0000080;
+		handler = kinst_control_r;
+	}
+	else if (address >= 0xb0000100 && address <= 0xb000013f)
+	{
+		start = 0xb0000100;
+		handler = ide_controller_r;
+	}
+	else if (address >= 0xb0000170 && address <= 0xb0000173)
+	{
+		start = 0xb0000170;
+		handler = ide_controller_extra_r;
+	}
+	else
+		return 0;
+
+	relative = address - start;
+	if (width == 1)
+	{
+		shift = 8 * (relative & 3);
+		mem_mask = ~(0xffU << shift);
+		*result = (*handler)(relative >> 2, mem_mask) >> shift;
+	}
+	else if (width == 2)
+	{
+		shift = 8 * (relative & 2);
+		mem_mask = ~(0xffffU << shift);
+		*result = (*handler)(relative >> 2, mem_mask) >> shift;
+	}
+	else if (width == 4)
+		*result = (*handler)(relative >> 2, 0);
+	else
+		return 0;
+	return 1;
+}
+#endif
+
+
+#if defined(_XBOX360) && X360_KI_FASTMEM
+static void kinst_x360_fastmem_common(UINT32 speedup_start, UINT32 speedup_end)
+{
+	/* Low aliases used during boot. */
+	mips3_x360_fastmem_add(0x00000000, 0x00000fff, (UINT8 *)rambase2 + 0x90000, MIPS3_X360_FASTMEM_RW);
+	mips3_x360_fastmem_add(0x00001000, 0x0007ffff, (UINT8 *)rambase1 + 0x1000, MIPS3_X360_FASTMEM_RW);
+
+	/* Main fixed RAM windows. */
+	mips3_x360_fastmem_add(0x80000000, 0x8007ffff, (UINT8 *)rambase1, MIPS3_X360_FASTMEM_RW);
+
+	/* 0x88000000 RAM contains the existing KI busy-loop speedup handler.
+	   Split the READ fast path around it so that handler still fires. */
+	if (speedup_start > 0x88000000)
+		mips3_x360_fastmem_add(0x88000000, speedup_start - 1, (UINT8 *)rambase2, MIPS3_X360_FASTMEM_RW);
+	if (speedup_end < 0x887fffff)
+		mips3_x360_fastmem_add(speedup_end + 1, 0x887fffff,
+			(UINT8 *)rambase2 + (speedup_end + 1 - 0x88000000), MIPS3_X360_FASTMEM_RW);
+
+	/* Cached/uncached aliases of the same program RAM. */
+	mips3_x360_fastmem_add(0xa0000000, 0xa007ffff, (UINT8 *)rambase1, MIPS3_X360_FASTMEM_RW);
+
+	/* Boot ROM aliases are read-only. */
+	mips3_x360_fastmem_add(0x9fc00000, 0x9fc7ffff, (UINT8 *)rombase, MIPS3_X360_FASTMEM_READ);
+	mips3_x360_fastmem_add(0xbfc00000, 0xbfc7ffff, (UINT8 *)rombase, MIPS3_X360_FASTMEM_READ);
+#if X360_KI_FASTIO
+	mips3_x360_fastio_set_handler(kinst_x360_fastio_read);
+#endif
+}
+#endif
 
 
 /*************************************
@@ -486,6 +582,13 @@ static DRIVER_INIT( kinst )
 	/* optimize one of the non-standard loops */
 	kinst_speedup = install_mem_read32_handler(0, 0x8808f5bc, 0x8808f5bf, kinst_speedup_r);
 
+#if defined(_XBOX360) && X360_KI_FASTMEM
+	/* The Xbox 360 uses the portable MIPS core here, so bypass the generic
+	   mapper for KI's fixed RAM/ROM windows. Keep the speedup handler hole. */
+	mips3_x360_fastmem_clear();
+	kinst_x360_fastmem_common(0x8808f5bc, 0x8808f5bf);
+#endif
+
 	/* set the fastest DRC options */
 	mips3drc_set_options(0, MIPS3DRC_FASTEST_OPTIONS);
 }
@@ -527,6 +630,11 @@ static DRIVER_INIT( kinst2 )
 
 	/* optimize one of the non-standard loops */
 	kinst_speedup = install_mem_read32_handler(0, 0x887ff544, 0x887ff547, kinst_speedup_r);
+
+#if defined(_XBOX360) && X360_KI_FASTMEM
+	mips3_x360_fastmem_clear();
+	kinst_x360_fastmem_common(0x887ff544, 0x887ff547);
+#endif
 
 	/* set the fastest DRC options */
 	mips3drc_set_options(0, MIPS3DRC_FASTEST_OPTIONS);

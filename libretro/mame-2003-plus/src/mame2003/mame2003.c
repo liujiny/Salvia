@@ -13,6 +13,19 @@
 #include <streams/file_stream.h>
 #include <math.h>
 
+#if defined(_XBOX360)
+#include <xtl.h>
+#ifndef X360_AV_WORKERS
+#define X360_AV_WORKERS 1
+#endif
+#ifndef X360_AUDIO_WORKER
+#define X360_AUDIO_WORKER X360_AV_WORKERS
+#endif
+#ifndef X360_VIDEO_WORKER
+#define X360_VIDEO_WORKER X360_AV_WORKERS
+#endif
+#endif
+
 #if (HAS_DRZ80 || HAS_CYCLONE)
 #include "frontend_list.h"
 #endif
@@ -26,6 +39,8 @@
 #include "fileio.h"
 #include "controls.h"
 #include "usrintrf.h"
+#include "../round4p_profile.h"
+#include "cpu/mips/mips3.h"
 
 
 const struct GameDriver  *game_driver;
@@ -38,6 +53,120 @@ int            orig_samples_per_frame = 0;
 short*         samples_buffer;
 short*         conversion_buffer;
 int            usestereo = 1;
+
+#if X360_MAME_PROFILE
+round4p_profile_data round4p_profile;
+#endif
+
+#define SALVIA_ENVIRONMENT_X360_GET_INDEXED_TELEMETRY 0x53580003u
+struct round4p_indexed_telemetry
+{
+  int compiled, available, enabled;
+  int shader_ok, texture_ok, upload_ok, sampler_point;
+  int direct_framebuffer_active;
+  int pixel_format;
+  const char *texture_format;
+  const char *reason;
+};
+extern unsigned video_conversion_type;
+
+#if X360_MAME_PROFILE
+static double round4p_ms(UINT64 ticks)
+{
+  if (!round4p_profile.frequency) return 0.0;
+  return (double)ticks * 1000.0 / (double)round4p_profile.frequency;
+}
+
+static double round4p_percent(UINT64 ticks, UINT64 total)
+{
+  return total ? (double)ticks * 100.0 / (double)total : 0.0;
+}
+#endif
+
+void round4p_profile_reset(void)
+{
+#if X360_MAME_PROFILE
+  LARGE_INTEGER frequency;
+  char path[1024];
+  FILE *file;
+  memset(&round4p_profile, 0, sizeof(round4p_profile));
+#if defined(_XBOX360)
+  mips3_x360_profile_reset();
+#endif
+  if (QueryPerformanceFrequency(&frequency))
+    round4p_profile.frequency = (UINT64)frequency.QuadPart;
+  if (options.libretro_save_path && options.libretro_save_path[0])
+  {
+    snprintf(path, sizeof(path), "%s%cround4p_profile.log",
+             options.libretro_save_path, PATH_DEFAULT_SLASH_C());
+    file = fopen(path, "w");
+    if (file)
+    {
+      fprintf(file, "Round4P profiler enabled\nBuild: %s %s\nCore: MAME2003+\nGame: %s\n\n",
+              __DATE__, __TIME__, game_driver ? game_driver->name : "unknown");
+      fclose(file);
+    }
+  }
+#endif
+}
+
+void round4p_profile_dump(int final_dump)
+{
+#if X360_MAME_PROFILE
+  char path[1024];
+  FILE *file;
+  UINT64 total;
+  UINT64 read_total, write_total, fast_total;
+  struct round4p_indexed_telemetry telemetry;
+  int have_telemetry;
+  const char *save_path = options.libretro_save_path;
+  const char *game_name = game_driver ? game_driver->name : "unknown";
+
+  if (!round4p_profile.frequency || !round4p_profile.frames || !save_path || !save_path[0])
+    return;
+  snprintf(path, sizeof(path), "%s%cround4p_profile.log", save_path, PATH_DEFAULT_SLASH_C());
+  file = fopen(path, "a");
+  if (!file) return;
+
+  total = round4p_profile.retro_run_ticks;
+  read_total = round4p_profile.fast_read_hit + round4p_profile.fast_read_miss;
+  write_total = round4p_profile.fast_write_hit + round4p_profile.fast_write_miss;
+  fast_total = read_total + write_total;
+  memset(&telemetry, 0, sizeof(telemetry));
+  have_telemetry = environ_cb && environ_cb(SALVIA_ENVIRONMENT_X360_GET_INDEXED_TELEMETRY, &telemetry);
+
+  fprintf(file, "========================================\nROUND4P XBOX360 MAME PROFILE%s\n========================================\n", final_dump ? " FINAL" : "");
+  fprintf(file, "Build: %s %s\nGame: %s\nFrames: %I64u\nQPC frequency: %I64u Hz\n", __DATE__, __TIME__, game_name, round4p_profile.frames, round4p_profile.frequency);
+  fprintf(file, "Total retro_run wall: %.3f ms\nAverage frame: %.3f ms\nEquivalent FPS: %.2f\n\n", round4p_ms(total), round4p_ms(total) / (double)round4p_profile.frames, total ? (double)round4p_profile.frames * (double)round4p_profile.frequency / (double)total : 0.0);
+  fprintf(file, "SUBSYSTEM CPU TIME (inclusive; worker rows are parallel thread wall-times)\n");
+  fprintf(file, "MAME frame: %.3f ms (%.2f%%)\n", round4p_ms(round4p_profile.mame_frame_ticks), round4p_percent(round4p_profile.mame_frame_ticks, total));
+  fprintf(file, "R4600/MIPS3: %.3f ms (%.2f%%), calls=%I64u cycles_requested=%I64u\n", round4p_ms(round4p_profile.mips_ticks), round4p_percent(round4p_profile.mips_ticks, total), round4p_profile.mips_calls, round4p_profile.mips_cycles);
+  fprintf(file, "DCS/ADSP2100: %.3f ms (%.2f%%), calls=%I64u cycles_requested=%I64u\n", round4p_ms(round4p_profile.adsp_ticks), round4p_percent(round4p_profile.adsp_ticks, total), round4p_profile.adsp_calls, round4p_profile.adsp_cycles);
+  fprintf(file, "MAME video_update: %.3f ms (%.2f%%), calls=%I64u\n", round4p_ms(round4p_profile.video_update_ticks), round4p_percent(round4p_profile.video_update_ticks, total), round4p_profile.video_update_calls);
+  fprintf(file, "osd_update_video_and_audio: %.3f ms (%.2f%%)\n", round4p_ms(round4p_profile.osd_ticks), round4p_percent(round4p_profile.osd_ticks, total));
+  fprintf(file, "CPU palette conversion: %.3f ms (%.2f%%), calls=%I64u\n", round4p_ms(round4p_profile.palette_ticks), round4p_percent(round4p_profile.palette_ticks, total), round4p_profile.palette_calls);
+  fprintf(file, "Direct framebuffer acquisition: %.3f ms, success=%I64u/%I64u\n", round4p_ms(round4p_profile.direct_ticks), round4p_profile.direct_success, round4p_profile.direct_calls);
+  fprintf(file, "GPU indexed CPU preparation: %.3f ms, calls=%I64u\n", round4p_ms(round4p_profile.gpu_prepare_ticks), round4p_profile.gpu_prepare_calls);
+  fprintf(file, "Indexed framebuffer copy: %.3f ms\n", round4p_ms(round4p_profile.indexed_copy_ticks));
+  fprintf(file, "Frontend video callback/Present CPU-side: %.3f ms, calls=%I64u\n", round4p_ms(round4p_profile.video_callback_ticks), round4p_profile.video_callback_calls);
+  fprintf(file, "Video worker work: %.3f ms; main wait: %.3f ms\n", round4p_ms(round4p_profile.video_worker_ticks), round4p_ms(round4p_profile.video_wait_ticks));
+  fprintf(file, "Audio worker work: %.3f ms; callback: %.3f ms; main wait: %.3f ms\n\n", round4p_ms(round4p_profile.audio_worker_ticks), round4p_ms(round4p_profile.audio_callback_ticks), round4p_ms(round4p_profile.audio_wait_ticks));
+  fprintf(file, "MIPS3 FASTMEM\nRead hits=%I64u misses=%I64u rate=%.2f%%\n", round4p_profile.fast_read_hit, round4p_profile.fast_read_miss, read_total ? 100.0 * (double)round4p_profile.fast_read_hit / (double)read_total : 0.0);
+  fprintf(file, "Write hits=%I64u misses=%I64u rate=%.2f%%\n", round4p_profile.fast_write_hit, round4p_profile.fast_write_miss, write_total ? 100.0 * (double)round4p_profile.fast_write_hit / (double)write_total : 0.0);
+  fprintf(file, "Overall rate=%.2f%% Generic fallback=%I64u\n\n", fast_total ? 100.0 * (double)(round4p_profile.fast_read_hit + round4p_profile.fast_write_hit) / (double)fast_total : 0.0, round4p_profile.generic_fallback);
+  fprintf(file, "VIDEO PATH\nGPU indexed frames=%I64u\nCPU PALTO565 frames=%I64u\nFallback frames=%I64u\n", round4p_profile.gpu_indexed_frames, round4p_profile.palto565_frames, round4p_profile.fallback_frames);
+  fprintf(file, "Pixel format=%d Conversion mode=%u (3=VCT_PALTO565)\n", have_telemetry ? telemetry.pixel_format : -1, video_conversion_type);
+  fprintf(file, "GPU indexed compiled=%s available=%s active=%s\n", have_telemetry && telemetry.compiled ? "yes" : "no", have_telemetry && telemetry.available ? "yes" : "no", round4p_profile.gpu_indexed_frames && have_telemetry && telemetry.enabled ? "yes" : "no");
+  fprintf(file, "Indexed shader=%s Palette texture=%s Palette upload=%s\n", have_telemetry && telemetry.shader_ok ? "OK" : "FAIL", have_telemetry && telemetry.texture_ok ? "OK" : "FAIL", have_telemetry && telemetry.upload_ok ? "OK" : "FAIL");
+  fprintf(file, "Sampler=%s Texture=%s Direct framebuffer=%s\n", have_telemetry && telemetry.sampler_point ? "POINT" : "not POINT", have_telemetry && telemetry.texture_format ? telemetry.texture_format : "unknown", have_telemetry && telemetry.direct_framebuffer_active ? "ACTIVE" : "fallback/unavailable");
+  fprintf(file, "Fallback reason=%s\nCPU PALTO565 bypassed=%s\n", have_telemetry && telemetry.reason ? telemetry.reason : "telemetry unavailable", round4p_profile.gpu_indexed_frames && !round4p_profile.palto565_frames ? "yes" : "no");
+  fprintf(file, "Workers: main HW1, video HW2=%s, audio HW3=%s\n\n", X360_VIDEO_WORKER ? "compiled" : "off", X360_AUDIO_WORKER ? "compiled" : "off");
+  mips3_x360_fastmem_profile_dump(file);
+  fclose(file);
+#else
+  (void)final_dump;
+#endif
+}
 
 
 /* MAME data structures to store and translate keyboard state */
@@ -54,6 +183,202 @@ static retro_input_state_t                 input_cb           = NULL;
 static retro_audio_sample_batch_t          audio_batch_cb     = NULL;
 retro_set_led_state_t                      led_state_cb       = NULL;
 struct retro_audio_buffer_status_callback  buf_status_cb;
+
+#if defined(_XBOX360) && X360_AUDIO_WORKER
+/*
+ * Xbox 360 asynchronous audio output worker.
+ *
+ * MAME's sound emulation/mixing stays on the emulation thread because those
+ * structures are tightly coupled to CPU/timer state.  Only the final immutable
+ * PCM block is handed to this worker.  This lets the frontend audio copy/queue
+ * and mono->stereo expansion overlap with the rest of the frame.
+ *
+ * Hardware thread 3 is the second SMT thread on Xenon physical core 1.
+ * Salvia pins its main/retro_run thread to HW 1 and reserves HW 4 for IO/HTTP
+ * and HW 5 for SDL/XAudio.  MAME video uses HW 2, so audio uses its SMT
+ * sibling HW 3 without colliding with Salvia's frontend-owned workers.
+ */
+#define X360_AUDIO_HW_THREAD 3
+#define X360_AUDIO_PAD_FRAMES 32
+
+static HANDLE x360_audio_thread;
+static HANDLE x360_audio_wake_event;
+static HANDLE x360_audio_done_event;
+static volatile LONG x360_audio_stop;
+static int x360_audio_pending;
+static INT16 *x360_audio_mono;
+static INT16 *x360_audio_stereo;
+static unsigned x360_audio_capacity_frames;
+static unsigned x360_audio_job_frames;
+static int x360_audio_job_stereo;
+
+static DWORD WINAPI x360_audio_worker_proc(LPVOID userdata)
+{
+   (void)userdata;
+
+   for (;;)
+   {
+      unsigned i;
+      WaitForSingleObject(x360_audio_wake_event, INFINITE);
+
+      if (x360_audio_stop)
+         break;
+
+#if X360_MAME_PROFILE
+      {
+         UINT64 work_start = round4p_ticks();
+         UINT64 callback_start;
+#endif
+
+      if (x360_audio_job_stereo)
+      {
+         if (audio_batch_cb)
+         {
+#if X360_MAME_PROFILE
+            callback_start = round4p_ticks();
+#endif
+            audio_batch_cb(x360_audio_stereo, x360_audio_job_frames);
+#if X360_MAME_PROFILE
+            round4p_profile.audio_callback_ticks += round4p_ticks() - callback_start;
+#endif
+         }
+      }
+      else
+      {
+         for (i = 0; i < x360_audio_job_frames; i++)
+         {
+            INT16 sample = x360_audio_mono[i];
+            x360_audio_stereo[i * 2 + 0] = sample;
+            x360_audio_stereo[i * 2 + 1] = sample;
+         }
+
+         if (audio_batch_cb)
+         {
+#if X360_MAME_PROFILE
+            callback_start = round4p_ticks();
+#endif
+            audio_batch_cb(x360_audio_stereo, x360_audio_job_frames);
+#if X360_MAME_PROFILE
+            round4p_profile.audio_callback_ticks += round4p_ticks() - callback_start;
+#endif
+         }
+      }
+
+#if X360_MAME_PROFILE
+         round4p_profile.audio_worker_ticks += round4p_ticks() - work_start;
+      }
+#endif
+
+      SetEvent(x360_audio_done_event);
+   }
+
+   return 0;
+}
+
+static void x360_audio_wait(void)
+{
+   if (x360_audio_pending && x360_audio_done_event)
+   {
+#if X360_MAME_PROFILE
+      UINT64 wait_start = round4p_ticks();
+#endif
+      WaitForSingleObject(x360_audio_done_event, INFINITE);
+#if X360_MAME_PROFILE
+      round4p_profile.audio_wait_ticks += round4p_ticks() - wait_start;
+#endif
+      x360_audio_pending = 0;
+   }
+}
+
+static void x360_audio_worker_stop(void)
+{
+   if (x360_audio_thread)
+   {
+      x360_audio_wait();
+      x360_audio_stop = 1;
+      SetEvent(x360_audio_wake_event);
+      WaitForSingleObject(x360_audio_thread, INFINITE);
+      CloseHandle(x360_audio_thread);
+   }
+
+   if (x360_audio_wake_event)
+      CloseHandle(x360_audio_wake_event);
+   if (x360_audio_done_event)
+      CloseHandle(x360_audio_done_event);
+
+   x360_audio_thread = NULL;
+   x360_audio_wake_event = NULL;
+   x360_audio_done_event = NULL;
+   x360_audio_stop = 0;
+   x360_audio_pending = 0;
+
+   free(x360_audio_mono);
+   free(x360_audio_stereo);
+   x360_audio_mono = NULL;
+   x360_audio_stereo = NULL;
+   x360_audio_capacity_frames = 0;
+}
+
+static int x360_audio_worker_start(unsigned capacity_frames)
+{
+   DWORD thread_id = 0;
+
+   x360_audio_worker_stop();
+
+   capacity_frames += X360_AUDIO_PAD_FRAMES;
+   x360_audio_mono = (INT16 *)malloc(capacity_frames * sizeof(INT16));
+   x360_audio_stereo = (INT16 *)malloc(capacity_frames * 2 * sizeof(INT16));
+   if (!x360_audio_mono || !x360_audio_stereo)
+      goto fail;
+
+   x360_audio_wake_event = CreateEvent(NULL, FALSE, FALSE, NULL);
+   x360_audio_done_event = CreateEvent(NULL, FALSE, FALSE, NULL);
+   if (!x360_audio_wake_event || !x360_audio_done_event)
+      goto fail;
+
+   x360_audio_stop = 0;
+   x360_audio_pending = 0;
+   x360_audio_capacity_frames = capacity_frames;
+   x360_audio_thread = CreateThread(NULL, 0, x360_audio_worker_proc, NULL, 0, &thread_id);
+   if (!x360_audio_thread)
+      goto fail;
+
+   /* Xbox 360 has six hardware threads: 0/1, 2/3, 4/5 by physical core. */
+   XSetThreadProcessor(x360_audio_thread, X360_AUDIO_HW_THREAD);
+
+   if (log_cb)
+      log_cb(RETRO_LOG_INFO, LOGPRE "X360 audio worker enabled on hardware thread %d.\n", X360_AUDIO_HW_THREAD);
+   return 1;
+
+fail:
+   if (log_cb)
+      log_cb(RETRO_LOG_WARN, LOGPRE "X360 audio worker unavailable; using synchronous audio.\n");
+   x360_audio_worker_stop();
+   return 0;
+}
+
+static int x360_audio_submit(const INT16 *buffer, unsigned frames, int stereo)
+{
+   if (!x360_audio_thread || !buffer || frames > x360_audio_capacity_frames)
+      return 0;
+
+   /* Reuse a single job buffer only after the previous frontend submission is done.
+    * In steady state that wait overlaps almost an entire emulated frame. */
+   x360_audio_wait();
+
+   x360_audio_job_frames = frames;
+   x360_audio_job_stereo = stereo ? 1 : 0;
+
+   if (stereo)
+      memcpy(x360_audio_stereo, buffer, frames * 2 * sizeof(INT16));
+   else
+      memcpy(x360_audio_mono, buffer, frames * sizeof(INT16));
+
+   x360_audio_pending = 1;
+   SetEvent(x360_audio_wake_event);
+   return 1;
+}
+#endif
 
 #ifdef _MSC_VER
 #if _MSC_VER < 1800
@@ -385,11 +710,16 @@ extern UINT8 frameskip_counter;
 
 void retro_run (void)
 {
+#if X360_MAME_PROFILE
+  UINT64 r4p_retro_start = round4p_ticks();
+  UINT64 r4p_frame_start;
+#endif
   bool updated = false;
   poll_cb(); /* execute input callback */
 
   if (retro_running == 0) /* first time through the loop */
   {
+    round4p_profile_reset();
     retro_running = 1;
     log_cb(RETRO_LOG_DEBUG, LOGPRE "Entering retro_run() for the first time.\n");
   }
@@ -405,7 +735,13 @@ void retro_run (void)
       cpunum_set_clockscale(0, options.cpu_clock_scale);
     }
   }
+#if X360_MAME_PROFILE
+  r4p_frame_start = round4p_ticks();
+#endif
   mame_frame();
+#if X360_MAME_PROFILE
+  round4p_profile.mame_frame_ticks += round4p_ticks() - r4p_frame_start;
+#endif
   if(frameskip_counter <= 11)
     frameskip_counter++;
 
@@ -413,6 +749,21 @@ void retro_run (void)
     frameskip_counter = 0;
 
  frameskip_counter = (frameskip_counter ) % 12;
+
+#if defined(_XBOX360) && X360_AUDIO_WORKER
+  /* Salvia assumes libretro A/V callbacks are complete when retro_run()
+   * returns.  The audio worker is allowed to overlap sound_update() with
+   * draw_screen()/video conversion inside mame_frame(), but must not escape
+   * into the frontend event loop: closeGame() may pause/clear SDL audio and
+   * reset AudioRateControl before retro_unload_game(). */
+  x360_audio_wait();
+#endif
+#if X360_MAME_PROFILE
+  round4p_profile.frames++;
+  round4p_profile.retro_run_ticks += round4p_ticks() - r4p_retro_start;
+  if ((round4p_profile.frames % 600) == 0)
+    round4p_profile_dump(0);
+#endif
   
  /*log_cb(RETRO_LOG_DEBUG, LOGPRE "frameskip_counter %d\n",frameskip_counter);*/
  
@@ -420,10 +771,15 @@ void retro_run (void)
 
 void retro_unload_game(void)
 {
+#if X360_MAME_PROFILE
+    round4p_profile_dump(1);
+#endif
     mame_done();
     /* do we need to be freeing things here? */
 
     free(options.romset_filename_noext);
+    options.romset_filename_noext = NULL;
+    retro_running = 0;
 }
 
 void retro_deinit(void)
@@ -567,6 +923,10 @@ int osd_start_audio_stream(int stereo)
   samples_buffer = (short *) calloc(samples_per_frame+16, 2 + usestereo * 2);
   if (!usestereo) conversion_buffer = (short *) calloc(samples_per_frame+16, 4);
 
+#if defined(_XBOX360) && X360_AUDIO_WORKER
+  x360_audio_worker_start((unsigned)(samples_per_frame + 16));
+#endif
+
   return samples_per_frame;
 }
 
@@ -576,6 +936,13 @@ int osd_update_audio_stream(INT16 *buffer)
 	int i,j;
 	if ( Machine->sample_rate !=0 && buffer)
 	{
+#if defined(_XBOX360) && X360_AUDIO_WORKER
+      /* On Xbox 360 the immutable PCM block is copied to a worker-owned buffer
+       * and submitted on Xenon core 1.  If worker creation failed, fall back to
+       * the original synchronous path below. */
+      if (!x360_audio_submit(buffer, (unsigned)samples_per_frame, usestereo))
+#endif
+      {
 		memcpy(samples_buffer, buffer, samples_per_frame * (usestereo ? 4 : 2));
 
 		if (usestereo)
@@ -589,6 +956,7 @@ int osd_update_audio_stream(INT16 *buffer)
 			}
 			audio_batch_cb(conversion_buffer,samples_per_frame);
 		}
+      }
 
 		/*process next frame */
 
@@ -622,6 +990,22 @@ void osd_update_silent_stream(void)
 
 	if (Machine->sample_rate !=0)
 	{
+#if defined(_XBOX360) && X360_AUDIO_WORKER
+      if (x360_audio_thread)
+      {
+         if (usestereo)
+         {
+            memset(samples_buffer, 0, length);
+            x360_audio_submit(samples_buffer, (unsigned)samples_per_frame, 1);
+         }
+         else
+         {
+            memset(samples_buffer, 0, samples_per_frame * sizeof(INT16));
+            x360_audio_submit(samples_buffer, (unsigned)samples_per_frame, 0);
+         }
+         return;
+      }
+#endif
 		if (usestereo)
 		{
 			memset(samples_buffer, 0, length);
@@ -638,6 +1022,9 @@ void osd_update_silent_stream(void)
 
 void osd_stop_audio_stream(void)
 {
+#if defined(_XBOX360) && X360_AUDIO_WORKER
+   x360_audio_worker_stop();
+#endif
 }
 
 

@@ -19,6 +19,134 @@
 extern "C" void salvia_dispatch_keyboard_event(bool down, unsigned retro_keycode,
                                                uint32_t character, uint16_t modifiers);
 
+/* Xbox 360 low-latency direct framebuffer path.
+ *
+ * MAME2003+ can request RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER
+ * and convert the CURRENT emulated frame directly into Salvia's native game
+ * surface.  SDL_Flip then lets the custom Xbox video backend upload/sample
+ * that surface and the Xenos GPU performs scaling/filtering/composition.
+ *
+ * This removes the extra core-video_buffer -> frontend-surface memcpy while
+ * keeping presentation in the same retro_run/main-loop iteration.  It does
+ * NOT queue an N-1 frame, so it adds no intentional frame of latency.
+ */
+#if defined(_XBOX) && defined(SALVIA_GPU_VIDEO)
+#ifndef SALVIA_X360_DIRECT_FB
+#define SALVIA_X360_DIRECT_FB 1
+#endif
+
+/* Salvia/Xbox private libretro extension used only by the paired MAME2003+
+ * Round4G core.  Standard cores never see these commands.  The game texture
+ * remains a normal 16-bit D3DFMT_LIN_R5G6B5 resource; in indexed mode the
+ * 16 raw bits are interpreted by a tiny Xenos palette lookup shader. */
+#define SALVIA_ENVIRONMENT_X360_GET_INDEXED_FRAMEBUFFER 0x53580001u
+#define SALVIA_ENVIRONMENT_X360_SET_INDEXED_PALETTE     0x53580002u
+#define SALVIA_ENVIRONMENT_X360_GET_INDEXED_TELEMETRY   0x53580003u
+
+struct salvia_x360_indexed_framebuffer {
+    void* data;
+    unsigned width;
+    unsigned height;
+    std::size_t pitch;
+};
+
+struct salvia_x360_indexed_palette {
+    const uint32_t* colors;
+    const uint32_t* dirty;
+    unsigned entries;
+    int full_update;
+};
+
+struct salvia_x360_indexed_telemetry {
+    int compiled, available, enabled;
+    int shader_ok, texture_ok, upload_ok, sampler_point;
+    int direct_framebuffer_active;
+    int pixel_format;
+    const char* texture_format;
+    const char* reason;
+};
+
+extern "C" int  SDL_XBOX_MameIndexedCanUse(void);
+extern "C" int  SDL_XBOX_MameIndexedUploadPalette(const uint32_t* colors,
+                                                     const uint32_t* dirty,
+                                                     unsigned entries,
+                                                     int full_update);
+extern "C" void SDL_XBOX_MameIndexedSetEnabled(int enabled);
+extern "C" int SDL_XBOX_MameIndexedGetTelemetry(int* enabled, int* available,
+    int* shader_ok, int* texture_ok, int* upload_ok, int* sampler_point,
+    const char** reason);
+
+#if SALVIA_X360_DIRECT_FB
+static SDL_Surface* g_direct_fb_surface = NULL;
+static bool g_direct_fb_locked = false;
+static enum retro_pixel_format g_direct_fb_format = RETRO_PIXEL_FORMAT_RGB565;
+static unsigned g_direct_fb_width = 0;
+static unsigned g_direct_fb_height = 0;
+static std::size_t g_direct_fb_pitch = 0;
+static bool g_direct_fb_log_once = false;
+static bool g_direct_fb_last_success = false;
+
+static void salvia_release_direct_framebuffer() {
+    if (g_direct_fb_locked && g_direct_fb_surface) {
+        SDL_UnlockSurface(g_direct_fb_surface);
+    }
+    g_direct_fb_surface = NULL;
+    g_direct_fb_locked = false;
+    g_direct_fb_width = 0;
+    g_direct_fb_height = 0;
+    g_direct_fb_pitch = 0;
+}
+
+static SDL_Surface* salvia_prepare_direct_framebuffer(unsigned width, unsigned height, int bpp) {
+    if (!gameMenu || width == 0 || height == 0) {
+        g_direct_fb_last_success = false;
+        return NULL;
+    }
+
+    /* Never carry a surface lock from an earlier retro_run. */
+    salvia_release_direct_framebuffer();
+
+    SDL_Surface*& screen = gameMenu->gameScreen;
+    t_scale_props& settings = gameMenu->current_video_settings;
+
+    if (!screen || width != (unsigned)settings.sw ||
+        height != (unsigned)settings.sh || bpp != settings.bpp) {
+        screen = XBOX_ResizeGameTexture(width, height, bpp);
+        if (!screen) {
+            g_direct_fb_last_success = false;
+            return NULL;
+        }
+        settings.sw = (int)width;
+        settings.sh = (int)height;
+        settings.bpp = bpp;
+        SDL_FillRect(screen, NULL, Constant::colors[clBackground].color);
+    }
+
+    if (!screen->pixels || !screen->format || screen->format->BitsPerPixel != bpp)
+    {
+        g_direct_fb_last_success = false;
+        return NULL;
+    }
+
+    if (SDL_LockSurface(screen) != 0)
+    {
+        g_direct_fb_last_success = false;
+        return NULL;
+    }
+
+    g_direct_fb_surface = screen;
+    g_direct_fb_locked = true;
+    g_direct_fb_width = width;
+    g_direct_fb_height = height;
+    g_direct_fb_pitch = screen->pitch;
+    g_direct_fb_last_success = true;
+    g_direct_fb_format = (bpp == 32) ? RETRO_PIXEL_FORMAT_XRGB8888
+                                     : RETRO_PIXEL_FORMAT_RGB565;
+    return screen;
+}
+#endif
+#endif
+
 static bool retro_environment(unsigned cmd, void *data) {
 	static char dirSystem[MAX_PATH] = {0};
 	static char savePath[MAX_PATH] = {0};
@@ -129,6 +257,89 @@ static bool retro_environment(unsigned cmd, void *data) {
 			}
 			LOG_ERROR("Core solicita un formato totalmente incompatible");
 			return false;
+        }
+
+#if defined(_XBOX) && defined(SALVIA_GPU_VIDEO) && SALVIA_X360_DIRECT_FB
+        case SALVIA_ENVIRONMENT_X360_SET_INDEXED_PALETTE: {
+            const salvia_x360_indexed_palette* p =
+                (const salvia_x360_indexed_palette*)data;
+            if (!p || !p->colors || p->entries == 0 || p->entries > 65536u)
+                return false;
+            return SDL_XBOX_MameIndexedUploadPalette(p->colors, p->dirty,
+                                                     p->entries, p->full_update) != 0;
+        }
+
+        case SALVIA_ENVIRONMENT_X360_GET_INDEXED_FRAMEBUFFER: {
+            salvia_x360_indexed_framebuffer* fb =
+                (salvia_x360_indexed_framebuffer*)data;
+            if (!fb || fb->width == 0 || fb->height == 0 ||
+                !SDL_XBOX_MameIndexedCanUse()) {
+                SDL_XBOX_MameIndexedSetEnabled(0);
+                return false;
+            }
+
+            SDL_Surface* direct = salvia_prepare_direct_framebuffer(fb->width, fb->height, 16);
+            if (!direct) {
+                SDL_XBOX_MameIndexedSetEnabled(0);
+                return false;
+            }
+
+            SDL_XBOX_MameIndexedSetEnabled(1);
+            fb->data = direct->pixels;
+            fb->pitch = direct->pitch;
+            return true;
+        }
+
+        case SALVIA_ENVIRONMENT_X360_GET_INDEXED_TELEMETRY: {
+            salvia_x360_indexed_telemetry* t =
+                (salvia_x360_indexed_telemetry*)data;
+            if (!t) return false;
+            std::memset(t, 0, sizeof(*t));
+            t->compiled = 1;
+            SDL_XBOX_MameIndexedGetTelemetry(&t->enabled, &t->available,
+                &t->shader_ok, &t->texture_ok, &t->upload_ok,
+                &t->sampler_point, &t->reason);
+            t->direct_framebuffer_active = g_direct_fb_last_success ? 1 : 0;
+            t->pixel_format = (int)g_direct_fb_format;
+            t->texture_format = "D3DFMT_LIN_R5G6B5 (raw index payload)";
+            return true;
+        }
+#endif
+
+        case RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER: {
+#if defined(_XBOX) && defined(SALVIA_GPU_VIDEO) && SALVIA_X360_DIRECT_FB
+            /* A normal RGB framebuffer request exits the private indexed mode. */
+            SDL_XBOX_MameIndexedSetEnabled(0);
+            struct retro_framebuffer* fb = (struct retro_framebuffer*)data;
+            if (!fb || fb->width == 0 || fb->height == 0) return false;
+
+            /* The Xbox game texture is RGB565 for every 16-bit core format.
+             * libretro explicitly allows the returned direct framebuffer
+             * format to differ from SET_PIXEL_FORMAT, so 0RGB1555 callers
+             * may receive RGB565 here and can decide whether to use it. */
+            /* The current Xbox 16-bit game surface is RGB565.  For a core that
+             * requested 0RGB1555 we intentionally decline the direct path,
+             * because the fallback hw_refresh conversion is required. */
+            if (fmt == RETRO_PIXEL_FORMAT_0RGB1555) return false;
+
+            const int target_bpp = (fmt == RETRO_PIXEL_FORMAT_XRGB8888) ? 32 : 16;
+            SDL_Surface* direct = salvia_prepare_direct_framebuffer(fb->width, fb->height, target_bpp);
+            if (!direct) return false;
+
+            fb->data = direct->pixels;
+            fb->pitch = direct->pitch;
+            fb->format = g_direct_fb_format;
+            fb->memory_flags = 0; /* do not over-promise cache mapping semantics */
+
+            if (!g_direct_fb_log_once) {
+                LOG_INFO("X360 direct framebuffer enabled: %ux%u, pitch=%u, format=%d",
+                         fb->width, fb->height, (unsigned)fb->pitch, (int)fb->format);
+                g_direct_fb_log_once = true;
+            }
+            return true;
+#else
+            return false;
+#endif
         }
 
 		case RETRO_ENVIRONMENT_GET_CAN_DUPE: {
@@ -837,10 +1048,26 @@ static inline void sw_refresh(const void *data, unsigned width, unsigned height,
 */
 static inline void hw_refresh(const void *data, unsigned width, 
                                 unsigned height, std::size_t pitch) {
+#if defined(_XBOX) && defined(SALVIA_GPU_VIDEO) && SALVIA_X360_DIRECT_FB
+    if (!data) {
+        /* A core may dupe a frame with video_cb(NULL). Never leave a direct
+         * framebuffer surface locked across retro_run boundaries. */
+        salvia_release_direct_framebuffer();
+        return;
+    }
+#else
     if (!data) return;
+#endif
 
     const int bpp = (fmt == RETRO_PIXEL_FORMAT_XRGB8888) ? 32 : 16;
     const unsigned row_bytes = width * (bpp / 8);
+#if defined(_XBOX) && defined(SALVIA_GPU_VIDEO) && SALVIA_X360_DIRECT_FB
+    /* If this is not the direct texture pointer obtained through either
+     * direct-framebuffer API, make sure a stale indexed shader cannot decode
+     * an ordinary RGB565 frame. */
+    if (!(g_direct_fb_locked && g_direct_fb_surface && data == g_direct_fb_surface->pixels))
+        SDL_XBOX_MameIndexedSetEnabled(0);
+#endif
     SDL_Surface*& screen = gameMenu->gameScreen;
 	t_scale_props &current_video_settings = gameMenu->current_video_settings;
 
@@ -848,6 +1075,9 @@ static inline void hw_refresh(const void *data, unsigned width,
     if (width  != current_video_settings.sw || height != current_video_settings.sh || bpp != current_video_settings.bpp){
         #ifdef _XBOX
         // El driver SDL de Xbox crea la textura al tamano del core.
+#if defined(SALVIA_X360_DIRECT_FB) && SALVIA_X360_DIRECT_FB
+        salvia_release_direct_framebuffer();
+#endif
 		screen = XBOX_ResizeGameTexture(width, height, bpp);
 //		screen = SDL_SetVideoMode(width, height, bpp, SDL_DOUBLEBUF);
         #else
@@ -855,6 +1085,7 @@ static inline void hw_refresh(const void *data, unsigned width,
         // SIN tocar la ventana ni el backbuffer.
         screen = WinD3D9_SetGameMode(width, height, bpp);
         #endif
+        if (!screen) return;
         current_video_settings.sw  = width;
         current_video_settings.sh  = height;
         current_video_settings.bpp = bpp;
@@ -876,6 +1107,32 @@ static inline void hw_refresh(const void *data, unsigned width,
 		}
 	}
 	#endif
+
+#if defined(_XBOX) && defined(SALVIA_GPU_VIDEO) && SALVIA_X360_DIRECT_FB
+    /* Zero-copy fast path: the core has already converted directly into the
+     * exact SDL/Xbox game surface returned by GET_CURRENT_SOFTWARE_FRAMEBUFFER.
+     * Unlocking here finalizes CPU writes; the outer salviaFlip/SDL_Flip then
+     * lets Xenos scale/filter/compose THIS SAME frame. */
+    const bool direct_match = g_direct_fb_locked &&
+                              g_direct_fb_surface == screen &&
+                              data == screen->pixels &&
+                              width == g_direct_fb_width &&
+                              height == g_direct_fb_height &&
+                              pitch == g_direct_fb_pitch;
+    if (direct_match) {
+        if (action_postponed.cycles == 1 && action_postponed.action == SAVE_STATE) {
+            const int direct_bpp = (g_direct_fb_format == RETRO_PIXEL_FORMAT_XRGB8888) ? 32 : 16;
+            take_screenshot((void*)data, width, height, pitch, direct_bpp);
+        }
+        salvia_release_direct_framebuffer();
+        return;
+    }
+
+    /* If a core asked for the direct buffer but ultimately submitted another
+     * pointer, release the stale lock and fall back to the normal copy path. */
+    if (g_direct_fb_locked)
+        salvia_release_direct_framebuffer();
+#endif
 
     // ── Determinar el puntero fuente definitivo ──────────────────────────────
     const void* final_src = data;
@@ -1217,6 +1474,9 @@ std::string initPathAndLog(char** argv){
 }
 
 void closeGame(){
+#if defined(_XBOX) && defined(SALVIA_GPU_VIDEO) && SALVIA_X360_DIRECT_FB
+    salvia_release_direct_framebuffer();
+#endif
 	if (gameMenu->romLoaded){
 		/* IMPORTANTE: NO cerrar el dispositivo de audio entre cargas.
 		 *

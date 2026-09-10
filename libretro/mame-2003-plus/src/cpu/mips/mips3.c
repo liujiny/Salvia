@@ -21,6 +21,7 @@
 #include "driver.h"
 #include "mamedbg.h"
 #include "mips3.h"
+#include "../../round4p_profile.h"
 
 
 #define ENABLE_OVERFLOWS	0
@@ -143,15 +144,7 @@
 #define SETPC(x)	mips3.nextpc = (x)
 #define SETPCL(x,l)	{ mips3.nextpc = (x); mips3.r[l] = mips3.pc + 4; }
 
-#define RBYTE(x)	(*mips3.memory.readbyte)(x)
-#define RWORD(x)	(*mips3.memory.readword)(x)
-#define RLONG(x)	(*mips3.memory.readlong)(x)
-#define RDOUBLE(x)	(*mips3.memory.readdouble)(x)
-
-#define WBYTE(x,v)	(*mips3.memory.writebyte)(x,v)
-#define WWORD(x,v)	(*mips3.memory.writeword)(x,v)
-#define WLONG(x,v)	(*mips3.memory.writelong)(x,v)
-#define WDOUBLE(x,v) (*mips3.memory.writedouble)(x,v)
+/* Data access macros are defined below the Xbox 360 fast-memory helpers. */
 
 #define HIVAL		(UINT32)mips3.hi
 #define LOVAL		(UINT32)mips3.lo
@@ -290,6 +283,609 @@ static const memory_handlers le_memory =
 	cpu_writemem32ledw, cpu_writemem32ledw_word, cpu_writemem32ledw_dword,	writemem32ledw_double
 };
 
+
+#if defined(_XBOX360)
+/*
+ * Xenon/PPC fast-memory path for the portable MIPS3 interpreter.
+ *
+ * MAME's generic 32-bit memory layer is flexible, but every emulated load/store
+ * normally pays for a level-1 lookup, possible subtable lookup and (for many
+ * maps) an indirect bank/handler path.  Killer Instinct's R4600LE spends most
+ * of its time touching a handful of fixed RAM/ROM windows, so the Xbox 360 can
+ * safely bypass that machinery for explicitly registered, non-bankswitched
+ * ranges.  Any address outside a registered range falls straight back to the
+ * original MAME accessors, preserving I/O handlers and speedup handlers.
+ */
+#define MIPS3_X360_FASTMEM_MAX_REGIONS 12
+
+#ifndef X360_KI_FASTMEM_PROFILE
+#define X360_KI_FASTMEM_PROFILE 0
+#endif
+#ifndef X360_KI_MISS_PAGE_SHIFT
+#define X360_KI_MISS_PAGE_SHIFT 16
+#endif
+#ifndef X360_KI_FASTIO
+#define X360_KI_FASTIO 0
+#endif
+#ifndef X360_KI_IO_PROFILE
+#define X360_KI_IO_PROFILE 0
+#endif
+#ifndef X360_KI_FASTIO_VERIFY
+#define X360_KI_FASTIO_VERIFY 0
+#endif
+#define X360_KI_MISS_PAGE_COUNT (1u << (32 - X360_KI_MISS_PAGE_SHIFT))
+#define X360_KI_IO_ADDRESS_COUNT 128
+#define X360_KI_IO_PC_SLOTS 256
+
+#if defined(_MSC_VER)
+#define MIPS3_X360_FORCEINLINE static __forceinline
+#else
+#define MIPS3_X360_FORCEINLINE static INLINE
+#endif
+
+typedef struct
+{
+	UINT32 start;
+	UINT32 end;
+	UINT8 *base;
+	UINT32 flags;
+#if X360_KI_FASTMEM_PROFILE
+	UINT64 profile_hits;
+#endif
+} mips3_x360_fastmem_region;
+
+static mips3_x360_fastmem_region mips3_x360_fastmem[MIPS3_X360_FASTMEM_MAX_REGIONS];
+static int mips3_x360_fastmem_count;
+static mips3_x360_fastmem_region *mips3_x360_last_read;
+static mips3_x360_fastmem_region *mips3_x360_last_write;
+#if X360_KI_FASTIO
+static mips3_x360_fastio_read_handler mips3_x360_fastio_handler;
+static UINT64 mips3_x360_fastio_eligible;
+static UINT64 mips3_x360_fastio_dispatched;
+#endif
+
+#if X360_KI_IO_PROFILE
+typedef struct
+{
+	UINT32 pc;
+	UINT32 address;
+	UINT32 count;
+} mips3_x360_io_pc_entry;
+
+static UINT32 mips3_x360_io_addresses[X360_KI_IO_ADDRESS_COUNT];
+static mips3_x360_io_pc_entry mips3_x360_io_pc[X360_KI_IO_PC_SLOTS];
+static UINT64 mips3_x360_io_width[4];
+static UINT64 mips3_x360_io_total;
+static UINT64 mips3_x360_io_pc_overflow;
+
+MIPS3_X360_FORCEINLINE void mips3_x360_profile_io(UINT32 address, UINT32 width)
+{
+	UINT32 pc;
+	UINT32 slot;
+	UINT32 probe;
+
+	if (address < 0xb0000000 || address > 0xb00001ff)
+		return;
+	mips3_x360_io_total++;
+	mips3_x360_io_addresses[(address - 0xb0000000) >> 2]++;
+	if (width == 1) mips3_x360_io_width[0]++;
+	else if (width == 2) mips3_x360_io_width[1]++;
+	else if (width == 4) mips3_x360_io_width[2]++;
+	else if (width == 8) mips3_x360_io_width[3]++;
+
+	pc = (UINT32)mips3.pc;
+	slot = ((pc >> 2) ^ (address >> 2)) & (X360_KI_IO_PC_SLOTS - 1);
+	for (probe = 0; probe < 8; probe++)
+	{
+		mips3_x360_io_pc_entry *entry = &mips3_x360_io_pc[(slot + probe) & (X360_KI_IO_PC_SLOTS - 1)];
+		if (entry->count == 0 || (entry->pc == pc && entry->address == address))
+		{
+			entry->pc = pc;
+			entry->address = address;
+			entry->count++;
+			return;
+		}
+	}
+	mips3_x360_io_pc_overflow++;
+}
+#else
+#define mips3_x360_profile_io(address,width) ((void)0)
+#endif
+
+#if X360_KI_FASTMEM_PROFILE
+static UINT32 mips3_x360_read_miss_pages[X360_KI_MISS_PAGE_COUNT];
+static UINT64 mips3_x360_miss_low, mips3_x360_miss_800, mips3_x360_miss_880;
+static UINT64 mips3_x360_miss_9fc, mips3_x360_miss_a00, mips3_x360_miss_bfc;
+static UINT64 mips3_x360_miss_control, mips3_x360_miss_ide;
+static UINT64 mips3_x360_miss_ide_extra, mips3_x360_miss_other;
+
+MIPS3_X360_FORCEINLINE void mips3_x360_profile_read_miss(UINT32 address)
+{
+	mips3_x360_read_miss_pages[address >> X360_KI_MISS_PAGE_SHIFT]++;
+	if (address <= 0x0007ffff) mips3_x360_miss_low++;
+	else if (address >= 0x80000000 && address <= 0x8007ffff) mips3_x360_miss_800++;
+	else if (address >= 0x88000000 && address <= 0x887fffff) mips3_x360_miss_880++;
+	else if (address >= 0x9fc00000 && address <= 0x9fc7ffff) mips3_x360_miss_9fc++;
+	else if (address >= 0xa0000000 && address <= 0xa007ffff) mips3_x360_miss_a00++;
+	else if (address >= 0xb0000080 && address <= 0xb00000ff) mips3_x360_miss_control++;
+	else if (address >= 0xb0000100 && address <= 0xb000013f) mips3_x360_miss_ide++;
+	else if (address >= 0xb0000170 && address <= 0xb0000173) mips3_x360_miss_ide_extra++;
+	else if (address >= 0xbfc00000 && address <= 0xbfc7ffff) mips3_x360_miss_bfc++;
+	else mips3_x360_miss_other++;
+}
+#else
+#define mips3_x360_profile_read_miss(address) ((void)0)
+#endif
+
+void mips3_x360_profile_reset(void)
+{
+	int i;
+
+#if X360_KI_FASTIO
+	mips3_x360_fastio_eligible = 0;
+	mips3_x360_fastio_dispatched = 0;
+#endif
+#if X360_KI_FASTMEM_PROFILE
+	memset(mips3_x360_read_miss_pages, 0, sizeof(mips3_x360_read_miss_pages));
+	mips3_x360_miss_low = mips3_x360_miss_800 = mips3_x360_miss_880 = 0;
+	mips3_x360_miss_9fc = mips3_x360_miss_a00 = mips3_x360_miss_bfc = 0;
+	mips3_x360_miss_control = mips3_x360_miss_ide = 0;
+	mips3_x360_miss_ide_extra = mips3_x360_miss_other = 0;
+	for (i = 0; i < mips3_x360_fastmem_count; i++)
+		mips3_x360_fastmem[i].profile_hits = 0;
+#else
+	(void)i;
+#endif
+#if X360_KI_IO_PROFILE
+	memset(mips3_x360_io_addresses, 0, sizeof(mips3_x360_io_addresses));
+	memset(mips3_x360_io_pc, 0, sizeof(mips3_x360_io_pc));
+	memset(mips3_x360_io_width, 0, sizeof(mips3_x360_io_width));
+	mips3_x360_io_total = 0;
+	mips3_x360_io_pc_overflow = 0;
+#endif
+}
+
+void mips3_x360_fastmem_clear(void)
+{
+	mips3_x360_fastmem_count = 0;
+	mips3_x360_last_read = NULL;
+	mips3_x360_last_write = NULL;
+#if X360_KI_FASTIO
+	mips3_x360_fastio_handler = NULL;
+#endif
+#if X360_KI_FASTMEM_PROFILE || X360_KI_IO_PROFILE || X360_KI_FASTIO
+	mips3_x360_profile_reset();
+#endif
+}
+
+void mips3_x360_fastio_set_handler(mips3_x360_fastio_read_handler handler)
+{
+#if X360_KI_FASTIO
+	mips3_x360_fastio_handler = handler;
+#else
+	(void)handler;
+#endif
+}
+
+int mips3_x360_fastmem_add(UINT32 start, UINT32 end, void *base, UINT32 flags)
+{
+	mips3_x360_fastmem_region *region;
+
+	if (start > end || base == NULL || (flags & (MIPS3_X360_FASTMEM_READ | MIPS3_X360_FASTMEM_WRITE)) == 0)
+		return 0;
+	if (mips3_x360_fastmem_count >= MIPS3_X360_FASTMEM_MAX_REGIONS)
+		return 0;
+
+	region = &mips3_x360_fastmem[mips3_x360_fastmem_count++];
+	region->start = start;
+	region->end = end;
+	region->base = (UINT8 *)base;
+	region->flags = flags;
+#if X360_KI_FASTMEM_PROFILE
+	region->profile_hits = 0;
+#endif
+
+	/* Adding a region can change which entry should win a cache lookup. */
+	mips3_x360_last_read = NULL;
+	mips3_x360_last_write = NULL;
+	return 1;
+}
+
+void mips3_x360_fastmem_profile_dump(void *opaque_file)
+{
+#if X360_KI_FASTMEM_PROFILE || X360_KI_IO_PROFILE
+	FILE *file = (FILE *)opaque_file;
+#if X360_KI_FASTMEM_PROFILE
+	UINT32 top_page[32], top_count[32];
+	UINT64 total = 0;
+	UINT32 page, count, start, end;
+	int i, j;
+#endif
+
+	if (!file) return;
+#if X360_KI_FASTMEM_PROFILE
+	memset(top_page, 0, sizeof(top_page));
+	memset(top_count, 0, sizeof(top_count));
+	for (page = 0; page < X360_KI_MISS_PAGE_COUNT; page++)
+	{
+		count = mips3_x360_read_miss_pages[page];
+		total += count;
+		if (!count || count <= top_count[31]) continue;
+		for (i = 0; i < 32 && count <= top_count[i]; i++) { }
+		if (i >= 32) continue;
+		for (j = 31; j > i; j--)
+		{
+			top_count[j] = top_count[j - 1];
+			top_page[j] = top_page[j - 1];
+		}
+		top_count[i] = count;
+		top_page[i] = page;
+	}
+
+	fprintf(file, "\n----------------------------------------\nFASTMEM READ MISS TOP 32\n----------------------------------------\n");
+	fprintf(file, "Rank  Address Range             Count       Percent\n");
+	for (i = 0; i < 32 && top_count[i]; i++)
+	{
+		start = top_page[i] << X360_KI_MISS_PAGE_SHIFT;
+		end = start + ((1u << X360_KI_MISS_PAGE_SHIFT) - 1u);
+		fprintf(file, "%2d    %08X-%08X  %10u  %7.2f%%\n", i + 1, start, end,
+		        top_count[i], total ? 100.0 * (double)top_count[i] / (double)total : 0.0);
+	}
+	fprintf(file, "TOTAL READ MISSES: %I64u\n", total);
+	fprintf(file, "\nKNOWN KI REGIONS\n");
+	fprintf(file, "00000000-0007FFFF: %I64u\n80000000-8007FFFF: %I64u\n", mips3_x360_miss_low, mips3_x360_miss_800);
+	fprintf(file, "88000000-887FFFFF: %I64u\n9FC00000-9FC7FFFF: %I64u\n", mips3_x360_miss_880, mips3_x360_miss_9fc);
+	fprintf(file, "A0000000-A007FFFF: %I64u\nBFC00000-BFC7FFFF: %I64u\n", mips3_x360_miss_a00, mips3_x360_miss_bfc);
+	fprintf(file, "CONTROL B0000080-B00000FF: %I64u\n", mips3_x360_miss_control);
+	fprintf(file, "IDE B0000100-B000013F: %I64u\n", mips3_x360_miss_ide);
+	fprintf(file, "IDE EXTRA B0000170-B0000173: %I64u\nOTHER: %I64u\n", mips3_x360_miss_ide_extra, mips3_x360_miss_other);
+	fprintf(file, "\nROUND5B DIRECT REGIONS (all are pre-Round5 mappings)\n");
+	for (i = 0; i < mips3_x360_fastmem_count; i++)
+		fprintf(file, "%08X-%08X flags=%c%c hits=%I64u\n",
+		        mips3_x360_fastmem[i].start, mips3_x360_fastmem[i].end,
+		        (mips3_x360_fastmem[i].flags & MIPS3_X360_FASTMEM_READ) ? 'R' : '-',
+		        (mips3_x360_fastmem[i].flags & MIPS3_X360_FASTMEM_WRITE) ? 'W' : '-',
+		        mips3_x360_fastmem[i].profile_hits);
+#if X360_MAME_PROFILE
+	fprintf(file, "Old fast read hits: %I64u\nRound5 new fast hits: 0\nGeneric read fallback: %I64u\n",
+	        round4p_profile.fast_read_hit, round4p_profile.fast_read_miss);
+#endif
+#endif
+#if X360_KI_IO_PROFILE
+	{
+		UINT32 top_address[32], top_address_count[32];
+		UINT32 top_pc[32], top_pc_address[32], top_pc_count[32];
+		UINT32 count;
+		int i, j;
+		memset(top_address, 0, sizeof(top_address));
+		memset(top_address_count, 0, sizeof(top_address_count));
+		memset(top_pc, 0, sizeof(top_pc));
+		memset(top_pc_address, 0, sizeof(top_pc_address));
+		memset(top_pc_count, 0, sizeof(top_pc_count));
+		for (i = 0; i < X360_KI_IO_ADDRESS_COUNT; i++)
+		{
+			count = mips3_x360_io_addresses[i];
+			if (!count || count <= top_address_count[31]) continue;
+			for (j = 0; j < 32 && count <= top_address_count[j]; j++) { }
+			if (j < 32)
+			{
+				int k;
+				for (k = 31; k > j; k--) { top_address_count[k] = top_address_count[k - 1]; top_address[k] = top_address[k - 1]; }
+				top_address_count[j] = count;
+				top_address[j] = 0xb0000000 + ((UINT32)i << 2);
+			}
+		}
+		for (i = 0; i < X360_KI_IO_PC_SLOTS; i++)
+		{
+			count = mips3_x360_io_pc[i].count;
+			if (!count || count <= top_pc_count[31]) continue;
+			for (j = 0; j < 32 && count <= top_pc_count[j]; j++) { }
+			if (j < 32)
+			{
+				int k;
+				for (k = 31; k > j; k--) { top_pc_count[k] = top_pc_count[k - 1]; top_pc[k] = top_pc[k - 1]; top_pc_address[k] = top_pc_address[k - 1]; }
+				top_pc_count[j] = count;
+				top_pc[j] = mips3_x360_io_pc[i].pc;
+				top_pc_address[j] = mips3_x360_io_pc[i].address;
+			}
+		}
+		fprintf(file, "\n========================================\nROUND5C KI I/O PROFILE\n========================================\n");
+		fprintf(file, "I/O READ TOTAL: %I64u\nREAD WIDTH: 8=%I64u 16=%I64u 32=%I64u 64=%I64u\n",
+		        mips3_x360_io_total, mips3_x360_io_width[0], mips3_x360_io_width[1], mips3_x360_io_width[2], mips3_x360_io_width[3]);
+		fprintf(file, "\nEXACT I/O ADDRESS TOP 32\nAddress       Count      Percent\n");
+		for (i = 0; i < 32 && top_address_count[i]; i++)
+			fprintf(file, "%08X  %10u  %7.2f%%\n", top_address[i], top_address_count[i],
+			        mips3_x360_io_total ? 100.0 * (double)top_address_count[i] / (double)mips3_x360_io_total : 0.0);
+		fprintf(file, "\nPC + ADDRESS TOP 32\nPC          Address      Count      Percent\n");
+		for (i = 0; i < 32 && top_pc_count[i]; i++)
+			fprintf(file, "%08X    %08X  %10u  %7.2f%%\n", top_pc[i], top_pc_address[i], top_pc_count[i],
+			        mips3_x360_io_total ? 100.0 * (double)top_pc_count[i] / (double)mips3_x360_io_total : 0.0);
+		fprintf(file, "PC table overflow: %I64u\n", mips3_x360_io_pc_overflow);
+	}
+#endif
+#if X360_KI_FASTIO
+	fprintf(file, "\nFAST I/O\nEligible reads: %I64u\nFast dispatched: %I64u\nGeneric fallback: %I64u\nFast dispatch rate: %.2f%%\n",
+	        mips3_x360_fastio_eligible, mips3_x360_fastio_dispatched,
+	        mips3_x360_fastio_eligible - mips3_x360_fastio_dispatched,
+	        mips3_x360_fastio_eligible ? 100.0 * (double)mips3_x360_fastio_dispatched / (double)mips3_x360_fastio_eligible : 0.0);
+#else
+	fprintf(file, "\nFAST I/O: compile-time disabled\n");
+#endif
+	fprintf(file, "BUSY LOOP: profiler only; no new spin enabled (awaiting PC/address evidence).\n");
+#else
+	(void)opaque_file;
+#endif
+}
+
+MIPS3_X360_FORCEINLINE int mips3_x360_region_contains(const mips3_x360_fastmem_region *region, UINT32 address, UINT32 bytes)
+{
+	UINT32 last = address + bytes - 1;
+	return last >= address && address >= region->start && last <= region->end;
+}
+
+MIPS3_X360_FORCEINLINE mips3_x360_fastmem_region *mips3_x360_find_region(UINT32 address, UINT32 bytes, UINT32 flag)
+{
+	mips3_x360_fastmem_region *region;
+	int i;
+
+	region = (flag == MIPS3_X360_FASTMEM_WRITE) ? mips3_x360_last_write : mips3_x360_last_read;
+	if (region != NULL && (region->flags & flag) != 0 && mips3_x360_region_contains(region, address, bytes))
+		return region;
+
+	for (i = 0; i < mips3_x360_fastmem_count; i++)
+	{
+		region = &mips3_x360_fastmem[i];
+		if ((region->flags & flag) != 0 && mips3_x360_region_contains(region, address, bytes))
+		{
+			if (flag == MIPS3_X360_FASTMEM_WRITE)
+				mips3_x360_last_write = region;
+			else
+				mips3_x360_last_read = region;
+			return region;
+		}
+	}
+	return NULL;
+}
+
+#if X360_KI_FASTIO
+MIPS3_X360_FORCEINLINE int mips3_x360_try_fastio(UINT32 address, UINT32 width, UINT32 *result)
+{
+	if (!((address >= 0xb0000080 && address <= 0xb00000ff) ||
+	      (address >= 0xb0000100 && address <= 0xb000013f) ||
+	      (address >= 0xb0000170 && address <= 0xb0000173)))
+		return 0;
+
+	mips3_x360_fastio_eligible++;
+	if (mips3_x360_fastio_handler != NULL && (*mips3_x360_fastio_handler)(address, width, result))
+	{
+		mips3_x360_fastio_dispatched++;
+		return 1;
+	}
+	return 0;
+}
+#endif
+
+MIPS3_X360_FORCEINLINE data8_t mips3_x360_readbyte(offs_t address)
+{
+	mips3_x360_fastmem_region *region;
+	UINT32 relative;
+#if X360_KI_FASTIO
+	UINT32 result;
+#endif
+
+	if (mips3_x360_fastmem_count != 0)
+	{
+		region = mips3_x360_find_region((UINT32)address, 1, MIPS3_X360_FASTMEM_READ);
+		if (region != NULL)
+		{
+			R4P_INC(fast_read_hit);
+#if X360_KI_FASTMEM_PROFILE
+			region->profile_hits++;
+#endif
+			relative = (UINT32)address - region->start;
+			return region->base[BYTE4_XOR_LE(relative)];
+		}
+		R4P_INC(fast_read_miss);
+		mips3_x360_profile_read_miss((UINT32)address);
+		mips3_x360_profile_io((UINT32)address, 1);
+#if X360_KI_FASTIO
+		if (mips3_x360_try_fastio((UINT32)address, 1, &result))
+			return (data8_t)result;
+#endif
+		R4P_INC(generic_fallback);
+	}
+	return (*mips3.memory.readbyte)(address);
+}
+
+MIPS3_X360_FORCEINLINE data16_t mips3_x360_readword(offs_t address)
+{
+	mips3_x360_fastmem_region *region;
+	UINT32 relative;
+#if X360_KI_FASTIO
+	UINT32 result;
+#endif
+
+	address &= ~1;
+	if (mips3_x360_fastmem_count != 0)
+	{
+		region = mips3_x360_find_region((UINT32)address, 2, MIPS3_X360_FASTMEM_READ);
+		if (region != NULL)
+		{
+			R4P_INC(fast_read_hit);
+#if X360_KI_FASTMEM_PROFILE
+			region->profile_hits++;
+#endif
+			relative = (UINT32)address - region->start;
+			return *(data16_t *)&region->base[WORD_XOR_LE(relative)];
+		}
+		R4P_INC(fast_read_miss);
+		mips3_x360_profile_read_miss((UINT32)address);
+		mips3_x360_profile_io((UINT32)address, 2);
+#if X360_KI_FASTIO
+		if (mips3_x360_try_fastio((UINT32)address, 2, &result))
+			return (data16_t)result;
+#endif
+		R4P_INC(generic_fallback);
+	}
+	return (*mips3.memory.readword)(address);
+}
+
+MIPS3_X360_FORCEINLINE data32_t mips3_x360_readlong(offs_t address)
+{
+	mips3_x360_fastmem_region *region;
+	UINT32 relative;
+#if X360_KI_FASTIO
+	UINT32 result;
+#endif
+
+	address &= ~3;
+	if (mips3_x360_fastmem_count != 0)
+	{
+		region = mips3_x360_find_region((UINT32)address, 4, MIPS3_X360_FASTMEM_READ);
+		if (region != NULL)
+		{
+			R4P_INC(fast_read_hit);
+#if X360_KI_FASTMEM_PROFILE
+			region->profile_hits++;
+#endif
+			relative = (UINT32)address - region->start;
+			return *(data32_t *)&region->base[relative];
+		}
+		R4P_INC(fast_read_miss);
+		mips3_x360_profile_read_miss((UINT32)address);
+		mips3_x360_profile_io((UINT32)address, 4);
+#if X360_KI_FASTIO
+		if (mips3_x360_try_fastio((UINT32)address, 4, &result))
+			return (data32_t)result;
+#endif
+		R4P_INC(generic_fallback);
+	}
+	return (*mips3.memory.readlong)(address);
+}
+
+MIPS3_X360_FORCEINLINE UINT64 mips3_x360_readdouble(offs_t address)
+{
+	UINT64 result;
+
+	/* Fast regions are currently registered only for little-endian R4600
+	   drivers. Preserve the original endian-specific 64-bit accessor for
+	   every other MIPS3 game on Xbox 360. */
+	if (mips3_x360_fastmem_count == 0 || mips3.bigendian)
+		return (*mips3.memory.readdouble)(address);
+
+	/* Attribute an I/O doubleword once. Do not split it through the profiled
+	   32-bit helper, and retain the generic two-handler semantics. */
+	if ((UINT32)address >= 0xb0000000 && (UINT32)address <= 0xb00001ff)
+	{
+		R4P_INC(fast_read_miss);
+		mips3_x360_profile_read_miss((UINT32)address);
+		mips3_x360_profile_io((UINT32)address, 8);
+		R4P_INC(generic_fallback);
+		return (*mips3.memory.readdouble)(address);
+	}
+
+	result = mips3_x360_readlong(address);
+	return result | ((UINT64)mips3_x360_readlong(address + 4) << 32);
+}
+
+MIPS3_X360_FORCEINLINE void mips3_x360_writebyte(offs_t address, data8_t data)
+{
+	mips3_x360_fastmem_region *region;
+	UINT32 relative;
+
+	if (mips3_x360_fastmem_count != 0)
+	{
+		region = mips3_x360_find_region((UINT32)address, 1, MIPS3_X360_FASTMEM_WRITE);
+		if (region != NULL)
+		{
+			R4P_INC(fast_write_hit);
+			relative = (UINT32)address - region->start;
+			region->base[BYTE4_XOR_LE(relative)] = data;
+			return;
+		}
+		R4P_INC(fast_write_miss);
+		R4P_INC(generic_fallback);
+	}
+	(*mips3.memory.writebyte)(address, data);
+}
+
+MIPS3_X360_FORCEINLINE void mips3_x360_writeword(offs_t address, data16_t data)
+{
+	mips3_x360_fastmem_region *region;
+	UINT32 relative;
+
+	address &= ~1;
+	if (mips3_x360_fastmem_count != 0)
+	{
+		region = mips3_x360_find_region((UINT32)address, 2, MIPS3_X360_FASTMEM_WRITE);
+		if (region != NULL)
+		{
+			R4P_INC(fast_write_hit);
+			relative = (UINT32)address - region->start;
+			*(data16_t *)&region->base[WORD_XOR_LE(relative)] = data;
+			return;
+		}
+		R4P_INC(fast_write_miss);
+		R4P_INC(generic_fallback);
+	}
+	(*mips3.memory.writeword)(address, data);
+}
+
+MIPS3_X360_FORCEINLINE void mips3_x360_writelong(offs_t address, data32_t data)
+{
+	mips3_x360_fastmem_region *region;
+	UINT32 relative;
+
+	address &= ~3;
+	if (mips3_x360_fastmem_count != 0)
+	{
+		region = mips3_x360_find_region((UINT32)address, 4, MIPS3_X360_FASTMEM_WRITE);
+		if (region != NULL)
+		{
+			R4P_INC(fast_write_hit);
+			relative = (UINT32)address - region->start;
+			*(data32_t *)&region->base[relative] = data;
+			return;
+		}
+		R4P_INC(fast_write_miss);
+		R4P_INC(generic_fallback);
+	}
+	(*mips3.memory.writelong)(address, data);
+}
+
+MIPS3_X360_FORCEINLINE void mips3_x360_writedouble(offs_t address, UINT64 data)
+{
+	if (mips3_x360_fastmem_count == 0 || mips3.bigendian)
+	{
+		(*mips3.memory.writedouble)(address, data);
+		return;
+	}
+
+	mips3_x360_writelong(address, (data32_t)data);
+	mips3_x360_writelong(address + 4, (data32_t)(data >> 32));
+}
+
+#define RBYTE(x)      mips3_x360_readbyte(x)
+#define RWORD(x)      mips3_x360_readword(x)
+#define RLONG(x)      mips3_x360_readlong(x)
+#define RDOUBLE(x)    mips3_x360_readdouble(x)
+#define WBYTE(x,v)    mips3_x360_writebyte(x,v)
+#define WWORD(x,v)    mips3_x360_writeword(x,v)
+#define WLONG(x,v)    mips3_x360_writelong(x,v)
+#define WDOUBLE(x,v)  mips3_x360_writedouble(x,v)
+
+#else
+
+#define RBYTE(x)      (*mips3.memory.readbyte)(x)
+#define RWORD(x)      (*mips3.memory.readword)(x)
+#define RLONG(x)      (*mips3.memory.readlong)(x)
+#define RDOUBLE(x)    (*mips3.memory.readdouble)(x)
+#define WBYTE(x,v)    (*mips3.memory.writebyte)(x,v)
+#define WWORD(x,v)    (*mips3.memory.writeword)(x,v)
+#define WLONG(x,v)    (*mips3.memory.writelong)(x,v)
+#define WDOUBLE(x,v)  (*mips3.memory.writedouble)(x,v)
+
+#endif
 
 
 /*###################################################################################################
@@ -1272,6 +1868,11 @@ static INLINE void handle_cop2(UINT32 op)
 
 int mips3_execute(int cycles)
 {
+#if X360_MAME_PROFILE
+	UINT64 r4p_start = round4p_ticks();
+	round4p_profile.mips_calls++;
+	round4p_profile.mips_cycles += (UINT64)cycles;
+#endif
 	/* count cycles and interrupt cycles */
 	mips3_icount = cycles;
 	mips3_icount -= mips3.interrupt_cycles;
@@ -1280,7 +1881,7 @@ int mips3_execute(int cycles)
 	if (mips3.bigendian)
 		change_pc32bedw(mips3.pc);
 	else
-		change_pc32bedw(mips3.pc);
+		change_pc32ledw(mips3.pc);
 
 
 	/* check for IRQs */
@@ -1308,7 +1909,7 @@ int mips3_execute(int cycles)
 			if (mips3.bigendian)
 				change_pc32bedw(mips3.pc);
 			else
-				change_pc32bedw(mips3.pc);
+				change_pc32ledw(mips3.pc);
 		}
 		else
 			mips3.pc += 4;
@@ -1531,6 +2132,9 @@ int mips3_execute(int cycles)
 
 	mips3_icount -= mips3.interrupt_cycles;
 	mips3.interrupt_cycles = 0;
+#if X360_MAME_PROFILE
+	round4p_profile.mips_ticks += round4p_ticks() - r4p_start;
+#endif
 	return cycles - mips3_icount;
 }
 

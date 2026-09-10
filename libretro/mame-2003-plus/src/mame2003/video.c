@@ -8,6 +8,67 @@
 #include "mame.h"
 #include "usrintrf.h"
 #include "driver.h"
+#include "../round4p_profile.h"
+
+/* Compatibility for older libretro.h snapshots used by some mame2003+ trees.
+ * The command value and structure match the upstream libretro API. */
+#ifndef RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER
+#ifndef RETRO_ENVIRONMENT_EXPERIMENTAL
+#define RETRO_ENVIRONMENT_EXPERIMENTAL 0x10000
+#endif
+#define RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER (40 | RETRO_ENVIRONMENT_EXPERIMENTAL)
+#ifndef RETRO_MEMORY_ACCESS_WRITE
+#define RETRO_MEMORY_ACCESS_WRITE (1 << 0)
+#endif
+struct retro_framebuffer
+{
+   void *data;
+   unsigned width;
+   unsigned height;
+   size_t pitch;
+   enum retro_pixel_format format;
+   unsigned access_flags;
+   unsigned memory_flags;
+};
+#endif
+
+#if defined(_XBOX360)
+#include <xtl.h>
+#ifndef X360_AV_WORKERS
+#define X360_AV_WORKERS 1
+#endif
+#ifndef X360_VIDEO_WORKER
+#define X360_VIDEO_WORKER X360_AV_WORKERS
+#endif
+#ifndef X360_DIRECT_FB
+#define X360_DIRECT_FB 1
+#endif
+#ifndef X360_GPU_INDEXED_PALETTE
+#define X360_GPU_INDEXED_PALETTE 1
+#endif
+
+/* Private Salvia/Xbox extension paired with Round4G frontend.  A 16-bit MAME
+ * indexed framebuffer is copied unchanged into the RGB565 game texture and a
+ * Xenos pixel shader reconstructs the 16-bit index and fetches RGB from a
+ * 256x256 palette texture.  Unsupported frontends simply return false and the
+ * normal CPU PALTO565 path is used. */
+#define SALVIA_ENVIRONMENT_X360_GET_INDEXED_FRAMEBUFFER 0x53580001u
+#define SALVIA_ENVIRONMENT_X360_SET_INDEXED_PALETTE     0x53580002u
+struct salvia_x360_indexed_framebuffer
+{
+   void *data;
+   unsigned width;
+   unsigned height;
+   size_t pitch;
+};
+struct salvia_x360_indexed_palette
+{
+   const uint32_t *colors;
+   const uint32_t *dirty;
+   unsigned entries;
+   int full_update;
+};
+#endif
 
 #define MAX_LED 8
 
@@ -34,6 +95,57 @@ bool video_flip_x, video_flip_y, video_swap_xy;
 bool video_hw_transpose;
 const rgb_t *video_palette;
 uint16_t *video_buffer;
+
+#if defined(_XBOX360) && X360_GPU_INDEXED_PALETTE
+static int x360_gpu_palette_ready = 0;
+static int x360_gpu_palette_logged = 0;
+#endif
+
+#if defined(_XBOX360) && X360_VIDEO_WORKER
+/*
+ * Xbox 360 low-latency video conversion worker.
+ *
+ * VIDEO_UPDATE remains on the MAME/libretro thread because drivers can touch
+ * live CPU/timer/video state there.  Once the current frame is complete, the
+ * immutable framebuffer is handed to hardware thread 2 for pixel conversion.
+ *
+ * Unlike Round2/Round2b, this worker NEVER carries a converted frame across
+ * retro_run() boundaries.  The main thread waits for the CURRENT frame's
+ * conversion, then calls video_cb() for that same frame.  Therefore this path
+ * does not intentionally add the old N-1 display / N emulation pipeline frame.
+ *
+ * Because the producer waits before emulation can advance, the worker can read
+ * the completed MAME bitmap and palette directly.  This also removes Round2's
+ * full-frame snapshot memcpy and private palette copy from the hot path.
+ */
+#define X360_VIDEO_HW_THREAD 2
+
+typedef struct
+{
+   const UINT8 *input;
+   int rowpixels;
+   struct rectangle visible_area;
+   unsigned conversion_type;
+   unsigned out_width;
+   unsigned out_height;
+   unsigned out_pitch;
+   void *output;
+   int flip_x;
+   int flip_y;
+   int swap_xy;
+   const rgb_t *palette;
+} x360_video_job_t;
+
+static HANDLE x360_video_thread;
+static HANDLE x360_video_wake_event;
+static HANDLE x360_video_done_event;
+static volatile LONG x360_video_stop;
+static int x360_video_pending;
+static x360_video_job_t x360_video_job;
+
+static int x360_video_worker_start(void);
+static void x360_video_worker_stop(void);
+#endif
 
 /* Possible pixel conversions (see corresponding function far below) */
 enum
@@ -235,6 +347,9 @@ int osd_create_display(
 
    mame2003_video_init_orientation();
    mame2003_video_init_conversion(rgb_components);
+#if defined(_XBOX360) && X360_GPU_INDEXED_PALETTE
+   x360_gpu_palette_ready = 0;
+#endif
 
    /* Check if a framebuffer conversion can be bypassed */
    video_do_bypass =
@@ -246,6 +361,9 @@ int osd_create_display(
       video_buffer = malloc(video_config.width * video_config.height * video_stride_out);
       if (!video_buffer)
          return 1;
+#if defined(_XBOX360) && X360_VIDEO_WORKER
+      x360_video_worker_start();
+#endif
    }
 
    return 0;
@@ -253,85 +371,104 @@ int osd_create_display(
 
 void osd_close_display(void)
 {
+#if defined(_XBOX360) && X360_VIDEO_WORKER
+   x360_video_worker_stop();
+#endif
    free(video_buffer);
    video_buffer = NULL;
 }
 
-static INLINE void pix_convert_pass8888(uint32_t *from, uint32_t *to)
+static INLINE void pix_convert_pass8888(uint32_t *from, uint32_t *to, const rgb_t *palette)
 {
+   (void)palette;
    *to = *from;
 }
 
-static INLINE void pix_convert_pass1555(uint16_t *from, uint16_t *to)
+static INLINE void pix_convert_pass1555(uint16_t *from, uint16_t *to, const rgb_t *palette)
 {
+   (void)palette;
    *to = *from;
 }
 
-static INLINE void pix_convert_passpal(uint16_t *from, uint32_t *to)
+static INLINE void pix_convert_passpal(uint16_t *from, uint32_t *to, const rgb_t *palette)
 {
-   *to = video_palette[*from];
+   *to = palette[*from];
 }
 
-static INLINE void pix_convert_palto565(uint16_t *from, uint16_t *to)
+static INLINE void pix_convert_palto565(uint16_t *from, uint16_t *to, const rgb_t *palette)
 {
-   const uint32_t color = video_palette[*from];
+   const uint32_t color = palette[*from];
    *to = (color & 0x00F80000) >> 8 | /* red */
          (color & 0x0000FC00) >> 5 | /* green */
          (color & 0x000000F8) >> 3;  /* blue */
 }
 
-static void frame_convert(struct mame_display *display)
+/* Shared converter used by the synchronous path and the Xbox 360 worker.
+ * Keeping one implementation avoids subtle differences in rotation/palette
+ * behavior between threaded and non-threaded rendering. */
+static void frame_convert_raw(
+   char *input,
+   char *output,
+   signed pitch,
+   unsigned output_pitch_bytes,
+   const struct rectangle *visible_area,
+   unsigned conversion_type,
+   const rgb_t *palette,
+   bool flip_x,
+   bool flip_y,
+   bool swap_xy)
 {
+#if X360_MAME_PROFILE
+   UINT64 r4p_convert_start = round4p_ticks();
+#endif
    int x, y;
-
-   bool flip_x = video_flip_x;
-   bool flip_y = video_flip_y;
-
-   struct rectangle visible_area = display->game_visible_area;
-   int x0 = visible_area.min_x, y0 = visible_area.min_y;
-   int x1 = visible_area.max_x, y1 = visible_area.max_y;
+   int x0 = visible_area->min_x, y0 = visible_area->min_y;
+   int x1 = visible_area->max_x, y1 = visible_area->max_y;
    int w = x1 - x0 + 1, h = y1 - y0 + 1;
 
-   signed pitch = display->game_bitmap->rowpixels;
-   char *input = (char*)display->game_bitmap->base;
-   char *output = (char*)video_buffer;
-
-   /* Pixel conversion loop macro for best possible inlining, w/o XY swap */
+   /* Pixel conversion loop macro for best possible inlining, w/o XY swap.
+    * output_pitch_bytes is allowed to be wider than the visible image; this is
+    * essential for writing directly into an SDL/Xbox texture surface whose
+    * pitch is usually aligned by the driver. */
    #define CONVERT_NOSWAP(CONVERT_FUNC, TYPE_IN, TYPE_OUT, FLIP_X, FLIP_Y)\
       {\
          signed skip;\
+         const signed out_stride = (signed)(output_pitch_bytes / sizeof(TYPE_OUT));\
          TYPE_IN *in = (TYPE_IN*)input;\
          TYPE_OUT *out = (TYPE_OUT*)output;\
          \
-         /* Swaps are handled by iterating over input backwards */\
          in += (!FLIP_X ? x0 : x1) + (!FLIP_Y ? y0 * pitch : y1 * pitch);\
-         /* After each line, reset the pointer to start, then to next line */\
          skip = (!FLIP_X ? -w : w) + (!FLIP_Y ? pitch : -pitch);\
          \
          for (y = 0; y < h; y++)\
          {\
             if (!FLIP_X)\
                for (x = 0; x < w; x++)\
-                  CONVERT_FUNC(in++, out++);\
+                  CONVERT_FUNC(in++, out++, palette);\
             else\
                for (x = 0; x < w; x++)\
-                  CONVERT_FUNC(in--, out++);\
+                  CONVERT_FUNC(in--, out++, palette);\
             in += skip;\
+            out += out_stride - w;\
          }\
       }
 
-   /* A much less optimized pixel conversion loop macro, with XY swap */
+   /* XY-swap path. Each source X becomes one output scanline whose visible
+    * width is the original source height. */
    #define CONVERT_SWAP(CONVERT_FUNC, TYPE_IN, TYPE_OUT, FLIP_X, FLIP_Y)\
       {\
+         const signed out_stride = (signed)(output_pitch_bytes / sizeof(TYPE_OUT));\
          TYPE_IN *in = (TYPE_IN*)input;\
          TYPE_OUT *out = (TYPE_OUT*)output;\
          \
          for (x = FLIP_Y ? x1 : x0; FLIP_Y ? x >= x0 : x <= x1; x += FLIP_Y ? -1 : 1)\
+         {\
             for (y = FLIP_X ? y1 : y0; FLIP_X ? y >= y0 : y <= y1; y += FLIP_X ? -1 : 1)\
-               CONVERT_FUNC(&in[y * pitch + x], out++);\
+               CONVERT_FUNC(&in[y * pitch + x], out++, palette);\
+            out += out_stride - h;\
+         }\
       }
 
-   /* Do a conversion accounting for XY flips */
    #define CONVERT_CHOOSE(CONVERT_MACRO, CONVERT_FUNC, TYPE_IN, TYPE_OUT)\
       {\
          if (!flip_x && !flip_y)\
@@ -344,14 +481,13 @@ static void frame_convert(struct mame_display *display)
             CONVERT_MACRO(CONVERT_FUNC, TYPE_IN, TYPE_OUT, true, true);\
       }
 
-   /* Do a conversion accounting for XY swap */
    #define CONVERT(CONVERT_FUNC, TYPE_IN, TYPE_OUT)\
-      if (!video_swap_xy)\
+      if (!swap_xy)\
          CONVERT_CHOOSE(CONVERT_NOSWAP, CONVERT_FUNC, TYPE_IN, TYPE_OUT)\
       else\
          CONVERT_CHOOSE(CONVERT_SWAP, CONVERT_FUNC, TYPE_IN, TYPE_OUT)
 
-   switch (video_conversion_type)
+   switch (conversion_type)
    {
       case VCT_PASS8888:
          CONVERT(pix_convert_pass8888, uint32_t, uint32_t);
@@ -366,7 +502,416 @@ static void frame_convert(struct mame_display *display)
          CONVERT(pix_convert_palto565, uint16_t, uint16_t);
          break;
    }
+
+#if X360_MAME_PROFILE
+   if (conversion_type == VCT_PALTO565 || conversion_type == VCT_PASSPAL)
+   {
+      round4p_profile.palette_ticks += round4p_ticks() - r4p_convert_start;
+      round4p_profile.palette_calls++;
+      if (conversion_type == VCT_PALTO565)
+         round4p_profile.palto565_frames++;
+   }
+#endif
+
+   #undef CONVERT
+   #undef CONVERT_CHOOSE
+   #undef CONVERT_SWAP
+   #undef CONVERT_NOSWAP
 }
+
+static void frame_convert(struct mame_display *display)
+{
+   frame_convert_raw(
+      (char*)display->game_bitmap->base,
+      (char*)video_buffer,
+      display->game_bitmap->rowpixels,
+      vis_width * video_stride_out,
+      &display->game_visible_area,
+      video_conversion_type,
+      video_palette,
+      video_flip_x,
+      video_flip_y,
+      video_swap_xy);
+}
+
+#if defined(_XBOX360) && X360_GPU_INDEXED_PALETTE
+/* Fastest low-latency path for ordinary 16-bit indexed games.
+ *
+ * No extra frame is queued.  The CURRENT MAME bitmap is copied row-for-row
+ * into the permanently CPU-mapped Xenos game texture.  This copy is required
+ * because MAME owns its bitmap, but it avoids the much heavier per-pixel
+ * palette[*src] + RGB888->RGB565 conversion.  Palette conversion is performed
+ * by Xenos when the current frame is drawn.
+ *
+ * We deliberately restrict this first GPU-palette implementation to frames
+ * that need no CPU flip/transpose.  Vertical/rotated titles and any frontend
+ * effect other than the driver's effect 0 automatically fall back to the
+ * proven Round3G CPU path. */
+static int x360_gpu_indexed_present(struct mame_display *display)
+{
+#if X360_MAME_PROFILE
+   UINT64 r4p_prepare_start = round4p_ticks();
+   UINT64 r4p_copy_start;
+#endif
+   struct salvia_x360_indexed_framebuffer fb;
+   struct salvia_x360_indexed_palette pal;
+   struct mame_bitmap *bitmap;
+   const struct rectangle *va;
+   const UINT16 *src;
+   UINT8 *dst;
+   unsigned y;
+   unsigned row_bytes;
+
+   if (!display || !video_cb || !environ_cb ||
+       video_conversion_type != VCT_PALTO565 ||
+       video_flip_x || video_flip_y || video_swap_xy)
+   {
+      R4P_INC(fallback_frames);
+      return 0;
+   }
+
+   bitmap = display->game_bitmap;
+   if (!bitmap || !bitmap->base || !video_palette ||
+       display->game_palette_entries == 0 ||
+       display->game_palette_entries > 65536u)
+   {
+      R4P_INC(fallback_frames);
+      return 0;
+   }
+
+   /* Upload only dirty palette entries after the first full upload. */
+   if (!x360_gpu_palette_ready || (display->changed_flags & GAME_PALETTE_CHANGED))
+   {
+      memset(&pal, 0, sizeof(pal));
+      pal.colors = (const uint32_t *)video_palette;
+      pal.dirty = x360_gpu_palette_ready ? (const uint32_t *)display->game_palette_dirty : NULL;
+      pal.entries = display->game_palette_entries;
+      pal.full_update = x360_gpu_palette_ready ? 0 : 1;
+
+      if (!environ_cb(SALVIA_ENVIRONMENT_X360_SET_INDEXED_PALETTE, &pal))
+      {
+         x360_gpu_palette_ready = 0;
+#if X360_MAME_PROFILE
+         round4p_profile.fallback_frames++;
+         round4p_profile.gpu_prepare_ticks += round4p_ticks() - r4p_prepare_start;
+         round4p_profile.gpu_prepare_calls++;
+#endif
+         return 0;
+      }
+      x360_gpu_palette_ready = 1;
+   }
+
+   memset(&fb, 0, sizeof(fb));
+   fb.width = vis_width;
+   fb.height = vis_height;
+#if X360_MAME_PROFILE
+   {
+      UINT64 direct_start = round4p_ticks();
+      round4p_profile.direct_calls++;
+#endif
+   if (!environ_cb(SALVIA_ENVIRONMENT_X360_GET_INDEXED_FRAMEBUFFER, &fb) ||
+       !fb.data || fb.pitch < (size_t)vis_width * sizeof(UINT16))
+   {
+#if X360_MAME_PROFILE
+      round4p_profile.direct_ticks += round4p_ticks() - direct_start;
+      round4p_profile.fallback_frames++;
+      round4p_profile.gpu_prepare_ticks += round4p_ticks() - r4p_prepare_start;
+      round4p_profile.gpu_prepare_calls++;
+#endif
+      return 0;
+   }
+#if X360_MAME_PROFILE
+      round4p_profile.direct_ticks += round4p_ticks() - direct_start;
+      round4p_profile.direct_success++;
+   }
+#endif
+
+   va = &display->game_visible_area;
+   src = (const UINT16 *)bitmap->base +
+         va->min_y * bitmap->rowpixels + va->min_x;
+   dst = (UINT8 *)fb.data;
+   row_bytes = vis_width * sizeof(UINT16);
+#if X360_MAME_PROFILE
+   r4p_copy_start = round4p_ticks();
+#endif
+
+   /* The common horizontal case is a straight cache-friendly row copy. */
+   if ((unsigned)bitmap->rowpixels == vis_width && fb.pitch == row_bytes)
+   {
+      memcpy(dst, src, (size_t)row_bytes * vis_height);
+   }
+   else
+   {
+      for (y = 0; y < vis_height; y++)
+         memcpy(dst + (size_t)y * fb.pitch,
+                src + (size_t)y * bitmap->rowpixels,
+                row_bytes);
+   }
+#if X360_MAME_PROFILE
+   round4p_profile.indexed_copy_ticks += round4p_ticks() - r4p_copy_start;
+#endif
+
+   if (!x360_gpu_palette_logged && log_cb)
+   {
+      log_cb(RETRO_LOG_INFO, LOGPRE
+         "X360 GPU indexed-palette path active: raw 16-bit indices -> Xenos palette shader, same-frame/no queue.\n");
+      x360_gpu_palette_logged = 1;
+   }
+
+#if X360_MAME_PROFILE
+   round4p_profile.gpu_indexed_frames++;
+   round4p_profile.gpu_prepare_ticks += round4p_ticks() - r4p_prepare_start;
+   round4p_profile.gpu_prepare_calls++;
+   {
+      UINT64 callback_start = round4p_ticks();
+      video_cb(fb.data, vis_width, vis_height, fb.pitch);
+      round4p_profile.video_callback_ticks += round4p_ticks() - callback_start;
+      round4p_profile.video_callback_calls++;
+   }
+#else
+   video_cb(fb.data, vis_width, vis_height, fb.pitch);
+#endif
+   return 1;
+}
+#endif
+
+#if defined(_XBOX360) && X360_VIDEO_WORKER
+static DWORD WINAPI x360_video_worker_proc(LPVOID userdata)
+{
+   (void)userdata;
+
+   for (;;)
+   {
+      WaitForSingleObject(x360_video_wake_event, INFINITE);
+      if (x360_video_stop)
+         break;
+
+#if X360_MAME_PROFILE
+      {
+         UINT64 worker_start = round4p_ticks();
+#endif
+      frame_convert_raw(
+         (char*)x360_video_job.input,
+         (char*)x360_video_job.output,
+         x360_video_job.rowpixels,
+         x360_video_job.out_pitch,
+         &x360_video_job.visible_area,
+         x360_video_job.conversion_type,
+         x360_video_job.palette,
+         x360_video_job.flip_x ? true : false,
+         x360_video_job.flip_y ? true : false,
+         x360_video_job.swap_xy ? true : false);
+#if X360_MAME_PROFILE
+         round4p_profile.video_worker_ticks += round4p_ticks() - worker_start;
+      }
+#endif
+
+      SetEvent(x360_video_done_event);
+   }
+
+   return 0;
+}
+
+static void x360_video_wait(void)
+{
+   if (x360_video_pending && x360_video_done_event)
+   {
+#if X360_MAME_PROFILE
+      UINT64 wait_start = round4p_ticks();
+#endif
+      WaitForSingleObject(x360_video_done_event, INFINITE);
+#if X360_MAME_PROFILE
+      round4p_profile.video_wait_ticks += round4p_ticks() - wait_start;
+#endif
+      x360_video_pending = 0;
+   }
+}
+
+static void x360_video_worker_stop(void)
+{
+   if (x360_video_thread)
+   {
+      x360_video_wait();
+      x360_video_stop = 1;
+      SetEvent(x360_video_wake_event);
+      WaitForSingleObject(x360_video_thread, INFINITE);
+      CloseHandle(x360_video_thread);
+   }
+
+   if (x360_video_wake_event)
+      CloseHandle(x360_video_wake_event);
+   if (x360_video_done_event)
+      CloseHandle(x360_video_done_event);
+
+   x360_video_thread = NULL;
+   x360_video_wake_event = NULL;
+   x360_video_done_event = NULL;
+   x360_video_stop = 0;
+   x360_video_pending = 0;
+}
+
+static int x360_video_worker_start(void)
+{
+   DWORD thread_id = 0;
+
+   x360_video_worker_stop();
+   x360_video_wake_event = CreateEvent(NULL, FALSE, FALSE, NULL);
+   x360_video_done_event = CreateEvent(NULL, FALSE, FALSE, NULL);
+   if (!x360_video_wake_event || !x360_video_done_event)
+      goto fail;
+
+   x360_video_stop = 0;
+   x360_video_thread = CreateThread(NULL, 0, x360_video_worker_proc, NULL, 0, &thread_id);
+   if (!x360_video_thread)
+      goto fail;
+
+   XSetThreadProcessor(x360_video_thread, X360_VIDEO_HW_THREAD);
+   if (log_cb)
+      log_cb(RETRO_LOG_INFO, LOGPRE "X360 low-latency video worker enabled on hardware thread %d (same-frame, no frame queue).\n", X360_VIDEO_HW_THREAD);
+   return 1;
+
+fail:
+   if (log_cb)
+      log_cb(RETRO_LOG_WARN, LOGPRE "X360 low-latency video worker unavailable; using synchronous conversion.\n");
+   x360_video_worker_stop();
+   return 0;
+}
+
+#if X360_DIRECT_FB
+static enum retro_pixel_format x360_expected_output_format(void)
+{
+   switch (video_conversion_type)
+   {
+      case VCT_PASS8888:
+      case VCT_PASSPAL:
+         return RETRO_PIXEL_FORMAT_XRGB8888;
+      case VCT_PASS1555:
+         return RETRO_PIXEL_FORMAT_0RGB1555;
+      case VCT_PALTO565:
+      default:
+         return RETRO_PIXEL_FORMAT_RGB565;
+   }
+}
+
+/* Ask Salvia for the CURRENT Xbox game-texture surface.  When accepted, the
+ * conversion worker writes straight into the surface that SDL_Flip/Xenos will
+ * consume.  This is the standard libretro zero-copy software-framebuffer API,
+ * not a private frontend callback. */
+static int x360_get_direct_framebuffer(struct retro_framebuffer *fb)
+{
+   enum retro_pixel_format expected = x360_expected_output_format();
+   static int logged_once = 0;
+#if X360_MAME_PROFILE
+   UINT64 direct_start = round4p_ticks();
+   round4p_profile.direct_calls++;
+#endif
+
+   if (!fb || !environ_cb)
+      return 0;
+
+   memset(fb, 0, sizeof(*fb));
+   fb->width = vis_width;
+   fb->height = vis_height;
+   fb->access_flags = RETRO_MEMORY_ACCESS_WRITE;
+
+   if (!environ_cb(RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER, fb))
+   {
+#if X360_MAME_PROFILE
+      round4p_profile.direct_ticks += round4p_ticks() - direct_start;
+#endif
+      return 0;
+   }
+
+   if (!fb->data || fb->width != vis_width || fb->height != vis_height ||
+       fb->format != expected || fb->pitch < (size_t)vis_width * video_stride_out ||
+       (fb->pitch % video_stride_out) != 0)
+   {
+#if X360_MAME_PROFILE
+      round4p_profile.direct_ticks += round4p_ticks() - direct_start;
+#endif
+      return 0;
+   }
+
+   if (!logged_once && log_cb)
+   {
+      log_cb(RETRO_LOG_INFO, LOGPRE
+         "X360 direct framebuffer active: current-frame conversion writes straight to Salvia/Xenos texture surface.\n");
+      logged_once = 1;
+   }
+#if X360_MAME_PROFILE
+   round4p_profile.direct_ticks += round4p_ticks() - direct_start;
+   round4p_profile.direct_success++;
+#endif
+   return 1;
+}
+#endif
+
+/* Queue the CURRENT completed bitmap.  There is deliberately no snapshot
+ * allocation/copy: retro_run cannot advance to the next emulated frame until
+ * x360_video_wait() has completed, so bitmap/palette lifetime is bounded to
+ * this same frame. */
+static int x360_video_submit_current(struct mame_display *display)
+{
+   struct mame_bitmap *bitmap = display->game_bitmap;
+
+   if (!x360_video_thread || !bitmap || !bitmap->base || x360_video_pending)
+      return 0;
+
+   x360_video_job.input = (const UINT8 *)bitmap->base;
+   x360_video_job.rowpixels = bitmap->rowpixels;
+   x360_video_job.visible_area = display->game_visible_area;
+   x360_video_job.conversion_type = video_conversion_type;
+   x360_video_job.out_width = vis_width;
+   x360_video_job.out_height = vis_height;
+   x360_video_job.out_pitch = vis_width * video_stride_out;
+   x360_video_job.output = video_buffer;
+#if X360_DIRECT_FB
+   {
+      struct retro_framebuffer fb;
+      if (x360_get_direct_framebuffer(&fb))
+      {
+         x360_video_job.output = fb.data;
+         x360_video_job.out_pitch = (unsigned)fb.pitch;
+      }
+   }
+#endif
+   x360_video_job.flip_x = video_flip_x ? 1 : 0;
+   x360_video_job.flip_y = video_flip_y ? 1 : 0;
+   x360_video_job.swap_xy = video_swap_xy ? 1 : 0;
+   x360_video_job.palette = video_palette;
+
+   x360_video_pending = 1;
+   SetEvent(x360_video_wake_event);
+   return 1;
+}
+
+/* Wait for and present the CURRENT frame.  This is intentionally same-frame
+ * synchronization: no N-1 frame is retained for the next retro_run(). */
+static int x360_video_present_current(struct mame_display *display)
+{
+   if (!x360_video_submit_current(display))
+      return 0;
+
+   x360_video_wait();
+#if X360_MAME_PROFILE
+   if (video_cb)
+   {
+      UINT64 callback_start = round4p_ticks();
+      video_cb(x360_video_job.output,
+               x360_video_job.out_width,
+               x360_video_job.out_height,
+               x360_video_job.out_pitch);
+      round4p_profile.video_callback_ticks += round4p_ticks() - callback_start;
+      round4p_profile.video_callback_calls++;
+   }
+#else
+   if (video_cb)
+      video_cb(x360_video_job.output, x360_video_job.out_width,
+               x360_video_job.out_height, x360_video_job.out_pitch);
+#endif
+   return 1;
+}
+#endif
 
 extern bool retro_audio_buff_underrun;
 extern bool retro_audio_buff_active;
@@ -424,6 +969,9 @@ int osd_skip_this_frame(void)
 
 void osd_update_video_and_audio(struct mame_display *display)
 {
+#if X360_MAME_PROFILE
+   UINT64 r4p_osd_start = round4p_ticks();
+#endif
    RETRO_PERFORMANCE_INIT(perf_cb, update_video_and_audio);
    RETRO_PERFORMANCE_START(perf_cb, update_video_and_audio);
 
@@ -452,6 +1000,13 @@ void osd_update_video_and_audio(struct mame_display *display)
       {
          if (!osd_skip_this_frame())
          {
+#if defined(_XBOX360) && X360_GPU_INDEXED_PALETTE
+            if (x360_gpu_indexed_present(display))
+            {
+               /* Presented current frame directly; no CPU PALTO565 conversion. */
+            }
+            else
+#endif
             if (video_do_bypass)
             {
                unsigned min_y = display->game_visible_area.min_y;
@@ -462,12 +1017,37 @@ void osd_update_video_and_audio(struct mame_display *display)
             }
             else
             {
-               frame_convert(display);
-               video_cb(video_buffer, vis_width, vis_height, vis_width * video_stride_out);
+#if defined(_XBOX360) && X360_VIDEO_WORKER
+               if (x360_video_thread)
+               {
+                  /* Convert and present frame N inside the same retro_run().
+                   * Audio output can still execute concurrently on HW thread 3,
+                   * but video never queues N behind N-1, so Round2's fixed
+                   * one-frame display latency is removed. */
+                  if (!x360_video_present_current(display))
+                  {
+                     frame_convert(display);
+                     video_cb(video_buffer, vis_width, vis_height, vis_width * video_stride_out);
+                  }
+               }
+               else
+#endif
+               {
+                  frame_convert(display);
+                  video_cb(video_buffer, vis_width, vis_height, vis_width * video_stride_out);
+               }
             }
          }
          else
+         {
+#if defined(_XBOX360) && X360_VIDEO_WORKER
+            /* Same-frame worker never owns a frame across retro_run(), so a
+             * skipped frame is a normal libretro frame-dupe. */
+            if (!video_do_bypass && x360_video_thread)
+               x360_video_wait();
+#endif
             video_cb(NULL, vis_width, vis_height, vis_width * video_stride_out);
+         }
       }
    }
 
@@ -493,6 +1073,10 @@ void osd_update_video_and_audio(struct mame_display *display)
 
   
    RETRO_PERFORMANCE_STOP(perf_cb, update_video_and_audio);
+#if X360_MAME_PROFILE
+   round4p_profile.osd_ticks += round4p_ticks() - r4p_osd_start;
+   round4p_profile.osd_calls++;
+#endif
 }
 
 struct mame_bitmap *osd_override_snapshot(struct mame_bitmap *bitmap, struct rectangle *bounds)
