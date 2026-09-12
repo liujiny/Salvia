@@ -8,6 +8,42 @@
 #include <xmmintrin.h>
 #endif
 
+#ifndef XBOX_CRT_PERF_DIAG
+#define XBOX_CRT_PERF_DIAG 1
+#endif
+
+#ifndef XBOX_LOW_CPU_FRAME_LIMITER
+#define XBOX_LOW_CPU_FRAME_LIMITER 1
+#endif
+
+#if defined(_XBOX) && XBOX_CRT_PERF_DIAG
+typedef struct X360_LIMITER_DIAG {
+    uint64_t frames;
+    double frame_work_us;
+    double sleep_us;
+    double spin_us;
+    double frame_start_ms;
+} X360_LIMITER_DIAG;
+
+static X360_LIMITER_DIAG g_x360_limiter_diag;
+
+static void x360_limiter_diag_dump(void) {
+    char line[320];
+    double count = g_x360_limiter_diag.frames
+                 ? (double)g_x360_limiter_diag.frames : 1.0;
+    sprintf(line,
+        "[X360LIMITER] frames=%I64u frame_work_avg_us=%.0f "
+        "limiter_sleep_avg_us=%.0f limiter_spin_avg_us=%.0f low_cpu=%d\n",
+        g_x360_limiter_diag.frames,
+        g_x360_limiter_diag.frame_work_us / count,
+        g_x360_limiter_diag.sleep_us / count,
+        g_x360_limiter_diag.spin_us / count,
+        XBOX_LOW_CPU_FRAME_LIMITER);
+    OutputDebugString(line);
+    memset(&g_x360_limiter_diag, 0, sizeof(g_x360_limiter_diag));
+}
+#endif
+
 Sync::Sync(int syncMode){
 	g_frameTimeIndex = 0;
 	g_lastFrameTick = 0;
@@ -174,12 +210,24 @@ void Sync::sample_cpu_utilization() {
 double Sync::limit_fps(double& nextFrameTime, int syncType, GameTicks &gameTicks) {
     double currentTime = Constant::getTicks();
     const float diffTime = (float)(nextFrameTime - currentTime);
+#if defined(_XBOX) && XBOX_CRT_PERF_DIAG
+    double waitBegin;
+    double waitEnd;
+    if (g_x360_limiter_diag.frame_start_ms > 0.0)
+        g_x360_limiter_diag.frame_work_us +=
+            (currentTime - g_x360_limiter_diag.frame_start_ms) * 1000.0;
+#endif
 
 	gameTicks.ticks++;
 	gameTicks.dt = (float)(currentTime - gameTicks.lastTime);
 	gameTicks.lastTime = currentTime;
 
-	if (syncType != SYNC_TO_VIDEO){
+    if (syncType != SYNC_TO_VIDEO){
+#if defined(_XBOX) && XBOX_CRT_PERF_DIAG
+        g_x360_limiter_diag.frames++;
+        if (g_x360_limiter_diag.frames >= 300) x360_limiter_diag_dump();
+        g_x360_limiter_diag.frame_start_ms = currentTime;
+#endif
 		return currentTime;
 	}
 
@@ -191,12 +239,42 @@ double Sync::limit_fps(double& nextFrameTime, int syncType, GameTicks &gameTicks
     // SYNC_TO_VIDEO (limit_fps solo se llama con SYNC_TO_VIDEO).
 
     if (diffTime > 0) {
+#if XBOX_LOW_CPU_FRAME_LIMITER
+        /* Sleep whenever there is a useful scheduler-sized interval and keep
+         * only a short tail for precise pacing. This avoids the old <=4 ms
+         * cliff where the complete remainder was charged as running CPU. */
+        const double spinTailMs = 0.75;
+        if (diffTime > 1.50f) {
+            uint32_t sleepMs = (uint32_t)((double)diffTime - spinTailMs);
+            if (sleepMs > 0) {
+#if defined(_XBOX) && XBOX_CRT_PERF_DIAG
+                waitBegin = Constant::getTicks();
+#endif
+                SDL_Delay(sleepMs);
+#if defined(_XBOX) && XBOX_CRT_PERF_DIAG
+                waitEnd = Constant::getTicks();
+                g_x360_limiter_diag.sleep_us += (waitEnd - waitBegin) * 1000.0;
+#endif
+            }
+        }
+#else
         // Dormir el hilo si sobra tiempo suficiente (ahorro de CPU)
         // SDL_Delay es seguro aqui porque el Busy Wait corregira su imprecision
         if (diffTime > 4.0) {
+#if defined(_XBOX) && XBOX_CRT_PERF_DIAG
+            waitBegin = Constant::getTicks();
+#endif
             SDL_Delay((uint32_t)(diffTime - 2.0));
+#if defined(_XBOX) && XBOX_CRT_PERF_DIAG
+            waitEnd = Constant::getTicks();
+            g_x360_limiter_diag.sleep_us += (waitEnd - waitBegin) * 1000.0;
+#endif
         }
+#endif
         // ESPERA ACTIVA: Clava el microsegundo exacto
+#if defined(_XBOX) && XBOX_CRT_PERF_DIAG
+        waitBegin = Constant::getTicks();
+#endif
         while (Constant::getTicks() < nextFrameTime) {
 			#ifdef _XBOX
 				YieldProcessor();
@@ -204,6 +282,10 @@ double Sync::limit_fps(double& nextFrameTime, int syncType, GameTicks &gameTicks
 				_mm_pause(); // Optimiza el bucle de espera en CPUs x86/x64
 			#endif
         }
+#if defined(_XBOX) && XBOX_CRT_PERF_DIAG
+        waitEnd = Constant::getTicks();
+        g_x360_limiter_diag.spin_us += (waitEnd - waitBegin) * 1000.0;
+#endif
     } else if (diffTime < -100.0) {
         // Si hay un lag masivo, reseteamos para evitar el efecto "camara rapida"
         nextFrameTime = currentTime;
@@ -211,6 +293,12 @@ double Sync::limit_fps(double& nextFrameTime, int syncType, GameTicks &gameTicks
 
     // El siguiente frame se calcula sobre el objetivo ideal
     nextFrameTime += frameDelay;
+
+#if defined(_XBOX) && XBOX_CRT_PERF_DIAG
+    g_x360_limiter_diag.frames++;
+    if (g_x360_limiter_diag.frames >= 300) x360_limiter_diag_dump();
+    g_x360_limiter_diag.frame_start_ms = Constant::getTicks();
+#endif
 
 	return currentTime;
 }

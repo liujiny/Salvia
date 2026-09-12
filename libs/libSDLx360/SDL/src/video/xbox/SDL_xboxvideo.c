@@ -100,6 +100,87 @@ static int g_display_scale_type = 0; /* 0=reduce,1=increase,2..6=escala fija 1x.
 static int g_texture_width = 0;
 static int g_texture_height = 0;
 static int g_screen_rotation = 0; /* 0..3 = 0/90/180/270 deg CCW (libretro convention) */
+static int g_current_effect = 0;
+static int g_vsync_enabled = 1;
+
+/* Compile-time-only CRT/video diagnostics. Release builds pay zero timer,
+ * counter, formatting or logging cost. Enable temporarily in this file. */
+#ifndef XBOX_CRT_PERF_DIAG
+#define XBOX_CRT_PERF_DIAG 1
+#endif
+
+/* Independent A/B switches. Defaults reproduce the original backend and
+ * original shader exactly; enable combinations explicitly for experiments. */
+#ifndef XBOX_GAME_TEXTURE_RING
+#define XBOX_GAME_TEXTURE_RING 0
+#endif
+#ifndef XBOX_CRT_FAST
+#define XBOX_CRT_FAST 0
+#endif
+#ifndef XBOX_OVERLAY_POST_PRESENT_RELOCK
+#define XBOX_OVERLAY_POST_PRESENT_RELOCK 0
+#endif
+
+#if XBOX_CRT_PERF_DIAG
+typedef struct XBOX_CRT_PERF_COUNTERS {
+	unsigned __int64 frames;
+	unsigned __int64 unlock_ticks;
+	unsigned __int64 draw_ticks;
+	unsigned __int64 present_ticks;
+	unsigned __int64 game_lock_ticks;
+	unsigned __int64 overlay_lock_ticks;
+	unsigned __int64 flip_ticks;
+	LARGE_INTEGER frequency;
+} XBOX_CRT_PERF_COUNTERS;
+
+static XBOX_CRT_PERF_COUNTERS g_crt_perf;
+
+static unsigned __int64 XBOX_CrtPerfNow(void)
+{
+	LARGE_INTEGER value;
+	QueryPerformanceCounter(&value);
+	return (unsigned __int64)value.QuadPart;
+}
+
+static unsigned __int64 XBOX_CrtPerfAverageUs(unsigned __int64 ticks)
+{
+	if (!g_crt_perf.frames || !g_crt_perf.frequency.QuadPart) return 0;
+	return (ticks * 1000000ui64) /
+	       ((unsigned __int64)g_crt_perf.frequency.QuadPart * g_crt_perf.frames);
+}
+
+static void XBOX_CrtPerfDump(void)
+{
+	char line[512];
+	sprintf(line,
+		"[X360GPU] effect=%d frames=%I64u resolution=%dx%d texture=%dx%d "
+		"vsync=%d upload_avg_us=0 texture_copy_avg_us=0 "
+		"unlock_avg_us=%I64u draw_submit_avg_us=%I64u "
+		"present_avg_us=%I64u game_lock_gpu_wait_avg_us=%I64u "
+		"overlay_lock_gpu_wait_avg_us=%I64u gpu_wait_avg_us=%I64u "
+		"flip_total_avg_us=%I64u\n",
+		g_current_effect, g_crt_perf.frames,
+		D3D_PP.BackBufferWidth, D3D_PP.BackBufferHeight,
+		g_texture_width, g_texture_height, g_vsync_enabled,
+		XBOX_CrtPerfAverageUs(g_crt_perf.unlock_ticks),
+		XBOX_CrtPerfAverageUs(g_crt_perf.draw_ticks),
+		XBOX_CrtPerfAverageUs(g_crt_perf.present_ticks),
+		XBOX_CrtPerfAverageUs(g_crt_perf.game_lock_ticks),
+		XBOX_CrtPerfAverageUs(g_crt_perf.overlay_lock_ticks),
+		XBOX_CrtPerfAverageUs(g_crt_perf.game_lock_ticks +
+		                      g_crt_perf.overlay_lock_ticks),
+		XBOX_CrtPerfAverageUs(g_crt_perf.flip_ticks));
+	OutputDebugString(line);
+	memset(&g_crt_perf, 0, sizeof(g_crt_perf));
+	QueryPerformanceFrequency(&g_crt_perf.frequency);
+}
+
+#define CRT_PERF_NOW(v) ((v) = XBOX_CrtPerfNow())
+#define CRT_PERF_ADD(field, begin) (g_crt_perf.field += XBOX_CrtPerfNow() - (begin))
+#else
+#define CRT_PERF_NOW(v) ((void)0)
+#define CRT_PERF_ADD(field, begin) ((void)0)
+#endif
 
 typedef struct { float x, y, z, rhw; float u, v; } HLSL_BG_VTX;
 
@@ -341,7 +422,6 @@ static LPDIRECT3DVERTEXBUFFER9 g_overlay_vb = NULL;
 static SDL_Surface* g_overlay_surface = NULL;
 static int g_overlay_enabled = 0;
 static int g_overlay_locked = 0;
-static int g_current_effect = 0;
 
 /* Overscan del overlay: desplaza los bordes del quad hacia adentro (positivo)
    o hacia afuera (negativo).  Se aplica via SDL_XBOX_SetOverscan. */
@@ -576,8 +656,10 @@ int XBOX_VideoInit(_THIS, SDL_PixelFormat *vformat)
 #ifdef NOVSYNC
     D3D_PP.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
     D3D_PP.SwapEffect = D3DSWAPEFFECT_DISCARD;
+    g_vsync_enabled = 0;
 #else
     D3D_PP.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+    g_vsync_enabled = 1;
 #endif
 
     if (!D3D_Device) {
@@ -892,12 +974,16 @@ void SDL_XBOX_SetVSync(int enabled)
 	float bbw, bbh;
 
 	if (!D3D_Device) return;
+	g_vsync_enabled = enabled ? 1 : 0;
 
 	if (g_xboxFlipCSInit) EnterCriticalSection(&g_xboxFlipCS);
 
 	/* Unlock game texture before Reset */
-	if (this && this->hidden && this->hidden->SDL_primary)
+	if (this && this->hidden && this->hidden->SDL_primary &&
+	    this->hidden->SDL_primary_locked) {
 		IDirect3DTexture9_UnlockRect(this->hidden->SDL_primary, 0);
+		this->hidden->SDL_primary_locked = 0;
+	}
 
 	/* Unlock overlay texture if locked */
 	if (g_overlay_texture && g_overlay_locked) {
@@ -940,6 +1026,7 @@ void SDL_XBOX_SetVSync(int enabled)
 	/* Re-lock game texture (CPU-cached, sobrevive al Reset) */
 	if (this && this->hidden && this->hidden->SDL_primary) {
 		IDirect3DTexture9_LockRect(this->hidden->SDL_primary, 0, &d3dlr, NULL, 0);
+		this->hidden->SDL_primary_locked = 1;
 		if (this->screen) {
 			this->screen->pixels = d3dlr.pBits;
 			this->screen->pitch = d3dlr.Pitch;
@@ -1108,18 +1195,19 @@ static void XBOX_DestroyOverlay(void)
 	g_overlay_enabled = 0;
 }
 
+static void XBOX_RelockOverlay(void);
+
 /* Draw the overlay quad with alpha blending (called during flip).
    game_texture is the primary D3D texture to restore after drawing.
    useAlphaFix: when true, use the alpha-fixup shader to force all non-black
    pixels opaque (avoids the CPU loop that sets alpha=0xFF per pixel). */
 static void XBOX_DrawOverlay(LPDIRECT3DTEXTURE9 game_texture, int useAlphaFix)
 {
-	D3DLOCKED_RECT d3dlr;
-
 	if (!g_overlay_enabled || !g_overlay_texture || !g_overlay_vb) return;
 
 	/* Unlock overlay texture so GPU can read it */
 	IDirect3DTexture9_UnlockRect(g_overlay_texture, 0);
+	g_overlay_locked = 0;
 
 	/* Enable alpha blending */
 	IDirect3DDevice9_SetRenderState(D3D_Device, D3DRS_ALPHABLENDENABLE, TRUE);
@@ -1157,10 +1245,31 @@ static void XBOX_DrawOverlay(LPDIRECT3DTEXTURE9 game_texture, int useAlphaFix)
 	IDirect3DDevice9_SetSamplerState(D3D_Device, 0, D3DSAMP_MINFILTER, g_current_sampler_filter);
 	IDirect3DDevice9_SetSamplerState(D3D_Device, 0, D3DSAMP_MAGFILTER, g_current_sampler_filter);
 
-	/* Re-lock overlay texture so the app can keep drawing to it */
-	IDirect3DTexture9_LockRect(g_overlay_texture, 0, &d3dlr, NULL, 0);
-	g_overlay_surface->pixels = d3dlr.pBits;
-	g_overlay_surface->pitch = d3dlr.Pitch;
+#if !XBOX_OVERLAY_POST_PRESENT_RELOCK
+	/* Original ordering, retained as the default A/B baseline. */
+	XBOX_RelockOverlay();
+#endif
+}
+
+/* Relock only after Present has submitted the complete frame. The old order
+ * locked the overlay immediately after its draw, which could serialize the
+ * CPU behind every preceding CRT pixel before the command buffer was even
+ * presented. This remains a potential implicit wait and is measured by P0. */
+static void XBOX_RelockOverlay(void)
+{
+	D3DLOCKED_RECT d3dlr;
+#if XBOX_CRT_PERF_DIAG
+	unsigned __int64 begin;
+#endif
+	if (!g_overlay_enabled || !g_overlay_texture || !g_overlay_surface ||
+	    g_overlay_locked) return;
+	CRT_PERF_NOW(begin);
+	if (IDirect3DTexture9_LockRect(g_overlay_texture, 0, &d3dlr, NULL, 0) == D3D_OK) {
+		g_overlay_surface->pixels = d3dlr.pBits;
+		g_overlay_surface->pitch = d3dlr.Pitch;
+		g_overlay_locked = 1;
+	}
+	CRT_PERF_ADD(overlay_lock_ticks, begin);
 }
 
 
@@ -1224,6 +1333,81 @@ void SDL_XBOX_SetOverlayEnabled(int enabled)
 	g_overlay_enabled = enabled;
 }
 
+#if XBOX_GAME_TEXTURE_RING
+#define XBOX_GAME_TEXTURE_RING_SIZE 3
+#else
+#define XBOX_GAME_TEXTURE_RING_SIZE 1
+#endif
+
+static void XBOX_DestroyGameTextureRing(_THIS)
+{
+	int i;
+	if (!this || !this->hidden) return;
+	if (this->hidden->SDL_primary && this->hidden->SDL_primary_locked) {
+		IDirect3DTexture9_UnlockRect(this->hidden->SDL_primary, 0);
+		this->hidden->SDL_primary_locked = 0;
+	}
+	if (D3D_Device) IDirect3DDevice9_SetTexture(D3D_Device, 0, NULL);
+	for (i = 0; i < XBOX_GAME_TEXTURE_RING_SIZE; i++) {
+		if (this->hidden->SDL_primary_ring[i]) {
+			IDirect3DTexture9_Release(this->hidden->SDL_primary_ring[i]);
+			this->hidden->SDL_primary_ring[i] = NULL;
+		}
+	}
+	this->hidden->SDL_primary = NULL;
+	this->hidden->SDL_primary_ring_index = 0;
+}
+
+static HRESULT XBOX_CreateGameTextureRing(_THIS, int width, int height,
+	D3DFORMAT pixel_mode, D3DLOCKED_RECT* first_lock)
+{
+	HRESULT hr;
+	int i;
+
+	if (!this || !this->hidden || !first_lock) return E_INVALIDARG;
+	memset(this->hidden->SDL_primary_ring, 0,
+	       sizeof(this->hidden->SDL_primary_ring));
+	this->hidden->SDL_primary_ring_index = 0;
+	this->hidden->SDL_primary_locked = 0;
+
+	for (i = 0; i < XBOX_GAME_TEXTURE_RING_SIZE; i++) {
+		hr = IDirect3DDevice9_CreateTexture(D3D_Device, width, height, 1, 0,
+			pixel_mode, D3DUSAGE_CPU_CACHED_MEMORY,
+			(D3DTexture**)&this->hidden->SDL_primary_ring[i], NULL);
+		if (hr != D3D_OK) {
+			XBOX_DestroyGameTextureRing(this);
+			return hr;
+		}
+	}
+
+	this->hidden->SDL_primary = this->hidden->SDL_primary_ring[0];
+	hr = IDirect3DTexture9_LockRect(this->hidden->SDL_primary, 0,
+		first_lock, NULL, 0);
+	if (hr != D3D_OK) {
+		XBOX_DestroyGameTextureRing(this);
+		return hr;
+	}
+	this->hidden->SDL_primary_locked = 1;
+	return D3D_OK;
+}
+
+/* Select a texture which is at least two submissions behind the GPU reader.
+ * The frame just written is still presented immediately; only the writable
+ * storage for the following frame rotates, so this adds no fixed framebuffer
+ * queue or intentional frame of video latency. */
+static HRESULT XBOX_LockNextGameTexture(_THIS, D3DLOCKED_RECT* lock)
+{
+	HRESULT hr;
+	int next;
+	if (!this || !this->hidden || !lock) return E_INVALIDARG;
+	next = (this->hidden->SDL_primary_ring_index + 1) % XBOX_GAME_TEXTURE_RING_SIZE;
+	this->hidden->SDL_primary_ring_index = next;
+	this->hidden->SDL_primary = this->hidden->SDL_primary_ring[next];
+	hr = IDirect3DTexture9_LockRect(this->hidden->SDL_primary, 0, lock, NULL, 0);
+	if (hr == D3D_OK) this->hidden->SDL_primary_locked = 1;
+	return hr;
+}
+
 /* Ajusta el overscan del overlay.
    x,y > 0 desplazan los bordes hacia adentro (reduce area visible).
    x,y < 0 los expanden hacia afuera.  Se puede llamar en cualquier
@@ -1247,10 +1431,7 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
 
 	/* Cleanup previous D3D texture if re-setting video mode */
 	if (this->hidden->SDL_primary) {
-		IDirect3DTexture9_UnlockRect(this->hidden->SDL_primary, 0);
-		IDirect3DDevice9_SetTexture(D3D_Device, 0, NULL);
-		IDirect3DTexture9_Release(this->hidden->SDL_primary);
-		this->hidden->SDL_primary = NULL;
+		XBOX_DestroyGameTextureRing(this);
 		current->pixels = NULL;
 	}
 
@@ -1290,7 +1471,8 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
 	}
 
  
-	ret = IDirect3DDevice9_CreateTexture(D3D_Device,width,height,1, 0,pixel_mode, D3DUSAGE_CPU_CACHED_MEMORY, (D3DTexture**)&this->hidden->SDL_primary, NULL);
+	ret = XBOX_CreateGameTextureRing(this, width, height,
+		(D3DFORMAT)pixel_mode, &d3dlr);
 	have_direct3dtexture=1;
 
 	if (ret != D3D_OK)
@@ -1298,15 +1480,6 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
 		SDL_SetError("Couldn't create Direct3D Texture!");
 		return(NULL);
 	}
-
-	/* Lock the texture permanently - app draws directly to texture memory.
-	   Unlock only briefly during flip for GPU to render, then re-lock. */
-	ret = IDirect3DTexture9_LockRect(this->hidden->SDL_primary, 0, &d3dlr, NULL, 0);
-	if (ret != D3D_OK) {
-		SDL_SetError("Couldn't lock Direct3D Texture!");
-		return(NULL);
-	}
-
 
     initShaders();
    	
@@ -1452,26 +1625,14 @@ SDL_Surface* XBOX_ResizeGameTexture(int width, int height, int bpp)
 
 	/* Liberar textura D3D anterior */
 	if (this->hidden->SDL_primary) {
-		IDirect3DTexture9_UnlockRect(this->hidden->SDL_primary, 0);
-		IDirect3DDevice9_SetTexture(D3D_Device, 0, NULL);
-		IDirect3DTexture9_Release(this->hidden->SDL_primary);
-		this->hidden->SDL_primary = NULL;
+		XBOX_DestroyGameTextureRing(this);
 	}
 
-	/* Crear textura D3D */
-	ret = IDirect3DDevice9_CreateTexture(D3D_Device, width, height, 1, 0,
-		pixel_mode, D3DUSAGE_CPU_CACHED_MEMORY,
-		(D3DTexture**)&this->hidden->SDL_primary, NULL);
+	/* Crear el ring y dejar su primer miembro lockeado para escritura CPU. */
+	ret = XBOX_CreateGameTextureRing(this, width, height,
+		(D3DFORMAT)pixel_mode, &d3dlr);
 	if (ret != D3D_OK) { this->hidden->SDL_primary = NULL; return NULL; }
 	have_direct3dtexture = 1;
-
-	/* Lock permanente: core escribe directo a VRAM (zero-copy) */
-	ret = IDirect3DTexture9_LockRect(this->hidden->SDL_primary, 0, &d3dlr, NULL, 0);
-	if (ret != D3D_OK) {
-		IDirect3DTexture9_Release(this->hidden->SDL_primary);
-		this->hidden->SDL_primary = NULL;
-		return NULL;
-	}
 
 	/* Liberar el surface SDL anterior (si existe) y crear uno nuevo
 	 * apuntando a la textura D3D lockeada, igual que XBOX_SetVideoMode.
@@ -1486,9 +1647,7 @@ SDL_Surface* XBOX_ResizeGameTexture(int width, int height, int bpp)
 	this->screen = SDL_CreateRGBSurface(SDL_SWSURFACE | SDL_PREALLOC,
 		width, height, pitch_bpp, Rmask, Gmask, Bmask, 0);
 	if (!this->screen) {
-		IDirect3DTexture9_UnlockRect(this->hidden->SDL_primary, 0);
-		IDirect3DTexture9_Release(this->hidden->SDL_primary);
-		this->hidden->SDL_primary = NULL;
+		XBOX_DestroyGameTextureRing(this);
 		return NULL;
 	}
 	/* Reemplazar el buffer interno por la textura D3D lockeada */
@@ -1533,17 +1692,30 @@ static void XBOX_FreeHWSurface(_THIS, SDL_Surface *surface)
 static int XBOX_RenderSurface(_THIS, SDL_Surface *surface)
 {
 	D3DLOCKED_RECT d3dlr;
+	LPDIRECT3DTEXTURE9 display_texture;
+	HRESULT lock_result;
 	int hlslWasActive;
+#if XBOX_CRT_PERF_DIAG
+	unsigned __int64 t_flip, t_stage;
+	if (!g_crt_perf.frequency.QuadPart)
+		QueryPerformanceFrequency(&g_crt_perf.frequency);
+	CRT_PERF_NOW(t_flip);
+#endif
 
 	/* [XBOX360] Serializar todo el bloque de rendering+Present con un
 	 * lock para que main thread y watcher thread no corrompan el ring
 	 * buffer del GPU si coinciden.  Coste: ~us por frame, despreciable. */
 	if (g_xboxFlipCSInit) EnterCriticalSection(&g_xboxFlipCS);
 
-	/* Unlock so the GPU can read the texture for rendering */
-	IDirect3DTexture9_UnlockRect(this->hidden->SDL_primary, 0);
+	/* Submit the frame which the CPU has just completed. */
+	display_texture = this->hidden->SDL_primary;
+	CRT_PERF_NOW(t_stage);
+	IDirect3DTexture9_UnlockRect(display_texture, 0);
+	this->hidden->SDL_primary_locked = 0;
+	CRT_PERF_ADD(unlock_ticks, t_stage);
+	IDirect3DDevice9_SetTexture(D3D_Device, 0, (D3DBaseTexture*)display_texture);
 
-
+	CRT_PERF_NOW(t_stage);
 	/* Clear for letterbox/pillarbox bars, then render game quad */
 	IDirect3DDevice9_Clear(D3D_Device, 0, NULL, D3DCLEAR_TARGET, 0x00000000, 1.0f, 0L);
 	XBOX_DrawMainQuad();
@@ -1558,15 +1730,35 @@ static int XBOX_RenderSurface(_THIS, SDL_Surface *surface)
 	 * transiciones de estado / arranque / callback del menu); ya no se
 	 * resetea por-frame aqui. */
 	hlslWasActive = g_hlslBkg_active;
-	XBOX_DrawOverlay(this->hidden->SDL_primary, hlslWasActive);
+	XBOX_DrawOverlay(display_texture, hlslWasActive);
+	CRT_PERF_ADD(draw_ticks, t_stage);
 
+	CRT_PERF_NOW(t_stage);
 	IDirect3DDevice9_Present(D3D_Device, NULL, NULL, NULL, NULL);
+	CRT_PERF_ADD(present_ticks, t_stage);
 
-	/* Re-lock so the app can keep drawing directly to texture memory */
-	IDirect3DTexture9_LockRect(this->hidden->SDL_primary, 0, &d3dlr, NULL, 0);
+	/* Lock another ring member for the next CPU frame. If this blocks, it is
+	 * a real GPU-resource wait and the diagnostic reports it explicitly. */
+	CRT_PERF_NOW(t_stage);
+	lock_result = XBOX_LockNextGameTexture(this, &d3dlr);
+	CRT_PERF_ADD(game_lock_ticks, t_stage);
+	if (lock_result != D3D_OK) {
+		if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
+		return -1;
+	}
 
 	surface->pixels = d3dlr.pBits;
 	surface->pitch = d3dlr.Pitch;
+
+#if XBOX_OVERLAY_POST_PRESENT_RELOCK
+	XBOX_RelockOverlay();
+#endif
+
+#if XBOX_CRT_PERF_DIAG
+	g_crt_perf.flip_ticks += XBOX_CrtPerfNow() - t_flip;
+	g_crt_perf.frames++;
+	if (g_crt_perf.frames >= 300) XBOX_CrtPerfDump();
+#endif
 
 	if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
 
@@ -1626,6 +1818,7 @@ static void XBOX_UnlockHWSurface(_THIS, SDL_Surface *surface)
 static void XBOX_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
 {
 	D3DLOCKED_RECT d3dlr;
+	LPDIRECT3DTEXTURE9 display_texture;
 
 	if (!this->hidden->SDL_primary || !have_vertexbuffer)
 		return;
@@ -1635,22 +1828,31 @@ static void XBOX_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
 	if (g_xboxFlipCSInit) EnterCriticalSection(&g_xboxFlipCS);
 
 	/* Unlock so the GPU can read the texture for rendering */
-	IDirect3DTexture9_UnlockRect(this->hidden->SDL_primary, 0);
+	display_texture = this->hidden->SDL_primary;
+	IDirect3DTexture9_UnlockRect(display_texture, 0);
+	this->hidden->SDL_primary_locked = 0;
+	IDirect3DDevice9_SetTexture(D3D_Device, 0, (D3DBaseTexture*)display_texture);
 
 
 	IDirect3DDevice9_Clear(D3D_Device, 0, NULL, D3DCLEAR_TARGET, 0x00000000, 1.0f, 0L);
 	XBOX_DrawMainQuad();
 	if (g_hlslBkg_active) HLSLBackground_draw(D3D_Device);
 	/* g_hlslBkg_active es estado retenido; ya no se resetea por-frame. */
-	XBOX_DrawOverlay(this->hidden->SDL_primary, 0);
+	XBOX_DrawOverlay(display_texture, 0);
 
 	IDirect3DDevice9_Present(D3D_Device, NULL, NULL, NULL, NULL);
 
-	/* Re-lock so the app can keep drawing directly to texture memory */
-	IDirect3DTexture9_LockRect(this->hidden->SDL_primary, 0, &d3dlr, NULL, 0);
+	/* Re-lock a different ring member for subsequent CPU updates. */
+	if (XBOX_LockNextGameTexture(this, &d3dlr) != D3D_OK) {
+		if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
+		return;
+	}
 
 	this->screen->pixels = d3dlr.pBits;
 	this->screen->pitch = d3dlr.Pitch;
+#if XBOX_OVERLAY_POST_PRESENT_RELOCK
+	XBOX_RelockOverlay();
+#endif
 
 	if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
 }
@@ -1675,13 +1877,9 @@ void XBOX_VideoQuit(_THIS)
 	 HLSLBackground_shutdown();
 	 XBOX_DestroyOverlay();
 	 XBOX_MameIndexedShutdown();
-	 if (this->hidden->SDL_primary)
-	 {
-		 IDirect3DTexture9_UnlockRect(this->hidden->SDL_primary, 0);
-		 IDirect3DDevice9_SetTexture(D3D_Device, 0, NULL);
+	 if (this->hidden->SDL_primary) {
 		 IDirect3DDevice9_SetStreamSource(D3D_Device, 0, NULL, 0, 0);
-		 IDirect3DTexture9_Release(this->hidden->SDL_primary);
-		 this->hidden->SDL_primary = NULL;
+		 XBOX_DestroyGameTextureRing(this);
 	 }
 
 	 if (this->screen)
@@ -1904,6 +2102,7 @@ void XBOX_FreeYUVOverlay(_THIS, SDL_Overlay *overlay)
 #define PS_FLAGS_DEFAULT         (D3DXSHADER_PARTIALPRECISION | D3DXSHADER_PREFER_FLOW_CONTROL)
 #define PS_FLAGS_FULL_PRECISION  (D3DXSHADER_PREFER_FLOW_CONTROL)
 
+/* Set to 1 for exact original CRT gamma during visual A/B testing. */
 /* Mezcla los flags en el hash del source para que el cache distinga compilaciones
  * con flags distintos. Sin esto, dos llamadas con misma source pero distintos
  * flags devolverian el mismo .pso cacheado. */
@@ -1913,6 +2112,8 @@ static unsigned long XBOX_HashShaderSource(const char* str, DWORD flags) {
     while ((c = *str++))
         hash = ((hash << 5) + hash) + c;
     hash = ((hash << 5) + hash) + (unsigned long)flags;
+    /* Cache ABI v2: shaders are now compiled with the _XBOX macro. */
+    hash ^= 0x43525432UL + (unsigned long)XBOX_CRT_FAST;
     return hash;
 }
 
@@ -1973,6 +2174,13 @@ HRESULT CreateShader(const char* source, IDirect3DPixelShader9** target, DWORD f
     unsigned long hash;
     DWORD cachedSize = 0;
     DWORD* cachedCode;
+#if XBOX_CRT_FAST
+    D3DXMACRO xboxMacros[3] = {
+        { "_XBOX", "1" }, { "XBOX_CRT_FAST", "1" }, { NULL, NULL }
+    };
+#else
+    D3DXMACRO xboxMacros[2] = { { "_XBOX", "1" }, { NULL, NULL } };
+#endif
 
     if (!source || !target) return E_INVALIDARG;
 
@@ -1995,7 +2203,7 @@ HRESULT CreateShader(const char* source, IDirect3DPixelShader9** target, DWORD f
      *   D3DXSHADER_PREFER_FLOW_CONTROL - prefiere ramas reales sobre predicacion.
      *     Reduce pressure en shaders con branches dinamicos. */
     //OutputDebugString("  -> compiling from source...\n");
-    hr = D3DXCompileShader(source, (UINT)strlen(source), NULL, NULL, "main", "ps_3_0",
+    hr = D3DXCompileShader(source, (UINT)strlen(source), xboxMacros, NULL, "main", "ps_3_0",
                             flags,
                             &pCode, &pError, NULL);
 
@@ -2232,8 +2440,8 @@ void XBOX_SelectEffect(int effectID) {
           elimina toda la casuistica. */
     dims[0] = (float)g_texture_width;
     dims[1] = (float)g_texture_height;
-    dims[2] = 0.0f;
-    dims[3] = 0.0f;
+    dims[2] = (g_texture_width  > 0) ? 1.0f / (float)g_texture_width  : 0.0f;
+    dims[3] = (g_texture_height > 0) ? 1.0f / (float)g_texture_height : 0.0f;
     IDirect3DDevice9_SetPixelShaderConstantF(D3D_Device, 1, dims, 1);
 
     /* 3. Sampler s0: filtro y wrap SIEMPRE. Escribir el wrap sin condiciones

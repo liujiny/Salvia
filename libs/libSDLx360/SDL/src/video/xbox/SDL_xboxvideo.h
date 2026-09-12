@@ -1,4 +1,4 @@
-﻿/*
+/*
     SDL - Simple DirectMedia Layer
     Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002  Sam Lantinga
 
@@ -56,6 +56,11 @@ VERTEX triangleStripVertices[3];
 
 struct SDL_PrivateVideoData {
 	LPDIRECT3DTEXTURE9 SDL_primary;
+	/* CPU writes one texture while Xenos samples another. SDL_primary always
+	 * aliases the currently CPU-locked member, preserving the SDL surface ABI. */
+	LPDIRECT3DTEXTURE9 SDL_primary_ring[3];
+	int SDL_primary_ring_index;
+	int SDL_primary_locked;
 };
 
 LPDIRECT3D9 D3D;

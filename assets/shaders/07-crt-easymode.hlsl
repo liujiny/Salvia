@@ -17,7 +17,14 @@
  *                                                                                *
  * Coste: 11 tex2D (igual que Lottes sin bloom). Visualmente: CRT plano con    *
  * aperture grille fina + scanlines limpias.                                    */
- float2 textureDims : register(c1);
+ float4 textureInfo : register(c1); /* xy=dims, zw=1/dims (CPU precomputed) */
+ #define textureDims    textureInfo.xy
+ #define invTextureDims textureInfo.zw
+ #ifdef XBOX_CRT_FAST
+ #define CRT_COLOR half3
+ #else
+ #define CRT_COLOR float3
+ #endif
  sampler2D detail : register(s0);
  struct PS_IN { float2 TexCoord : TEXCOORD0; };
 
@@ -29,16 +36,31 @@
  #define brightBoost   1.1    /* refuerzo ligero antes de la mask.     */
  #define shape         2.0    /* exponente del kernel Gaussiano.         */
 
+ #ifdef XBOX_CRT_FAST
+ /* Xenos fast path; Windows keeps the original 2.2 gamma below. */
+ CRT_COLOR ToLinear(CRT_COLOR c) {
+     CRT_COLOR v = saturate(c) * brightBoost;
+     return v * v;
+ }
+ CRT_COLOR ToSrgb(CRT_COLOR c) {
+     return sqrt(saturate(c));
+ }
+ #else
  float3 ToLinear(float3 c) {
      return pow(saturate(c) * brightBoost, float3(2.2, 2.2, 2.2));
  }
  float3 ToSrgb(float3 c) {
      return pow(saturate(c), float3(1.0/2.2, 1.0/2.2, 1.0/2.2));
  }
+ #endif
 
  /* Fetch en posicion nearest emulada con offset entero. */
- float3 Fetch(float2 pos, float2 off) {
+ CRT_COLOR Fetch(float2 pos, float2 off) {
+ #ifdef XBOX_CRT_FAST
+     pos = (floor(pos * textureDims + off) + 0.5) * invTextureDims;
+ #else
      pos = (floor(pos * textureDims + off) + 0.5) / textureDims;
+ #endif
      return ToLinear(tex2D(detail, pos).rgb);
  }
 
@@ -48,14 +70,19 @@
  }
 
  float Gaus(float pos, float scale) {
+ #ifdef XBOX_CRT_FAST
+     float d = abs(pos);
+     return exp2(scale * d * d);
+ #else
      return exp2(scale * pow(abs(pos), shape));
+ #endif
  }
 
  /* Filtro 3-tap Gaussiano horizontal. */
  float3 Horz3(float2 pos, float off) {
-     float3 b = Fetch(pos, float2(-1.0, off));
-     float3 c = Fetch(pos, float2( 0.0, off));
-     float3 d = Fetch(pos, float2( 1.0, off));
+     CRT_COLOR b = Fetch(pos, float2(-1.0, off));
+     CRT_COLOR c = Fetch(pos, float2( 0.0, off));
+     CRT_COLOR d = Fetch(pos, float2( 1.0, off));
      float dst = Dist(pos).x;
      float wb = Gaus(dst - 1.0, hardPix);
      float wc = Gaus(dst + 0.0, hardPix);
@@ -65,11 +92,11 @@
 
  /* Filtro 5-tap Gaussiano horizontal (linea central). */
  float3 Horz5(float2 pos, float off) {
-     float3 a = Fetch(pos, float2(-2.0, off));
-     float3 b = Fetch(pos, float2(-1.0, off));
-     float3 c = Fetch(pos, float2( 0.0, off));
-     float3 d = Fetch(pos, float2( 1.0, off));
-     float3 e = Fetch(pos, float2( 2.0, off));
+     CRT_COLOR a = Fetch(pos, float2(-2.0, off));
+     CRT_COLOR b = Fetch(pos, float2(-1.0, off));
+     CRT_COLOR c = Fetch(pos, float2( 0.0, off));
+     CRT_COLOR d = Fetch(pos, float2( 1.0, off));
+     CRT_COLOR e = Fetch(pos, float2( 2.0, off));
      float dst = Dist(pos).x;
      float wa = Gaus(dst - 2.0, hardPix);
      float wb = Gaus(dst - 1.0, hardPix);
@@ -116,8 +143,7 @@
  float4 main(PS_IN In, float2 vpos : VPOS) : COLOR0
  {
      /* Sin Warp: Easymode es CRT plano. */
-     float3 outColor = Tri(In.TexCoord);
+     CRT_COLOR outColor = Tri(In.TexCoord);
      outColor *= Mask(vpos);
      return float4(ToSrgb(outColor), 1.0);
  }
-
