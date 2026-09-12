@@ -1,4 +1,4 @@
-﻿#ifndef _CPS1_H_
+#ifndef _CPS1_H_
 #define _CPS1_H_
 
 extern data16_t *cps1_gfxram;     /* Video RAM */

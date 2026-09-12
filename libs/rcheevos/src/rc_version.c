@@ -1,4 +1,4 @@
-﻿#include "rc_version.h"
+#include "rc_version.h"
 
 uint32_t rc_version(void)
 {

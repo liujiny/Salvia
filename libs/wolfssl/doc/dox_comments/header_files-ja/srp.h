@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup SRP
     \brief  使用方法のためにSRP構造体を初期化します。
     \return 0  成功しています。

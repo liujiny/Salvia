@@ -1,4 +1,4 @@
-﻿/* 
+/* 
  * basic, incomplete SSP160x (SSP1601?) interpreter
  *
  * Copyright (c) Gražvydas "notaz" Ignotas, 2008

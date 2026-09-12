@@ -1,4 +1,4 @@
-﻿/*
+/*
  * libatari800/init.c - Atari800 as a library - initialisation routines
  *
  * Copyright (c) 2012 Tomasz Krasuski

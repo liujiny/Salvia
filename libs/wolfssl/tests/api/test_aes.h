@@ -1,4 +1,4 @@
-﻿/* test_aes.h
+/* test_aes.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿/* ASG 971222 -- rewrote this interface */
+/* ASG 971222 -- rewrote this interface */
 #ifndef __V20INTRF_H_
 #define __V20INTRF_H_
 

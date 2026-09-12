@@ -1,4 +1,4 @@
-﻿/*	$Id: mem_wrap.c,v 1.2 2003/12/05 18:07:19 nonaka Exp $	*/
+/*	$Id: mem_wrap.c,v 1.2 2003/12/05 18:07:19 nonaka Exp $	*/
 
 #include "common.h"
 #include <string.h>

@@ -1,4 +1,4 @@
-﻿int  sh2_drc_init(SH2 *sh2);
+int  sh2_drc_init(SH2 *sh2);
 void sh2_drc_finish(SH2 *sh2);
 void sh2_drc_wcheck_ram(u32 a, unsigned len, SH2 *sh2);
 void sh2_drc_wcheck_da(u32 a, unsigned len, SH2 *sh2);

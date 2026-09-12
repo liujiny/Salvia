@@ -1,4 +1,4 @@
-﻿/*
+/*
  * rdevice.c - Atari850 emulation
  *
  * Copyright (c) ???? Tom Hunt, Chris Martin

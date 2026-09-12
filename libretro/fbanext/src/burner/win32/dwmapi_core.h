@@ -1,4 +1,4 @@
-﻿#include <uxtheme.h>
+#include <uxtheme.h>
 
 #define DWM_EC_DISABLECOMPOSITION         0
 #define DWM_EC_ENABLECOMPOSITION          1

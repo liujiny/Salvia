@@ -1,4 +1,4 @@
-﻿#ifndef DOS_INTS_H_
+#ifndef DOS_INTS_H_
 #define DOS_INTS_H_
 
 /* Thanks, Allegro! */

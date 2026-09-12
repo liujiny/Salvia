@@ -1,4 +1,4 @@
-﻿#include <stdarg.h>
+#include <stdarg.h>
 #include "mednafen/mednafen.h"
 #include "mednafen/mednafen-endian.h"
 #include "mednafen/mempatcher.h"

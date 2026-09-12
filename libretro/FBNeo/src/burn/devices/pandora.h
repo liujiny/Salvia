@@ -1,4 +1,4 @@
-﻿extern INT32 pandora_flipscreen;
+extern INT32 pandora_flipscreen;
 
 void pandora_set_clear(INT32 clear);
 void pandora_update(UINT16 *dest);

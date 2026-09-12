@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_CW_OUT_H
+#ifndef HEADER_CURL_CW_OUT_H
 #define HEADER_CURL_CW_OUT_H
 /***************************************************************************
  *                                  _   _ ____  _

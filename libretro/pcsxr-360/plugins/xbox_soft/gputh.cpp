@@ -1,4 +1,4 @@
-﻿#include <xtl.h>
+#include <xtl.h>
 #include <queue>
 
 #include "gpu.h"

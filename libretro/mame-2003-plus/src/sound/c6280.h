@@ -1,4 +1,4 @@
-﻿#ifndef _C6280_H_
+#ifndef _C6280_H_
 #define _C6280_H_
 
 #define MAX_C6280 2

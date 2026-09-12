@@ -1,4 +1,4 @@
-﻿/* Nuked OPL3
+/* Nuked OPL3
  * Copyright (C) 2013-2020 Nuke.YKT
  * Copyright (C) 2026 Tony Gies (Nuked-OPL3-fast modifications)
  *

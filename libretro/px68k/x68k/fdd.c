@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  FDD.C - FDD Unit
  */
 

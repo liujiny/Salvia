@@ -1,4 +1,4 @@
-﻿/*
+/*
  * WAV streaming music support. Adapted from ioquake3 with changes.
  *
  * Copyright (C) 1999-2005 Id Software, Inc.

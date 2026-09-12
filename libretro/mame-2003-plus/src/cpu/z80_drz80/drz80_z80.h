@@ -1,4 +1,4 @@
-﻿#ifndef DRZ80_Z80_H
+#ifndef DRZ80_Z80_H
 #define DRZ80_Z80_H
 
 #include "cpuintrf.h"

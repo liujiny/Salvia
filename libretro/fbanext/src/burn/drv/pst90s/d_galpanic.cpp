@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Gals Panic (set 1) driver for FB Alpha 0.2.96.71
  *
  * Port by OopsWare. 2007

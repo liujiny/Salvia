@@ -1,4 +1,4 @@
-﻿/*
+/*
  * monitor.c - Implements a builtin system monitor for debugging
  *
  * Copyright (C) 1995-1998 David Firth

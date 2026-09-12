@@ -1,4 +1,4 @@
-﻿#ifndef _STRCONV_H_
+#ifndef _STRCONV_H_
 #define _STRCONV_H_
 
 // Used to convert strings when possibly needed

@@ -1,4 +1,4 @@
-﻿// FB Alpha Beast Busters and Mechanized Attack driver module
+// FB Alpha Beast Busters and Mechanized Attack driver module
 // Based on MAME driver by Bryan McPhail
 
 // Solved both ym2608 + deltaT problems July 31, 2021 -dink

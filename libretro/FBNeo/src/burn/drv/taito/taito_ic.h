@@ -1,4 +1,4 @@
-﻿extern INT32 TaitoIC_PC080SNInUse;
+extern INT32 TaitoIC_PC080SNInUse;
 extern INT32 TaitoIC_PC090OJInUse;
 extern INT32 TaitoIC_TC0100SCNInUse;
 extern INT32 TaitoIC_TC0110PCRInUse;

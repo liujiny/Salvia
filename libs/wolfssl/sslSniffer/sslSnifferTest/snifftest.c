@@ -1,4 +1,4 @@
-﻿/* snifftest.c
+/* snifftest.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

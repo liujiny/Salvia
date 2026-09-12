@@ -1,4 +1,4 @@
-﻿/*	video hardware for Pacific Novelty games:
+/*	video hardware for Pacific Novelty games:
 **	Thief/Nato Defense
 */
 

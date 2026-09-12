@@ -1,4 +1,4 @@
-﻿/* CryIf.h
+/* CryIf.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

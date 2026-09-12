@@ -1,4 +1,4 @@
-﻿
+
 static UINT32 EA;
 static UINT16 EO;
 static UINT16 E16;

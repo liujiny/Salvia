@@ -1,4 +1,4 @@
-﻿/* test_mlkem.c
+/* test_mlkem.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

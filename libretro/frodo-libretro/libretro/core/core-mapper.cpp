@@ -1,4 +1,4 @@
-ï»¿#include <libretro.h>
+#include <libretro.h>
 #include "libretro-core.h"
 #include "retroscreen.h"
 
@@ -89,7 +89,7 @@ static long GetTicks(void)
 {
 #if defined(_MSC_VER)
    // cpu_features_get_time_usec() devuelve un int64_t con el tiempo en microsegundos.
-   // Al dividirlo por 1000, obtenemos milisegundos idï¿½nticos al cï¿½lculo original.
+   // Al dividirlo por 1000, obtenemos milisegundos idénticos al cálculo original.
    return (long)(cpu_features_get_time_usec() / 1000);
 
 #elif !defined(_ANDROID_)

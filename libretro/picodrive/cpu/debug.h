@@ -1,4 +1,4 @@
-﻿
+
 #ifdef PDB
 
 enum {

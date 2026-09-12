@@ -1,4 +1,4 @@
-﻿extern UINT8 *pPsikyoshTiles;
+extern UINT8 *pPsikyoshTiles;
 extern UINT32  *pPsikyoshSpriteBuffer;
 extern UINT32  *pPsikyoshBgRAM;
 extern UINT32  *pPsikyoshVidRegs;

@@ -1,4 +1,4 @@
-﻿#ifndef __OTL_GDEF_H__
+#ifndef __OTL_GDEF_H__
 #define __OTL_GDEF_H__
 
 #include "otltable.h"

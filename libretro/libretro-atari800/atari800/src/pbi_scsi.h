@@ -1,4 +1,4 @@
-﻿#ifndef PBI_SCSI_H_
+#ifndef PBI_SCSI_H_
 #define PBI_SCSI_H_
 
 #include "atari.h"

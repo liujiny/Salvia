@@ -1,4 +1,4 @@
-﻿// Based on MAME sources by Zsolt Vasvari
+// Based on MAME sources by Zsolt Vasvari
 /*****************************************************************************
 
     Texas Instruments SN76477 emulator

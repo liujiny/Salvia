@@ -1,4 +1,4 @@
-﻿#ifndef INPUT_H_
+#ifndef INPUT_H_
 #define INPUT_H_
 
 /* Keyboard AKEY_* are in akey.h */

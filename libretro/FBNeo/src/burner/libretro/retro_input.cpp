@@ -1,4 +1,4 @@
-﻿#include <vector>
+#include <vector>
 #include "retro_common.h"
 #include "retro_input.h"
 #include "burn_gun.h"

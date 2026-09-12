@@ -1,4 +1,4 @@
-﻿/* Cygne
+/* Cygne
  *
  * Copyright notice for this file:
  *  Copyright (C) 2002 Dox dox@space.pl

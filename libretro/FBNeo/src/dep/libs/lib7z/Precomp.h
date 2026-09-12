@@ -1,4 +1,4 @@
-﻿/* Precomp.h -- precompilation file
+/* Precomp.h -- precompilation file
 2024-01-25 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_PRECOMP_H

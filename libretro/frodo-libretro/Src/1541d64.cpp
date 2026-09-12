@@ -1,8 +1,8 @@
-ï»¿/*
+/*
  *  1541d64.cpp - 1541 emulation in disk image files (.d64/.x64/zipcode)
  *
  *  Frodo Copyright (C) Christian Bauer
- *  zipcode decoding routines (C) 1993-1997 Marko Mï¿½kelï¿½, Paul David Doherty
+ *  zipcode decoding routines (C) 1993-1997 Marko Mäkelä, Paul David Doherty
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

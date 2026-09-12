@@ -1,4 +1,4 @@
-﻿// Based on MAME sources by Luca Elia
+// Based on MAME sources by Luca Elia
 
 #include "burnint.h"
 #include "msm6295.h"

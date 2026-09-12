@@ -1,4 +1,4 @@
-﻿/* ssl_bn.c
+/* ssl_bn.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

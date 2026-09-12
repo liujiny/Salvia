@@ -1,4 +1,4 @@
-﻿// Mouser for FBA, ported by vbt with help from dink
+// Mouser for FBA, ported by vbt with help from dink
 // Based on MAME driver by Frank Palazzolo
 #include "tiles_generic.h"
 #include "z80_intf.h"

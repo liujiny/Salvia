@@ -1,4 +1,4 @@
-﻿/*
+/*
   libco.sjlj (2008-01-28)
   author: Nach
   license: public domain

@@ -1,4 +1,4 @@
-﻿/* renesas-rx64-hw-crypt.h
+/* renesas-rx64-hw-crypt.h
  *
  * Contributed by Johnson Controls Tyco IP Holdings LLP.
  *

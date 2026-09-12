@@ -1,4 +1,4 @@
-﻿/*----------- defined in video/denjinmk.c -----------*/
+/*----------- defined in video/denjinmk.c -----------*/
 
 extern UINT16 *denjinmk_back_data,*denjinmk_fore_data,*denjinmk_mid_data,*denjinmk_scrollram16,*denjinmk_textram;
 extern UINT8 grainbow_pri_n;

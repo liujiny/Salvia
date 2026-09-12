@@ -1,4 +1,4 @@
-﻿void sega_speech_reset();
+void sega_speech_reset();
 void sega_speech_data_write(UINT8 data);
 void sega_speech_init(UINT8 *program, UINT8 *samples);
 void sega_speech_exit();

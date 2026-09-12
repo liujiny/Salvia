@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  pnm2png.c --- conversion from PBM/PGM/PPM-file to PNG-file
  *  copyright (C) 1999 by Willem van Schaik <willem@schaik.com>
  *

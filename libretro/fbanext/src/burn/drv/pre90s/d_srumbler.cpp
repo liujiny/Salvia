@@ -1,4 +1,4 @@
-﻿// FB Alpha The Speed Rumbler driver module
+// FB Alpha The Speed Rumbler driver module
 // Based on MAME driver by Paul Leaman
 
 #include "tiles_generic.h"

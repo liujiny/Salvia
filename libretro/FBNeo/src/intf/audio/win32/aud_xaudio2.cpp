@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 #include "aud_dsp.h"
 
 //#ifdef _MSC_VER

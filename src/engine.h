@@ -1,10 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include <SDL.h>
 #include <SDL_ttf.h>
 
 #include <audio\audiobuffer.h>
 #include <audio\audiorate.h>
+#include <audio\midisynth.h>
 #include <const\Constant.h>
 #include <io\cfgloader.h>
 #include <io\joystick.h>
@@ -47,6 +48,12 @@ class Engine{
 		// Instancia global para los callbacks
 		AudioBuffer g_audioBuffer;
 		AudioRateControl g_audioRate;
+		/* Sintetizador MIDI del frontend.  Vive aqui, junto al anillo y al
+		 * resampler, porque se mezcla en la misma ruta: el audio del core se
+		 * suma con el del synth antes de remuestrear (ver retro_audio_sample*).
+		 * A diferencia de MusicPlayer no necesita ser puntero: su constructor no
+		 * crea objetos del kernel. */
+		MidiSynth g_midi;
 		Sync *sync;
 		Joystick *joystick;
 		struct t_keyboard *keyb;

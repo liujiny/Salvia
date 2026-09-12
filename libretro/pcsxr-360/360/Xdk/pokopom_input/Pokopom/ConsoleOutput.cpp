@@ -1,4 +1,4 @@
-﻿// Based on the following blog post
+// Based on the following blog post
 // 	http://justcheckingonall.wordpress.com/2008/08/29/console-window-win32-app/
 // 
 // Quite the useful thing.

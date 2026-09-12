@@ -1,4 +1,4 @@
-﻿// ARM9 (ARM946E-S) CPU wrapper header for FBNeo
+// ARM9 (ARM946E-S) CPU wrapper header for FBNeo
 // Derived from arm7core.h with ARM9_MODE extensions
 
 #pragma once

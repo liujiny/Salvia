@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Cave-1000 System driver module
+// FinalBurn Neo Cave-1000 System driver module
 // Based on MAME driver by David Haywood, Luca Elia, MetalliC
 
 #include "tiles_generic.h"

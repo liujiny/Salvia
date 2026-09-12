@@ -1,4 +1,4 @@
-﻿/*
+/*
 	generate the tms9980a/tms9981 emulator
 */
 

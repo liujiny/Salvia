@@ -1,4 +1,4 @@
-﻿//
+//
 //  SPUDownloaderProtocol.h
 //  PersistentDownloader
 //

@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "s2650_intf.h"
 
 #define ADDRESS_MAX	0x8000

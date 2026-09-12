@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Dr. Tomy driver module
+// FinalBurn Neo Dr. Tomy driver module
 // Based on MAME driver by Pierpaolo Prazzoli
 
 #include "tiles_generic.h"

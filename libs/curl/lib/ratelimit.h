@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_RLIMIT_H
+#ifndef HEADER_CURL_RLIMIT_H
 #define HEADER_CURL_RLIMIT_H
 /***************************************************************************
  *                                  _   _ ____  _

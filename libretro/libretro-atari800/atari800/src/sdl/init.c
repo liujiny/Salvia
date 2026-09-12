@@ -1,4 +1,4 @@
-﻿/*
+/*
  * sdl/init.c - SDL library specific port code - initialisation routines
  *
  * Copyright (c) 2012 Tomasz Krasuski

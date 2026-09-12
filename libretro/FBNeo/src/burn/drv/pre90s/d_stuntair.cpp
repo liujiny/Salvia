@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Stunt Air driver module
+// FinalBurn Neo Stunt Air driver module
 // Based on MAME driver by David Haywood
 
 #include "tiles_generic.h"

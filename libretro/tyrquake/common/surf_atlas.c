@@ -1,4 +1,4 @@
-﻿/*
+/*
  * surf_atlas.c -- RHI-agnostic surface texture atlas.
  *
  * See surf_atlas.h for API contracts and design notes.

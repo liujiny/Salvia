@@ -1,4 +1,4 @@
-﻿/*
+/*
  * common code for base/cd/32x
  * (C) notaz, 2007-2009,2013
  * (C) irixxxx, 2020-2024
@@ -310,6 +310,8 @@ static int PicoFrameHints(void)
       do_timing_hacks_end(pv);
     }
   }
+
+  SyncCPUs(Pico.t.m68c_aim);
 
   // === VBLANK last line ===
   pv->status &= ~(SR_VB | PVS_VB2);

@@ -1,4 +1,4 @@
-﻿#ifndef _winx68k_cdrom
+#ifndef _winx68k_cdrom
 #define _winx68k_cdrom
 
 #include <stdint.h>

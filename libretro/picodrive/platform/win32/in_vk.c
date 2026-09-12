@@ -1,4 +1,4 @@
-﻿#define RC_INVOKED // we only need defines
+#define RC_INVOKED // we only need defines
 #include <winuser.h>
 #undef RC_INVOKED
 #include <string.h>

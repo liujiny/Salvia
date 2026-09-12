@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 
 void pic16c5xDoReset(INT32 type, INT32 *rom, INT32 *ram);
 extern INT32 pic16c5xScanCpu(INT32 nAction, INT32* pnMin);

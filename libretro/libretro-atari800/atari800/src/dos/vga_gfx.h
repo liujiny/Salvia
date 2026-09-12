@@ -1,4 +1,4 @@
-﻿#ifndef VGA_GFX_H_
+#ifndef VGA_GFX_H_
 #define VGA_GFX_H_
 
 #include "atari.h"

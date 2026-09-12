@@ -11,6 +11,7 @@
 #include <SDL_thread.h>
 
 #include <menus/gameMenu.h>
+#include <audio/musicplayer.h>
 #include <const/menuconst.h>
 #include <image/icons.h>
 #include <uiobjects/listmenu.h>
@@ -81,6 +82,50 @@ static std::size_t rotation_buffer_size = 0;
 int audio_opened = 0;
 // En tu clase/global:
 volatile bool audio_closing = false;
+
+/* Tasa a la que se PIDE abrir el dispositivo de audio.  Se abre una sola vez al
+ * arrancar y no se vuelve a tocar en toda la sesion: en Xbox 360 el ciclo
+ * SDL_OpenAudio/SDL_CloseAudio repetido cuelga libSDLx360 (ver closeGame).  Cada
+ * core entrega su audio a su propia tasa y lo adapta AudioRateControl.
+ *
+ * 48000 y no 44100 porque en la 360 el mastering voice de XAudio2 ya trabaja a
+ * 48000, asi que pedir esa misma tasa evita un segundo remuestreo dentro de
+ * XAudio2 (SDL_xboxaudio.c, XboxDX_OpenAudio crea el source voice con
+ * spec->freq). */
+#define AUDIO_DEVICE_RATE 48000
+
+/* Tasa REAL con la que quedo abierto el dispositivo.  Puede no ser
+ * AUDIO_DEVICE_RATE: init_sdl_audio lee el `obtained` de SDL, asi que si un
+ * driver de Windows abre a otra tasa el resampler usa esta y todo sigue
+ * cuadrando en vez de salir desafinado. */
+static int g_audio_device_rate = AUDIO_DEVICE_RATE;
+
+/* Ultimos fps/sample_rate que el frontend aplico del core.  Son la guarda de
+ * delta del recheck de av_info: tras un cambio de core-options se reconsulta
+ * retro_get_system_av_info y solo se reaplica (reset del limitador y del
+ * resampler) si de verdad cambiaron.  Hace falta porque algunos cores cambian
+ * su temporizado al vuelo (p.ej. nestopia al forzar la region) pero NO emiten
+ * RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO, asi que el frontend se quedaria con el
+ * fps viejo (limitador capado a la tasa anterior). */
+static double g_applied_core_fps         = 0.0;
+static double g_applied_core_sample_rate = 0.0;
+/* Se pone a true cuando el core avisa de un cambio de opciones (via
+ * GET_VARIABLE_UPDATE) para reconsultar av_info una sola vez tras ese retro_run. */
+static bool   g_recheck_avinfo_pending   = false;
+
+/* Musica de menu.  Suena en todo estado menos partida en marcha y overlay sobre
+ * ella (ver musicWantedFor en salvia.cpp).  Es posible gracias a que el
+ * dispositivo esta permanentemente abierto: antes habria que haberlo abierto y
+ * cerrado al entrar y salir de cada juego.
+ *
+ * La cancion NO esta fijada en el codigo: la elige applyMenuMusic() segun el
+ * core activo (clave 'music_file' de su .cfg) con configMain[cfg::musicFile]
+ * como respaldo, y configMain[cfg::musicEnabled] la apaga del todo.
+ *
+ * Puntero y no objeto global a proposito: AudioBuffer crea un evento del kernel
+ * en su constructor, y como global eso correria ANTES de main.  Se reserva en
+ * main, como gameMenu y listMenu. */
+MusicPlayer* g_music = NULL;
 t_rom_paths romPaths;
 // CRC32 de la ROM cargada (0 si desconocido). Para resolver el .cht por hash via .rdb.
 uint32_t g_currentRomCrc = 0;
@@ -147,13 +192,6 @@ static std::string g_currentRompath;
 bool g_currentCoreSupportsNoGame;
 
 double nextFrameTime;
-
-/* [Xbox 360] Tasa actualmente abierta del dispositivo SDL audio.  Permite
- * a launchGame detectar cambios de sample_rate entre cargas y, si la macro
- * RESET_AUDIO esta definida, reabrir el device a la nueva tasa.  Sin
- * RESET_AUDIO se mantiene el comportamiento por defecto (no reabrir nunca,
- * porque en 360 SDL_OpenAudio/CloseAudio repetidos colgaban). */
-static int g_audio_opened_rate = 0;
 
 bool g_start_from_exception = false;
 static std::string g_excp_emulator_path;
@@ -225,6 +263,13 @@ DWORD WINAPI th_printLoading(LPVOID data) {
 				}
 				//Procesamos las hotkeys
 				gameMenu->joystick->pollKeys(gameMenu->getEmuStatus());
+				/* Drenar tambien aqui los ratones extra: sus acumuladores viven en el
+				 * plugin y siguen creciendo mientras no se lean, asi que sin esto la mira
+				 * pegaria un salto al volver del menu. */
+				{
+					SDL_Surface* ms = gameMenu->getMouseSurface();
+					gameMenu->joystick->updateMice(ms ? ms->w : 0, ms ? ms->h : 0);
+				}
 				HOTKEYS_LIST hotkey = gameMenu->joystick->findHotkey();
 				if (hotkey == HK_EXIT_GAME){
 					LOG_ERROR("Requested exit");
@@ -507,7 +552,7 @@ void initializeMenus(ListMenu &menuData, GameMenu &gameMenu, CfgLoader &cfgLoade
     struct ListStatus menuBeforeExit;
 	dirutil dir;
 
-    int retMenu = gameMenu.recoverGameMenuPos(menuData, menuBeforeExit);
+    int retMenu = cfgLoader.recoverGameMenuPos(menuBeforeExit);
     if (retMenu == 0){
         if (menuBeforeExit.layout != menuData.layout){
             menuData.setLayout(menuBeforeExit.layout, gameMenu.overlay->w, gameMenu.overlay->h);
@@ -595,49 +640,45 @@ void drawLoadingProgressBar(SDL_Surface*& screen, float progress) {
 	salviaFlip(gameMenu->gameScreen);
 }
 
+/* Prepara el audio para el juego que se acaba de cargar.
+ *
+ * NO abre ni reabre el dispositivo: eso se hizo una sola vez al arrancar
+ * (init_sdl_audio con AUDIO_DEVICE_RATE).  Aqui solo se le dice al resampler a
+ * que tasa entrega este core, y se reanuda el callback que closeGame dejo
+ * pausado.
+ *
+ * Antes esto abria el device con la tasa del PRIMER juego y se quedaba asi para
+ * toda la sesion, de modo que un juego posterior con otra tasa sonaba a
+ * velocidad y tono equivocados.  La valvula de escape que habia (RESET_AUDIO,
+ * reabrir el device) queda eliminada porque reexponia el cuelgue de
+ * SDL_OpenAudio/SDL_CloseAudio de libSDLx360 en la 360; ahora el desajuste se
+ * resuelve remuestreando, sin tocar el dispositivo. */
 void initGameAudio(double sampleRate){
-	/* Inicializar SDL Audio con la frecuencia del core.
+	/* La musica NO se libera aqui.  Se libero mientras el criterio era "solo
+	 * suena sin ROM cargada", pero ahora suena tambien en el menu de pausa
+	 * (EMU_MENU con juego cargado), asi que tiene que sobrevivir a la carga: si
+	 * se liberase, cada vez que abrieras el menu habria que releer el fichero
+	 * entero de disco, y en la 360 eso es un tiron perceptible cada vez.
 	 *
-	 * El device se abre UNA SOLA VEZ por sesion (primer juego cargado)
-	 * y se mantiene abierto hasta cierre de la app — abrirlo/cerrarlo
-	 * en cada carga colgaba SDL_OpenAudio en Xbox 360 tras varias
-	 * iteraciones (ver closeGame para el rationale).
-	 *
-	 * En cargas posteriores el device sigue abierto (audio_opened==1)
-	 * pero el callback esta pausado.  Reanudamos con PauseAudio(0).
-	 *
-	 * RESET_AUDIO (opt-in): si el sample_rate cambia entre cargas
-	 * (p.ej. FBNeo Neo Geo cart 48011 Hz -> Neo Geo CD 48000 Hz), el
-	 * consumidor SDL queda desincronizado y aparecen pops.  Con
-	 * RESET_AUDIO definido reabrimos el device a la nueva tasa.  Es
-	 * el camino "C": resuelve el desajuste a cambio de exponer el bug
-	 * historico de SDL_OpenAudio/CloseAudio en 360.  Sin la macro se
-	 * mantiene el comportamiento estable de no reabrir nunca. */
+	 * Quien decide si suena o no es musicWantedFor(estado); durante la partida
+	 * no se decodifica ni se lee nada, solo se queda el fichero en RAM. */
 	if (!audio_opened){
-		init_sdl_audio(sampleRate);
+		/* Red de seguridad: si por lo que sea el arranque no pudo abrirlo,
+		 * intentarlo aqui -- pero SIEMPRE a la tasa del dispositivo, nunca a la
+		 * del core. */
+		init_sdl_audio(AUDIO_DEVICE_RATE);
 	} else {
-#ifdef RESET_AUDIO
-		int new_rate = (int)sampleRate;
-		if (new_rate > 0 && new_rate != g_audio_opened_rate) {
-			LOG_DEBUG("RESET_AUDIO: rate change %d -> %d, reopening SDL audio\n",
-				g_audio_opened_rate, new_rate);
-			audio_closing = true;
-			SDL_PauseAudio(1);
-			SDL_Delay(50);              // dejar terminar el callback en vuelo
-			gameMenu->g_audioBuffer.Clear();
-			SDL_CloseAudio();
-			audio_opened = 0;
-			g_audio_opened_rate = 0;
-			audio_closing = false;
-			init_sdl_audio(sampleRate);
-		} else {
-			SDL_PauseAudio(0);
-		}
-#else
 		SDL_PauseAudio(0);
-#endif
 	}
+
 	gameMenu->g_audioRate.init(BUFF_SIZE);
+	gameMenu->g_audioRate.setRates(sampleRate, (double)g_audio_device_rate);
+	/* El sintetizador MIDI se mezcla ANTES del resampler, o sea a la tasa del
+	 * core, no a la del dispositivo.  Si el juego nuevo declara otra, hay que
+	 * reafinarlo o sonaria a destiempo y desafinado. */
+	gameMenu->g_midi.setSampleRate((int)sampleRate);
+	LOG_INFO("Audio: core a %.1f Hz -> dispositivo a %d Hz (ratio %.4f)\n",
+		sampleRate, g_audio_device_rate, gameMenu->g_audioRate.getBaseRatio());
 }
 
 bool extractAndLoadGame(std::string rompath, bool tmpDelete = true){

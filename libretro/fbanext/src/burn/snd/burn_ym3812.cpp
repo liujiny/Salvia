@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "burn_sound.h"
 #include "burn_ym3812.h"
 #include "m68000_intf.h"

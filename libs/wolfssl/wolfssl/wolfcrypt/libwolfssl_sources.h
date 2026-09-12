@@ -1,4 +1,4 @@
-﻿/* libwolfssl_sources.h
+/* libwolfssl_sources.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

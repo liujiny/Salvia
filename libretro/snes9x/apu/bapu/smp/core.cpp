@@ -1,4 +1,4 @@
-﻿void SMP::tick() {
+void SMP::tick() {
   timer0.tick();
   timer1.tick();
   timer2.tick();

@@ -1,4 +1,4 @@
-﻿/* Emacs style mode select   -*- C++ -*-
+/* Emacs style mode select   -*- C++ -*-
  *-----------------------------------------------------------------------------
  *
  *
@@ -51,6 +51,8 @@ void M_LoadDefaultsFile (char *file, dbool   basedefault);
 void M_LoadDefaults (void);
 
 void M_SaveDefaults (void);
+
+void M_FreeDefaults (void);
 
 struct default_s *M_LookupDefault(const char *name);     /* killough 11/98 */
 

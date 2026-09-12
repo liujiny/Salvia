@@ -1,4 +1,4 @@
-﻿#ifndef _JCLKCOOK_H_
+#ifndef _JCLKCOOK_H_
 #define _JCLKCOOK_H_
 
 /* Joy Clocky CookieJar public interface header file */

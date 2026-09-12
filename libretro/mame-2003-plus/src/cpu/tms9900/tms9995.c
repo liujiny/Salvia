@@ -1,4 +1,4 @@
-﻿/*
+/*
 	generate the tms9995 emulator
 */
 

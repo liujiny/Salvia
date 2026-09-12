@@ -1,4 +1,4 @@
-﻿/*  PPF/SBI Support for PCSX-Reloaded
+/*  PPF/SBI Support for PCSX-Reloaded
  *  Copyright (c) 2009, Wei Mingzhi <whistler_wmz@users.sf.net>.
  *  Copyright (c) 2010, shalma.
  *

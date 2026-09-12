@@ -1,4 +1,4 @@
-﻿#ifndef _EMBOS_USER_SETTINGS_H_
+#ifndef _EMBOS_USER_SETTINGS_H_
 #define _EMBOS_USER_SETTINGS_H_
 
     #undef WOLFSSL_EMBOS

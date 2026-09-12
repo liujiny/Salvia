@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup Camellia
 
     \brief This function sets the key and initialization vector for a

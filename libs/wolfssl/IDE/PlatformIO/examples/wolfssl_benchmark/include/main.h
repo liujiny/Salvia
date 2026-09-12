@@ -1,4 +1,4 @@
-﻿/* PlatformIO wolfssl_benchmark main.c
+/* PlatformIO wolfssl_benchmark main.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

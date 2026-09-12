@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 //
 // Copyright 2017 Christoph Oelckers
 // Copyright 2019 Fernando Carmona Varo
@@ -25,6 +25,7 @@
 
 #include "doomdef.h"
 #include "info.h"
+#include "dsda_hacked.h"
 #include "m_misc.h"
 #include "g_game.h"
 #include "u_scanner.h"
@@ -254,7 +255,7 @@ static int ParseStandardProperty(u_scanner_t* s, mapentry_t *mape)
       else
       {
         int i, special, tag;
-        for (i = 0; i < NUMMOBJTYPES; i++)
+        for (i = 0; i < num_mobj_types; i++)
         {
           if (mobjinfo[i].actorname != NULL && !strcasecmp(s->string, mobjinfo[i].actorname))
           {

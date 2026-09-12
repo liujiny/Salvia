@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Berzerk/Frenzy Soundhardware Driver
  * Copyright Alex Judd 1997/98
  * V1.1 for Mame 0.31 13March98

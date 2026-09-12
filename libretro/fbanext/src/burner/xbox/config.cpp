@@ -1,4 +1,4 @@
-﻿// Burner xml config file module, added by regret
+// Burner xml config file module, added by regret
 
 /* changelog:
  update 4: change format, improve compatibility

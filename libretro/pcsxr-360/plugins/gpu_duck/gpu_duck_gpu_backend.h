@@ -1,4 +1,4 @@
-﻿/*
+/*
  * gpu_duck_gpu_backend.h
  *
  * Minimal VS2010-compatible replacement for SwanStation's gpu_backend.h.

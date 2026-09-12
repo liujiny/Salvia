@@ -1,4 +1,4 @@
-﻿/* DllSecur.c -- DLL loading security
+/* DllSecur.c -- DLL loading security
 2023-12-03 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"

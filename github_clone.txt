@@ -25,6 +25,10 @@ git subtree add --prefix=libretro/beetle-ngp-libretro https://github.com/libretr
 git subtree add --prefix=libretro/libretro-atari800 https://github.com/libretro/libretro-atari800 master --squash
 git subtree add --prefix=libretro/frodo-libretro https://github.com/libretro/frodo-libretro master --squash
 git subtree add --prefix=libretro/px68k https://github.com/libretro/px68k-libretro master --squash
+git subtree add --prefix=libretro/prboom https://github.com/libretro/libretro-prboom master --squash
+git subtree add --prefix=libretro/cannonball https://github.com/libretro/cannonball master --squash
+git subtree add --prefix=libretro/uae https://github.com/libretro/libretro-uae master --squash
+git subtree add --prefix=libretro/uae2021 https://github.com/libretro/libretro-uae 2.6.1 --squash
 
 ###########################################################################################################
 # External libraries
@@ -61,6 +65,11 @@ git subtree pull --prefix=libretro/beetle-ngp-libretro https://github.com/libret
 git subtree pull --prefix=libretro/libretro-atari800 https://github.com/libretro/libretro-atari800 master --squash
 git subtree pull --prefix=libretro/frodo-libretro https://github.com/libretro/frodo-libretro master --squash
 git subtree pull --prefix=libretro/px68k https://github.com/libretro/px68k-libretro master --squash
+git subtree pull --prefix=libretro/prboom https://github.com/libretro/libretro-prboom master --squash
+git subtree pull --prefix=libretro/cannonball https://github.com/libretro/cannonball master --squash
+git subtree pull --prefix=libretro/uae https://github.com/libretro/libretro-uae master --squash
+git subtree pull --prefix=libretro/uae2021 https://github.com/libretro/libretro-uae 2.6.1 --squash
+
 
 ###########################################################################################################
 # Merging conflicts
@@ -70,3 +79,14 @@ git config --global merge.tool kdiff3
 git config --global mergetool.kdiff3.path "C:/Program Files/KDiff3/kdiff3.exe"
 git config --global mergetool.prompt false
 git mergetool --tool=kdiff3
+
+###########################################################################################################
+# Compilando Cores con su makefile original
+###########################################################################################################
+
+Para 32-bit: 
+	make platform=win CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++
+Limpieza:
+	make clean
+Debug: Para build con símbolos de debug:
+	make platform=win DEBUG=1

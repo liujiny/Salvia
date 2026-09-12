@@ -1,4 +1,4 @@
-﻿#ifndef RETROSCREEN_H
+#ifndef RETROSCREEN_H
 #define RETROSCREEN_H 1
 
 extern int CROP_WIDTH;

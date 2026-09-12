@@ -1,4 +1,4 @@
-﻿/*
+/*
  * cfg.c - Emulator Configuration
  *
  * Copyright (c) 1995-1998 David Firth

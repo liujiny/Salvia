@@ -1,4 +1,4 @@
-﻿// SDL_Sound module
+// SDL_Sound module
 
 #include <SDL.h>
 #include "burner.h"

@@ -1,4 +1,4 @@
-﻿/* Big Striker (bootleg) Video Hardware */
+/* Big Striker (bootleg) Video Hardware */
 
 #include "driver.h"
 

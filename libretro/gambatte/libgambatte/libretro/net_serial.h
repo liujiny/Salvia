@@ -1,4 +1,4 @@
-﻿#ifndef _NET_SERIAL_H
+#ifndef _NET_SERIAL_H
 #define _NET_SERIAL_H
 
 #if defined(__HAIKU__)

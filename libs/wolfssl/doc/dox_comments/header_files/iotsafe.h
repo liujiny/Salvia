@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup IoTSafe
     \brief This function enables the IoT-Safe support on the given context.
 

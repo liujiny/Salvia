@@ -1,4 +1,4 @@
-﻿// QSound - emulator for the QSound Chip
+// QSound - emulator for the QSound Chip
 
 #include <math.h>
 #include "cps.h"

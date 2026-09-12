@@ -1,4 +1,4 @@
-﻿#ifndef __COMMON_MP3_H__
+#ifndef __COMMON_MP3_H__
 #define __COMMON_MP3_H__
 
 #include <stdio.h>

@@ -1,4 +1,4 @@
-﻿#ifdef SMP_CPP
+#ifdef SMP_CPP
 
 //this is the IPLROM for the S-SMP coprocessor.
 //the S-SMP does not allow writing to the IPLROM.

@@ -1,4 +1,4 @@
-﻿typedef CINESTATE (*opcode_func)(int);
+typedef CINESTATE (*opcode_func)(int);
 
 
 /* a lot of jump table entries evaluate to the same thing */

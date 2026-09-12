@@ -1,4 +1,4 @@
-﻿#include "adsp2100.h"
+#include "adsp2100.h"
 
 #define DASMFLAG_SUPPORTED		0x80000000	/* are disassembly flags supported? */
 #define DASMFLAG_STEP_OUT		0x40000000	/* this instruction should be the end of a step out sequence */

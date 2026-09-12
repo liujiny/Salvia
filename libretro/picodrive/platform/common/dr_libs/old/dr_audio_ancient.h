@@ -1,4 +1,4 @@
-﻿// Public domain. See "unlicense" statement at the end of this file.
+// Public domain. See "unlicense" statement at the end of this file.
 
 //
 // QUICK NOTES

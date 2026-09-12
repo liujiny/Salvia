@@ -1,4 +1,4 @@
-﻿#ifndef GBA_MEMORY_H
+#ifndef GBA_MEMORY_H
 #define GBA_MEMORY_H
 
 #define FLASH_128K_SZ 0x20000

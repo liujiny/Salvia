@@ -1,4 +1,4 @@
-﻿#include "pic16c5x.h"
+#include "pic16c5x.h"
 
 UINT16 pic16c5xFetch(UINT16 address);
 UINT8 pic16c5xRead(UINT16 address);

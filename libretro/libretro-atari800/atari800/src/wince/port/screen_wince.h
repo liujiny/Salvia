@@ -1,4 +1,4 @@
-﻿#ifndef _SCREEN_WINCE_H_
+#ifndef _SCREEN_WINCE_H_
 #define _SCREEN_WINCE_H_
 
 #include "atari.h"

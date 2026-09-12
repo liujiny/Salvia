@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2001, 2002 Francesco Zappa Nardelli
  *
  * Permission is hereby granted, free of charge, to any person obtaining a

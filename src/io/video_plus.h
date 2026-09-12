@@ -1,4 +1,4 @@
-﻿#include <algorithm>
+#include <algorithm>
 
 #if defined(WIN)
 	#include <emmintrin.h> // SSE2

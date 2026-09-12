@@ -1,4 +1,4 @@
-﻿#include "filepackage.h"
+#include "filepackage.h"
 
 #include <cstring>
 #include <fstream>

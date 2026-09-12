@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  1541job.h - Emulation of 1541 GCR disk reading/writing
  *
  *  Frodo (C) 1994-1997,2002-2005 Christian Bauer

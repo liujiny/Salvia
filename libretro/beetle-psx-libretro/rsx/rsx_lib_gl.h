@@ -1,4 +1,4 @@
-﻿#ifndef __RSX_LIB_GL_H__
+#ifndef __RSX_LIB_GL_H__
 #define __RSX_LIB_GL_H__
 
 #include <stdint.h>

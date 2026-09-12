@@ -1,4 +1,4 @@
-﻿/* This is from the BIND 4.9.4 release, modified to compile by itself */
+/* This is from the BIND 4.9.4 release, modified to compile by itself */
 
 /* Copyright (c) Internet Software Consortium.
  *

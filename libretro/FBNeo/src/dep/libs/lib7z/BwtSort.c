@@ -1,4 +1,4 @@
-﻿/* BwtSort.c -- BWT block sorting
+/* BwtSort.c -- BWT block sorting
 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"

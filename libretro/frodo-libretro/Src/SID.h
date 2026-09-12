@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  SID.h - 6581 emulation
  *
  *  Frodo (C) 1994-1997,2002-2005 Christian Bauer

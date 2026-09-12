@@ -1,4 +1,4 @@
-ï»¿/******************************************************************************/
+/******************************************************************************/
 /* Mednafen - Multi-system Emulator                                           */
 /******************************************************************************/
 /* endian.cpp:
@@ -133,7 +133,7 @@ void Endian_V_NE_BE(void* p, size_t len)
  #endif
 }
 
-// Aï¿½ade la que falta: FlipByteOrder
+// Añade la que falta: FlipByteOrder
 void FlipByteOrder(uint8_t *src, uint32_t count) {
     std::reverse(src, src + count);
 }

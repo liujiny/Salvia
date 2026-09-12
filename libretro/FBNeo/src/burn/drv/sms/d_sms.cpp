@@ -1,4 +1,4 @@
-﻿// Sega Mastersystem driver for FBN
+// Sega Mastersystem driver for FBN
 // Interface for SMS Plus by Charles MacDonald
 
 #include "smsshared.h"

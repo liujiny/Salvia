@@ -1,4 +1,4 @@
-﻿/*
+/*
  * esc.c - Patch the OS with escape sequences
  *
  * Copyright (c) 1995-1998 David Firth

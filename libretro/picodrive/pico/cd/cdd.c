@@ -1,4 +1,4 @@
-ï»¿/***************************************************************************************
+/***************************************************************************************
  *  Genesis Plus
  *  CD drive processor & CD-DA fader
  *
@@ -725,7 +725,7 @@ void cdd_read_audio(unsigned int samples)
 void cdd_update(void)
 {
 #ifdef LOG_CDD
-  error("LBA = %d (track nï¿½%d)(latency=%d)\n", cdd.lba, cdd.index, cdd.latency);
+  error("LBA = %d (track n°%d)(latency=%d)\n", cdd.lba, cdd.index, cdd.latency);
 #endif
   
   /* update decoder, depending on track type */

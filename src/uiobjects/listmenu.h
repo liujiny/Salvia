@@ -1,4 +1,4 @@
-﻿#pragma once 
+#pragma once 
 
 #include <fstream>
 #include <string>
@@ -91,10 +91,15 @@ class ListMenu : public Object{
 
 
         void resetIndexPos();
+        /* Coloca el cursor en newPos y recoloca la ventana visible en un solo
+         * paso.  Lo comparten nextPos/prevPos/nextPage/prevPage, que solo se
+         * diferencian en el destino que calculan. */
+        void moveTo(int newPos);
         void nextPos();
         void prevPos();
         void nextPage();
         void prevPage();
+		void navigateLetter(int direction);
 		void resizeMarginTop(int addedMargin, int screenH);
 };
 

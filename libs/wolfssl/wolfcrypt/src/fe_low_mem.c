@@ -1,4 +1,4 @@
-﻿/* fe_low_mem.c
+/* fe_low_mem.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿#include "cps.h"
+#include "cps.h"
 // CPS - Memory
 
 UINT32 CpsMProt[4];

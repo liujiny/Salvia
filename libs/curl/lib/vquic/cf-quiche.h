@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_VQUIC_CF_QUICHE_H
+#ifndef HEADER_CURL_VQUIC_CF_QUICHE_H
 #define HEADER_CURL_VQUIC_CF_QUICHE_H
 /***************************************************************************
  *                                  _   _ ____  _

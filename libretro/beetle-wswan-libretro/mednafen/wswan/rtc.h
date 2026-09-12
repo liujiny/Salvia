@@ -1,4 +1,4 @@
-﻿#ifndef __WSWAN_RTC_H
+#ifndef __WSWAN_RTC_H
 #define __WSWAN_RTC_H
 
 #include "../mednafen-types.h"

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "beans/structures.h"
 #include "const/cfgconst.h"
@@ -25,6 +25,7 @@ public:
 	~CfgLoader();
 
 	static cfg::t_cfg_props configMain [cfg::MAIN_CFG_MAX];
+	static std::string appliedFileParmsCore;
 
 	std::vector<std::unique_ptr<cfg::t_cfg_emu>> emulators;
 	std::map<std::string, std::unique_ptr<cfg::t_emu_props> > startupLibretroParams;
@@ -33,6 +34,11 @@ public:
 	// order the core declares them. Runtime only, not persisted; used to build the
 	// per-category submenus in the core options menu.
 	std::vector<std::pair<std::string, std::string> > libretroCategories;
+	std::vector<std::string> musicFiles;
+	/* SoundFonts (.sf2) encontrados en el directorio 'system'.  El primer
+	 * elemento es siempre "ninguno".  Runtime, no se persiste: lo que se guarda
+	 * es el indice elegido (cfg::midiSoundfont). */
+	std::vector<std::string> soundfontFiles;
 
 	std::string saveCoreParams();
 	void loadCoreParams();
@@ -49,6 +55,11 @@ public:
 	bool applyCoreParamsFile(const std::string& path);
 	std::string saveMainParams();
 	std::string saveCoreOverrideParams(int emuIdx);
+	void findAllBgMusic();
+	void findAllSoundfonts();
+	
+	bool deleteCoreParams();
+	bool deleteGameParams(const std::string& gamePath);
 	//unsigned int findConfigIndex(std::string);
 	
 	int getWidth();
@@ -61,6 +72,8 @@ public:
     ConfigEmu *getPrevCfgEmu();
 	ConfigEmu *getCfgEmu();
 	ConfigEmu *findCfgEmu(std::string execName);
+	std::string getCoreCfgPath(bool save=false);
+	int recoverGameMenuPos(struct ListStatus &);
 
 	std::map<std::string, std::unique_ptr<cfg::t_emu_props> >& getLibretroParams();
 	int emuCfgPos;
@@ -75,9 +88,13 @@ private:
 	void initMainConfig();
 	void loadMainConfig();
 	void loadEmuConfig(std::string);
+	// Traduce el nombre de preset guardado (assets\shaders) al indice vivo
+	// que usan el menu y XBOX_SelectEffect, con migracion de los valores
+	// numericos 0..12 de versiones anteriores.
+	void resolveShaderModes();
 	int findKeyCfg(const std::string&);
 	void checkSystemLang();
-	std::string getCoreCfgPath();
+	
 	void parsearIdiomas(const char*, const std::string&, std::vector<FieldIdDesc>&);
 	void parsearRegiones(const char*, const std::string&, std::vector<FieldIdDesc>&);
 	void getExecutables(std::string, cfg::t_cfg_emu*);

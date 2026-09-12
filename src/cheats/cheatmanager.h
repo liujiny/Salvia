@@ -1,4 +1,4 @@
-﻿#ifndef CHEATS_CHEATMANAGER_H
+#ifndef CHEATS_CHEATMANAGER_H
 #define CHEATS_CHEATMANAGER_H
 
 #include <string>

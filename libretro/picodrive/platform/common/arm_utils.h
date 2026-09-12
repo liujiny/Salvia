@@ -1,4 +1,4 @@
-﻿
+
 void bgr444_to_rgb32(void *to, void *from, unsigned entries);
 void bgr444_to_rgb32_sh(void *to, void *from);
 

@@ -1,4 +1,4 @@
-﻿// FB Alpha Parodius Da! driver module
+// FB Alpha Parodius Da! driver module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

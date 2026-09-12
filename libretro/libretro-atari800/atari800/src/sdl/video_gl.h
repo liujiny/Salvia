@@ -1,4 +1,4 @@
-﻿#ifndef SDL_VIDEO_GL_H_
+#ifndef SDL_VIDEO_GL_H_
 #define SDL_VIDEO_GL_H_
 
 #include <stdio.h>

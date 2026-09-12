@@ -1,4 +1,4 @@
-﻿#include "toaplan.h"
+#include "toaplan.h"
 #include "samples.h"
 
 #define REFRESHRATE 57.59

@@ -1,4 +1,4 @@
-﻿#ifndef LIBOPERA_LOG_H_INCLUDED
+#ifndef LIBOPERA_LOG_H_INCLUDED
 #define LIBOPERA_LOG_H_INCLUDED
 
 enum opera_log_level_t

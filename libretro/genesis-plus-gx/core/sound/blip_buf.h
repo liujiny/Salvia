@@ -1,4 +1,4 @@
-﻿/** Sample buffer that resamples from input clock rate to output sample rate \file */
+/** Sample buffer that resamples from input clock rate to output sample rate \file */
 
 /* blip_buf $vers */
 #ifndef BLIP_BUF_H 

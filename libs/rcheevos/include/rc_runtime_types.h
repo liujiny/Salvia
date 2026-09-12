@@ -1,4 +1,4 @@
-﻿#ifndef RC_RUNTIME_TYPES_H
+#ifndef RC_RUNTIME_TYPES_H
 #define RC_RUNTIME_TYPES_H
 
 #include "rc_error.h"

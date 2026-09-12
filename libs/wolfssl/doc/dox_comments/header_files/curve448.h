@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup Curve448
 
     \brief This function generates a Curve448 key using the given random

@@ -1,4 +1,4 @@
-﻿/* Lzma2Enc.c -- LZMA2 Encoder
+/* Lzma2Enc.c -- LZMA2 Encoder
 2010-09-24 : Igor Pavlov : Public domain */
 
 /* #include <stdio.h> */

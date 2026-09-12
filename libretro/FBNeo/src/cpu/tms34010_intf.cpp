@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "tms34010/tms34010.h"
 #include "tms34010_intf.h"
 

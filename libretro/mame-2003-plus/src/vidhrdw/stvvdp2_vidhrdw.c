@@ -1,4 +1,4 @@
-﻿/* Sega Saturn VDP2 */
+/* Sega Saturn VDP2 */
 
 /*
 

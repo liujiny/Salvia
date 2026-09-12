@@ -1,4 +1,4 @@
-﻿/* sha3.c
+/* sha3.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

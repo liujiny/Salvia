@@ -1,4 +1,4 @@
-ï»¿// ****************************************************************************
+// ****************************************************************************
 // * This file is part of the xBRZ project. It is distributed under           *
 // * GNU General Public License: https://www.gnu.org/licenses/gpl-3.0         *
 // * Copyright (C) Zenju (zenju AT gmx DOT de) - All Rights Reserved          *
@@ -182,14 +182,14 @@ double distYCbCrBuffered(uint32_t pix1, uint32_t pix2)
 {
     //30% perf boost compared to plain distYCbCr()!
     //consumes 64 MB memory; using double is only 2% faster, but takes 128 MB
-	static const std::vector<float> diffToDist = []() -> std::vector<float> // <--- Tipo de retorno explï¿½cito
+	static const std::vector<float> diffToDist = []() -> std::vector<float> // <--- Tipo de retorno explícito
 	{
 		std::vector<float> tmp;
-		tmp.reserve(256 * 256 * 256); // [!] Crï¿½tico: Evita mï¿½ltiples realojamientos de 16MB
+		tmp.reserve(256 * 256 * 256); // [!] Crítico: Evita múltiples realojamientos de 16MB
 
 		for (uint32_t i = 0; i < 256 * 256 * 256; ++i)
 		{
-			// Usamos mï¿½scaras de bits para extraer los bytes de forma segura
+			// Usamos máscaras de bits para extraer los bytes de forma segura
 			const int r_diff = static_cast<signed char>((i >> 16) & 0xFF) * 2;
 			const int g_diff = static_cast<signed char>((i >> 8) & 0xFF) * 2;
 			const int b_diff = static_cast<signed char>(i & 0xFF) * 2;
@@ -209,7 +209,7 @@ double distYCbCrBuffered(uint32_t pix1, uint32_t pix2)
 			tmp.push_back(static_cast<float>(std::sqrt(y*y + c_b*c_b + c_r*c_r)));
 		}
 		return tmp; 
-	}(); // Los parï¿½ntesis finales ejecutan la lambda
+	}(); // Los paréntesis finales ejecutan la lambda
 
     //if (pix1 == pix2) -> 8% perf degradation!
     //    return 0;
@@ -310,7 +310,7 @@ BlendResult preProcessCorners(const Kernel_4x4& ker, const xbrz::ScalerCfg& cfg)
         DistWrapper(const xbrz::ScalerCfg& cfg) : cfg_(cfg) {}
         
         double operator()(uint32_t pix1, uint32_t pix2) const {
-            // Acceso explï¿½cito a la clase de la plantilla
+            // Acceso explícito a la clase de la plantilla
             return ColorDistance::dist(pix1, pix2, cfg_.luminanceWeight);
         }
     } dist(cfg);
@@ -427,7 +427,7 @@ void blendPixel(const Kernel_3x3& ker,
         #define XBRZ_EQ(p1, p2)   (ColorDistance::dist(p1, p2, cfg.luminanceWeight) < cfg.equalColorTolerance)
         #define XBRZ_DIST(p1, p2) (ColorDistance::dist(p1, p2, cfg.luminanceWeight))
 
-        // REEMPLAZO DE doLineBlend (Lï¿½gica extraï¿½da de la lambda)
+        // REEMPLAZO DE doLineBlend (Lógica extraída de la lambda)
         bool doLineBlend = true;
         if (getBottomR(blend) < BLEND_DOMINANT)
         {
@@ -497,7 +497,7 @@ public:
 
     void readDhlp(Kernel_4x4& ker, int x) const 
 	{
-		const int x_p2 = x + 2; // Declaraciï¿½n fuera del if
+		const int x_p2 = x + 2; // Declaración fuera del if
     
 		if (0 <= x_p2 && x_p2 < srcWidth_) 
 		{
@@ -523,7 +523,7 @@ private:
     const int srcWidth_;
 };
 
-// Definimos una versiï¿½n local para evitar conflictos con el namespace std de VS2010
+// Definimos una versión local para evitar conflictos con el namespace std de VS2010
 template<class T>
 static inline T xbrz_clamp(const T& v, const T& lo, const T& hi) {
     return (v < lo) ? lo : (hi < v) ? hi : v;

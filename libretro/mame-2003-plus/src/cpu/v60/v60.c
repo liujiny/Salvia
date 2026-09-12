@@ -1,4 +1,4 @@
-﻿/* V60.C*/
+/* V60.C*/
 /* Undiscover the beast!*/
 /* Main hacking and coding by Farfetch'd*/
 /* Portability fixes by Richter Belmont*/

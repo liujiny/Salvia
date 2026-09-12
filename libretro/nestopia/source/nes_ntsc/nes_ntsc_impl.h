@@ -1,4 +1,4 @@
-﻿/* nes_ntsc 0.2.2. http://www.slack.net/~ant/ */
+/* nes_ntsc 0.2.2. http://www.slack.net/~ant/ */
 
 /* Common implementation of NTSC filters */
 

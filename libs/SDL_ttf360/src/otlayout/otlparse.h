@@ -1,4 +1,4 @@
-﻿#ifndef __OTL_PARSER_H__
+#ifndef __OTL_PARSER_H__
 #define __OTL_PARSER_H__
 
 #include "otlayout.h"

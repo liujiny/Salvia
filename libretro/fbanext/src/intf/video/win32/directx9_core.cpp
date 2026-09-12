@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 #include "directx9_core.h"
 
 // Direct3DCreate9

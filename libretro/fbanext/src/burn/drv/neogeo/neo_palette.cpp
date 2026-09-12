@@ -1,4 +1,4 @@
-﻿#include "neogeo.h"
+#include "neogeo.h"
 // Neo Geo -- palette functions
 
 UINT8* NeoPalSrc[2];		// Pointer to input palettes

@@ -1,4 +1,4 @@
-﻿#ifndef USER_SETTINGS_H
+#ifndef USER_SETTINGS_H
 #define USER_SETTINGS_H
 
 /* Math library to use */

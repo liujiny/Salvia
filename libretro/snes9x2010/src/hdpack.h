@@ -1,4 +1,4 @@
-﻿/* hdpack.h: HD texture pack support for the snes9x2010 renderer.
+/* hdpack.h: HD texture pack support for the snes9x2010 renderer.
  *
  * The architecture follows Mesen's NES HD packs (HdNesPack /
  * HdPackLoader / hires.txt), adapted to the SNES PPU and this

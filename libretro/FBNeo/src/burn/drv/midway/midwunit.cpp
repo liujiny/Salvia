@@ -1,4 +1,4 @@
-﻿// midway wolf unit
+// midway wolf unit
 
 #include "tiles_generic.h"
 #include "midwunit.h"

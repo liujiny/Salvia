@@ -1,4 +1,4 @@
-﻿#include "cps.h"
+#include "cps.h"
 #include "burn_ym2203.h"
 #include "msm5205.h"
 

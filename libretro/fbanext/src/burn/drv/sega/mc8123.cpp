@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "bitswap.h"
 
 static INT32 decrypt_type0(INT32 val,INT32 param,INT32 swap)

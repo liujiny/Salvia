@@ -1,4 +1,4 @@
-﻿/* public domain */
+/* public domain */
 /* gcc -o udptest udp-test.c */
 
 /*

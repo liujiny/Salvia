@@ -1,4 +1,4 @@
-﻿#ifndef ADPCM_H
+#ifndef ADPCM_H
 #define ADPCM_H
 
 #define MAX_ADPCM		16

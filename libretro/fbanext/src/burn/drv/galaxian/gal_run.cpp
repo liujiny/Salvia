@@ -1,4 +1,4 @@
-﻿#include "gal.h"
+#include "gal.h"
 
 UINT8 GalInputPort0[8]       = {0, 0, 0, 0, 0, 0, 0, 0};
 UINT8 GalInputPort1[8]       = {0, 0, 0, 0, 0, 0, 0, 0};

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * pbi_scsi.c - SCSI emulation for the MIO and Black Box
  *
  * Copyright (C) 2007-2008 Perry McFarlane

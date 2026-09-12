@@ -1,4 +1,4 @@
-﻿#ifndef DITHER_H_
+#ifndef DITHER_H_
 #define DITHER_H_
 
 layout(set = 0, binding = 2) uniform mediump sampler2D uDitherLUT;

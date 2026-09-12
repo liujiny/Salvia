@@ -1,4 +1,4 @@
-﻿/* Md5.c -- MD5 Hash
+/* Md5.c -- MD5 Hash
 : Igor Pavlov : Public domain
 This code is based on Colin Plumb's public domain md5.c code */
 

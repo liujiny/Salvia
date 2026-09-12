@@ -1,4 +1,4 @@
-﻿/* sp_sm2_armthumb.c
+/* sp_sm2_armthumb.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

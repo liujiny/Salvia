@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 
 #define		HORIZONTAL_ORIENTED_RES		0
 #define		VERTICAL_ORIENTED_RES		1

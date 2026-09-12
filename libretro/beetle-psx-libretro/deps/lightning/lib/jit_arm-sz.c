@@ -1,4 +1,4 @@
-﻿
+
 #if __WORDSIZE == 32
 #if defined(__ARM_PCS_VFP)
 #define JIT_INSTR_MAX 48

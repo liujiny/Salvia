@@ -1,4 +1,4 @@
-﻿/* Expose POSIX 199309 (struct timespec, nanosleep) needed by the non-vita
+/* Expose POSIX 199309 (struct timespec, nanosleep) needed by the non-vita
  * branch's thread_sleep_ms below.  Must be defined before any header is
  * included -- glibc only honors feature-test macros that are set before its
  * <features.h> first runs. */

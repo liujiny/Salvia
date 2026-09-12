@@ -1,4 +1,4 @@
-﻿/* LzmaLib.c -- LZMA library wrapper
+/* LzmaLib.c -- LZMA library wrapper
 2023-04-02 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"

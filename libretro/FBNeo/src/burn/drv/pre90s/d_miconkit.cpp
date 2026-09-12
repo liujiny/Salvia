@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo SNK Micon-Kit driver module
+// FinalBurn Neo SNK Micon-Kit driver module
 // Based on MAME driver by hap
 
 #include "tiles_generic.h"

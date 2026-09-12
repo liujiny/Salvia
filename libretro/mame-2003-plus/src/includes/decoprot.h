@@ -1,4 +1,4 @@
-﻿READ16_HANDLER( deco16_60_prot_r );
+READ16_HANDLER( deco16_60_prot_r );
 READ16_HANDLER( deco16_66_prot_r );
 READ16_HANDLER( deco16_104_prot_r );
 READ16_HANDLER( deco16_104_cninja_prot_r );

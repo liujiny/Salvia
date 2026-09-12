@@ -1,4 +1,4 @@
-﻿/* ST-V SpeedUp Hacks */
+/* ST-V SpeedUp Hacks */
 
 /*
 to be honest i think some of these cause more problems than they're worth ...

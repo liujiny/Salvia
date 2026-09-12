@@ -1,4 +1,4 @@
-ï»¿/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2014-2021 Paul Cercueil <paul@crapouillou.net>
  */
@@ -12,7 +12,7 @@
 #ifndef __packed
     #ifdef _MSC_VER
         /* MSVC no usa __packed al final, usa pragmas. 
-           Definimos como vacï¿½o para que no de error de sintaxis. */
+           Definimos como vacío para que no de error de sintaxis. */
         #define __packed
     #else
         #define __packed __attribute__((packed))

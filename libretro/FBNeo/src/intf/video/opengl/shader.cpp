@@ -1,4 +1,4 @@
-﻿#include <exception>
+#include <exception>
 #include "shader.h"
 
 void Shader::buildProgram(const string& vsrc, const string& fsrc)

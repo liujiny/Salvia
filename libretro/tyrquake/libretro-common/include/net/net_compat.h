@@ -1,4 +1,4 @@
-﻿/* Copyright  (C) 2010-2022 The RetroArch team
+/* Copyright  (C) 2010-2022 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (net_compat.h).
@@ -311,14 +311,13 @@ struct addrinfo
 #if defined(_XBOX)
 struct hostent
 {
-   char *h_name;
+   char  *h_name;
    char **h_aliases;
-   int  h_addrtype;
-   int  h_length;
+   short  h_addrtype;
+   short  h_length;
    char **h_addr_list;
-   char *h_addr;
-   char *h_end;
 };
+#define h_addr h_addr_list[0]
 
 #elif defined(VITA)
 struct pollfd

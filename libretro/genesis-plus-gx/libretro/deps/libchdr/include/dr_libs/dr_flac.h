@@ -1,4 +1,4 @@
-﻿/*
+/*
 FLAC audio decoder. Choice of public domain or MIT-0. See license statements at the end of this file.
 dr_flac - v0.12.42 - 2023-11-02
 

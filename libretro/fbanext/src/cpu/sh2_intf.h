@@ -1,4 +1,4 @@
-﻿
+
 #ifndef FASTCALL
  #undef __fastcall
  #define __fastcall

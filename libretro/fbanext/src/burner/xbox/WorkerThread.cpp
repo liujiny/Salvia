@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 #include "WorkerThread.h"
 
 bool WorkerThread::CreateWorkerThread( void )

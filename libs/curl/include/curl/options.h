@@ -1,4 +1,4 @@
-﻿#ifndef CURLINC_OPTIONS_H
+#ifndef CURLINC_OPTIONS_H
 #define CURLINC_OPTIONS_H
 /***************************************************************************
  *                                  _   _ ____  _

@@ -1,4 +1,4 @@
-ï»¿/*
+/*
  * Copyright (C) 2010 Cameron Zemek ( grom@zeminvaders.net)
  *
  * This program is free software; you can redistribute it and/or
@@ -17,7 +17,7 @@
  */
 
 #include <stdint.h>
-#include <stddef.h>  // La cabecera estï¿½ndar para NULL
+#include <stddef.h>  // La cabecera estándar para NULL
 #include "hqx.h"
 
 uint32_t   *RGBtoYUV = NULL;

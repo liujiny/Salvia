@@ -1,8 +1,8 @@
-ï»¿/******************************************************************************
+/******************************************************************************
  *
  * CZ80 ED opcode include source file
  * CZ80 emulator version 0.9
- * Copyright 2004-2005 Stï¿½phane Dallongeville
+ * Copyright 2004-2005 Stéphane Dallongeville
  *
  * (Modified by NJ)
  *

@@ -1,4 +1,4 @@
-﻿#ifndef __YMDELTAT_H_
+#ifndef __YMDELTAT_H_
 #define __YMDELTAT_H_
 
 #define YM_DELTAT_SHIFT    (16)

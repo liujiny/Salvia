@@ -1,4 +1,4 @@
-﻿void TimepltSndSoundlatch(UINT8 data);
+void TimepltSndSoundlatch(UINT8 data);
 void TimepltSndReset();
 void TimepltSndInit(UINT8 *rom, UINT8 *ram, INT32 z80number);
 void LocomotnSndInit(UINT8 *rom, UINT8 *ram, INT32 z80number);

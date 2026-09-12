@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "burn_ymf271.h"
 
 static INT32 (*BurnYMF271StreamCallback)(INT32 nSoundRate);

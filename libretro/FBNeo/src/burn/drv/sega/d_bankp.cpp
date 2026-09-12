@@ -1,4 +1,4 @@
-﻿// FB Neo Bank Panic Driver Module
+// FB Neo Bank Panic Driver Module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

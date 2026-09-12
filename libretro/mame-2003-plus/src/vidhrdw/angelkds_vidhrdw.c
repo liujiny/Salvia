@@ -1,4 +1,4 @@
-﻿/* vidhrdw/angelkds.c - see drivers/angelkds.c for more info */
+/* vidhrdw/angelkds.c - see drivers/angelkds.c for more info */
 
 /* graphical issues
 

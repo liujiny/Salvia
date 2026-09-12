@@ -1,4 +1,4 @@
-﻿// FB Alpha Gauntlet driver module
+// FB Alpha Gauntlet driver module
 // Based on MAME driver by Aaron Giles
 
 // to do:

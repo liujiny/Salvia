@@ -1,4 +1,4 @@
-ï»¿/*
+/*
     SDL - Simple DirectMedia Layer
     Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002  Sam Lantinga
 
@@ -511,7 +511,7 @@ void SDL_SYS_JoystickQuit(void)
 }
 
 /* ===========================================================================
- *  SDL_XBOX_SetVibration ï¿½ Xbox 360 rumble extension
+ *  SDL_XBOX_SetVibration — Xbox 360 rumble extension
  * ===========================================================================
  *
  *  Wrap nativo de XInputSetState para que codigo cliente (frontend / cores)

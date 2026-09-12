@@ -1,4 +1,4 @@
-﻿/*
+/*
 Portraits 1983 (c) Olympia
 
 Driver by Steve Ellenoff & Peo

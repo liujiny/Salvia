@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Seibu SPI System driver module
+// FinalBurn Neo Seibu SPI System driver module
 // Based on MAME driver by Ville Linde, hap, Nicola Salmoria
 
 /*

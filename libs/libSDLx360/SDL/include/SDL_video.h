@@ -1,4 +1,4 @@
-﻿/*
+/*
     SDL - Simple DirectMedia Layer
     Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002  Sam Lantinga
 
@@ -416,6 +416,10 @@ extern DECLSPEC void SDLCALL SDL_XBOX_SetDisplayOverflow(int overflow);
  * Use alpha=0x00 for transparent pixels, alpha=0xFF for opaque.
  */
 extern DECLSPEC SDL_Surface* SDLCALL SDL_XBOX_GetOverlay(void);
+
+/* Rect de la imagen del juego en pixeles del overlay (ver la implementacion:
+ * compone el aspect del quad del juego con el overscan del overlay). */
+extern void SDL_XBOX_GetGameRectOnOverlay(int *x, int *y, int *w, int *h);
 
 /*
 * Xbox 360: Set the overscan for the overlay surface

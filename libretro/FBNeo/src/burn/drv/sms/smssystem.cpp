@@ -1,4 +1,4 @@
-﻿/*
+/*
 Unless otherwise explicitly stated, all code in SMS Plus is released under
 the following license:
 

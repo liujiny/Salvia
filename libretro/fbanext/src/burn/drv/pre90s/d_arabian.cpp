@@ -1,4 +1,4 @@
-﻿// FB Alpha Arabian driver module
+// FB Alpha Arabian driver module
 // Based on MAME driver by Jarek Burczynski and various others
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-﻿#include "mips3_intf.h"
+#include "mips3_intf.h"
 #include "mips3/mips3.h"
 #include "burnint.h"
 #include <stdint.h>

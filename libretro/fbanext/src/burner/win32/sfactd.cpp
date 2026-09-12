@@ -1,4 +1,4 @@
-﻿// Burner Shots Factory Test Dialog Rev. 0.02
+// Burner Shots Factory Test Dialog Rev. 0.02
 // history:
 // rev 0.00: hacked together code
 // rev 0.01: Added sprite toggle.

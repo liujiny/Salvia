@@ -1,4 +1,4 @@
-﻿/*
+/*
 ** Model 1 coprocessor TGP simulation
 */
 

@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_FASTFIFO_H
+#ifndef __MDFN_FASTFIFO_H
 #define __MDFN_FASTFIFO_H
 
 // size should be a power of 2.

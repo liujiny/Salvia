@@ -1,4 +1,4 @@
-﻿// Cheap Squeak Deluxe audio module
+// Cheap Squeak Deluxe audio module
 // based on MAME sources by Aaron Giles
 
 #include "burnint.h"

@@ -1,4 +1,4 @@
-﻿ /*
+ /*
  * @file vidhrdw/djboy.c
  *
  * video hardware for DJ Boy

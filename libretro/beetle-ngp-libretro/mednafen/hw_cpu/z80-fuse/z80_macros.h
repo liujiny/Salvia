@@ -1,4 +1,4 @@
-﻿/* z80_macros.h: Some commonly used z80 things as macros
+/* z80_macros.h: Some commonly used z80 things as macros
    Copyright (c) 1999-2011 Philip Kendall
 
    $Id: z80_macros.h 4624 2012-01-09 20:59:35Z pak21 $

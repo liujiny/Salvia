@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_PSX_SPU_H
+#ifndef __MDFN_PSX_SPU_H
 #define __MDFN_PSX_SPU_H
 
 extern uint32_t IntermediateBufferPos;

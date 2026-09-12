@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifndef __YMF262_H__
 #define __YMF262_H__

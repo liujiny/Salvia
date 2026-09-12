@@ -1,4 +1,4 @@
-﻿void AtariEEPROMUnlockWrite();
+void AtariEEPROMUnlockWrite();
 void AtariEEPROMReset();
 void AtariEEPROMInit(INT32 size);
 void AtariEEPROMInstallMap(INT32 map_handler, UINT32 address_start, UINT32 address_end);

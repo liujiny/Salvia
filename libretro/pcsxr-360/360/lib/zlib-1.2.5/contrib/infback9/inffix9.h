@@ -1,4 +1,4 @@
-﻿    /* inffix9.h -- table for decoding deflate64 fixed codes
+    /* inffix9.h -- table for decoding deflate64 fixed codes
      * Generated automatically by makefixed9().
      */
 

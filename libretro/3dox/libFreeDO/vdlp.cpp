@@ -1,4 +1,4 @@
-п»ї/*
+/*
 	3DOplay sources v1.7.3 based on FreeDOcore
 	3doplay.do.am
 	Developer: Viktor Ivanov
@@ -114,7 +114,7 @@ void _vdl_ProcessVDL( unsigned int addr)
 
 	if((addr&0xfff00000)!=0x200000)
 	{
-		//io_interface(EXT_DEBUG_PRINT,(void*)str.print("!!!!VDLP!!!! пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ VRAM!!! 0x%8.8X",addr).CStr());
+		//io_interface(EXT_DEBUG_PRINT,(void*)str.print("!!!!VDLP!!!! Код за границами VRAM!!! 0x%8.8X",addr).CStr());
 	}
 
 }

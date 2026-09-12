@@ -1,4 +1,4 @@
-﻿/*
+/*
 Popper
 Omori Electric CAD (OEC) 1983
 */

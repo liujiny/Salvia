@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "watchdog.h"
 #include "m68000_intf.h"
 

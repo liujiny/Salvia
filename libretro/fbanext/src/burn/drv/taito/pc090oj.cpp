@@ -1,4 +1,4 @@
-﻿// PC090OJ
+// PC090OJ
 
 #include "tiles_generic.h"
 #include "taito_ic.h"

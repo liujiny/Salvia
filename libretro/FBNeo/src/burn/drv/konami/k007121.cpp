@@ -1,4 +1,4 @@
-﻿#include "tiles_generic.h"
+#include "tiles_generic.h"
 
 #define K007121_CHIPS 2
 

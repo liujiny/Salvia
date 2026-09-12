@@ -1,4 +1,4 @@
-﻿/*
+/*
  * ui.h - Atari user interface definitions
  *
  * Copyright (C) 1995-1998 David Firth

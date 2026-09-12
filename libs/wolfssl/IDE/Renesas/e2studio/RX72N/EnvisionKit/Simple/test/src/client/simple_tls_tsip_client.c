@@ -1,4 +1,4 @@
-﻿/* simpel_tls_tsip_client.c
+/* simpel_tls_tsip_client.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

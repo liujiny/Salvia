@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_PCE_PCE_H
+#ifndef __MDFN_PCE_PCE_H
 #define __MDFN_PCE_PCE_H
 
 #include <vector>

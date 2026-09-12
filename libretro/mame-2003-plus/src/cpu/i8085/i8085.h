@@ -1,4 +1,4 @@
-﻿#ifndef I8085_H
+#ifndef I8085_H
 #define I8085_H
 
 #include "osd_cpu.h"

@@ -1,4 +1,4 @@
-﻿#ifndef POKEYREC_H_
+#ifndef POKEYREC_H_
 #define POKEYREC_H_
 
 void POKEYREC_Recorder(void);

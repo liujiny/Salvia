@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Eolith 32 bits hardware: Gradation 2D system driver module
+// FinalBurn Neo Eolith 32 bits hardware: Gradation 2D system driver module
 // Based on MAME driver by Tomasz Slanina,Pierpaolo Prazzoli
 
 #include "tiles_generic.h"

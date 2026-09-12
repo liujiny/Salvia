@@ -12,7 +12,7 @@ I had grown weary of juggling a multitude of different emulators, each requiring
 
 ## Features
 * Integration with **retroachievements**
-* Graphic **filters** (Nearest, Sharp bilinear, LCD3x, scanlines, CRT-Geom, CRT-Lottes, CRT-EasyMode, HQ2X, HQ3X, HQ4X, XBR, 5XBR)
+* Graphic **filters** (Nearest, Sharp bilinear, LCD3x, scanlines, Fake-crt-geom, CRT-Lottes, CRT-EasyMode, HQ2X, HQ3X, HQ4X, XBR, 5XBR)
 * **Integer scaling** (reduced, increased scale or fixed 1x:5x)
 * Different **aspect ratios**
 * **Savestates**
@@ -21,24 +21,25 @@ I had grown weary of juggling a multitude of different emulators, each requiring
 * **F.A.Q and Walktrough** viewer from gamefaqs.gamespot.com
 * **Fast forward**
 * **Navigate zipped files** and load contained games directly (they need to have a symbol @ as the first letter to be opened. Search "htgdb-gamepacks" in archive.org and you will thank me XD)
-* **Disc control** to change disks on PSX, SegaCD, PC Engine CD and multi-disk Commodore 64 / Atari games
+* **Disc control** to change disks on PSX, SegaCD, PC Engine CD and multi-disk Commodore 64 / Amiga / Atari 
 * **Bios Boot** (To organize PSX memory card savegames)
 * **Buttons mapper** for each Joystick
+* **Mouse** support via dashlaunch plugin
+* **Lightgun** support
 * Ingame **Hotkeys**
-* Joystick **Rapid-fire**
+* **Rapid-fire**
 * **Animated** or static frontend **backgrounds**
 * Game **library search filters** (for FBNeo, FBANext and Mame 2003 plus)
 * **Per-core** libretro configuration
-* **Mouse support** via dashlaunch plugin
+* **Background music** for each system
+
 
 ## Emulators
 Salvia provides the following emulators from the latests releases:
 
-* Megadrive/Genesis/Sega CD
+* Megadrive/Genesis/Sega CD/Master System/Game Gear/SG-1000
   - genesis-plus-gx
   - picodrive
-* Master System/Game Gear/SG-1000
-  - genesis-plus-gx
 * Sega 32X
   - picodrive
 * Super Nintendo/Super Famicom
@@ -61,6 +62,10 @@ Salvia provides the following emulators from the latests releases:
   - beetle-vb
 * Atari Lynx
   - beetle-lynx
+* Play Station 1
+  - pcsxr-360 (ported to libretro from the Wolf3s repository)
+* 3DO
+  - 3dox (ported to libretro from the Lantus version -> "3dox - Xbox 360 New Years Day Pre-Release - V0.03")
 * Neo Geo Pocket
   - beetle-ngp --|--> They use different romsets
   - FBNeo ------|
@@ -68,24 +73,27 @@ Salvia provides the following emulators from the latests releases:
   - FBNeo
   - FBANext (ported from the magicseb repository)
   - mame-2003-plus
-* Play Station 1
-  - pcsxr-360 (ported to libretro from the Wolf3s repository)
+* MSX
+  - FBNeo
+* Spectrum  
+  - FBNeo
 * MS-DOS
   - dosbox-pure (with dynamic powerpc recompiler working)
 * Commodore 64
   - frodo
 * Sharp X68000
   - px68k
-* Atari 8-bit computers (400/800/XL/XE)
+* Amiga 500/1200/CD32
+  - puae2021
+  - puae
+* Atari 5200 and Atari 8-bit computers (400/800/XL/XE)
   - atari800
-* Atari 5200
-  - atari800
-* 3DO
-  - 3dox (ported to libretro from the Lantus version -> "3dox - Xbox 360 New Years Day Pre-Release - V0.03")
 * Quake
   - tyrquake
 * Doom
   - prboom
+* Outrun
+  - Cannonball
 
 ## Configuration
 
@@ -118,6 +126,20 @@ system/
 ├── disksys.rom
 ├── gba_bios.bin
 ├── goldstar.bin
+├── kick33180.A500
+├── kick34005.A500
+├── kick34005.CDTV
+├── kick37175.A500
+├── kick37350.A600
+├── kick39106.A1200
+├── kick39106.A4000
+├── kick40060.CD32
+├── kick40060.CD32.ext
+├── kick40063.A600
+├── kick40068.A1200
+├── kick40068.A4000
+├── WHDLoad.prefs
+├── WHDLoad.prefs_backup
 ├── lynxboot.img
 ├── NstDatabase.xml
 ├── panafz1-kanji.bin
@@ -146,13 +168,11 @@ system/
 ├── syscard3.pce
 ├── XEGAME.ROM
 ├── keropi/
-│   ├── config
 │   ├── cgrom.dat
 │   ├── iplrom.dat
 │   ├── iplrom30.dat
 │   ├── iplromco.dat
-│   ├── iplromxv.dat
-│   └── sram.dat
+│   └── iplromxv.dat
 ├── fbneo/
 │   ├── blend/ (Not needed really but nice to have)
 │   │   ├── 1941.bld ... zupapan.bld (110 .bld files)
@@ -207,14 +227,18 @@ You are now ready to place your backup games into their respective directories:
 Usb0:\Roms
 ├── 32x\                 (Sega 32x --> 32x zip)
 ├── 3do\                 (3DO --> iso bin cue chd)
+├── amiga500\            (Amiga 500 -> adf adz dms fdi raw ipf hdf hdz lha slave info cue ccd nrg mds iso chd uae m3u zip 7z)
+├── amiga1200\           (Amiga 1200 -> adf adz dms fdi raw ipf hdf hdz lha slave info cue ccd nrg mds iso chd uae m3u zip 7z)
+├── amigacd32\           (Amiga CD32 -> adf adz dms fdi raw ipf hdf hdz lha slave info cue ccd nrg mds iso chd uae m3u zip 7z)
 ├── atari800\            (Atari 8-bit --> xfd atr dcm cas bin a52 zip atx car rom com xex m3u)
 ├── atari5200\           (Atari 5200 --> xfd atr dcm cas bin a52 zip atx car rom com xex m3u)
 ├── atarilynx\           (Atari Lynx --> lnx lyx bll o zip)
 ├── c64\                 (Commodore 64 --> d64 t64 x64 p00 lnx lyx zip prg m3u)
+├── cannonball\          (Cannonball --> game)
 ├── dos\                 (MS-DOS --> zip dosz exe com bat iso chd cue ins img ima vhd jrc m3u m3u8 conf)
 ├── fbneo\               (Arcade FBNeo --> zip 7z cue ccd chd)
 │   ├── neocd\           (NeoGeo CD --> cue ccd chd)
-│   ├── megadrive\       (FBNeo Megadrive core)
+│   └── megadrive\       (FBNeo Megadrive core)
 │       └── paprium.zip  (Paprium game containing 'Paprium (World)(2020)(WaterMelon).bin')
 ├── gb\                  (Game boy --> zip gb gbc dmg)
 ├── gba\                 (Game boy advance --> gba zip)
@@ -315,6 +339,20 @@ Runs the Atari 400/800/XL/XE home computers and the Atari 5200 console. Supporte
 
 Multi-disk Atari (`.atr`) games can also be swapped from the **Disk Control** menu using an `.m3u` playlist, exactly like the C64 core.
 
+### Amiga 500/1200/CD32 (puae2021 and puae)
+For Amiga 500, the puae2021 core runs fullspeed out of the box, emulating up to A600. If you want to emulate Amiga 1200 or CD32, frameskip is highly recommended (`Core Options > Video > Frameskip` set to 1). It's also important to have the Audio Synchronization activated to this core, as it sets the internal framerate to 25fps while maintaining a frameskip of 1, producing an effective framerate of 50fps. By default the `Options > Emulation > System Advanced Settings > Amiga 1200/CD32` will be set to that value.
+
+To load multidiskette games, the easiest thing to do is to launch a compressed .zip file with the required files inside
+
+```
+Alien Breed - Tower Assault (OCS & AGA).zip
+   └── Alien Breed - Tower Assault (OCS & AGA)_Disk1.adf
+   └── Alien Breed - Tower Assault (OCS & AGA)_Disk2.adf
+   └── Alien Breed - Tower Assault (OCS & AGA)_Disk3.adf
+   └── Alien Breed - Tower Assault (OCS & AGA)_Disk4.adf
+```
+When the game ask you to change disk, it can be done easily cycling diskettes with the menu: `Options > Emulation > Disks Control > Next Disk`
+
 ### FBNEO and FBANext
 For this core, there are two subdirectories available **neocd** (to load neogeo cd games) and  **megadrive** (it can load megadrive games for the fbneo core, but its main purpose is to load the game Paprium as Genesis-plus-gx is the gold standard for megadrive)
 
@@ -364,7 +402,6 @@ The MSX, ZX-Spectrum and NeoGeo Pocket (ngp now supported also by beetle-ngp) re
 For MSX and ZX Spectrum cores, an on-screen overlay keyboard is available and can be enabled by pressing the default shortcut SELECT + X
 
 <img width="1281" height="722" alt="image" src="https://github.com/user-attachments/assets/01e73cc0-96b4-4e67-82e5-b78738a58989" />
-
 
 ### QUAKE
 To load the right episode or mod of quake, a subdirectory must be created for each of them. The structure should be as follows:
@@ -453,6 +490,62 @@ The libretro cheat database offers each game in several *device* variants — `(
 - **arcade (FBNeo / MAME)** have their own cheats engine
 - Whatever the device name, the code inside must match the format the core expects — the variants listed in the table above are the ones known to work on each system.
 
+## Background music
+To add your own music while navigating through the menus, you can copy your mp3 files into the directory Usb0:\Salvia\assets\music
+There is an already provided default song named menu.mp3, but you can choose whatever music file you want for each independent core accessing to: 
+
+```
+Options > Emulation > System Advanced Settings > [Megadrive, nes...]
+```
+There is also a new menu option **Audio**, where you can disable the music or set a general volume.
+
+## MIDI music
+Some systems played their music on an external MIDI module instead of the internal sound chip: the X68000 with its CZ-6BM1 board, DOS games with a Roland module, and Doom. Salvia has a built-in MIDI synthesizer so that music can be heard.
+
+All you need is a **SoundFont** file (`.sf2`) copied into the system directory:
+
+```
+system/
+├── Roland_SC-55.sf2
+└── ... (your other bios files)
+```
+
+Then pick it in:
+
+```
+Options > Audio
+```
+
+| Option | What it does |
+| --- | --- |
+| **MIDI synthesizer** | Turns it on or off |
+| **SoundFont (.sf2)** | Which bank to use, from the ones found in `system` |
+| **MIDI volume** | Music volume, in 10% steps |
+| **MIDI module** | Leave it on *Auto-detect*. See the MT-32 note below |
+
+On Xbox 360 prefer a small bank. A SoundFont takes about **twice its file size in RAM** while you play, so a 50 MB one costs around 100 MB. It is only loaded when a game actually needs MIDI, so it costs nothing for the rest of the systems.
+
+### Turning it on in each core
+
+The synthesizer is only half of it: each core has to be told to send its music out as MIDI.
+
+**X68000 (px68k)** — set `MIDI Output` to `enabled` in the core options. Most games also need a key held down **while the game boots**:
+
+| Game | Hold while booting |
+| --- | --- |
+| Granada, Sol-Feace | **R2** on the pad (or ScrollLock) |
+| Atomic Robo-Kid | **F1** |
+| Gemini Wing | **F1** (MT-32) / **F2** (CM-64) |
+
+**Doom (prboom)** — in Doom's own menu, go to Options > Setup > General and set **MIDI Hardware** to the libretro option. It is remembered for next time.
+
+**DOS (DOSBox-Pure)** — set its `MIDI Output` core option to `Frontend MIDI driver`. Careful: if you leave it on a `.sf2`, it uses its own synthesizer instead of Salvia's, which also works fine.
+
+### A note about MT-32 games
+Most X68000 games, and many DOS ones, were written for a **Roland MT-32**, which is a different kind of synthesizer, not a General MIDI one. Salvia detects those games and translates their instruments to the closest General MIDI equivalents, so the music plays correctly and in tune, but it will not sound exactly like a real MT-32. Games that load their own custom instruments will differ the most.
+
+If a game sounds wrong and you know which module it expects, you can force it with the **MIDI module** option.
+
 ## Games artwork and titles
 ### Built-in scraper
 To be able to scrap your local games, you must first register into the following link: [screenscraper.fr](https://www.screenscraper.fr/membreinscription.php)
@@ -503,6 +596,9 @@ if you want manually generate the titles for each game, a script is provided in 
 
 # Compiling
 [see COMPILING.md](COMPILING.md)
+
+# Video shaders
+[see SHADERS.md](SHADERS.md)
 
 # License
 This project is licensed under the GNU General Public License v3.0 - see the LICENSE file for details.

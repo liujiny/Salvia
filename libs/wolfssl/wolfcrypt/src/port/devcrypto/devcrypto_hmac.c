@@ -1,4 +1,4 @@
-﻿/* devcrypto_hmac.c
+/* devcrypto_hmac.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

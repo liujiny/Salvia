@@ -1,4 +1,4 @@
-﻿/*
+/*
  * colours_ntsc.c - Atari NTSC colour palette generation and adjustment
  *
  * Copyright (C) 2009-2010 Atari800 development team (see DOC/CREDITS)

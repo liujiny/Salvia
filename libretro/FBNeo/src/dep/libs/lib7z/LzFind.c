@@ -1,4 +1,4 @@
-﻿/* LzFind.c -- Match finder for LZ algorithms
+/* LzFind.c -- Match finder for LZ algorithms
 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"

@@ -1,4 +1,4 @@
-﻿/*
+/*
   libco.genode_secondary_stack (2018-09-15)
   author: Emery Hemingway
   license: public domain

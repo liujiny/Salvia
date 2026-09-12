@@ -1,4 +1,4 @@
-﻿/*
+/*
  * pbi_bb.c - CSS Black Box emulation
  *
  * Copyright (C) 2007-2008 Perry McFarlane

@@ -1,4 +1,4 @@
-﻿/* test_dsa.h
+/* test_dsa.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

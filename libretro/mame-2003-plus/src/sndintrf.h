@@ -1,4 +1,4 @@
-﻿#ifndef SNDINTRF_H
+#ifndef SNDINTRF_H
 #define SNDINTRF_H
 
 

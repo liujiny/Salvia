@@ -1,4 +1,4 @@
-﻿/* Video emulation definitions */
+/* Video emulation definitions */
 VIDEO_START( dec0 );
 VIDEO_START( dec0_nodma );
 VIDEO_UPDATE( hbarrel );

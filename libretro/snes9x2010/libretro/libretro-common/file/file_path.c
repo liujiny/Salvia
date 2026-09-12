@@ -1,4 +1,4 @@
-﻿/* Copyright  (C) 2010-2020 The RetroArch team
+/* Copyright  (C) 2010-2020 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (file_path.c).
@@ -57,15 +57,6 @@
 #ifdef __WINRT__
 #include <uwp/uwp_func.h>
 #endif
-#endif
-
-/* Assume W-functions do not work below Win2K and Xbox platforms */
-#if defined(_WIN32_WINNT) && _WIN32_WINNT < 0x0500 || defined(_XBOX)
-
-#ifndef LEGACY_WIN32
-#define LEGACY_WIN32
-#endif
-
 #endif
 
 /* Time format strings with AM-PM designation require special
@@ -730,6 +721,12 @@ bool path_is_absolute(const char *path)
    {
       if (path[0] == '/')
          return true;
+      /* VFS URL schemes (smb://, cdrom://, saf://, ...) are absolute. */
+      {
+         const char *scheme = strstr(path, "://");
+         if (scheme && scheme > path)
+            return true;
+      }
 #if defined(_WIN32)
       if (path[0] == '\\' && path[1] == '\\')
          return true;
@@ -1346,7 +1343,26 @@ size_t fill_pathname_application_path(char *s, size_t len)
    if (len)
    {
 #if defined(_WIN32)
-#ifdef LEGACY_WIN32
+#if defined(LEGACY_WIN32_RUNTIME)
+      DWORD ret;
+
+      if (win32_needs_local_encoding())
+         ret = GetModuleFileNameA(NULL, s, len);
+      else
+      {
+         wchar_t wstr[PATH_MAX_LENGTH] = {0};
+         ret = GetModuleFileNameW(NULL, wstr, ARRAY_SIZE(wstr));
+         if (*wstr)
+         {
+            char *str = utf16_to_utf8_string_alloc(wstr);
+            if (str)
+            {
+               strlcpy(s, str, len);
+               free(str);
+            }
+         }
+      }
+#elif defined(LEGACY_WIN32)
       DWORD ret = GetModuleFileNameA(NULL, s, len);
 #else
       wchar_t wstr[PATH_MAX_LENGTH] = {0};

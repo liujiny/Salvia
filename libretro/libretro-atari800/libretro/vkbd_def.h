@@ -1,4 +1,4 @@
-﻿#ifndef VKBD_DEF_H
+#ifndef VKBD_DEF_H
 #define VKBD_DEF_H 1
 
 typedef struct {

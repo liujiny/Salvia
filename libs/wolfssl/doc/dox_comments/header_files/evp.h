@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup openSSL
 
     \brief Getter functions for the respective WOLFSSL_EVP_CIPHER pointers.

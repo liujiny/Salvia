@@ -1,4 +1,4 @@
-﻿/*
+/*
 
   Beezer - (c) 1982 Tong Electronic
 

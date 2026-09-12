@@ -1,4 +1,4 @@
-﻿#ifndef SPC700__HEADER
+#ifndef SPC700__HEADER
 #define SPC700__HEADER
 
 #include <retro_inline.h>

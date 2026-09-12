@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "fonts.h"
 #include <font/Arimo_Regular.ttf.h>

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * sound.c - Win32 port specific code
  *
  * Copyright (C) 2000 Krzysztof Nikiel

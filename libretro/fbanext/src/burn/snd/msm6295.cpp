@@ -1,4 +1,4 @@
-﻿#include <math.h>
+#include <math.h>
 #include "burnint.h"
 #include "msm6295.h"
 #include "burn_sound.h"

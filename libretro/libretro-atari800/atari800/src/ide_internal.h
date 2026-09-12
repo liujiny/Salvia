@@ -1,4 +1,4 @@
-﻿#ifndef IDE_INTERNAL_H
+#ifndef IDE_INTERNAL_H
 #define IDE_INTERNAL_H
 
 #ifdef HAVE_INTTYPES_H

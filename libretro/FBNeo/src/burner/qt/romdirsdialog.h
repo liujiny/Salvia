@@ -1,4 +1,4 @@
-﻿#ifndef ROMDIRSDIALOG_H
+#ifndef ROMDIRSDIALOG_H
 #define ROMDIRSDIALOG_H
 
 #include <QDialog>

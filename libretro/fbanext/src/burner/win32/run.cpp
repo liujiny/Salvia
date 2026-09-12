@@ -1,4 +1,4 @@
-﻿// Run module
+// Run module
 #include "burner.h"
 
 // for NeoGeo CD (WAV playback)

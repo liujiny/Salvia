@@ -1,4 +1,4 @@
-﻿static void i_add_br8(nec_state_t *nec_state);
+static void i_add_br8(nec_state_t *nec_state);
 static void i_add_wr16(nec_state_t *nec_state);
 static void i_add_r8b(nec_state_t *nec_state);
 static void i_add_r16w(nec_state_t *nec_state);

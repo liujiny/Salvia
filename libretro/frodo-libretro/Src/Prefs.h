@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Prefs.h - Global preferences
  *
  *  Frodo Copyright (C) Christian Bauer

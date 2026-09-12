@@ -1,4 +1,4 @@
-﻿
+
 /*!
     \ingroup SipHash
     \brief  この関数は、MacサイズのキーでSiphashを初期化します。

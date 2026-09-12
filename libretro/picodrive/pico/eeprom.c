@@ -1,4 +1,4 @@
-﻿/*
+/*
  * rarely used EEPROM code
  * (C) notaz, 2007-2009
  *

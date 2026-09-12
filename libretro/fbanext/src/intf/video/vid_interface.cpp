@@ -1,4 +1,4 @@
-﻿// Video Output - (calls all the Vid Out plugins)
+// Video Output - (calls all the Vid Out plugins)
 #include "burner.h"
 
 #define DEFAULT_IMAGE_WIDTH (304)

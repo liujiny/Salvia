@@ -1,4 +1,4 @@
-﻿// FB Neo Super Kaneko Nova System driver module by iq_132, fixups by dink
+// FB Neo Super Kaneko Nova System driver module by iq_132, fixups by dink
 // Based on MAME driver by Sylvain Glaize and David Haywood
 
 #include "tiles_generic.h"

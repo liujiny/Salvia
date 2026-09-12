@@ -1,4 +1,4 @@
-﻿/*
+/*
  * antic.c - ANTIC chip emulation
  *
  * Copyright (C) 1995-1998 David Firth

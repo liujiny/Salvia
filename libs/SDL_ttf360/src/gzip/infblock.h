@@ -1,4 +1,4 @@
-﻿/* infblock.h -- header to use infblock.c
+/* infblock.h -- header to use infblock.c
  * Copyright (C) 1995-2002 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */

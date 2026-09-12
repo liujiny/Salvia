@@ -1,4 +1,4 @@
-﻿/*
+/*
 **
 ** File: ymf262.c - software implementation of YMF262
 **                  FM sound generator type OPL3

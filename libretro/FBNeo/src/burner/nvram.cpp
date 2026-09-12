@@ -1,4 +1,4 @@
-﻿// Driver nvram module
+// Driver nvram module
 #include "burner.h"
 
 static UINT8 *pNvramData;

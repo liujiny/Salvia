@@ -1,4 +1,4 @@
-﻿/* xil-versal-trng.h
+/* xil-versal-trng.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

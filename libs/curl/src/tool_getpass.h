@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_TOOL_GETPASS_H
+#ifndef HEADER_CURL_TOOL_GETPASS_H
 #define HEADER_CURL_TOOL_GETPASS_H
 /***************************************************************************
  *                                  _   _ ____  _

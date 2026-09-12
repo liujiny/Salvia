@@ -1,4 +1,4 @@
-﻿#ifndef __VB_VB_H
+#ifndef __VB_VB_H
 #define __VB_VB_H
 
 #include <boolean.h>

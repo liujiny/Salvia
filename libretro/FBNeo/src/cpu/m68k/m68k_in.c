@@ -1,4 +1,4 @@
-﻿/*
+/*
 must fix:
     callm
     chk

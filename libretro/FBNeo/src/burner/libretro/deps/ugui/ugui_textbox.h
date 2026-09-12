@@ -1,4 +1,4 @@
-﻿#ifndef __UGUI_TEXTBOX_H
+#ifndef __UGUI_TEXTBOX_H
 #define __UGUI_TEXTBOX_H
 
 #include "ugui.h"

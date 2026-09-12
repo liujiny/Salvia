@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup ED448
 
     \brief This function generates the Ed448 public key from the private key.

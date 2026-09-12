@@ -1,4 +1,4 @@
-﻿#include <engine.h>
+#include <engine.h>
 #include <io/joystick.h>
 #include <io/keyboard.h>
 #include <http/badgedownloader.h>
@@ -11,7 +11,7 @@
 	#include <windows.h>
 	#include <mmsystem.h> // Necesario para timeBeginPeriod
 	#include <SDL_syswm.h> // Para obtener el HWND de la ventana SDL
-	//#pragma comment(lib, "winmm.lib") // Necesario para timeBeginPeriod
+	#pragma comment(lib, "winmm.lib") // Necesario para timeBeginPeriod
 #endif
 
 Engine::Engine(){
@@ -26,8 +26,13 @@ int Engine::initEngine(CfgLoader* cfgLoader){
 	LOG_DEBUG("Initiating engine\n");
 
 	#ifdef WIN
-		// 1. Activar la precision de 1ms en el reloj de Windows
-		//timeBeginPeriod(1);
+		// 1. Activar la precision de 1ms en el reloj de Windows.
+		// El limitador de frames (Sync::limit_fps) duerme el grueso de la espera
+		// con SDL_Delay y solo clava el instante final con espera activa; con la
+		// granularidad por defecto (15.6 ms) el sleep se pasaria y el limitador
+		// tendria que gastar en espera activa TODO el frame.  No dependemos de
+		// que la SDL lo suba por dentro en SDL_SYS_TimerInit: lo pedimos aqui.
+		timeBeginPeriod(1);
 		//SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 		// Forzar el driver GDI: SDL solo gestiona la ventana/eventos; el
 		// render lo hace nuestra capa D3D9 (no llamamos a SDL_Flip en PC).
@@ -51,16 +56,15 @@ int Engine::initEngine(CfgLoader* cfgLoader){
 		SDL_XBOX_GetScreenResolution(&video_width, &video_height);
 	#endif
 
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
+	/* AUDIO va aqui explicitamente porque el dispositivo se abre en el arranque
+	 * (ver init_sdl_audio) y no al cargar el primer juego.  Antes funcionaba sin
+	 * pedirlo porque SDL_OpenAudio auto-inicializa el subsistema, pero conviene
+	 * que la inicializacion sea la que se declara. */
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) < 0) {
 		//fprintf(stderr, "Error SDL_Init: %s\n", SDL_GetError());
 		LOG_ERROR("Error SDL_Init: %s\n", SDL_GetError());
 		return 1;
     }
-
-	/* Publish after SDL_Init (LUT decoding needs SDL_image), but before the
-	 * video backend creates its shader objects inside SDL_SetVideoMode. */
-	if (!ShaderRegistry::instance()->publish())
-		LOG_ERROR("No se pudo publicar la tabla de shaders; se usara el filtro integrado\n");
 
 	SDL_ShowCursor(SDL_DISABLE);
 
@@ -89,6 +93,14 @@ int Engine::initEngine(CfgLoader* cfgLoader){
 			if (video_width <= 0 || video_height <= 0) { video_width = 1280; video_height = 720; }
 		}
 	#endif
+
+#if defined(_XBOX) || defined(SALVIA_GPU_VIDEO)
+	/* La tabla de shaders tiene que estar publicada ANTES de que el backend de
+	 * video se inicialice: initShaders() se llama desde dentro de
+	 * SDL_SetVideoMode (Xbox) y de WinD3D9_Init (Windows). Si llegase tarde,
+	 * el backend arrancaria solo con el passthrough integrado. */
+	ShaderRegistry::instance()->publish();
+#endif
 
 	gameScreen = SDL_SetVideoMode(video_width, video_height, video_bpp, video_flags);
 
@@ -145,9 +157,12 @@ int Engine::initEngine(CfgLoader* cfgLoader){
 	overlay = gameScreen;
 #endif
 
-	/* SDL_SetVideoMode / WinD3D9_Init have copied shader sources and uploaded
-	 * LUTs, so their temporary CPU buffers can now be released safely. */
+#if defined(_XBOX) || defined(SALVIA_GPU_VIDEO)
+	/* Las LUT ya estan subidas a la GPU y sus texturas sobreviven al device
+	 * lost/reset por su cuenta, asi que soltamos los pixeles en RAM (hasta
+	 * ~470 KB con las tres tablas de HQx). */
 	ShaderRegistry::instance()->freeTransientBuffers();
+#endif
 
 	//Actualizar overscan en windows y xbox
 	SDL_XBOX_SetOverscan(cfgLoader->configMain[cfg::overscan_x].valueInt, cfgLoader->configMain[cfg::overscan_y].valueInt);
@@ -170,9 +185,9 @@ void Engine::stopEngine(){
 	delete fonts;
 	delete sync;
 	// 3. Limpieza: Devolver el reloj del sistema a su estado normal
-	//#ifdef WIN
-	//	timeEndPeriod(1);
-	//#endif
+	#ifdef WIN
+		timeEndPeriod(1);
+	#endif
 
 #if defined(WIN) && defined(SALVIA_GPU_VIDEO)
 	// gameScreen (textura de juego) y overlay son propiedad de WinD3D9;
@@ -192,7 +207,8 @@ void Engine::stopEngine(){
 	}
 #endif
 	BadgeDownloader::instance().stop();
-    SDL_Quit();
+	//No llamamos a SDL_Quit porque los subsistemas ya los hemos ido cerrando uno a uno
+	SDL_CloseAudio();
 }
 
 int Engine::initFont(){

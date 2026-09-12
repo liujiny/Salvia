@@ -1,4 +1,4 @@
-﻿/* test_ossl_asn1.h
+/* test_ossl_asn1.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

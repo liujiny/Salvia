@@ -1,4 +1,4 @@
-﻿/* md_ntsc 0.1.2. http://www.slack.net/~ant/ */
+/* md_ntsc 0.1.2. http://www.slack.net/~ant/ */
 
 /* Modified for use with Genesis Plus GX -- EkeEke */
 

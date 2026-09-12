@@ -1,4 +1,4 @@
-﻿/****************************************************************\
+/****************************************************************\
 * Status Trivia 2 driver by David Haywood, MooglyGuy, and Stephh *
 * Super Trivia driver by MooglyGuy                               *
 * Triv Quiz driver by MooglyGuy                                  *

@@ -1,4 +1,4 @@
-п»ї/*
+/*
 	3DOplay sources v1.7.3 based on FreeDOcore
 	3doplay.do.am
 	Developer: Viktor Ivanov
@@ -32,7 +32,7 @@ Felix Lazarev
 #ifndef	XBUS_3DO_HEADER
 #define XBUS_3DO_HEADER
 #include "IsoXBUS.h"
-//пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//порт-процедура
 typedef void* (*_xbus_device)(int, void*);
 	int _xbus_Attach(_xbus_device dev);
 

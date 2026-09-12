@@ -1,4 +1,4 @@
-﻿#define FN(a,b,c,d) RenderTile ## a ## _ROT ## b ## c ## d
+#define FN(a,b,c,d) RenderTile ## a ## _ROT ## b ## c ## d
 #define FUNCTIONNAME(a,b,c,d) FN(a,b,c,d)
 
 #define ISOPAQUE 0

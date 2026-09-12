@@ -1,4 +1,4 @@
-﻿// Tiger Heli, Get Star / Guardian, & Slap Fight
+// Tiger Heli, Get Star / Guardian, & Slap Fight
 
 #include "burnint.h"
 #include "z80_intf.h"

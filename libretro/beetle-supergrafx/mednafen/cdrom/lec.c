@@ -1,4 +1,4 @@
-﻿/*  cdrdao - write audio CD-Rs in disc-at-once mode
+/*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
  *  Copyright (C) 1998-2002 Andreas Mueller <andreas@daneb.de>
  *

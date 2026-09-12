@@ -1,4 +1,4 @@
-﻿#ifndef __2608INTF_H__
+#ifndef __2608INTF_H__
 #define __2608INTF_H__
 
 #include "fm.h"

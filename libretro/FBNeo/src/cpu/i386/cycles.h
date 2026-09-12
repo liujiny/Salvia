@@ -1,4 +1,4 @@
-﻿typedef enum {
+typedef enum {
 	CYCLES_MOV_REG_REG,
 	CYCLES_MOV_REG_MEM,
 	CYCLES_MOV_MEM_REG,

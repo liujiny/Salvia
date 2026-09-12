@@ -1,4 +1,4 @@
-﻿#define YM2610B_WARNING
+#define YM2610B_WARNING
 
 /*
 **

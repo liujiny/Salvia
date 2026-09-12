@@ -1,4 +1,4 @@
-﻿// Based on original FBAlpha Toaplan driver by Jan Klaassen & MAME driver by Quench, Yochizo, David Haywood
+// Based on original FBAlpha Toaplan driver by Jan Klaassen & MAME driver by Quench, Yochizo, David Haywood
 
 #include "toaplan.h"
 #include "z180_intf.h"

@@ -1,4 +1,4 @@
-﻿#include "otlbase.h"
+#include "otlbase.h"
 #include "otlcommn.h"
 
   static void

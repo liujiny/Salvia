@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup Curve25519
 
     \brief This function generates a Curve25519 key using the given random

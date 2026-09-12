@@ -1,4 +1,4 @@
-﻿/* wolfcaam_rsa.c
+/* wolfcaam_rsa.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

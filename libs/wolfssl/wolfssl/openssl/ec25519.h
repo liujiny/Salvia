@@ -1,4 +1,4 @@
-﻿/* ec25519.h
+/* ec25519.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

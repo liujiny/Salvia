@@ -1,4 +1,4 @@
-﻿template<unsigned cycle_frequency>
+template<unsigned cycle_frequency>
 void SMP::Timer<cycle_frequency>::tick() {
   if(++stage1_ticks < cycle_frequency) return;
 

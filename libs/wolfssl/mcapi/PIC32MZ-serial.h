@@ -1,4 +1,4 @@
-﻿void _mon_putc(char c);
+void _mon_putc(char c);
 
 #define BAUD_GEN(sysclk, baud) ((sysclk / (16 * baud)) - 1)
 

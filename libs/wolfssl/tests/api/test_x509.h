@@ -1,4 +1,4 @@
-﻿/* test_x509.h
+/* test_x509.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

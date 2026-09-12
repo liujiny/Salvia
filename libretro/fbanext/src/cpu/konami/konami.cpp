@@ -1,4 +1,4 @@
-﻿/*** konami: Portable Konami cpu emulator ******************************************
+/*** konami: Portable Konami cpu emulator ******************************************
 
     Copyright Nicola Salmoria and the MAME Team
 

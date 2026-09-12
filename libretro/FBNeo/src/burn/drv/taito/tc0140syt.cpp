@@ -1,4 +1,4 @@
-﻿// TC0140SYT
+// TC0140SYT
 // Based on MAME sources by Philip Bennett
 
 #include "burnint.h"

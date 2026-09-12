@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_TOOL_HOMEDIR_H
+#ifndef HEADER_CURL_TOOL_HOMEDIR_H
 #define HEADER_CURL_TOOL_HOMEDIR_H
 /***************************************************************************
  *                                  _   _ ____  _

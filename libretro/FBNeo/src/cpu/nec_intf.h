@@ -1,4 +1,4 @@
-﻿// Nec V20/V30/V33 interface
+// Nec V20/V30/V33 interface
 
 #ifndef FASTCALL
  #undef __fastcall

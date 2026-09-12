@@ -1,4 +1,4 @@
-﻿#ifndef RC_VALIDATE_H
+#ifndef RC_VALIDATE_H
 #define RC_VALIDATE_H
 
 #include "rc_runtime_types.h"

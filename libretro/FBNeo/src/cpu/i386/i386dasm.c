@@ -1,4 +1,4 @@
-﻿/*
+/*
    i386 Disassembler
 
    Written by Ville Linde

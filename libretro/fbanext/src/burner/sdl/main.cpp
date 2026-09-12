@@ -1,4 +1,4 @@
-﻿/*----------------
+/*----------------
 Stuff to finish:
 
 It wouldn't be a stretch of the imagination to think the whole of the sdl 'port' needs a redo but here are the main things wrong with this version:

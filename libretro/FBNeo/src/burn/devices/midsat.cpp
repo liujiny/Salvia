@@ -1,4 +1,4 @@
-﻿// Midway Squeak and Talk module
+// Midway Squeak and Talk module
 // based on MAME code by Aaron Giles
 
 #include "burnint.h"

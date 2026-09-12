@@ -1,4 +1,4 @@
-﻿#include "config.h"
+#include "config.h"
 #include "screen.h"
 #include "render_direct3d.h"
 #include <windows.h>

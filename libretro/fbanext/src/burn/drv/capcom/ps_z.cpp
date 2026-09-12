@@ -1,4 +1,4 @@
-﻿#include "cps.h"
+#include "cps.h"
 #include "burn_ym2151.h"
 
 // PSound - Z80

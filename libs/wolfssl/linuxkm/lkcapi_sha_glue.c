@@ -1,4 +1,4 @@
-﻿/* lkcapi_sha_glue.c -- glue logic for SHA*
+/* lkcapi_sha_glue.c -- glue logic for SHA*
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

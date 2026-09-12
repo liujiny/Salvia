@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
 
 Toshiba T5182 die map, by Jonathan Gevaryahu AKA Lord Nightmare,
 with assistance from Kevin Horton.

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * image.c - interface for image codecs
  *
  * Copyright (C) 2021 Rob McMullen

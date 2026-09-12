@@ -1,4 +1,4 @@
-﻿/*
+/*
  * PicoDrive input driver for PSP
  *
  * (C) Gražvydas "notaz" Ignotas, 2006-2012

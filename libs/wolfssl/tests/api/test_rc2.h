@@ -1,4 +1,4 @@
-﻿/* test_rc2.h
+/* test_rc2.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

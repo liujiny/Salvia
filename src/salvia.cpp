@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "salvia.h"
+#include <video/shaderpreset.h>
 #include <http/httputil.h>
 #include <http/scrapper.h>
 #include <http/gamefaqs.h>
@@ -10,7 +11,6 @@
 #include <http/picojson.h>
 #include <io/filelist.h>
 #include <cheats/cheatlocator.h>
-#include <video/shaderpreset.h>
 
 // Puente entre los eventos SDL del frontend y el callback de teclado que
 // el core ha registrado via RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK. La
@@ -20,121 +20,77 @@
 extern "C" void salvia_dispatch_keyboard_event(bool down, unsigned retro_keycode,
                                                uint32_t character, uint16_t modifiers);
 
-/* Xbox 360 low-latency direct framebuffer path.
- *
- * MAME2003+ can request RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER
- * and convert the CURRENT emulated frame directly into Salvia's native game
- * surface.  SDL_Flip then lets the custom Xbox video backend upload/sample
- * that surface and the Xenos GPU performs scaling/filtering/composition.
- *
- * This removes the extra core-video_buffer -> frontend-surface memcpy while
- * keeping presentation in the same retro_run/main-loop iteration.  It does
- * NOT queue an N-1 frame, so it adds no intentional frame of latency.
- */
 #if defined(_XBOX) && defined(SALVIA_GPU_VIDEO)
 #ifndef SALVIA_X360_DIRECT_FB
 #define SALVIA_X360_DIRECT_FB 1
 #endif
 
-/* Salvia/Xbox private libretro extension used only by the paired MAME2003+
- * Round4G core.  Standard cores never see these commands.  The game texture
- * remains a normal 16-bit D3DFMT_LIN_R5G6B5 resource; in indexed mode the
- * 16 raw bits are interpreted by a tiny Xenos palette lookup shader. */
 #define SALVIA_ENVIRONMENT_X360_GET_INDEXED_FRAMEBUFFER 0x53580001u
 #define SALVIA_ENVIRONMENT_X360_SET_INDEXED_PALETTE     0x53580002u
 #define SALVIA_ENVIRONMENT_X360_GET_INDEXED_TELEMETRY   0x53580003u
 
 struct salvia_x360_indexed_framebuffer {
-    void* data;
-    unsigned width;
-    unsigned height;
-    std::size_t pitch;
+    void* data; unsigned width; unsigned height; std::size_t pitch;
 };
-
 struct salvia_x360_indexed_palette {
-    const uint32_t* colors;
-    const uint32_t* dirty;
-    unsigned entries;
-    int full_update;
+    const uint32_t* colors; const uint32_t* dirty;
+    unsigned entries; int full_update;
 };
-
 struct salvia_x360_indexed_telemetry {
     int compiled, available, enabled;
     int shader_ok, texture_ok, upload_ok, sampler_point;
-    int direct_framebuffer_active;
-    int pixel_format;
-    const char* texture_format;
-    const char* reason;
+    int direct_framebuffer_active; int pixel_format;
+    const char* texture_format; const char* reason;
 };
 
-extern "C" int  SDL_XBOX_MameIndexedCanUse(void);
-extern "C" int  SDL_XBOX_MameIndexedUploadPalette(const uint32_t* colors,
-                                                     const uint32_t* dirty,
-                                                     unsigned entries,
-                                                     int full_update);
-extern "C" void SDL_XBOX_MameIndexedSetEnabled(int enabled);
-extern "C" int SDL_XBOX_MameIndexedGetTelemetry(int* enabled, int* available,
-    int* shader_ok, int* texture_ok, int* upload_ok, int* sampler_point,
-    const char** reason);
+extern "C" int SDL_XBOX_MameIndexedCanUse(void);
+extern "C" int SDL_XBOX_MameIndexedUploadPalette(const uint32_t*,
+    const uint32_t*, unsigned, int);
+extern "C" void SDL_XBOX_MameIndexedSetEnabled(int);
+extern "C" int SDL_XBOX_MameIndexedGetTelemetry(int*, int*, int*, int*,
+    int*, int*, const char**);
 
 #if SALVIA_X360_DIRECT_FB
 static SDL_Surface* g_direct_fb_surface = NULL;
 static bool g_direct_fb_locked = false;
 static enum retro_pixel_format g_direct_fb_format = RETRO_PIXEL_FORMAT_RGB565;
-static unsigned g_direct_fb_width = 0;
-static unsigned g_direct_fb_height = 0;
+static unsigned g_direct_fb_width = 0, g_direct_fb_height = 0;
 static std::size_t g_direct_fb_pitch = 0;
-static bool g_direct_fb_log_once = false;
-static bool g_direct_fb_last_success = false;
+static bool g_direct_fb_log_once = false, g_direct_fb_last_success = false;
 
 static void salvia_release_direct_framebuffer() {
-    if (g_direct_fb_locked && g_direct_fb_surface) {
+    if (g_direct_fb_locked && g_direct_fb_surface)
         SDL_UnlockSurface(g_direct_fb_surface);
-    }
     g_direct_fb_surface = NULL;
     g_direct_fb_locked = false;
-    g_direct_fb_width = 0;
-    g_direct_fb_height = 0;
+    g_direct_fb_width = g_direct_fb_height = 0;
     g_direct_fb_pitch = 0;
 }
 
-static SDL_Surface* salvia_prepare_direct_framebuffer(unsigned width, unsigned height, int bpp) {
-    if (!gameMenu || width == 0 || height == 0) {
+static SDL_Surface* salvia_prepare_direct_framebuffer(unsigned width,
+                                                       unsigned height,
+                                                       int bpp) {
+    if (!gameMenu || !width || !height) {
         g_direct_fb_last_success = false;
         return NULL;
     }
-
-    /* Never carry a surface lock from an earlier retro_run. */
     salvia_release_direct_framebuffer();
-
     SDL_Surface*& screen = gameMenu->gameScreen;
     t_scale_props& settings = gameMenu->current_video_settings;
-
     if (!screen || width != (unsigned)settings.sw ||
         height != (unsigned)settings.sh || bpp != settings.bpp) {
         screen = XBOX_ResizeGameTexture(width, height, bpp);
-        if (!screen) {
-            g_direct_fb_last_success = false;
-            return NULL;
-        }
+        if (!screen) { g_direct_fb_last_success = false; return NULL; }
         settings.sw = (int)width;
         settings.sh = (int)height;
         settings.bpp = bpp;
         SDL_FillRect(screen, NULL, Constant::colors[clBackground].color);
     }
-
-    if (!screen->pixels || !screen->format || screen->format->BitsPerPixel != bpp)
-    {
+    if (!screen->pixels || !screen->format ||
+        screen->format->BitsPerPixel != bpp || SDL_LockSurface(screen) != 0) {
         g_direct_fb_last_success = false;
         return NULL;
     }
-
-    if (SDL_LockSurface(screen) != 0)
-    {
-        g_direct_fb_last_success = false;
-        return NULL;
-    }
-
     g_direct_fb_surface = screen;
     g_direct_fb_locked = true;
     g_direct_fb_width = width;
@@ -147,6 +103,57 @@ static SDL_Surface* salvia_prepare_direct_framebuffer(unsigned width, unsigned h
 }
 #endif
 #endif
+
+/* Callbacks del retro_midi_interface.  Los llama el CORE desde su hilo de
+ * emulacion, dentro de retro_run, asi que van directos al sintetizador sin
+ * candados (ver el reparto de hilos en src/audio/midisynth.h).
+ *
+ * Solo salida: no hay MIDI de entrada, no tenemos de donde sacarlo. */
+static bool salvia_midi_input_enabled(void)  { return false; }
+static bool salvia_midi_output_enabled(void) { return gameMenu->g_midi.isLoaded(); }
+static bool salvia_midi_read(uint8_t* byte)  { (void)byte; return false; }
+
+static bool salvia_midi_write(uint8_t byte, uint32_t delta_time) {
+	/* delta_time se ignora: los eventos se aplican al sintetizador en el acto y
+	 * el audio del frame se renderiza despues, asi que la cuantizacion es de un
+	 * frame (~16 ms).  Se nota en arpegios muy rapidos y nada mas; partir el
+	 * render en segmentos por evento seria la mejora, pero no hace falta. */
+	(void)delta_time;
+	if (!gameMenu->g_midi.isLoaded())
+		return false;   /* el contrato es "true si se ha escrito el byte" */
+	gameMenu->g_midi.writeByte(byte);
+	return true;
+}
+
+static bool salvia_midi_flush(void) {
+	gameMenu->g_midi.flush();   /* no hay cola que vaciar */
+	return true;
+}
+
+/* Aplica el timing que declara el core: reconfigura el limitador de fps y el
+ * ratio del resampler (sin reabrir el dispositivo) y refresca el aspect ratio.
+ * Apunta lo aplicado en g_applied_core_* para que el recheck sepa si algo
+ * cambio.  Lo usan el handler de SET_SYSTEM_AV_INFO y el recheck tras un cambio
+ * de core-options en caliente. */
+static void applyCoreAvInfo(const struct retro_system_av_info& av) {
+	gameMenu->sync->init_fps_counter((float)av.timing.fps);
+	gameMenu->g_audioRate.reset();
+	gameMenu->g_audioRate.init(BUFF_SIZE);
+	gameMenu->g_midi.setSampleRate((int)av.timing.sample_rate);
+	/* Con el dispositivo fijo, un cambio de tasa no obliga a reabrir nada:
+	 * basta recalcular el ratio del resampler. */
+	if (av.timing.sample_rate > 0.0){
+		gameMenu->g_audioRate.setRates(av.timing.sample_rate,
+			(double)g_audio_device_rate);
+		LOG_INFO("Audio: el core cambia a %.1f Hz (ratio %.4f)\n",
+			av.timing.sample_rate, gameMenu->g_audioRate.getBaseRatio());
+	}
+	if (av.geometry.aspect_ratio > 0.0f){
+		aspectRatioValues[RATIO_CORE] = av.geometry.aspect_ratio;
+	}
+	g_applied_core_fps         = av.timing.fps;
+	g_applied_core_sample_rate = av.timing.sample_rate;
+}
 
 static bool retro_environment(unsigned cmd, void *data) {
 	static char dirSystem[MAX_PATH] = {0};
@@ -357,6 +364,47 @@ static bool retro_environment(unsigned cmd, void *data) {
 			// "Si, puedes pedirme todos los botones de golpe".
 			return true;
 
+		/* Sintetizador MIDI del frontend (ver src/audio/midisynth.h).
+		 *
+		 * OJO con el tipo del payload: la cabecera de libretro documenta
+		 * "struct retro_midi_interface **", pero NO es asi.  RetroArch castea a
+		 * "struct retro_midi_interface *" y rellena la estructura EN SITIO, y
+		 * eso es lo que esperan los cores (px68k y dosbox-pure le pasan la
+		 * direccion de su propia struct).  Seguir el comentario de la cabecera
+		 * pisaria la primera
+		 * palabra de la estructura del core y reventaria en el primer write.
+		 *
+		 * SIEMPRE se entrega el interface, aunque en este momento no haya
+		 * soundfont cargado.  Devolver false aqui era un error: los cores
+		 * preguntan UNA sola vez (en su retro_init) y se quedan con la
+		 * respuesta para toda la sesion -- prboom guarda un midi_iface_valid
+		 * que ya nunca vuelve a revisar.  Con un false, activar el
+		 * sintetizador despues desde el menu no servia de nada.
+		 *
+		 * Para eso esta output_enabled(), que el core SI consulta cada vez
+		 * (prboom en cada I_RegisterSong): ahi es donde se dice "ahora mismo
+		 * no hay salida MIDI", y en cuanto se carga un banco la siguiente
+		 * cancion ya suena sin tener que recargar el juego. */
+		case RETRO_ENVIRONMENT_GET_MIDI_INTERFACE:{
+			struct retro_midi_interface* iface = (struct retro_midi_interface*)data;
+			if (!iface) return false;
+			/* Este es el momento exacto en que se sabe que el core va a usar
+			 * MIDI, y sigue siendo antes de que suene nada: aqui se abre el
+			 * banco si toca (ver la carga perezosa en midisynth.h). */
+			if (!gameMenu->g_midi.isLoaded())
+				applyMidiSoundfont(true);
+			iface->input_enabled  = salvia_midi_input_enabled;
+			iface->output_enabled = salvia_midi_output_enabled;
+			iface->read           = salvia_midi_read;
+			iface->write          = salvia_midi_write;
+			iface->flush          = salvia_midi_flush;
+			LOG_DEBUG("MIDI: interface entregado al core (soundfont: %s)",
+				gameMenu->g_midi.isLoaded()
+					? gameMenu->g_midi.getPath().c_str()
+					: "ninguno todavia; output_enabled lo dira cuando lo haya");
+			return true;
+		}
+
 		case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:{
 			std::string currentPath = gameMenu->getCfgLoader()->configMain[cfg::libretrosystem].valueStr;
 
@@ -372,13 +420,11 @@ static bool retro_environment(unsigned cmd, void *data) {
 		}
 
 		case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:{
+			/* Un core puede cambiar su tasa a mitad de partida (p.ej. FBNeo al
+			 * pasar de cart a CD).  El helper reconfigura limitador + resampler
+			 * sin reabrir el dispositivo y deja anotado lo aplicado. */
 			const struct retro_system_av_info *av_info = (const struct retro_system_av_info *)data;
-			gameMenu->sync->init_fps_counter((float)av_info->timing.fps);
-			gameMenu->g_audioRate.reset();
-			gameMenu->g_audioRate.init(BUFF_SIZE);
-			if (av_info->geometry.aspect_ratio > 0.0f){
-				aspectRatioValues[RATIO_CORE] = av_info->geometry.aspect_ratio;
-			}
+			applyCoreAvInfo(*av_info);
 			return true;
 		}
 
@@ -679,8 +725,7 @@ static bool retro_environment(unsigned cmd, void *data) {
 			}
 
 			gameMenu->configMenus->poblarCoreOptions(gameMenu->getCfgLoader());
-			gameMenu->configMenus->resetIndexPos();
-
+			gameMenu->configMenus->volverMenuInicial();
 			return true;
 		}
 
@@ -691,8 +736,12 @@ static bool retro_environment(unsigned cmd, void *data) {
 			*updated = gameMenu->configMenus->options_changed_flag;
 			if (*updated){
 				LOG_DEBUG("Core options changed");
+				/* Tras procesar el cambio, el core puede haber alterado su
+				 * temporizado (fps/sample_rate) sin emitir SET_SYSTEM_AV_INFO.
+				 * Reconsultamos av_info una vez despues de este retro_run. */
+				g_recheck_avinfo_pending = true;
 			}
-			// IMPORTANTE: Una vez que el core sabe que hubo un cambio, 
+			// IMPORTANTE: Una vez que el core sabe que hubo un cambio,
 			// reseteamos el flag para que en el siguiente frame no vuelva a procesar todo.
 			gameMenu->configMenus->options_changed_flag = false;
 			return true;
@@ -1109,11 +1158,8 @@ static inline void hw_refresh(const void *data, unsigned width,
 	}
 	#endif
 
+    // ── Determinar el puntero fuente definitivo ──────────────────────────────
 #if defined(_XBOX) && defined(SALVIA_GPU_VIDEO) && SALVIA_X360_DIRECT_FB
-    /* Zero-copy fast path: the core has already converted directly into the
-     * exact SDL/Xbox game surface returned by GET_CURRENT_SOFTWARE_FRAMEBUFFER.
-     * Unlocking here finalizes CPU writes; the outer salviaFlip/SDL_Flip then
-     * lets Xenos scale/filter/compose THIS SAME frame. */
     const bool direct_match = g_direct_fb_locked &&
                               g_direct_fb_surface == screen &&
                               data == screen->pixels &&
@@ -1122,20 +1168,17 @@ static inline void hw_refresh(const void *data, unsigned width,
                               pitch == g_direct_fb_pitch;
     if (direct_match) {
         if (action_postponed.cycles == 1 && action_postponed.action == SAVE_STATE) {
-            const int direct_bpp = (g_direct_fb_format == RETRO_PIXEL_FORMAT_XRGB8888) ? 32 : 16;
+            const int direct_bpp =
+                (g_direct_fb_format == RETRO_PIXEL_FORMAT_XRGB8888) ? 32 : 16;
             take_screenshot((void*)data, width, height, pitch, direct_bpp);
         }
         salvia_release_direct_framebuffer();
         return;
     }
-
-    /* If a core asked for the direct buffer but ultimately submitted another
-     * pointer, release the stale lock and fall back to the normal copy path. */
     if (g_direct_fb_locked)
         salvia_release_direct_framebuffer();
 #endif
 
-    // ── Determinar el puntero fuente definitivo ──────────────────────────────
     const void* final_src = data;
     std::size_t final_pitch = pitch;
 
@@ -1237,7 +1280,7 @@ int16_t retro_input_state(unsigned port, unsigned device, unsigned index, unsign
 			// 2. Obtener el indice del boton una sola vez
 			int sdlBtn = inputs->mapperCore.getSdlBtn(port, RETRO_DEVICE_ID_JOYPAD_START);
 			// 3. Validacion de rango rapida
-			if ((unsigned int)sdlBtn < MAX_BUTTONS) { 
+			if ((unsigned int)sdlBtn < MAX_SDL_BUTTONS) {
 				// Forzamos el estado true mientras haya frames de retencion
 				inputs->btn_state[port][sdlBtn] = true;
 			}
@@ -1282,44 +1325,134 @@ int16_t retro_input_state(unsigned port, unsigned device, unsigned index, unsign
 		}
 	} 
 	else if (device == RETRO_DEVICE_ANALOG && !gameMenu->isOnscreenKeybEnabled()) {
-		int sdl_axis = -1;
+		/* Ya no hay numeros de eje cableados aqui. Cada direccion analogica del core
+		 * es un slot de mapperCore.analogDst, reasignable desde el menu y guardado
+		 * en el .joy; la diferencia entre plataformas vive en los defaults
+		 * (analogSlotAxis, beans/structures.h).
+		 *
+		 * El valor del eje se compone restando sus dos direcciones, lo que da gratis
+		 * el eje invertido, el cruzado entre sticks y el asignado a un boton.
+		 * Convencion libretro: X+ es derecha e Y+ es ABAJO. */
+		int slotNeg = -1, slotPos = -1;
 
 		if (index == RETRO_DEVICE_INDEX_ANALOG_LEFT) {
-			sdl_axis = (id == RETRO_DEVICE_ID_ANALOG_X) ? 0 : 1;
-			//LOG_INFO("Analog Left: %u %u", id, sdl_axis);
+			if (id == RETRO_DEVICE_ID_ANALOG_X) {
+				slotNeg = t_joy_mapper::analogSlot(JOY_AXIS1_LEFT);
+				slotPos = t_joy_mapper::analogSlot(JOY_AXIS1_RIGHT);
+			} else {
+				slotNeg = t_joy_mapper::analogSlot(JOY_AXIS1_UP);
+				slotPos = t_joy_mapper::analogSlot(JOY_AXIS1_DOWN);
+			}
 		} else if (index == RETRO_DEVICE_INDEX_ANALOG_RIGHT) {
-			#ifdef _XBOX
-			sdl_axis = (id == RETRO_DEVICE_ID_ANALOG_X) ? 2 : 3;
-			#else
-			sdl_axis = (id == RETRO_DEVICE_ID_ANALOG_X) ? 4 : 3;
-			#endif
-			//LOG_INFO("Analog Right: %u %u", id, sdl_axis);
-		} else if (index == RETRO_DEVICE_INDEX_ANALOG_BUTTON) {
-			//LOG_INFO("Analog button: %u ", index);
-			// Gatillos: el core pide id = RETRO_DEVICE_ID_JOYPAD_L2 / R2
-			#ifdef _XBOX
-			if (id == RETRO_DEVICE_ID_JOYPAD_L2)
-				sdl_axis = AXIS_LT;
-			else if (id == RETRO_DEVICE_ID_JOYPAD_R2)
-				sdl_axis = AXIS_RT;
-			#endif
-		} 
-		//else {
-		//	LOG_INFO("Indice analogico: %u", index);
-		//}
+			if (id == RETRO_DEVICE_ID_ANALOG_X) {
+				slotNeg = t_joy_mapper::analogSlot(JOY_AXIS2_LEFT);
+				slotPos = t_joy_mapper::analogSlot(JOY_AXIS2_RIGHT);
+			} else {
+				slotNeg = t_joy_mapper::analogSlot(JOY_AXIS2_UP);
+				slotPos = t_joy_mapper::analogSlot(JOY_AXIS2_DOWN);
+			}
+		}
+		/* RETRO_DEVICE_INDEX_ANALOG_BUTTON (gatillos analogicos) no se atiende: cae al
+		 * return 0 del final.
+		 *
+		 * Aqui habia una rama para la 360 que leia g_analog_state[port][AXIS_LT/AXIS_RT],
+		 * dos slots reservados que NO escribe nadie, asi que devolvia siempre 0 -- pero
+		 * PARECIA que hacia algo. En la 360 los gatillos son botones digitales y llegan
+		 * por la via JOYPAD; en Windows comparten el eje 2 y se digitalizan en pollKeys.
+		 * Si algun dia se quiere el valor analogico del gatillo, hay que EMPEZAR por
+		 * producirlo en pollKeys. */
 
-		if (sdl_axis != -1) {
-			return gameMenu->joystick->inputs.g_analog_state[port][sdl_axis];
+		if (slotNeg != -1 && slotPos != -1) {
+			/* El mapeo va de direccion fisica a destino, asi que aqui se pregunta
+			 * "quien apunta a esta direccion del core": analogSlotAxis convierte el
+			 * slot con nombre en el indice virtual que el core espera recibir. */
+			return gameMenu->joystick->inputs.getCoreAnalog(port,
+				analogSlotAxis[slotNeg], analogSlotAxis[slotPos]);
 		}
 	} else if (device == RETRO_DEVICE_MOUSE && !gameMenu->isOnscreenKeybEnabled()) {
+		/* Cada puerto de raton usa el SUYO (ver Joystick::updateMice). Con un solo
+		 * raton todos apuntan al slot 0, que es el raton de SDL de siempre. */
+		const int mi = inputs->mouseOfPort[port];
+		if ((unsigned)mi >= (unsigned)t_joy_state::MAX_MICE) return 0;
 		switch (id) {
-			case RETRO_DEVICE_ID_MOUSE_X:      return inputs->mouse_rel_x;
-			case RETRO_DEVICE_ID_MOUSE_Y:      return inputs->mouse_rel_y;
-			case RETRO_DEVICE_ID_MOUSE_LEFT:   return inputs->mouse_buttons[0];
-			case RETRO_DEVICE_ID_MOUSE_RIGHT:  return inputs->mouse_buttons[2];
+			case RETRO_DEVICE_ID_MOUSE_X:      return inputs->mice_rel_x[mi];
+			case RETRO_DEVICE_ID_MOUSE_Y:      return inputs->mice_rel_y[mi];
+			case RETRO_DEVICE_ID_MOUSE_LEFT:   return inputs->mice_buttons[mi][0];
+			case RETRO_DEVICE_ID_MOUSE_RIGHT:  return inputs->mice_buttons[mi][2];
 			//case RETRO_DEVICE_ID_MOUSE_WHEELUP:   return (inputs->mouse_wheel > 0);
 			//case RETRO_DEVICE_ID_MOUSE_WHEELDOWN: return (inputs->mouse_wheel < 0);
-			case RETRO_DEVICE_ID_MOUSE_MIDDLE: return inputs->mouse_buttons[1];
+			case RETRO_DEVICE_ID_MOUSE_MIDDLE: return inputs->mice_buttons[mi][1];
+		}
+	} else if (device == RETRO_DEVICE_LIGHTGUN && !gameMenu->isOnscreenKeybEnabled()) {
+		/* Pistola de luz apuntada con el raton.
+		 *
+		 * SCREEN_X/Y son ABSOLUTAS y normalizadas a [-0x7fff, 0x7fff], no
+		 * deltas: es lo que define libretro y lo que el core convierte despues
+		 * a posicion de barrido.
+		 *
+		 * La base de normalizacion sale de getMouseSurface() y NO de
+		 * SDL_GetVideoSurface(): hay que dividir por el espacio EXACTO al que
+		 * SDL acota mouse_x/mouse_y, que en Xbox no es el que devuelve
+		 * SDL_GetVideoSurface (ver el comentario largo de getMouseSurface --
+		 * con la superficie equivocada el apuntado solo alcanzaba 1/5 del ancho).
+		 *
+		 * La reticula usa esa MISMA superficie, asi que reticula y punto de
+		 * disparo coinciden por construccion y no por ajuste.
+		 *
+		 * El raton del que sale todo esto es el que updateMice le haya asignado a
+		 * ESTE puerto: con dos ratones conectados, dos pistolas independientes. Con
+		 * uno solo, todos los puertos comparten el slot 0 (lo de siempre). */
+		const int  mi = inputs->mouseOfPort[port];
+		/* Sin raton asignado (dos pistolas y un solo raton) se anula lo que sale
+		 * del raton, pero NO lo que sale del mando: AUX_B y START siguen yendo, que
+		 * es lo que deja moverse por los menus del juego. */
+		const bool hasMouse = ((unsigned)mi < (unsigned)t_joy_state::MAX_MICE);
+		switch (id) {
+			case RETRO_DEVICE_ID_LIGHTGUN_SCREEN_X:
+			case RETRO_DEVICE_ID_LIGHTGUN_SCREEN_Y: {
+				SDL_Surface* vs = gameMenu->getMouseSurface();
+				int span, pos;
+				if (!vs || !hasMouse) return 0;
+				if (id == RETRO_DEVICE_ID_LIGHTGUN_SCREEN_X) {
+					span = vs->w - 1;
+					pos  = (int)inputs->mice_x[mi];
+				} else {
+					span = vs->h - 1;
+					pos  = (int)inputs->mice_y[mi];
+				}
+				if (span <= 0) return 0;
+				if (pos < 0)    pos = 0;
+				if (pos > span) pos = span;
+				/* pos*65534 son ~84M como maximo, dentro de int de sobra. */
+				return (int16_t)(((pos * 65534) / span) - 32767);
+			}
+			/* El raton esta ACOTADO a la pantalla, asi que por posicion nunca
+			 * apunta fuera: la respuesta honesta es 0. El disparo fuera de
+			 * pantalla se hace con RELOAD, que es el gesto de recargar de las
+			 * pistolas de verdad y lo que el core traduce al centinela. */
+			case RETRO_DEVICE_ID_LIGHTGUN_IS_OFFSCREEN: return 0;
+
+			case RETRO_DEVICE_ID_LIGHTGUN_TRIGGER: return hasMouse ? inputs->mice_buttons[mi][0] : 0;
+
+			/* Recargar va al boton MEDIO y no al derecho, aunque el derecho sea
+			 * el sitio natural: en Time Crisis el boton A del arma es el PEDAL
+			 * (cubrirse / salir), que se usa constantemente, y RELOAD solo hace
+			 * falta en los juegos que recargan disparando fuera de pantalla.
+			 * El derecho se reserva para el pedal. */
+			case RETRO_DEVICE_ID_LIGHTGUN_RELOAD:  return hasMouse ? inputs->mice_buttons[mi][1] : 0;
+
+			/* AUX_A y AUX_B son los botones A y B del GunCon, que el arma
+			 * presenta al juego como Start y Cruz. Se aceptan tanto del raton
+			 * como del mando: el core DESCARTA los botones del pad en un puerto
+			 * de pistola (igual que upstream), asi que si no se recogen aqui se
+			 * quedan sin usar -- y hacen falta para los menus. */
+			case RETRO_DEVICE_ID_LIGHTGUN_AUX_A:
+				return (hasMouse && inputs->mice_buttons[mi][2]) ||
+				       inputs->getCoreAny(port, RETRO_DEVICE_ID_JOYPAD_START);
+			case RETRO_DEVICE_ID_LIGHTGUN_AUX_B:
+				return inputs->getCoreAny(port, RETRO_DEVICE_ID_JOYPAD_A);
+			case RETRO_DEVICE_ID_LIGHTGUN_START:
+				return inputs->getCoreAny(port, RETRO_DEVICE_ID_JOYPAD_START);
 		}
 	} else if (device == RETRO_DEVICE_KEYBOARD){
 		// Poll-based keyboard query (algunos cores lo usan; otros como
@@ -1333,18 +1466,176 @@ int16_t retro_input_state(unsigned port, unsigned device, unsigned index, unsign
 	return 0;
 }
 
+/* Unico sitio donde se decide si toca musica de menu.  Lo consultan el hilo de
+ * audio (sdl_audio_callback, para elegir fuente) y el principal (runGameLoop,
+ * para rellenar el anillo); teniendolo aqui no pueden discrepar.
+ *
+ * Suena en todo estado MENOS con la partida en marcha y el overlay dibujado
+ * sobre ella.  En particular SI suena en EMU_MENU aunque haya ROM cargada: ese
+ * es el menu de pausa. */
+static inline bool musicWantedFor(int emuStatus) {
+	return emuStatus != EMU_STARTED && emuStatus != EMU_MENU_OVERLAY;
+}
+
+/* Ruta absoluta de la musica que le toca al core activo, o cadena vacia si no
+ * hay ninguna.  Prioridad: la del core (clave 'music_file' de su .cfg) y, si no
+ * la define, la general (configMain[cfg::musicFile]). */
+static std::string resolveMenuMusicPath() {
+	if (!cfgLoader) return std::string();
+	if (!cfgLoader->configMain[cfg::musicEnabled].valueBool) return std::string();
+
+	ConfigEmu*  emu = cfgLoader->getCfgEmu();
+	std::string rel = (emu && !emu->music_file.empty())
+		? emu->music_file
+		: cfgLoader->configMain[cfg::musicFile].valueStr;
+
+	if (rel.empty()) return std::string();
+	return Constant::getAppDir() + Constant::getFileSep() + rel;
+}
+
+/* Pone (o quita) la musica que corresponde al estado actual de la config.
+ *
+ * ensureLoaded no hace nada si el fichero ya es el que suena, asi que llamar a
+ * esto de mas es barato: al moverse entre cores que comparten musica no se corta
+ * ni se reinicia la cancion. */
+/* Abre (o cierra) el SoundFont que toque segun la configuracion.
+ *
+ * Se llama al arrancar y cada vez que el usuario cambia la opcion en el menu.
+ * NUNCA con una partida en marcha: close() libera el tsf* que el hilo de
+ * emulacion estaria usando en render().  El menu de audio solo es accesible con
+ * el juego pausado o sin ROM, asi que la condicion se cumple sola, pero conviene
+ * tenerla escrita.
+ *
+ * El banco se queda residente toda la sesion, igual que la musica de menu: hay
+ * que tenerlo cargado ANTES de que el core pregunte por GET_MIDI_INTERFACE (que
+ * ocurre en retro_init, antes incluso de saber la tasa de audio del juego), y
+ * releerlo en cada carga seria un tiron notable en la 360. */
+void applyMidiSoundfont(bool loadNow) {
+	CfgLoader* cfg = gameMenu->getCfgLoader();
+	if (!cfg) return;
+
+	std::string path;
+	const int idx = cfg->configMain[cfg::midiSoundfont].valueInt;
+
+	/* El indice 0 es "ninguno" y es lo que apaga el sintetizador sin tocar el
+	 * interruptor general. */
+	if (cfg->configMain[cfg::midiEnabled].valueBool &&
+	    idx > 0 && (std::size_t)idx < cfg->soundfontFiles.size()) {
+		path = cfg->configMain[cfg::libretrosystem].valueStr +
+		       Constant::getFileSep() + cfg->soundfontFiles[idx];
+	}
+
+	LOG_DEBUG("MIDI: applyMidiSoundfont enabled=%d idx=%d listado=%d cargado=%d ruta='%s'",
+		cfg->configMain[cfg::midiEnabled].valueBool ? 1 : 0, idx,
+		(int)cfg->soundfontFiles.size(), gameMenu->g_midi.isLoaded() ? 1 : 0,
+		path.c_str());
+
+	/* El modulo se aplica siempre, este cargado el banco o no: es estado del
+	 * sintetizador, no del fichero. */
+	gameMenu->g_midi.setModuleMode(cfg->configMain[cfg::midiModule].valueInt);
+
+	if (path.empty()) {
+		gameMenu->g_midi.close();
+		return;
+	}
+	if (gameMenu->g_midi.isLoaded() && gameMenu->g_midi.getPath() == path) {
+		gameMenu->g_midi.setVolumePercent(cfg->configMain[cfg::midiVolume].valueInt * 10);
+		return;   /* ya es el que suena: no releer el fichero */
+	}
+
+	/* Carga perezosa (ver midisynth.h).  Desde el menu solo se abre si hay una
+	 * partida en marcha que pueda estar usandolo; si no la hay, el ajuste se
+	 * queda guardado en la configuracion y se aplicara cuando el proximo core
+	 * pida el interface.  Asi mover el volumen o mirar la lista de bancos no
+	 * reserva decenas de MB por las buenas. */
+	if (!loadNow && !gameMenu->romLoaded)
+		return;
+
+	gameMenu->g_midi.open(path, (int)g_applied_core_sample_rate > 0
+	                             ? (int)g_applied_core_sample_rate : 44100);
+	gameMenu->g_midi.setVolumePercent(cfg->configMain[cfg::midiVolume].valueInt * 10);
+}
+
+void applyMenuMusic() {
+	if (!g_music || !audio_opened) return;
+
+	const std::string path = resolveMenuMusicPath();
+	if (path.empty()) {
+		g_music->stop();
+		return;
+	}
+	if (g_music->ensureLoaded(path, g_audio_device_rate)) {
+		SDL_PauseAudio(0);
+	}
+}
+
 //Audio Callbacks for Libretro
 // Callback para una sola muestra (menos eficiente, pero requerido)
-void retro_audio_sample(int16_t left, int16_t right) {
-	// Creamos una referencia local al buffer
-    // Esto evita que la CPU haga: gameMenu -> buscar g_audioBuffer -> llamar Write
-    AudioBuffer& audio = gameMenu->g_audioBuffer;
-    const int mode = *gameMenu->current_sync;
+/* Acumulador de la ruta de muestra suelta (ver retro_audio_sample).  A fichero y
+ * no static dentro de la funcion para que closeGame pueda vaciarlo y un juego no
+ * herede las muestras a medio bloque del anterior. */
+#define RETRO_SAMPLE_BLOCK 256
+static int16_t     g_singleSampleBlock[RETRO_SAMPLE_BLOCK * 2];
+static std::size_t g_singleSampleFrames = 0;
 
+/* Buffer de trabajo para mezclar el sintetizador MIDI con el audio del core.
+ * Mismo presupuesto que el temporal del resampler (DRC_MAX_FRAMES): 2048 frames
+ * estereo son 8 KB. */
+#define MIDI_MIX_FRAMES 2048
+static int16_t g_midiMixBuf[MIDI_MIX_FRAMES * 2];
+
+/* Unico punto por el que el audio del core entra al resampler.
+ *
+ * Si el juego no usa MIDI (el caso normal) esto es una rama predecible y el
+ * audio va directo, sin copias.  Si lo usa, hay que copiar a un buffer propio
+ * porque el del core llega const, y ahi encima se renderiza el sintetizador:
+ * tsf_render_short con flag_mixing suma y satura, que es justo el mezclador que
+ * el frontend no tiene. */
+/* Flanco de entrada en fast-forward, para cortar el MIDI una sola vez. */
+static bool g_midiFastForwardCut = false;
+
+static void audioSubmit(const int16_t* data, std::size_t frames, bool blocking) {
+	MidiSynth& midi = gameMenu->g_midi;
+
+	g_midiFastForwardCut = false;   /* llegando audio normal: rearmado */
+
+	if (!midi.isActive()) {
+		gameMenu->g_audioRate.processAndWrite(gameMenu->g_audioBuffer, data, frames, blocking);
+		return;
+	}
+
+	while (frames) {
+		const std::size_t n = (frames > MIDI_MIX_FRAMES) ? (std::size_t)MIDI_MIX_FRAMES : frames;
+		memcpy(g_midiMixBuf, data, n * 2 * sizeof(int16_t));
+		midi.render(g_midiMixBuf, (int)n);
+		gameMenu->g_audioRate.processAndWrite(gameMenu->g_audioBuffer, g_midiMixBuf, n, blocking);
+		data   += n * 2;
+		frames -= n;
+	}
+}
+
+void retro_audio_sample(int16_t left, int16_t right) {
+	/* Ruta de muestra suelta: la usan pocos cores y entregan un frame por
+	 * llamada.  Se acumula un bloque antes de remuestrear por dos motivos:
+	 * llamar al resampler frame a frame haria que el coste fijo de la llamada
+	 * dominase (a 48 kHz son 48.000 llamadas por segundo), y ademas cada lote de
+	 * un solo frame apenas deja avanzar la posicion fraccionaria.
+	 *
+	 * El resto por debajo de un bloque se queda para la siguiente tanda: son
+	 * menos de 6 ms y evita tener que enganchar un flush al final del frame. */
 	if (gameMenu->current_fast_forward && CfgLoader::configMain[cfg::fastForwardMult].valueInt > 10) return;
 
-    int16_t samples[2] = { left, right };
-    audio.Write(samples, 2);
+	g_singleSampleBlock[g_singleSampleFrames * 2]     = left;
+	g_singleSampleBlock[g_singleSampleFrames * 2 + 1] = right;
+	g_singleSampleFrames++;
+
+	if (g_singleSampleFrames >= RETRO_SAMPLE_BLOCK) {
+		const int mode = *gameMenu->current_sync;
+		if (mode != SYNC_FAST_FORWARD) {
+			audioSubmit(g_singleSampleBlock, g_singleSampleFrames, mode == SYNC_TO_AUDIO);
+		}
+		g_singleSampleFrames = 0;
+	}
 }
 
 // Callback para rafagas de muestras (el que usan casi todos los cores)
@@ -1355,14 +1646,26 @@ std::size_t retro_audio_sample_batch(const int16_t * __restrict data, std::size_
 	const int mode = *gameMenu->current_sync;
     switch(mode) {
         case SYNC_TO_AUDIO:
-            // El bloqueo ya sincroniza naturalmente con el reloj de audio
-            gameMenu->g_audioBuffer.WriteBlocking(data, frames * 2);
+            /* El bloqueo ya sincroniza naturalmente con el reloj de audio, pero
+             * hay que pasar igualmente por el resampler: el dispositivo esta
+             * abierto a tasa fija y escribir crudo sonaria a destiempo. El
+             * bloqueo se conserva -- processAndWrite lo propaga al buffer. */
+            audioSubmit(data, frames, true);
             break;
         case SYNC_FAST_FORWARD:
+            /* No se renderiza, pero los eventos MIDI siguen llegando por
+             * salvia_midi_write, asi que las notas se acumularian y sonarian
+             * todas de golpe al volver a velocidad normal.  Se corta una vez, al
+             * entrar: panic() recorre los 16 canales y no interesa repetirlo en
+             * cada lote. */
+            if (!g_midiFastForwardCut) {
+                gameMenu->g_midi.panic();
+                g_midiFastForwardCut = true;
+            }
             return frames;
         default:
             // SYNC_TO_VIDEO / SYNC_NONE: DRC ajusta la tasa para evitar drift
-            gameMenu->g_audioRate.processAndWrite(gameMenu->g_audioBuffer, data, frames, false);
+            audioSubmit(data, frames, false);
             break;
     }
     return frames;
@@ -1398,15 +1701,45 @@ void sdl_audio_callback(void* userdata, Uint8* stream, int len) {
     }
 #endif
 
+    /* Eleccion de fuente.  Musica y core nunca suenan a la vez, asi que no hace
+     * falta mezclar: basta con elegir de donde se lee.
+     *
+     * Se decide por ESTADO y no por romLoaded: el menu de pausa se abre como
+     * EMU_MENU con el juego cargado (gamemenu.cpp, HK_VIEW_MENU) y ahi SI
+     * queremos musica.  Los unicos dos estados sin musica son la partida en
+     * marcha y el overlay que se dibuja encima de ella.
+     *
+     * Leer getEmuStatus() desde el hilo de audio es leer un int: es benigno, y a
+     * cambio la conmutacion es inmediata en vez de llevar el frame de retraso
+     * que tendria si conmutase el hilo principal.
+     *
+     * readInto solo lee del anillo; el decodificado ocurre en el hilo principal
+     * (MusicPlayer::update). */
+    /* La condicion NO es solo "toca musica": tambien se sigue leyendo mientras
+     * la rampa no haya llegado abajo.  Si se conmutase en cuanto el estado deja
+     * de pedirla, el fade-out no se oiria nunca -- la fuente cambiaria de golpe
+     * antes de que el volumen bajase, que es justo el corte que el fundido
+     * viene a evitar.  El core, al arrancar, todavia no tiene nada que sonar en
+     * esos 250 ms, asi que no se pierde audio suyo. */
+    if (g_music && g_music->isActive() &&
+        (musicWantedFor(gameMenu->getEmuStatus()) || !g_music->isSilent())) {
+        g_music->readInto(samples, count);
+        return;
+    }
+
     gameMenu->g_audioBuffer.Read(samples, count);
 }
 
 /**
 *
 */
+/* Abre el dispositivo de audio.  Se llama UNA vez por sesion, desde el arranque,
+ * con AUDIO_DEVICE_RATE: no se reabre al cargar juegos ni cuando un core pide
+ * otra tasa.  De adaptar la tasa del core a la del dispositivo se encarga
+ * AudioRateControl (audio/audiorate.h). */
 void init_sdl_audio(double sample_rate) {
 	LOG_DEBUG("init_sdl_audio %.1f\n", sample_rate);
-    SDL_AudioSpec wanted;
+    SDL_AudioSpec wanted, obtained;
     wanted.freq = (int)sample_rate;
     wanted.format = AUDIO_S16SYS;
     wanted.channels = 2;
@@ -1428,13 +1761,23 @@ void init_sdl_audio(double sample_rate) {
     }
 #endif
 
-    if (SDL_OpenAudio(&wanted, NULL) < 0) {
+    /* Con `obtained` en vez de NULL: SDL nos dice a que tasa quedo abierto de
+     * verdad.  Es el fallback de todo el diseno -- si el driver no da la tasa
+     * pedida, el resampler se ajusta a la real y el tono sigue siendo correcto,
+     * en vez de sonar desafinado por un desajuste invisible. */
+    memset(&obtained, 0, sizeof(obtained));
+    if (SDL_OpenAudio(&wanted, &obtained) < 0) {
 		string error = "Error SDL Audio: " + string(SDL_GetError());
         LOG_ERROR("%s\n", error.c_str());
         return;
     }
 	audio_opened = 1;
-	g_audio_opened_rate = wanted.freq;
+	g_audio_device_rate = (obtained.freq > 0) ? obtained.freq : wanted.freq;
+	if (g_audio_device_rate != wanted.freq) {
+		LOG_INFO("Audio: se pidio %d Hz y el driver abrio %d Hz; el resampler usa la tasa real\n",
+			wanted.freq, g_audio_device_rate);
+	}
+	LOG_INFO("Audio: dispositivo abierto a %d Hz (una sola vez por sesion)\n", g_audio_device_rate);
     SDL_PauseAudio(0); // Inicia el audio
 }
 
@@ -1503,7 +1846,17 @@ void closeGame(){
 			/* audio_opened se mantiene a 1: el device sigue abierto,
 			 * solo pausado.  En la siguiente carga se reanuda. */
 		}
+		/* Bloque a medias de la ruta de muestra suelta: si no se vacia, el
+		 * proximo juego empieza oyendo la cola del anterior. */
+		g_singleSampleFrames = 0;
 		gameMenu->g_audioRate.reset();
+		/* Notas MIDI colgadas: el core se va sin mandar los note-off, asi que si
+		 * no se cortan aqui el proximo juego arranca con el acorde del anterior.
+		 * El soundfont NO se descarga: es el mismo para toda la sesion y
+		 * releerlo en cada carga seria un tiron en la 360 (mismo criterio que la
+		 * musica de menu). */
+		gameMenu->g_midi.panic();
+		g_midiFastForwardCut = false;
 #ifndef NO_SRAM
 		saveSram(romPaths.sram.c_str());
 #endif
@@ -1524,6 +1877,19 @@ void closeGame(){
 		retro_unload_game();
 		retro_deinit();
 		gameMenu->romLoaded = false;
+
+		/* El banco MIDI se suelta con el core: el proximo juego lo volvera a
+		 * pedir si lo necesita.  Aqui ya no queda nadie del lado de la
+		 * emulacion que pueda estar dentro de render(). */
+		gameMenu->g_midi.close();
+
+		/* De vuelta al menu: reanudar el dispositivo, que el bloque de audio de
+		 * arriba dejo pausado.  No hay que recargar nada -- la musica sigue en
+		 * memoria y continua donde se quedo; de elegir fuente ya se encarga
+		 * musicWantedFor(estado) en el callback. */
+		if (audio_opened && g_music && g_music->isActive()) {
+			SDL_PauseAudio(0);
+		}
 
 		/* Descartar los descriptores capturados via SET_MEMORY_MAPS:
 		 * sus punteros apuntan a RAM interna del core que acaba de
@@ -1622,6 +1988,11 @@ int launchGame(std::string rompath, bool tmpDelete){
 	gameMenu->sync->init_fps_counter((float)av_info.timing.fps);
 	//Iniciando el sistema de audio
 	initGameAudio(av_info.timing.sample_rate);
+	/* Semilla de la guarda de delta del recheck: lo que el core declara al
+	 * cargar es la referencia contra la que se compara si luego cambia. */
+	g_applied_core_fps         = av_info.timing.fps;
+	g_applied_core_sample_rate = av_info.timing.sample_rate;
+	g_recheck_avinfo_pending   = false;
 	gameMenu->romLoaded = true;
 	//Deshabilitamos el fast forward si estaba a true y restauramos el vsync por defecto
 	if (gameMenu->current_fast_forward){
@@ -1714,6 +2085,31 @@ inline void updateGame() {
 		audio_status_cb(true, occupancy, underrun_likely);
 	}
 	retro_run();
+
+	/* Red de seguridad: si el usuario cambio una core-option en este frame, el
+	 * core ya la proceso dentro del retro_run de arriba y puede haber cambiado
+	 * su temporizado sin emitir SET_SYSTEM_AV_INFO (caso nestopia al forzar la
+	 * region: cambia fps 50<->60 pero no lo notifica, y el limitador se
+	 * quedaria capado a la tasa anterior).  Reconsultamos av_info y solo
+	 * reaplicamos si de verdad cambio, para no reiniciar el warmup del
+	 * resampler en cada cambio de cualquier otra opcion. */
+	if (g_recheck_avinfo_pending){
+		g_recheck_avinfo_pending = false;
+		struct retro_system_av_info av = gameMenu->getAvInfo();
+		/* Diferencia absoluta a mano para no depender de <cmath> (VS2010). */
+		double dfps  = av.timing.fps - g_applied_core_fps;
+		double drate = av.timing.sample_rate - g_applied_core_sample_rate;
+		if (dfps  < 0.0) dfps  = -dfps;
+		if (drate < 0.0) drate = -drate;
+		bool fps_chg  = dfps > 0.01;
+		bool rate_chg = av.timing.sample_rate > 0.0 && drate > 0.5;
+		if (fps_chg || rate_chg){
+			LOG_INFO("av_info refrescado tras cambio de opciones: fps %.4f -> %.4f, rate %.1f -> %.1f\n",
+				g_applied_core_fps, av.timing.fps,
+				g_applied_core_sample_rate, av.timing.sample_rate);
+			applyCoreAvInfo(av);
+		}
+	}
 }
 
 void processFrontendEvents(){
@@ -1805,6 +2201,19 @@ void processFrontendEvents(){
 
 void closeResources() {
 	closeGame();
+
+	/* Musica: parar el dispositivo ANTES de destruir el reproductor, o el
+	 * callback podria entrar a leer un anillo que ya no existe.  El destructor
+	 * de MusicPlayer espera a su hilo de IO_THREAD antes de soltar nada. */
+	if (audio_opened) SDL_PauseAudio(1);
+	if (g_music) {
+		delete g_music;
+		g_music = NULL;
+	}
+	/* El sintetizador es miembro de Engine, no hace falta borrarlo; pero el
+	 * banco son varios MB y se suelta aqui, con el audio ya parado. */
+	gameMenu->g_midi.close();
+
 	Scrapper::ShutdownScrapper();
     if (conversion_buffer != NULL) {
         free(conversion_buffer);
@@ -1853,9 +2262,35 @@ static void __declspec(noinline) runGameLoop() {
 		while (gameMenu->running) {
 			processFrontendEvents();
 
+			/* Musica de menu: aqui SOLO se abre o cierra el grifo.  El
+			 * decodificado corre en su propio hilo (IO_THREAD), porque cuando
+			 * vivia aqui la musica se cortaba en cuanto el menu tardaba en
+			 * listar ficheros -- el escaneo bloquea este hilo y el anillo se
+			 * vaciaba.  Mismo predicado que usa el callback para elegir fuente,
+			 * asi no pueden discrepar. */
+			if (g_music) {
+				g_music->setWanted(musicWantedFor(gameMenu->getEmuStatus()));
+
+				/* Cambio de listado (L/R) o cualquier otra via que cambie el
+				 * core activo: se detecta por el indice y no enganchando el
+				 * manejador de L/R, porque loadEmuCfg se llama desde cuatro
+				 * sitios y asi no se queda ninguno fuera.  Comparar un int por
+				 * frame es gratis; resolver la ruta solo se hace al cambiar. */
+				static int lastEmuCfgPos = -1;
+				if (cfgLoader->emuCfgPos != lastEmuCfgPos) {
+					lastEmuCfgPos = cfgLoader->emuCfgPos;
+					applyMenuMusic();
+				}
+			}
+
 			switch (gameMenu->getEmuStatus()){
 				case EMU_STARTED:
 					updateGame();
+					/* Despues de updateGame para quedar ENCIMA de los contadores de
+					 * FPS/memoria: el solape es un rect pequeno que sigue al raton y
+					 * los contadores se redibujan cada frame, asi que lo peor que
+					 * puede pasar es un parpadeo de un frame en ellos. */
+					gameMenu->drawLightgunCrosshair();
 					break;
 				case EMU_MENU:
 				case EMU_MENU_FILTER:
@@ -1868,7 +2303,17 @@ static void __declspec(noinline) runGameLoop() {
 			}
 
 			gameMenu->processFrontendEventsAfter();
+
+			/* Se presenta en cuanto el frame esta listo y la espera del
+			 * limitador va DESPUES: asi la latencia de input es la minima.
+			 * (Probado el orden contrario -esperar y luego presentar- para
+			 * equiespaciar las presentaciones: sin diferencia apreciable ni con
+			 * vsync ni sin el, asi que no compensa la latencia de mas.) */
+			const double flipIni = Constant::getTicks();
 			salviaFlip(gameMenu->gameScreen);
+			const double flipEnd = Constant::getTicks();
+			gameMenu->sync->note_flip(flipEnd - flipIni);
+			gameMenu->sync->note_present(flipEnd);
 			gameMenu->sync->limit_fps(nextFrameTime, *gameMenu->current_sync, gameMenu->gameTicks);
 		}
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -1882,9 +2327,13 @@ static void __declspec(noinline) runGameLoop() {
 */
 int main(int argc, char *argv[]) {
 	initPathAndLog(argv);
-	/* Discover presets before CfgLoader resolves the saved filter selection.
-	 * LUT image decoding is deliberately deferred until SDL is initialized. */
+
+	/* Los shaders se descubren en assets\shaders ANTES de construir CfgLoader:
+	 * la configuracion guarda el shader por NOMBRE de preset y necesita
+	 * resolverlo a indice al cargar. Aqui solo se enumera y se parsea (no toca
+	 * D3D); la publicacion al backend de video ocurre en engine.cpp. */
 	ShaderRegistry::instance()->load();
+
 	cfgLoader = new CfgLoader();
 
 	if (cfgLoader->isDebug()){
@@ -1896,11 +2345,43 @@ int main(int argc, char *argv[]) {
 
 	LOG_DEBUG("appdir: %s\n", Constant::getAppDir().c_str());
 	LOG_DEBUG("appexe: %s\n", Constant::getAppExecutable().c_str());
-
-	// Se cargan los textos
-	const std::string mainLang = cfgLoader->configMain[cfg::mainLang].valueStr;
-	LanguageManager::instance()->loadLanguage(Constant::getAppDir() + "\\assets\\i18n\\" + mainLang + ".ini");
 	gameMenu = new GameMenu(cfgLoader);
+
+	/* Dispositivo de audio: se abre AQUI, una sola vez, a tasa fija, y ya no se
+	 * vuelve a abrir en toda la sesion (el ciclo SDL_OpenAudio/SDL_CloseAudio
+	 * cuelga libSDLx360 en la 360).  Cada core entrega a su tasa y AudioRateControl
+	 * la adapta.
+	 *
+	 * Tiene que ir despues de crear gameMenu: sdl_audio_callback lee
+	 * gameMenu->g_audioBuffer.  Se deja PAUSADO hasta que haya juego, que es el
+	 * mismo ciclo de siempre (closeGame pausa, initGameAudio reanuda). */
+	init_sdl_audio(AUDIO_DEVICE_RATE);
+
+	/* Musica de menu.  Si carga, el dispositivo se queda SONANDO (antes se
+	 * pausaba hasta que hubiera juego); si no hay fichero o no decodifica, se
+	 * pausa como siempre y el frontend arranca igual: quedarse sin musica no
+	 * puede impedir usar el programa. */
+	if (audio_opened) {
+		/* Pausado de partida: applyMenuMusic() lo reanuda si de verdad hay
+		 * cancion que poner. */
+		SDL_PauseAudio(1);
+
+		g_music = new MusicPlayer();
+		/* Volumen ANTES de cargar: load() calcula el destino de la rampa a
+		 * partir de el, asi que ponerlo despues dejaria la primera reproduccion
+		 * al 100% hasta el primer cambio de estado. */
+		g_music->setVolume(cfgLoader->configMain[cfg::musicVolume].valueInt * 10);
+
+		/* La cancion la elige applyMenuMusic segun el core activo, con la
+		 * general como respaldo; ya no hay ruta fija en el codigo. */
+		applyMenuMusic();
+	}
+
+	/* El SoundFont NO se abre aqui: se abre cuando un core pide el interface
+	 * MIDI (ver RETRO_ENVIRONMENT_GET_MIDI_INTERFACE).  Un banco ocupa en RAM el
+	 * doble de lo que pesa el fichero, y los hay de 50 MB: no se van a reservar
+	 * para una sesion que a lo mejor solo toca la Master System. */
+
 	listMenu = new ListMenu(gameMenu->overlay->w, gameMenu->overlay->h);
 	listMenu->setLayout(LAYBOXES, gameMenu->overlay->w, gameMenu->overlay->h);
     tileMap.load(Constant::getAppDir() + Constant::getFileSep() + "assets" + Constant::getFileSep() + "art" + Constant::getFileSep() + "bricks2.png");

@@ -1,4 +1,4 @@
-﻿/** 
+/** 
 * This file is a stub to be able to run the frontend without 
 * a statically compiled libretro core. We need it to generate 
 * the default.xex used to launch all other cores

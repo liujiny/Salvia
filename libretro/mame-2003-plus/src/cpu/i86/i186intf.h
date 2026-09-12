@@ -1,4 +1,4 @@
-﻿/* ASG 971222 -- rewrote this interface */
+/* ASG 971222 -- rewrote this interface */
 #ifndef __I186INTR_H_
 #define __I186INTR_H_
 

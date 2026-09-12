@@ -1,4 +1,4 @@
-﻿#ifndef MDFN_SETTINGS_H
+#ifndef MDFN_SETTINGS_H
 #define MDFN_SETTINGS_H
 
 #include <boolean.h>

@@ -1,4 +1,4 @@
-﻿/* helper function to join two 16-bit ROMs and form a 32-bit data stream */
+/* helper function to join two 16-bit ROMs and form a 32-bit data stream */
 void konami_rom_deinterleave_2(int mem_region);
 void konami_rom_deinterleave_2_half(int mem_region);
 /* helper function to join four 16-bit ROMs and form a 64-bit data stream */

@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_GVRAM_H
+#ifndef _WINX68K_GVRAM_H
 #define _WINX68K_GVRAM_H
 
 #include <stdint.h>

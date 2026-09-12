@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Generate the tms9900 emulator
 */
 

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * colours_external.c - Loading external colour palettes
  *
  * Copyright (C) 1995-1998 David Firth

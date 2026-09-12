@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_AUDIOREADER_H
+#ifndef __MDFN_AUDIOREADER_H
 #define __MDFN_AUDIOREADER_H
 
 #include "../Stream.h"

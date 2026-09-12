@@ -1,4 +1,4 @@
-﻿// Cheat module
+// Cheat module
 // Cheat file parser @ burner/conc.cpp
 
 #include "burnint.h"

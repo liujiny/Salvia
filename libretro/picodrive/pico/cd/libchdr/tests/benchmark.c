@@ -1,4 +1,4 @@
-﻿#include <libchdr/chd.h>
+#include <libchdr/chd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>

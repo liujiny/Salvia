@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 #include "system16.h"
 #include "cpu/i8039/i8039.h"
 #include "vidhrdw/segaic16.h"

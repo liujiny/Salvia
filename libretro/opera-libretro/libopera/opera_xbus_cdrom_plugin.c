@@ -1,4 +1,4 @@
-﻿#include "boolean.h"
+#include "boolean.h"
 
 #include "opera_cdrom.h"
 #include "opera_state.h"

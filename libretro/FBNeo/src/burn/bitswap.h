@@ -1,4 +1,4 @@
-﻿#define BITSWAP32(n, 														\
+#define BITSWAP32(n, 														\
 				  bit31, bit30, bit29, bit28, bit27, bit26, bit25, bit24,	\
 				  bit23, bit22, bit21, bit20, bit19, bit18, bit17, bit16,	\
 				  bit15, bit14, bit13, bit12, bit11, bit10, bit09, bit08,	\

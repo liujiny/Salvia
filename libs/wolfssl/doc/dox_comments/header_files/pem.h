@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup openSSL
 
     \brief This function writes a key into a WOLFSSL_BIO structure

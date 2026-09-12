@@ -1,4 +1,4 @@
-﻿//
+//
 //  SUUnarchiver.h
 //  Sparkle
 //

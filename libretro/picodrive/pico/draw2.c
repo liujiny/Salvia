@@ -1,4 +1,4 @@
-﻿/*
+/*
  * tile renderer
  * (C) notaz, 2006-2008
  * (C) irixxxx, 2020-2023

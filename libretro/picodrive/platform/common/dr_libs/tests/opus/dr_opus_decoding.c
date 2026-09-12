@@ -1,4 +1,4 @@
-﻿/*#define DR_OPUS_DEBUGGING*/
+/*#define DR_OPUS_DEBUGGING*/
 
 #define DR_OPUS_IMPLEMENTATION
 #include "../../wip/dr_opus.h"

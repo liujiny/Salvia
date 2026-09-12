@@ -1,4 +1,4 @@
-﻿/* video hardware for Namco System II */
+/* video hardware for Namco System II */
 
 #include "driver.h"
 #include "vidhrdw/generic.h"

@@ -1,4 +1,4 @@
-﻿#ifndef LIBCHDR_CODEC_ZSTD_H
+#ifndef LIBCHDR_CODEC_ZSTD_H
 #define LIBCHDR_CODEC_ZSTD_H
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-﻿/* maxq10xx.h
+/* maxq10xx.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
  *   spu_freeze.h - SPU savestate struct, extracted from plugins.h.
  *
  *   The dfsound plugin needs SPUFreeze_t in freeze.c, but cannot

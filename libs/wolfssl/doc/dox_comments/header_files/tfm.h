@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup Math
 
     \brief This function checks the runtime fastmath settings for the maximum

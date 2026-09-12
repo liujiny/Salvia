@@ -1,4 +1,4 @@
-﻿// StringSet C++ class
+// StringSet C++ class
 #include "burner.h"
 
 int __cdecl StringSet::Add(TCHAR* szFormat,...)

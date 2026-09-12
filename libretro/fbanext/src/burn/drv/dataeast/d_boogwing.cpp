@@ -1,4 +1,4 @@
-﻿// FB Alpha Boogie Wing / Great Ragtime Show driver module
+// FB Alpha Boogie Wing / Great Ragtime Show driver module
 // Based on MAME driver by Bryan McPhail and David Haywood
 
 #include "tiles_generic.h"

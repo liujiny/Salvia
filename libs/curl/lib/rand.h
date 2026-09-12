@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_RAND_H
+#ifndef HEADER_CURL_RAND_H
 #define HEADER_CURL_RAND_H
 /***************************************************************************
  *                                  _   _ ____  _

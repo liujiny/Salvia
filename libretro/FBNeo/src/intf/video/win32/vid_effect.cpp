@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 #include "vid_effect.h"
 #include <d3d9.h>
 #include <d3dx9.h>

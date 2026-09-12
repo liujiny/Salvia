@@ -1,4 +1,4 @@
-﻿void williams_adpcm_sound_write(UINT16 data);
+void williams_adpcm_sound_write(UINT16 data);
 void williams_adpcm_reset_write(UINT16 state);
 UINT16 williams_adpcm_sound_irq_read();
 void williams_adpcm_reset();

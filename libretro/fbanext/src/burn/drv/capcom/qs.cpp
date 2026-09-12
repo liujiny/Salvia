@@ -1,4 +1,4 @@
-﻿#include "cps.h"
+#include "cps.h"
 // QSound
 
 static INT32 nQsndCyclesExtra;

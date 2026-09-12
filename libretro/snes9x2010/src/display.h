@@ -1,4 +1,4 @@
-﻿/***********************************************************************************
+/***********************************************************************************
   Snes9x - Portable Super Nintendo Entertainment System (TM) emulator.
 
   (c) Copyright 1996 - 2002  Gary Henderson (gary.henderson@ntlworld.com),
@@ -188,6 +188,7 @@ enum s9x_getdirtype
 {
 	DEFAULT_DIR = 0,
 	BIOS_DIR,
+	SAT_DIR,
 	LAST_DIR
 };
 

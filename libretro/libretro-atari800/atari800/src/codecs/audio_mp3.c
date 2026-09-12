@@ -1,4 +1,4 @@
-﻿/*
+/*
  * audio_mp3.c - MP3 audio codec
  *
  * This is a derivative work of code from the FFmpeg project. The FFmpeg code

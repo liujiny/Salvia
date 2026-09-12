@@ -1,4 +1,4 @@
-﻿// burn_ym2151.h
+// burn_ym2151.h
 #include "driver.h"
 extern "C" {
  #include "ym2151.h"

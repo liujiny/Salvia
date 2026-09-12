@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_PSX_INPUT_DUALSHOCK_H
+#ifndef __MDFN_PSX_INPUT_DUALSHOCK_H
 #define __MDFN_PSX_INPUT_DUALSHOCK_H
 
 #include <string>

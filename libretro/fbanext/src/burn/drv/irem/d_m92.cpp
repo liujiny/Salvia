@@ -1,4 +1,4 @@
-﻿// FB Alpha Irem M92 system driver
+// FB Alpha Irem M92 system driver
 // Based on MAME driver by Bryan McPhail
 // Original port from MAME by OopsWare
 

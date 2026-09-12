@@ -1,4 +1,4 @@
-﻿// FB Alpha Joyful Road / Munch Mobile driver module
+// FB Alpha Joyful Road / Munch Mobile driver module
 // Based on MAME driver by Phil Stroffolino
 
 #include "tiles_generic.h"

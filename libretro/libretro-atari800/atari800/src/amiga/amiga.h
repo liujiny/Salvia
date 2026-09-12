@@ -1,4 +1,4 @@
-﻿#ifndef _ATARI_AMIGA_H_
+#ifndef _ATARI_AMIGA_H_
 #define _ATARI_AMIGA_H_
 
 LONG InsertROM(LONG CartType);

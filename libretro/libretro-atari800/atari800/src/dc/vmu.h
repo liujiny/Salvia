@@ -1,4 +1,4 @@
-﻿/*
+/*
  * VMU defines, taken mostly from dcgnuboy
  * (c) by Takayama Fumihiko <tekezo@catv296.ne.jp>
  */

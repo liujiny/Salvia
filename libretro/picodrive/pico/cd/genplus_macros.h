@@ -1,4 +1,4 @@
-﻿#undef uint8
+#undef uint8
 #undef uint16
 #undef uint32
 #undef int8

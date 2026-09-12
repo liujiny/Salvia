@@ -1,4 +1,4 @@
-﻿/*
+/*
 **
 ** File: ymdeltat.c
 **

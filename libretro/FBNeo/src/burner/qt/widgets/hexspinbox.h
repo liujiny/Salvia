@@ -1,4 +1,4 @@
-﻿#ifndef HEXSPINBOX_H
+#ifndef HEXSPINBOX_H
 #define HEXSPINBOX_H
 
 #include <QSpinBox>

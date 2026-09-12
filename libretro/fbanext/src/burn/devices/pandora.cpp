@@ -1,4 +1,4 @@
-﻿// Kaneko Pandora module
+// Kaneko Pandora module
 
 #include "tiles_generic.h"
 

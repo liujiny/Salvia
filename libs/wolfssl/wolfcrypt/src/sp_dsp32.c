@@ -1,4 +1,4 @@
-﻿/* sp_cdsp_signed.c
+/* sp_cdsp_signed.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

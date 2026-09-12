@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_CONFIG2SETOPTS_H
+#ifndef HEADER_CURL_CONFIG2SETOPTS_H
 #define HEADER_CURL_CONFIG2SETOPTS_H
 /***************************************************************************
  *                                  _   _ ____  _

@@ -1,4 +1,4 @@
-﻿#ifndef SIO_H_
+#ifndef SIO_H_
 #define SIO_H_
 
 #include "config.h"

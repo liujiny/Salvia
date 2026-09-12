@@ -1,4 +1,4 @@
-﻿/*
+/*
  * gpu_duck_sw_backend.h
  *
  * VS2010-compatible port of SwanStation's gpu_sw_backend.h.

@@ -1,4 +1,4 @@
-﻿/* esp32_aes.c
+/* esp32_aes.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

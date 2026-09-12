@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  MIDI.C - MIDI Board (CZ-6BM1) emulator
  */
 

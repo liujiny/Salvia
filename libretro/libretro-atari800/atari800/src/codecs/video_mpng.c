@@ -1,4 +1,4 @@
-﻿/*
+/*
  * video_mpng.c - Video codec for Motion-PNG
  *
  * Copyright (C) 2021 Rob McMullen

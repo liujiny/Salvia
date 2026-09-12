@@ -1,4 +1,4 @@
-﻿/* pie_redirect_table.c -- module load/unload hooks for libwolfssl.ko
+/* pie_redirect_table.c -- module load/unload hooks for libwolfssl.ko
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

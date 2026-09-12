@@ -1,4 +1,4 @@
-﻿#include <windows.h>
+#include <windows.h>
 #include <commdlg.h>
 #include <stdio.h>
 

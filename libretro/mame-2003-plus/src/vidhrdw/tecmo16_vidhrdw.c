@@ -1,4 +1,4 @@
-﻿/******************************************************************************
+/******************************************************************************
   Ganbare Ginkun  (Japan)  (c)1995 TECMO
   Final StarForce (US)     (c)1992 TECMO
   Based on sprite drivers from vidhrdw/wc90.c by Ernesto Corvi (ernesto@imagina.com)

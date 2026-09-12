@@ -1,4 +1,4 @@
-﻿/* user_settings-tls-generic.h
+/* user_settings-tls-generic.h
  * generated from configure options
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.

@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "m6805_intf.h"
 
 static INT32 ADDRESS_MAX;

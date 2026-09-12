@@ -1,4 +1,4 @@
-﻿#ifndef _SDL_xboxshaders_h
+#ifndef _SDL_xboxshaders_h
 #define _SDL_xboxshaders_h
 
 #include "SDL.h"

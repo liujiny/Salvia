@@ -1,4 +1,4 @@
-﻿/* Speed Spin Vidhrdw, see driver file for notes */
+/* Speed Spin Vidhrdw, see driver file for notes */
 
 #include "driver.h"
 

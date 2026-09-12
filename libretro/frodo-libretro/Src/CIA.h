@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  CIA.h - 6526 emulation
  *
  *  Frodo Copyright (C) Christian Bauer

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * PDB, the PicoDrive debugger
  * (C) notaz, 2010
  *

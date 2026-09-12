@@ -1,4 +1,4 @@
-﻿/*
+/*
  * PicoDrive
  * (C) irixxxx, 2024
  *

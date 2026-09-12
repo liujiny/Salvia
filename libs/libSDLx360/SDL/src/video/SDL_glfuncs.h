@@ -1,4 +1,4 @@
-﻿/* list of OpenGL functions sorted alphabetically
+/* list of OpenGL functions sorted alphabetically
    If you need to use a GL function from the SDL video subsystem,
    change it's entry from SDL_PROC_UNUSED to SDL_PROC and rebuild.
 */

@@ -1,4 +1,4 @@
-﻿// FB Alpha Funky Bee Driver Module
+// FB Alpha Funky Bee Driver Module
 // Based on MAME driver by Zsolt Vasvari
 
 #include "tiles_generic.h"

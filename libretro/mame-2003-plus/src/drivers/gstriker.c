@@ -1,4 +1,4 @@
-﻿/*** DRIVER INFO **************************************************************
+/*** DRIVER INFO **************************************************************
 
 Grand Striker, V Goal Soccer, World Cup '94
 driver by Farfetch and David Haywood

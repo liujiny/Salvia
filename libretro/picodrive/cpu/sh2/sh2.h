@@ -1,4 +1,4 @@
-﻿#ifndef __SH2_H__
+#ifndef __SH2_H__
 #define __SH2_H__
 
 #include <pico/pico_types.h>

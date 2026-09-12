@@ -1,4 +1,4 @@
-﻿// pgm2_run.cpp - PGM2 (IGS036) platform CPU / memory / I/O emulation
+// pgm2_run.cpp - PGM2 (IGS036) platform CPU / memory / I/O emulation
 //
 // Hardware reference (from MAME pgm2.cpp):
 //   CPU:   ARM946E-S (IGS036) @ ~100 MHz

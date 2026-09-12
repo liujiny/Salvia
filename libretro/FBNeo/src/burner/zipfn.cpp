@@ -1,4 +1,4 @@
-﻿// Zip module
+// Zip module
 #include "burner.h"
 #include "unzip.h"
 

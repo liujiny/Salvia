@@ -1,4 +1,4 @@
-﻿/*
+/*
  * audio_mulaw.c - Audio codec for mu-law telephony encoding
  *
  * Copyright (C) 2021 Rob McMullen

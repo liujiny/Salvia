@@ -1,4 +1,4 @@
-﻿// T6W28_Snd_Emu
+// T6W28_Snd_Emu
 
 #include <stdlib.h>
 

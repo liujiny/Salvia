@@ -1,4 +1,4 @@
-﻿// FB Neo Super Qix driver module
+// FB Neo Super Qix driver module
 // Based on MAME driver by Mirko Buffoni, Nicola Salmoria, Tomasz Slanina
 
 /*

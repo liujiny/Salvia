@@ -1,4 +1,4 @@
-﻿// Emacs style mode select   -*- C++ -*-
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright(C) 2009 Simon Howard
@@ -702,6 +702,11 @@ unsigned int MIDI_GetFileTimeDivision(const midi_file_t *file)
 void MIDI_RestartIterator(midi_track_iter_t *iter)
 {
     iter->position = 0;
+}
+
+unsigned int MIDI_IteratorPosition(const midi_track_iter_t *iter)
+{
+    return iter->position;
 }
 
 // NSM: an alternate iterator tool.

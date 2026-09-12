@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Yamaha YMF271-F "OPX" emulator v0.1
 	By R. Belmont.  
 	Based in part on YMF278B emulator by R. Belmont and O. Galibert.

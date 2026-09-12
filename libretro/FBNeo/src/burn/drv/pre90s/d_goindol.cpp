@@ -1,4 +1,4 @@
-﻿// FB Neo Goindol driver module
+// FB Neo Goindol driver module
 // Based on MAME driver by Jarek Parchanski
 
 #include "tiles_generic.h"

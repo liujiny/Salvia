@@ -1,4 +1,4 @@
-﻿#include <cheats/cheatmanager.h>
+#include <cheats/cheatmanager.h>
 
 #include <map>
 #include <cstdlib>

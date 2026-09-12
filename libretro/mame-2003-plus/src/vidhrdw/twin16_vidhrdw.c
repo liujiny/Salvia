@@ -1,4 +1,4 @@
-﻿/*
+/*
 
 	Konami Twin16 Hardware - Video
 

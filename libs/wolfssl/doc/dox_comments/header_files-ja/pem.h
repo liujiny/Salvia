@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup openSSL
     \brief  この関数は、PEM形式のwolfssl_bio構造体にキーを書き込みます。
     \return SSL_SUCCESS  成功すると。

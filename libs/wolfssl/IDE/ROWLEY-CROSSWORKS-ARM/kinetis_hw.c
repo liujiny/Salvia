@@ -1,4 +1,4 @@
-﻿/* kinetis_hw.c
+/* kinetis_hw.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

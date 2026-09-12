@@ -1,4 +1,4 @@
-﻿/* Sha3.h -- SHA-3 Hash
+/* Sha3.h -- SHA-3 Hash
 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_MD5_H

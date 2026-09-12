@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup SHA
 
     \brief This function initializes SHA256. This is automatically

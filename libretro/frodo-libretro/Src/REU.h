@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  REU.h - 17xx REU emulation
  *
  *  Frodo (C) 1994-1997,2002-2005 Christian Bauer

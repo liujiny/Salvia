@@ -1,4 +1,4 @@
-﻿#ifndef TEST_FRAMEWORK_H
+#ifndef TEST_FRAMEWORK_H
 #define TEST_FRAMEWORK_H
 
 #include <string.h>

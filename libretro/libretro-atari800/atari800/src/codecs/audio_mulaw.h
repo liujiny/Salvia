@@ -1,4 +1,4 @@
-﻿#ifndef CODECS_AUDIO_MULAW_H_
+#ifndef CODECS_AUDIO_MULAW_H_
 #define CODECS_AUDIO_MULAW_H_
 
 #include "atari.h"

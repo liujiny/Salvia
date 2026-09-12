@@ -1,4 +1,4 @@
-﻿#ifndef CURLINC_SYSTEM_H
+#ifndef CURLINC_SYSTEM_H
 #define CURLINC_SYSTEM_H
 /***************************************************************************
  *                                  _   _ ____  _

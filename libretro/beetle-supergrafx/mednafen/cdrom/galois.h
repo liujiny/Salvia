@@ -1,4 +1,4 @@
-﻿#ifndef _GALOIS_H
+#ifndef _GALOIS_H
 #define _GALOIS_H
 
 #include <stdint.h>

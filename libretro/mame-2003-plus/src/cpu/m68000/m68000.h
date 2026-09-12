@@ -1,4 +1,4 @@
-﻿#ifndef M68000__HEADER
+#ifndef M68000__HEADER
 #define M68000__HEADER
 
 #include "osd_cpu.h"

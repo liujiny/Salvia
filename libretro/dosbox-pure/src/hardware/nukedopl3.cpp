@@ -1,4 +1,4 @@
-﻿
+
 /* Nuked OPL3
  *
  * Copyright (C) 2013-2020 Nuke.YKT

@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup RIPEMD
 
     \brief This function initializes a ripemd structure by initializing

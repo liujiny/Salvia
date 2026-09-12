@@ -1,4 +1,4 @@
-ï»¿// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 //	OPN/A/B interface with ADPCM support
 //	Copyright (C) cisc 1998, 2003.
 // ---------------------------------------------------------------------------
@@ -34,9 +34,9 @@ namespace FM
 		
 		int		fmvolume;
 		
-		uint32_t	clock;				// OPN ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½
-		uint32_t	rate;				// FM ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ì¡¼ï¿½ï¿½
-		uint32_t	psgrate;			// FMGen  ï¿½ï¿½ï¿½Ï¥ì¡¼ï¿½ï¿½
+		uint32_t	clock;				// OPN ¥¯¥í¥Ã¥¯
+		uint32_t	rate;				// FM ²»¸»¹çÀ®¥ì¡¼¥È
+		uint32_t	psgrate;			// FMGen  ½ÐÎÏ¥ì¡¼¥È
 		uint32_t	status;
 		Channel4* csmch;
 		
@@ -97,7 +97,7 @@ namespace FM
 		int		ReadRAMN();
 		int		DecodeADPCMBSample(uint32_t);
 		
-	// FM ï¿½ï¿½ï¿½ï¿½ï¿½Ø·ï¿½
+	// FM ²»¸»´Ø·¸
 		uint8_t	pan[6];
 		uint8_t	fnum2[9];
 		
@@ -113,35 +113,35 @@ namespace FM
 		uint32_t	fnum[6];
 		uint32_t	fnum3[3];
 		
-	// ADPCM ï¿½Ø·ï¿½
+	// ADPCM ´Ø·¸
 		uint8_t*	adpcmbuf;		// ADPCM RAM
-		uint32_t	adpcmmask;		// ï¿½ï¿½ï¿½ê¥¢ï¿½É¥ì¥¹ï¿½ï¿½ï¿½Ð¤ï¿½ï¿½ï¿½Ó¥Ã¥È¥Þ¥ï¿½ï¿½ï¿½
-		uint32_t	adpcmnotice;	// ADPCM ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½Ä¥Ó¥Ã¥ï¿½
+		uint32_t	adpcmmask;		// ¥á¥â¥ê¥¢¥É¥ì¥¹¤ËÂÐ¤¹¤ë¥Ó¥Ã¥È¥Þ¥¹¥¯
+		uint32_t	adpcmnotice;	// ADPCM ºÆÀ¸½ªÎ»»þ¤Ë¤¿¤Ä¥Ó¥Ã¥È
 		uint32_t	startaddr;		// Start address
 		uint32_t	stopaddr;		// Stop address
-		uint32_t	memaddr;		// ï¿½ï¿½ï¿½ï¿½ï¿½æ¥¢ï¿½É¥ì¥¹
+		uint32_t	memaddr;		// ºÆÀ¸Ãæ¥¢¥É¥ì¥¹
 		uint32_t	limitaddr;		// Limit address/mask
-		int		adpcmlevel;		// ADPCM ï¿½ï¿½ï¿½ï¿½
+		int		adpcmlevel;		// ADPCM ²»ÎÌ
 		int		adpcmvolume;
 		int		adpcmvol;
-		uint32_t	deltan;			// ï¿½ï¿½N
-		int		adplc;			// ï¿½ï¿½ï¿½È¿ï¿½ï¿½Ñ´ï¿½ï¿½ï¿½ï¿½Ñ¿ï¿½
-		int		adpld;			// ï¿½ï¿½ï¿½È¿ï¿½ï¿½Ñ´ï¿½ï¿½ï¿½ï¿½Ñ¿ï¿½ï¿½Ê¬ï¿½ï¿½
-		uint32_t	adplbase;		// adpld ï¿½Î¸ï¿½
-		int		adpcmx;			// ADPCM ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ x
-		int		adpcmd;			// ADPCM ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
-		int		adpcmout;		// ADPCM ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î½ï¿½ï¿½ï¿½
+		uint32_t	deltan;			// ­ùN
+		int		adplc;			// ¼þÇÈ¿ôÊÑ´¹ÍÑÊÑ¿ô
+		int		adpld;			// ¼þÇÈ¿ôÊÑ´¹ÍÑÊÑ¿ôº¹Ê¬ÃÍ
+		uint32_t	adplbase;		// adpld ¤Î¸µ
+		int		adpcmx;			// ADPCM ¹çÀ®ÍÑ x
+		int		adpcmd;			// ADPCM ¹çÀ®ÍÑ ­ù
+		int		adpcmout;		// ADPCM ¹çÀ®¸å¤Î½ÐÎÏ
 		int		apout0;			// out(t-2)+out(t-1)
 		int		apout1;			// out(t-1)+out(t)
 
-		uint32_t	adpcmreadbuf;	// ADPCM ï¿½ê¡¼ï¿½ï¿½ï¿½Ñ¥Ð¥Ã¥Õ¥ï¿½
-		bool	adpcmplay;		// ADPCM ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		uint32_t	adpcmreadbuf;	// ADPCM ¥ê¡¼¥ÉÍÑ¥Ð¥Ã¥Õ¥¡
+		bool	adpcmplay;		// ADPCM ºÆÀ¸Ãæ
 		int8_t	granuality;		
 		bool	adpcmmask_;
 
-		uint8_t	control1;		// ADPCM ï¿½ï¿½ï¿½ï¿½È¥ï¿½ï¿½ï¿½ï¿½ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-		uint8_t	control2;		// ADPCM ï¿½ï¿½ï¿½ï¿½È¥ï¿½ï¿½ï¿½ï¿½ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-		uint8_t	adpcmreg[8];	// ADPCM ï¿½ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½Î°ï¿½ï¿½ï¿½Ê¬
+		uint8_t	control1;		// ADPCM ¥³¥ó¥È¥í¡¼¥ë¥ì¥¸¥¹¥¿£±
+		uint8_t	control2;		// ADPCM ¥³¥ó¥È¥í¡¼¥ë¥ì¥¸¥¹¥¿£²
+		uint8_t	adpcmreg[8];	// ADPCM ¥ì¥¸¥¹¥¿¤Î°ìÉôÊ¬
 
 		int		rhythmmask_;
 
@@ -210,23 +210,23 @@ namespace FM
 	private:
 		struct Rhythm
 		{
-			uint8_t	pan;		// ï¿½Ñ¤ï¿½
-			int8_t	level;		// ï¿½ï¿½ï¿½ï¿½ï¿½ç¤¦
-			int		volume;		// ï¿½ï¿½ï¿½ï¿½ï¿½ç¤¦ï¿½ï¿½ï¿½Ã¤Æ¤ï¿½
-			int16_t*	sample;		// ï¿½ï¿½ï¿½ï¿½×¤ï¿½
-			uint32_t	size;		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-			uint32_t	pos;		// ï¿½ï¿½ï¿½ï¿½
-			uint32_t	step;		// ï¿½ï¿½ï¿½Æ¤Ã¤×¤ï¿½
-			uint32_t	rate;		// ï¿½ï¿½ï¿½ï¿½×¤ï¿½Î¤ì¡¼ï¿½ï¿½
+			uint8_t	pan;		// ¤Ñ¤ó
+			int8_t	level;		// ¤ª¤ó¤ê¤ç¤¦
+			int		volume;		// ¤ª¤ó¤ê¤ç¤¦¤»¤Ã¤Æ¤¤
+			int16_t*	sample;		// ¤µ¤ó¤×¤ë
+			uint32_t	size;		// ¤µ¤¤¤º
+			uint32_t	pos;		// ¤¤¤Á
+			uint32_t	step;		// ¤¹¤Æ¤Ã¤×¤Á
+			uint32_t	rate;		// ¤µ¤ó¤×¤ë¤Î¤ì¡¼¤È
 		};
 	
 		void	RhythmMix(int16_t* buffer, size_t count);
 
-	// ï¿½ê¥ºï¿½à²»ï¿½ï¿½ï¿½Ø·ï¿½
+	// ¥ê¥º¥à²»¸»´Ø·¸
 		Rhythm	rhythm[6];
-		int8_t	rhythmtl;		// ï¿½ê¥ºï¿½ï¿½ï¿½ï¿½ï¿½Î¤Î²ï¿½ï¿½ï¿½
+		int8_t	rhythmtl;		// ¥ê¥º¥àÁ´ÂÎ¤Î²»ÎÌ
 		int		rhythmtvol;		
-		uint8_t	rhythmkey;		// ï¿½ê¥ºï¿½ï¿½Î¥ï¿½ï¿½ï¿½
+		uint8_t	rhythmkey;		// ¥ê¥º¥à¤Î¥­¡¼
 	};
 
 	//	YMF288 ---------------------------------------------------
@@ -252,25 +252,25 @@ namespace FM
 	private:
 		struct Rhythm
 		{
-			uint8_t	pan;		// ï¿½Ñ¤ï¿½
-			int8_t	level;		// ï¿½ï¿½ï¿½ï¿½ï¿½ç¤¦
-			int		volume;		// ï¿½ï¿½ï¿½ï¿½ï¿½ç¤¦ï¿½ï¿½ï¿½Ã¤Æ¤ï¿½
-			int16_t*	sample;		// ï¿½ï¿½ï¿½ï¿½×¤ï¿½
-			uint32_t	size;		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-			uint32_t	pos;		// ï¿½ï¿½ï¿½ï¿½
-			uint32_t	step;		// ï¿½ï¿½ï¿½Æ¤Ã¤×¤ï¿½
-			uint32_t	rate;		// ï¿½ï¿½ï¿½ï¿½×¤ï¿½Î¤ì¡¼ï¿½ï¿½
+			uint8_t	pan;		// ¤Ñ¤ó
+			int8_t	level;		// ¤ª¤ó¤ê¤ç¤¦
+			int		volume;		// ¤ª¤ó¤ê¤ç¤¦¤»¤Ã¤Æ¤¤
+			int16_t*	sample;		// ¤µ¤ó¤×¤ë
+			uint32_t	size;		// ¤µ¤¤¤º
+			uint32_t	pos;		// ¤¤¤Á
+			uint32_t	step;		// ¤¹¤Æ¤Ã¤×¤Á
+			uint32_t	rate;		// ¤µ¤ó¤×¤ë¤Î¤ì¡¼¤È
 		};
 	
 		void	RhythmMix(int16_t* buffer, size_t count);
 
-	// ï¿½ê¥ºï¿½à²»ï¿½ï¿½ï¿½Ø·ï¿½
+	// ¥ê¥º¥à²»¸»´Ø·¸
 		Rhythm	rhythm[6];
-		int8_t	rhythmtl;		// ï¿½ê¥ºï¿½ï¿½ï¿½ï¿½ï¿½Î¤Î²ï¿½ï¿½ï¿½
+		int8_t	rhythmtl;		// ¥ê¥º¥àÁ´ÂÎ¤Î²»ÎÌ
 		int		rhythmtvol;		
-		uint8_t	rhythmkey;		// ï¿½ê¥ºï¿½ï¿½Î¥ï¿½ï¿½ï¿½
+		uint8_t	rhythmkey;		// ¥ê¥º¥à¤Î¥­¡¼
 
-		int	mode288;		// 288/2608ï¿½â¡¼ï¿½É¥Õ¥é¥°
+		int	mode288;		// 288/2608¥â¡¼¥É¥Õ¥é¥°
 	};
 }
 

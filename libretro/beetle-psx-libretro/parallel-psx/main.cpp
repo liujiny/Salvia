@@ -1,4 +1,4 @@
-﻿#include "device.hpp"
+#include "device.hpp"
 #include "renderer/renderer.hpp"
 #include "stb_image_write.h"
 

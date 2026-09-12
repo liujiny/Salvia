@@ -1,4 +1,4 @@
-﻿/* [XBOX360] Primitivas de hilo (sthread/slock/scond) sobre Win32/XDK para el
+/* [XBOX360] Primitivas de hilo (sthread/slock/scond) sobre Win32/XDK para el
  * cdrom-async.c de pcsx_rearmed (USE_ASYNC_CDROM). El worker de prefetch de CD
  * es el unico consumidor: un solo hilo, un solo lock y un condvar de un unico
  * waiter, por lo que un evento AUTO-RESET basta como variable de condicion

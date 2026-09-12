@@ -1,4 +1,4 @@
-﻿#ifndef CHEATS_RDBREADER_H
+#ifndef CHEATS_RDBREADER_H
 #define CHEATS_RDBREADER_H
 
 #include <string>

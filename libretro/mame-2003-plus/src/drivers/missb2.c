@@ -1,4 +1,4 @@
-﻿/* Miss Bubble 2
+/* Miss Bubble 2
 
 A rather odd bootleg of Bubble Bobble with level select, redesigned levels,
 redesigned (8bpp!) graphics and different sound hardware... Crazy

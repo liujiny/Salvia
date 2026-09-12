@@ -1,4 +1,4 @@
-ï»¿// ****************************************************************************
+// ****************************************************************************
 // * This file is part of the HqMAME project. It is distributed under         *
 // * GNU General Public License: http://www.gnu.org/licenses/gpl.html         *
 // * Copyright (C) Zenju (zenju AT gmx DOT de) - All Rights Reserved          *
@@ -52,7 +52,7 @@ THREAD-SAFETY: - parts of the same image may be scaled by multiple threads as lo
 void scale(size_t factor, //valid range: 2 - 5
            const uint32_t* src, uint32_t* trg, int srcWidth, int srcHeight,
            const ScalerCfg& cfg = ScalerCfg(),
-           int yFirst = 0, int yLast = (std::numeric_limits<int>::max)()); // <--- Parï¿½ntesis aquï¿½
+           int yFirst = 0, int yLast = (std::numeric_limits<int>::max)()); // <--- Paréntesis aquí
 
 void nearestNeighborScale(const uint32_t* src, int srcWidth, int srcHeight,
                           uint32_t* trg, int trgWidth, int trgHeight);

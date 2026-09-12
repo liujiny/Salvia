@@ -90,6 +90,7 @@
     <IntDir>$(SolutionDir)obj\Xbox360\$(Configuration)\</IntDir>
     <TargetName>prboom_libretro_xdk360</TargetName>
     <TargetExt>.lib</TargetExt>
+    <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">
     <OutDir>$(SolutionDir)bin\Xbox360\$(Configuration)\</OutDir>
@@ -104,14 +105,15 @@
   <!-- Win32 Debug -->
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..;$(ProjectDir)..\src;$(ProjectDir)..\deps\libmad;$(ProjectDir)..\libretro\libretro-common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;__LIBRETRO__;FPM_DEFAULT;INLINE=_inline;HAVE_LIBMAD;MUSIC_SUPPORT;HAVE_STRLWR;__WIN32__;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)..;$(ProjectDir)..\src;$(ProjectDir)..\libretro\libretro-common\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;__WIN32__;_WINDOWS;_CRT_SECURE_NO_WARNINGS;__LIBRETRO__;FPM_DEFAULT;INLINE=_inline;HAVE_RVORBIS;HAVE_RMP3;HAVE_RMODTRACKER;HAVE_RWAV;HAVE_RPNG;HAVE_RJPEG;STATIC_LINKING;MUSIC_SUPPORT;HAVE_STRLWR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <CompileAs>CompileAsC</CompileAs>
       <DisableSpecificWarnings>4244;4267;4996;4146;4305;4800;4805;4723;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -123,7 +125,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)..;$(ProjectDir)..\src;$(ProjectDir)..\deps\libmad;$(ProjectDir)..\libretro\libretro-common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;__LIBRETRO__;FPM_DEFAULT;INLINE=_inline;HAVE_LIBMAD;MUSIC_SUPPORT;HAVE_STRLWR;__WIN32__;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;__LIBRETRO__;FPM_DEFAULT;INLINE=_inline;HAVE_RVORBIS;HAVE_RMP3;HAVE_RMODTRACKER;HAVE_RWAV;HAVE_RPNG;HAVE_RJPEG;STATIC_LINKING;MUSIC_SUPPORT;HAVE_STRLWR</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -131,6 +133,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <CompileAs>CompileAsC</CompileAs>
       <DisableSpecificWarnings>4244;4267;4996;4146;4305;4800;4805;4723;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -144,13 +147,18 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)..;$(ProjectDir)..\src;$(ProjectDir)..\deps\libmad;$(ProjectDir)..\libretro\libretro-common\include;$(XEDK)\include\xbox;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_XBOX;_XBOX360;_DEBUG;__LIBRETRO__;FPM_DEFAULT;INLINE=_inline;HAVE_LIBMAD;MUSIC_SUPPORT;HAVE_STRLWR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>_XBOX;_XBOX360;__LIBRETRO__;FPM_DEFAULT;INLINE=_inline;HAVE_RVORBIS;HAVE_RMP3;HAVE_RMODTRACKER;HAVE_RWAV;HAVE_RPNG;HAVE_RJPEG;STATIC_LINKING;MUSIC_SUPPORT;HAVE_STRLWR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <CompileAs>CompileAsC</CompileAs>
       <DisableSpecificWarnings>4244;4267;4996;4146;4305;4800;4805;4723;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ExceptionHandling>false</ExceptionHandling>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(XEDK)\lib\xbox;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -160,15 +168,25 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)..;$(ProjectDir)..\src;$(ProjectDir)..\deps\libmad;$(ProjectDir)..\libretro\libretro-common\include;$(XEDK)\include\xbox;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_XBOX;_XBOX360;NDEBUG;__LIBRETRO__;FPM_DEFAULT;INLINE=_inline;HAVE_LIBMAD;MUSIC_SUPPORT;HAVE_STRLWR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_XBOX;_XBOX360;NDEBUG;__LIBRETRO__;FPM_DEFAULT;INLINE=_inline;HAVE_RVORBIS;HAVE_RMP3;HAVE_RMODTRACKER;HAVE_RWAV;HAVE_RPNG;HAVE_RJPEG;STATIC_LINKING;MUSIC_SUPPORT;HAVE_STRLWR</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4244;4267;4996;4146;4305;4800;4805;4723;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <CompileAs>Default</CompileAs>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <TrapIntegerDividesOptimization>true</TrapIntegerDividesOptimization>
+      <PreschedulingOptimization>true</PreschedulingOptimization>
+      <InlineAssemblyOptimization>true</InlineAssemblyOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(XEDK)\lib\xbox;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -179,6 +197,25 @@
   <!-- ============================================================ -->
   <ItemGroup>
     <!-- LibRetro Interface -->
+    <ClCompile Include="..\libretro\libretro-common\encodings\encoding_crc32.c" />
+    <ClCompile Include="..\libretro\libretro-common\encodings\encoding_deflate.c" />
+    <ClCompile Include="..\libretro\libretro-common\formats\audio_transfer.c" />
+    <ClCompile Include="..\libretro\libretro-common\formats\data_transfer.c" />
+    <ClCompile Include="..\libretro\libretro-common\formats\image_transfer.c" />
+    <ClCompile Include="..\libretro\libretro-common\formats\jpeg\rjpeg.c" />
+    <ClCompile Include="..\libretro\libretro-common\formats\mod\rmodtracker.c" />
+    <ClCompile Include="..\libretro\libretro-common\formats\mp3\rmp3.c" />
+    <ClCompile Include="..\libretro\libretro-common\formats\png\rpng.c" />
+    <ClCompile Include="..\libretro\libretro-common\formats\png\rpng_apng.c" />
+    <ClCompile Include="..\libretro\libretro-common\formats\vorbis\rvorbis.c" />
+    <ClCompile Include="..\libretro\libretro-common\formats\wav\rwav.c" />
+    <ClCompile Include="..\libretro\libretro-common\memmap\memmap.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\libretro\libretro-common\streams\trans_stream.c" />
+    <ClCompile Include="..\libretro\libretro-common\streams\trans_stream_deflate.c" />
+    <ClCompile Include="..\libretro\libretro-common\streams\trans_stream_pipe.c" />
     <ClCompile Include="..\libretro\libretro.c" />
     <ClCompile Include="..\libretro\libretro_sound.c" />
     <!-- LibRetro Common -->
@@ -196,18 +233,9 @@
     <ClCompile Include="..\libretro\libretro-common\file\file_path_io.c" />
     <ClCompile Include="..\libretro\libretro-common\time\rtime.c" />
     <!-- libmad (MP3 decoder) -->
-    <ClCompile Include="..\deps\libmad\bit.c" />
-    <ClCompile Include="..\deps\libmad\decoder.c" />
-    <ClCompile Include="..\deps\libmad\fixed.c" />
-    <ClCompile Include="..\deps\libmad\frame.c" />
-    <ClCompile Include="..\deps\libmad\huffman.c" />
-    <ClCompile Include="..\deps\libmad\layer3.c" />
-    <ClCompile Include="..\deps\libmad\layer12.c" />
-    <ClCompile Include="..\deps\libmad\stream.c" />
-    <ClCompile Include="..\deps\libmad\synth.c" />
-    <ClCompile Include="..\deps\libmad\timer.c" />
     <!-- PrBoom Core Engine -->
     <ClCompile Include="..\src\am_map.c" />
+    <ClCompile Include="..\src\dsda_hacked.c" />
     <ClCompile Include="..\src\d_deh.c" />
     <ClCompile Include="..\src\d_items.c" />
     <ClCompile Include="..\src\d_main.c" />
@@ -219,10 +247,31 @@
     <ClCompile Include="..\src\f_wipe.c" />
     <ClCompile Include="..\src\flplayer.c" />
     <ClCompile Include="..\src\g_game.c" />
+    <ClCompile Include="..\src\heretic\f_finale.c" />
+    <ClCompile Include="..\src\heretic\info.c" />
+    <ClCompile Include="..\src\heretic\in_lude.c" />
+    <ClCompile Include="..\src\heretic\p_action.c" />
+    <ClCompile Include="..\src\heretic\sounds.c" />
+    <ClCompile Include="..\src\hexen\f_finale.c" />
+    <ClCompile Include="..\src\hexen\info.c" />
+    <ClCompile Include="..\src\hexen\in_lude.c" />
+    <ClCompile Include="..\src\hexen\po_man.c" />
+    <ClCompile Include="..\src\hexen\p_acs.c" />
+    <ClCompile Include="..\src\hexen\p_anim.c" />
+    <ClCompile Include="..\src\hexen\p_lightning.c" />
+    <ClCompile Include="..\src\hexen\p_mapinfo.c" />
+    <ClCompile Include="..\src\hexen\p_spec_hexen.c" />
+    <ClCompile Include="..\src\hexen\sn_sonix.c" />
+    <ClCompile Include="..\src\hexen\sounds.c" />
+    <ClCompile Include="..\src\hexen\sv_save.c" />
     <ClCompile Include="..\src\hu_lib.c" />
     <ClCompile Include="..\src\hu_stuff.c" />
     <ClCompile Include="..\src\info.c" />
+    <ClCompile Include="..\src\i_cpu_features.c" />
+    <ClCompile Include="..\src\libretro_midiout.c" />
     <ClCompile Include="..\src\lprintf.c" />
+    <ClCompile Include="..\src\map_format.c" />
+    <ClCompile Include="..\src\modplayer.c" />
     <ClCompile Include="..\src\m_argv.c" />
     <ClCompile Include="..\src\m_bbox.c" />
     <ClCompile Include="..\src\m_cheat.c" />
@@ -230,54 +279,83 @@
     <ClCompile Include="..\src\m_misc.c" />
     <ClCompile Include="..\src\m_random.c" />
     <ClCompile Include="..\src\madplayer.c" />
-    <ClCompile Include="..\src\md5.c" />
     <ClCompile Include="..\src\memio.c" />
     <ClCompile Include="..\src\midifile.c" />
     <ClCompile Include="..\src\mus2mid.c" />
+    <ClCompile Include="..\src\oggplayer.c" />
     <ClCompile Include="..\src\opl.c" />
     <ClCompile Include="..\src\opl_queue.c" />
     <ClCompile Include="..\src\oplplayer.c" />
     <ClCompile Include="..\src\p_ceilng.c" />
+    <ClCompile Include="..\src\p_conversation.c" />
     <ClCompile Include="..\src\p_doors.c" />
     <ClCompile Include="..\src\p_enemy.c" />
+    <ClCompile Include="..\src\p_ffloor.c" />
     <ClCompile Include="..\src\p_floor.c" />
     <ClCompile Include="..\src\p_genlin.c" />
     <ClCompile Include="..\src\p_inter.c" />
     <ClCompile Include="..\src\p_lights.c" />
+    <ClCompile Include="..\src\p_lineportal.c" />
     <ClCompile Include="..\src\p_map.c" />
     <ClCompile Include="..\src\p_maputl.c" />
     <ClCompile Include="..\src\p_mobj.c" />
     <ClCompile Include="..\src\p_plats.c" />
     <ClCompile Include="..\src\p_pspr.c" />
     <ClCompile Include="..\src\p_saveg.c" />
+    <ClCompile Include="..\src\p_sectorportal.c" />
     <ClCompile Include="..\src\p_setup.c" />
     <ClCompile Include="..\src\p_sight.c" />
+    <ClCompile Include="..\src\p_skybox.c" />
+    <ClCompile Include="..\src\p_slope.c" />
     <ClCompile Include="..\src\p_spec.c" />
     <ClCompile Include="..\src\p_switch.c" />
     <ClCompile Include="..\src\p_telept.c" />
     <ClCompile Include="..\src\p_tick.c" />
     <ClCompile Include="..\src\p_user.c" />
+    <ClCompile Include="..\src\p_vslope.c" />
+    <ClCompile Include="..\src\p_zacs.c" />
     <ClCompile Include="..\src\r_bsp.c" />
     <ClCompile Include="..\src\r_data.c" />
+    <ClCompile Include="..\src\r_decal.c" />
     <ClCompile Include="..\src\r_demo.c" />
     <ClCompile Include="..\src\r_draw.c" />
+    <ClCompile Include="..\src\r_drawcmd.c" />
+    <ClCompile Include="..\src\r_drawtc.c" />
+    <ClCompile Include="..\src\r_dynlight.c" />
     <ClCompile Include="..\src\r_filter.c" />
     <ClCompile Include="..\src\r_fps.c" />
     <ClCompile Include="..\src\r_main.c" />
     <ClCompile Include="..\src\r_patch.c" />
     <ClCompile Include="..\src\r_plane.c" />
+    <ClCompile Include="..\src\r_rendermt.c" />
     <ClCompile Include="..\src\r_segs.c" />
     <ClCompile Include="..\src\r_sky.c" />
     <ClCompile Include="..\src\r_things.c" />
+    <ClCompile Include="..\src\r_voxel.c" />
+    <ClCompile Include="..\src\scanner.c" />
     <ClCompile Include="..\src\s_sound.c" />
     <ClCompile Include="..\src\sounds.c" />
     <ClCompile Include="..\src\st_lib.c" />
     <ClCompile Include="..\src\st_stuff.c" />
     <ClCompile Include="..\src\tables.c" />
+    <ClCompile Include="..\src\udmf.c" />
+    <ClCompile Include="..\src\u_brightmap.c" />
+    <ClCompile Include="..\src\u_decaldef.c" />
+    <ClCompile Include="..\src\u_decorate.c" />
+    <ClCompile Include="..\src\u_dynlight.c" />
     <ClCompile Include="..\src\u_mapinfo.c" />
     <ClCompile Include="..\src\u_musinfo.c" />
+    <ClCompile Include="..\src\u_png.c" />
     <ClCompile Include="..\src\u_scanner.c" />
+    <ClCompile Include="..\src\u_voxel.c" />
+    <ClCompile Include="..\src\u_zanimdefs.c" />
+    <ClCompile Include="..\src\u_zmapinfo.c" />
+    <ClCompile Include="..\src\u_zsecact.c" />
+    <ClCompile Include="..\src\u_zsndinfo.c" />
+    <ClCompile Include="..\src\u_ztextures.c" />
+    <ClCompile Include="..\src\vid_mode.c" />
     <ClCompile Include="..\src\v_video.c" />
+    <ClCompile Include="..\src\w_pk3.c" />
     <ClCompile Include="..\src\w_wad.c" />
     <ClCompile Include="..\src\w_memcache.c" />
     <ClCompile Include="..\src\wi_stuff.c" />

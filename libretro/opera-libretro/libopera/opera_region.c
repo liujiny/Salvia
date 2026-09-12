@@ -1,4 +1,4 @@
-﻿#include "opera_clock.h"
+#include "opera_clock.h"
 #include "opera_timing.h"
 
 #include "opera_region_i.h"

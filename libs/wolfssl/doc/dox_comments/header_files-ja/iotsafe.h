@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup IoTSafe
     \brief  この関数は与えられたコンテキストでのIoTセーフサポートを有効にします。
     \param ctx  IOTセーフサポートを有効にする必要があるWOLFSSL_CTXオブジェクトへのポインタ

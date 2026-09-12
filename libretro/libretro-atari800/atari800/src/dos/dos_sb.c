@@ -1,4 +1,4 @@
-﻿/*
+/*
  * atari_sb.c - DOS Sound Blaster sound port code
  *
  * Copyright (c) 1998-2000 Matthew Conte

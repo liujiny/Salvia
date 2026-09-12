@@ -1,4 +1,4 @@
-﻿#ifndef LIBOPERA_VDLP_I_H_INCLUDED
+#ifndef LIBOPERA_VDLP_I_H_INCLUDED
 #define LIBOPERA_VDLP_I_H_INCLUDED
 
 #include "static_assert.h"

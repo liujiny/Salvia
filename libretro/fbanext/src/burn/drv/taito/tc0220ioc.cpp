@@ -1,4 +1,4 @@
-﻿// TC0220IOC
+// TC0220IOC
 
 #include "burnint.h"
 #include "taito_ic.h"

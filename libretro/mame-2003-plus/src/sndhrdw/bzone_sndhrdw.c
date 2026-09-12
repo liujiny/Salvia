@@ -1,4 +1,4 @@
-﻿/*
+/*
 
 Battlezone sound info, courtesy of Al Kossow:
 

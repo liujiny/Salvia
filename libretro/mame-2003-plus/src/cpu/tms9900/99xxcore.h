@@ -1,4 +1,4 @@
-﻿/*
+/*
 	99xxcore.h : generic tms99xx emulation
 
 	The TMS99XX_MODEL switch tell which emulator we want to build.  Set the switch, then include

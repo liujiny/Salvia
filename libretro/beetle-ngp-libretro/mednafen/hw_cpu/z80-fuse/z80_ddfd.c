@@ -1,4 +1,4 @@
-﻿/* z80_ddfd.c Z80 {DD,FD}xx opcodes
+/* z80_ddfd.c Z80 {DD,FD}xx opcodes
    Copyright (c) 1999-2003 Philip Kendall
 
    This program is free software; you can redistribute it and/or modify

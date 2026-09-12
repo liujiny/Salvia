@@ -1,4 +1,4 @@
-﻿#ifndef k005289_h
+#ifndef k005289_h
 #define k005289_h
 
 struct k005289_interface

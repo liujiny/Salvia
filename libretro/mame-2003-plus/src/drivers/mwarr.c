@@ -1,4 +1,4 @@
-﻿/*
+/*
 
 Mighty Warrior
 Elettronica Video-Games S.R.L, 19??

@@ -1,4 +1,4 @@
-﻿/*
+/*
    GI SP0250 digital LPC sound synthesizer
 
    By O. Galibert.

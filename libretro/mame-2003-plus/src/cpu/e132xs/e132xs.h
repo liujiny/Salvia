@@ -1,4 +1,4 @@
-﻿#ifndef E132XS_H
+#ifndef E132XS_H
 #define E132XS_H
 
 /* Functions */

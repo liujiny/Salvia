@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_MD4_H
+#ifndef HEADER_CURL_MD4_H
 #define HEADER_CURL_MD4_H
 /***************************************************************************
  *                                  _   _ ____  _

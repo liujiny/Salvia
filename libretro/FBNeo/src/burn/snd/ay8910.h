@@ -1,4 +1,4 @@
-﻿#ifndef DRIVER_H
+#ifndef DRIVER_H
 #include "driver.h"
 #endif
 

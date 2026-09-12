@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_LEPACKER_H
+#ifndef __MDFN_LEPACKER_H
 #define __MDFN_LEPACKER_H
 
 #include <vector>

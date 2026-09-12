@@ -1,4 +1,4 @@
-﻿// FB Neo Bally Astrocade Driver Module
+// FB Neo Bally Astrocade Driver Module
 // Based on MAME driver by Nicola Salmoria, Mike Coates, Frank Palazzolo
 
 // to done:

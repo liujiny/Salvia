@@ -1,4 +1,4 @@
-﻿/*
+/*
  *	Thunder Ceptor board
  *	(C) 1986 Namco
  *

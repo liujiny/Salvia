@@ -1,4 +1,4 @@
-﻿// PCX image loader. Public domain. See "unlicense" statement at the end of this file.
+// PCX image loader. Public domain. See "unlicense" statement at the end of this file.
 // dr_pcx - v0.3.1 - 2018-09-11
 //
 // David Reid - mackron@gmail.com

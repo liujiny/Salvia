@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifdef HAVE_SQLITE
 #include <db/sqlite3.h>

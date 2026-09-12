@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 
 
 data16_t *aerofgt_rasterram;

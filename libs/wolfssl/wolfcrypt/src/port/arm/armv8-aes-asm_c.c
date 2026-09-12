@@ -1,4 +1,4 @@
-﻿/* armv8-aes-asm
+/* armv8-aes-asm
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

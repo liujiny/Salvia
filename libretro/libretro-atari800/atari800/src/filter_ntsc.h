@@ -1,4 +1,4 @@
-﻿#ifndef FILTER_NTSC_H_
+#ifndef FILTER_NTSC_H_
 #define FILTER_NTSC_H_
 
 #include <stdio.h>

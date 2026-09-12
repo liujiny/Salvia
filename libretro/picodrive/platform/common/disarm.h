@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (C) 2012 Wojtek Kaniewski <wojtekka@toxygen.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy

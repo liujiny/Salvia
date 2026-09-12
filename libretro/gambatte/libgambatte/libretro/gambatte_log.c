@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <stdarg.h>
 #include <string/stdstring.h>
 #include "gambatte_log.h"

@@ -1,4 +1,4 @@
-﻿// FBNeo PNG Load & rescale
+// FBNeo PNG Load & rescale
 // History:
 // convert to libspng				-dink nov '23
 // load png from buffer				-dink april '26

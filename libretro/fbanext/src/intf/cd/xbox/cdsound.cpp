@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 #include <xaudio2.h>
 #include "cdsound.h"
 

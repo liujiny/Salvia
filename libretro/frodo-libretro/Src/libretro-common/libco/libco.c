@@ -1,4 +1,4 @@
-﻿/*
+/*
   libco
   auto-selection module
   license: public domain

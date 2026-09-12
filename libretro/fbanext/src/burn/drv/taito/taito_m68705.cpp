@@ -1,4 +1,4 @@
-﻿
+
 #include "burnint.h"
 #include "taito_m68705.h"
 

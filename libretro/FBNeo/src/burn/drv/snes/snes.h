@@ -1,4 +1,4 @@
-﻿
+
 #ifndef SNES_H
 #define SNES_H
 

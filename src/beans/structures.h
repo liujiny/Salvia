@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <string>
 #include <vector>
@@ -138,7 +138,6 @@ struct t_scale_props{
 		sw = sh = dw = dh = scale = 0;
 		ratio = .0f;
 		bpp = 16;
-		filter = -1;
 		integer_scale = false;
 		integer_scale_type = SCALE_INT_REDUCE;
 	}
@@ -147,6 +146,22 @@ struct t_scale_props{
 // Buffer para alojar el resultado de Scale2x (ej. 320x224 -> 640x448)
 // Reservamos para el caso maximo (ej. 512x512 -> 1024x1024)
 // 2048 * 1152 permite hasta Scale4x de una imagen de 512x256 o xBRZ alto
+//
+// NO convertir esto en 'extern' con una definicion unica, por tentador que sea.
+// Al ser 'static' en una cabecera, CADA unidad de compilacion tiene su propia copia,
+// y de eso depende que funcione: los dos consumidores reales son menus/gamemenu.cpp
+// (hilo principal) y menus/menuassetloader.cpp, que es un HILO PERSISTENTE aparte
+// (CreateThread, pineado a IO_THREAD en la 360). Compartir un unico scratch entre los
+// dos haria que el escalado de una imagen del cargador de assets y el del frame se
+// pisaran. La separacion es lo que los protege.
+//
+// El precio es que las ~16 unidades que incluyen structures.h y NO escalan nada se
+// llevan igualmente 4,5 MB de BSS cada una. Si algun dia molesta, la forma correcta de
+// arreglarlo es mover el buffer a quien escala y darle uno POR HILO (o por objeto),
+// no unificarlo.
+//
+// Riesgo aparte, sin resolver: 2048*1152 no cubre scale4x de una fuente de 512x384
+// (1536 lineas de salida). Con una fuente asi se sale del array.
 static uint16_t temp_buffer[2048 * 1152]; // Ocupa aprox 4.5 MB
 
 struct GameDataFields{
@@ -241,9 +256,9 @@ struct GameData {
 		description[0] = '\0';
 	}
 
-	// --- M�todos SET seguros ---
+	// --- Metodos SET seguros ---
     void setCloneof(const char* src) {
-        // Copia asegurando que no se pase del tama�o y fuerza el car�cter nulo al final
+        // Copia asegurando que no se pase del tamanyo y fuerza el caracter nulo al final
         std::strncpy(cloneof, src, sizeof(cloneof) - 1);
         cloneof[sizeof(cloneof) - 1] = '\0';
     }
@@ -396,28 +411,154 @@ struct t_key_input{
 	}
 };
 
-#define MAX_BUTTONS MAXJOYBUTTONS
-#define MAX_AXIS MAXJOYBUTTONS
-#define MAX_HATS MAXJOYBUTTONS
-#define MAX_ANALOG_AXIS 16
+/* Aqui habia MAX_BUTTONS == MAX_AXIS == MAX_HATS == MAXJOYBUTTONS, los tres iguales
+ * POR ACCIDENTE: MAXJOYBUTTONS es el tamano del enum joystickButtons, que no tiene
+ * nada que ver con lo que el mando reporta. De esa confusion salieron la guarda
+ * "axis >= MAX_AXIS/2" (cuyo comentario admitia que la version anterior escribia fuera
+ * del array) y que hats_state usara 4 de 31 posiciones.
+ *
+ * Son DOS espacios distintos, y cada tabla del mapper tiene un pie en cada uno:
+ *   - el ESPACIO SDL, que es lo que entrega el mando: numero de boton, mascara de hat,
+ *     o direccion de eje (eje*2 + signo). Indexa sdlToX[] y los arrays de estado.
+ *   - el ESPACIO DE DESTINOS, que son ids logicos: RETRO_DEVICE_ID_JOYPAD_* (0..15),
+ *     JOY_BUTTON_* JOY_AXIS* del frontend (0..30) y HK_* de las hotkeys (0..10).
+ *     Indexa XToSdl[] y rapidFire[].
+ */
+#define MAX_TARGETS         MAXJOYBUTTONS   /* ids logicos: el mayor es JOY_AXIS_R2 */
+#define MAX_SDL_BUTTONS     24              /* botones que puede reportar SDL       */
+#define MAX_SDL_HAT_VALUES  16              /* mascara de hat: 0..15, diagonales incluidas */
+#define MAX_ANALOG_AXIS     16
+#define MAX_SDL_AXIS_DIRS   (MAX_ANALOG_AXIS * 2)  /* eje*2 + signo */
 
+/* Eje que comparten LT y RT. Solo lo usa Windows: en la 360 los gatillos son botones
+ * digitales, y ese eje 2 es en realidad la X del stick derecho.
+ * (Aqui habia tambien AXIS_LT/AXIS_RT, dos "slots libres" de g_analog_state que no
+ * escribia nadie; su unica lectura, en salvia.cpp, devolvia siempre 0.) */
+static const int XBOX_COMBINED_TRIGGER_AXIS = 2;
+
+/* --- Remapeo de las direcciones analogicas -----------------------------------
+ * Ocho SLOTS, uno por cada direccion con nombre de los dos sticks, en el orden
+ * del enum joystickButtons (constant.h): JOY_AXIS1_RIGHT, _LEFT, _UP, _DOWN y
+ * luego los cuatro JOY_AXIS2_*.
+ *
+ * El slot es la direccion FISICA del stick, y el valor guardado es EN QUE SE
+ * CONVIERTE. Al reves que las otras tres tablas del mapper, que van de fisico a
+ * id del core. Esto es lo que permite que funcione con cualquier core: si una
+ * direccion se convierte en un boton, se enciende su btn_state y a partir de ahi
+ * es indistinguible de una pulsacion de verdad, asi que pasa por mapperCore como
+ * el resto. Sustituye al viejo axisAsPad, que era un interruptor global por
+ * jugador y solo sabia hacer "todos los ejes como cruceta".
+ *
+ * Valor, codificado en un solo entero para que quepa en una clave del .joy:
+ *
+ *   -1                          sin asignar (esa direccion no hace nada)
+ *   0 .. 2*MAX_ANALOG_AXIS-1    otra direccion de eje, en el espacio virtual
+ *                               eje*2 + (valor > 0). El core recibe el ANALOGICO,
+ *                               ya intercambiado entre sticks o invertido.
+ *   ANALOG_DST_BTN_BASE + n     enciende el boton SDL n al cruzar la deadzone
+ *   ANALOG_DST_HAT_BASE + h     enciende la posicion de hat h (mascara SDL)
+ * -------------------------------------------------------------------------- */
+#define ANALOG_TARGETS      8
+#define ANALOG_DST_BTN_BASE 1000
+#define ANALOG_DST_HAT_BASE 2000
+
+/* Que direccion fisica (indice virtual eje*2+signo) es cada slot. Es una
+ * DESCRIPCION DE LA PLATAFORMA, no una preferencia: el stick derecho no usa los
+ * mismos ejes SDL en las dos. En la 360 son el 2(X) y el 3(Y); en Windows el
+ * 4(X) y el 3(Y), porque alli el eje 2 son los gatillos combinados. */
 #ifdef _XBOX
-static const int XBOX_COMBINED_TRIGGER_AXIS = 2;  // eje que comparten LT y RT
-static const int AXIS_LT                   = 6;   // slot libre en g_analog_state
-static const int AXIS_RT                   = 7;   // slot libre en g_analog_state
+static const int analogSlotAxis[ANALOG_TARGETS] = {
+	1, 0, 2, 3,   /* izq: eje 0 = X (0 izq / 1 der), eje 1 = Y (2 arr / 3 abj) */
+	5, 4, 6, 7    /* der: eje 2 = X (4 izq / 5 der), eje 3 = Y (6 arr / 7 abj) */
+};
 #else
-static const int XBOX_COMBINED_TRIGGER_AXIS = 2;  // eje que comparten LT y RT
+static const int analogSlotAxis[ANALOG_TARGETS] = {
+	1, 0, 2, 3,   /* izq: igual en las dos plataformas                        */
+	9, 8, 6, 7    /* der: eje 4 = X (8 izq / 9 der), eje 3 = Y (6 arr / 7 abj) */
+};
 #endif
 
 
-struct t_joy_mapper{
-	int sdlToHat[MAX_PLAYERS][MAX_HATS];
-	int sdlToAxis[MAX_PLAYERS][MAX_AXIS];
-	int sdlToBtn[MAX_PLAYERS][MAX_BUTTONS];
+/* --------------------------------------------------------------------------
+ * INDICE SDL DE CADA BOTON LOGICO
+ *
+ * Indexada por JOY_BUTTON_* (A=0 .. R3=9), da el numero de boton que ENTREGA
+ * SDL para ese boton fisico. Es el gemelo de analogSlotAxis de arriba, y por el
+ * mismo motivo: DESCRIPCION DE LA PLATAFORMA, no una preferencia.
+ *
+ * En Windows es la identidad; en la 360 (SDL de Lantus) los cuatro del medio
+ * van al reves: L3/R3 ocupan el 6 y el 7, y START/SELECT el 8 y el 9.
+ *
+ * Existe porque los defaults se escribian usando JOY_BUTTON_* COMO si fuera el
+ * indice SDL (configMapperRetro y el constructor de Hotkeys), y eso solo vale en
+ * Windows: en la 360 salian START, SELECT, L3 y R3 cruzados, tanto en el mapeo
+ * del mando como en las hotkeys.
+ * -------------------------------------------------------------------------- */
+#ifdef _XBOX
+static const int sdlIndexOfLogicalBtn[] = {
+	0, 1, 2, 3,   /* A, B, X, Y     */
+	4, 5,         /* L, R           */
+	9, 8,         /* SELECT, START  <- cruzados respecto a Windows */
+	6, 7          /* L3, R3         <- idem */
+};
+#else
+static const int sdlIndexOfLogicalBtn[] = {
+	0, 1, 2, 3,   /* A, B, X, Y     */
+	4, 5,         /* L, R           */
+	6, 7,         /* SELECT, START  */
+	8, 9          /* L3, R3         */
+};
+#endif
 
-	int hatToSdl[MAX_PLAYERS][MAX_HATS];
-	int axisToSdl[MAX_PLAYERS][MAX_AXIS];
-	int btnToSdl[MAX_PLAYERS][MAX_BUTTONS];
+/* Traduce un JOY_BUTTON_* a indice SDL. Fuera de rango devuelve el propio id,
+ * que es el comportamiento de antes.
+ * 'static inline' y no 'static' a secas: siendo una cabecera que incluye medio
+ * proyecto, la version static suelta un C4505 (funcion sin usar) en cada unidad
+ * que no la llame -- el mismo motivo por el que analogSlotOfVirtual acabo siendo
+ * miembro de t_joy_mapper. */
+static inline int sdlBtnOf(int logicalBtn){
+	const int n = (int)(sizeof(sdlIndexOfLogicalBtn) / sizeof(sdlIndexOfLogicalBtn[0]));
+	if (logicalBtn < 0 || logicalBtn >= n) return logicalBtn;
+	return sdlIndexOfLogicalBtn[logicalBtn];
+}
+
+/* --------------------------------------------------------------------------
+ * DEADZONE POR MANDO
+ *
+ * Umbral a partir del cual una direccion de stick cuenta como pulsada al
+ * convertirla en boton o en cruceta (ver analogDst arriba y el manejador de
+ * SDL_JOYAXISMOTION en io/joystick.cpp).  Antes era la constante global
+ * DEADZONE = 10000 de const/constant.h, igual para todos los mandos.
+ *
+ * Se guarda el INDICE en esta tabla, no el valor: es lo que espera el widget
+ * OpcionLista del menu y lo que hace la clave 'dz=' del .joy estable si algun
+ * dia se anaden valores intermedios... siempre que se anadan AL FINAL.  Si se
+ * inserta uno en medio, los .joy ya guardados apuntaran a otro valor.
+ * -------------------------------------------------------------------------- */
+#define DEADZONE_STEPS 7
+static const int deadzoneValues[DEADZONE_STEPS] = {
+	1000, 2000, 5000, 10000, 15000, 20000, 25000
+};
+/* Indice del 5000 */
+#define DEADZONE_DEFAULT_IDX 2
+
+struct t_joy_mapper{
+	/* SDL -> destino: indexadas por lo que entrega el mando */
+	int sdlToHat[MAX_PLAYERS][MAX_SDL_HAT_VALUES];
+	int sdlToAxis[MAX_PLAYERS][MAX_SDL_AXIS_DIRS];
+	int sdlToBtn[MAX_PLAYERS][MAX_SDL_BUTTONS];
+
+	/* destino -> SDL: indexadas por id logico */
+	int hatToSdl[MAX_PLAYERS][MAX_TARGETS];
+	int axisToSdl[MAX_PLAYERS][MAX_TARGETS];
+	int btnToSdl[MAX_PLAYERS][MAX_TARGETS];
+
+	/* Direccion fisica del stick -> en que se convierte. Ver ANALOG_DST_BTN_BASE. */
+	int analogDst[MAX_PLAYERS][ANALOG_TARGETS];
+
+	/* Indice en deadzoneValues[], uno por jugador. Lo apunta directamente el
+	 * OpcionLista del menu de asignacion, de ahi que sea int y no un enum. */
+	int deadzoneIdx[MAX_PLAYERS];
 
 	t_joy_mapper(){
 		clear(sdlToHat, -1);
@@ -427,6 +568,65 @@ struct t_joy_mapper{
 		clear(hatToSdl, -1);
 		clear(axisToSdl, -1);
 		clear(btnToSdl, -1);
+
+		clear(analogDst, -1);
+
+		for (int i = 0; i < MAX_PLAYERS; i++){
+			deadzoneIdx[i] = DEADZONE_DEFAULT_IDX;
+		}
+	}
+
+	/* Umbral en unidades de eje para este jugador. Acota el indice en vez de
+	 * fiarse de el: llega de un fichero editable a mano. */
+	int getDeadzone(int player){
+		int idx;
+		if (player < 0 || player >= MAX_PLAYERS) return deadzoneValues[DEADZONE_DEFAULT_IDX];
+		idx = deadzoneIdx[player];
+		if (idx < 0 || idx >= DEADZONE_STEPS) idx = DEADZONE_DEFAULT_IDX;
+		return deadzoneValues[idx];
+	}
+
+	void setDeadzoneIdx(int player, int idx){
+		if (player < 0 || player >= MAX_PLAYERS) return;
+		if (idx < 0 || idx >= DEADZONE_STEPS) idx = DEADZONE_DEFAULT_IDX;
+		deadzoneIdx[player] = idx;
+	}
+
+	/* JOY_AXIS1_RIGHT..JOY_AXIS2_DOWN -> slot 0..7. Cualquier otro id -> -1.
+	 * Sirve para distinguir una opcion de menu analogica de una normal sin
+	 * mirar el tipoKey, que se sobrescribe al capturar la pulsacion. */
+	static int analogSlot(int joyAxisId){
+		if (joyAxisId >= JOY_AXIS1_RIGHT && joyAxisId <= JOY_AXIS2_DOWN){
+			return joyAxisId - JOY_AXIS1_RIGHT;
+		}
+		return -1;
+	}
+
+	/* Slot al que pertenece una direccion fisica, o -1 si no es de un stick con
+	 * nombre (por ejemplo el eje de los gatillos combinados de Windows).
+	 * Miembro de la clase y no funcion libre: siendo 'static' en una cabecera que
+	 * incluye medio proyecto, saldria un C4505 (funcion sin usar) en cada unidad
+	 * que no la llame, que son casi todas. */
+	static int analogSlotOfVirtual(int virtualIdx){
+		int s;
+		for (s = 0; s < ANALOG_TARGETS; s++){
+			if (analogSlotAxis[s] == virtualIdx) return s;
+		}
+		return -1;
+	}
+
+	/* Sin la limpieza bidireccional de assignValue: dos direcciones distintas SI
+	 * pueden convertirse legitimamente en lo mismo. */
+	void setAnalogDst(int player, int slot, int encodedDst){
+		if (player < 0 || player >= MAX_PLAYERS) return;
+		if (slot < 0 || slot >= ANALOG_TARGETS) return;
+		analogDst[player][slot] = encodedDst;
+	}
+
+	int getAnalogDst(int player, int slot){
+		if (player < 0 || player >= MAX_PLAYERS) return -1;
+		if (slot < 0 || slot >= ANALOG_TARGETS) return -1;
+		return analogDst[player][slot];
 	}
 
 	template<size_t N, size_t M>
@@ -438,14 +638,10 @@ struct t_joy_mapper{
 		}
 	}
 
-	bool isSameConfig(int p1, int p2) {
-		// Comparamos los arrays de hats, ejes y botones para ambos jugadores
-		bool hats_iguales = memcmp(sdlToHat[p1], sdlToHat[p2], sizeof(int) * MAX_HATS) == 0;
-		bool axis_iguales = memcmp(sdlToAxis[p1], sdlToAxis[p2], sizeof(int) * MAX_AXIS) == 0;
-		bool btns_iguales = memcmp(sdlToBtn[p1], sdlToBtn[p2], sizeof(int) * MAX_BUTTONS) == 0;
-
-		return hats_iguales && axis_iguales && btns_iguales;
-	}
+	/* Aqui vivia isSameConfig(p1, p2). Estaba muerta -- la deduplicacion de perfiles la
+	 * hace saveButtonsConfig por firma de texto -- y ademas comparaba solo hats, ejes y
+	 * botones: al ignorar analogDst habria dado por iguales dos configuraciones que no
+	 * lo son. Si algun dia hace falta, que se escriba comparando TODAS las tablas. */
 
 	void setBtnFromSdl(int player, int sdlBtn, int btn){
 		assignValue(sdlToBtn, btnToSdl, player, sdlBtn, btn);
@@ -459,22 +655,23 @@ struct t_joy_mapper{
 		assignValue(sdlToAxis, axisToSdl, player, sdlBtn, btn);
 	}
 
+	/* 'btn' es un id de DESTINO en las tres. Devuelven el indice SDL asociado, o -1. */
 	int getSdlHat(unsigned int player, unsigned int btn){
-		if (player < MAX_PLAYERS && btn < MAX_HATS){
+		if (player < MAX_PLAYERS && btn < MAX_TARGETS){
 			return hatToSdl[player][btn];
 		}
 		return -1;
 	}
 
 	int getSdlBtn(unsigned int player, unsigned int btn){
-		if (player < MAX_PLAYERS && btn < MAX_BUTTONS){
+		if (player < MAX_PLAYERS && btn < MAX_TARGETS){
 			return btnToSdl[player][btn];
 		}
 		return -1;
 	}
 
 	int getSdlAxis(unsigned int player, unsigned int btn){
-		if (player < MAX_PLAYERS && btn < MAX_AXIS){
+		if (player < MAX_PLAYERS && btn < MAX_TARGETS){
 			return axisToSdl[player][btn];
 		}
 		return -1;
@@ -549,34 +746,82 @@ struct t_repeat_handler {
 struct t_joy_state {
 	//This two arrays are used mainly to know the state of the buttons while the core is running
 	//They will be sent to the core
-	bool btn_state[MAX_PLAYERS][MAX_BUTTONS];
+	bool btn_state[MAX_PLAYERS][MAX_SDL_BUTTONS];
 	// Sticks analogicos como botones digitales
-	bool axis_state[MAX_PLAYERS][MAX_AXIS];    
+	bool axis_state[MAX_PLAYERS][MAX_SDL_AXIS_DIRS];
 	// hats status
-	bool hats_state[MAX_PLAYERS][MAX_HATS];    
+	bool hats_state[MAX_PLAYERS][MAX_SDL_HAT_VALUES];
 	//To store the positions of the analog axis, but is not used by any core actually
 	int16_t g_analog_state[MAX_PLAYERS][MAX_ANALOG_AXIS];
+
+	/* Botones y hats SIMULADOS por una direccion de stick (ver analogDst). Van
+	 * aparte y no sobre btn_state/hats_state para que no se pisen con el mando de
+	 * verdad: si el stick y el boton fisico apuntan al mismo sitio, soltar el
+	 * stick apagaria el boton aunque lo tuvieras pulsado. getCoreBtn/getCoreHat
+	 * hacen el OR de los dos. */
+	bool axisSimBtn[MAX_PLAYERS][MAX_SDL_BUTTONS];
+	bool axisSimHat[MAX_PLAYERS][MAX_SDL_HAT_VALUES];
 
 	uint16_t mouse_x;
 	uint16_t mouse_y;
 	int16_t mouse_rel_x;
 	int16_t mouse_rel_y;
 	bool mouse_buttons[3];
+
+	/* --- Varios ratones fisicos -------------------------------------------
+	 * Los campos de arriba son el raton de SDL, que es UNO solo: SDL 1.2 no tiene
+	 * multi-raton, y en Xbox el plugin hidmouse le pasa el AGREGADO de todos (la
+	 * suma). Eso es lo que se quiere para el cursor del menu -- cualquier raton lo
+	 * mueve -- pero no sirve para el juego: con dos pistolas, mover la del jugador
+	 * 2 movería tambien la mira del 1.
+	 *
+	 * Por eso el juego lee estos slots, uno por raton fisico. Con un solo raton
+	 * miceCount vale 1 y el slot 0 es una copia exacta del raton de SDL, asi que
+	 * no cambia nada de lo que ya funcionaba; solo al aparecer un segundo raton se
+	 * integra la posicion de cada uno por separado (ver Joystick::updateMice). */
+	static const int MAX_MICE = 4;
+	uint16_t mice_x[MAX_MICE];
+	uint16_t mice_y[MAX_MICE];
+	int16_t  mice_rel_x[MAX_MICE];
+	int16_t  mice_rel_y[MAX_MICE];
+	bool     mice_buttons[MAX_MICE][3];   /* [izq, medio, der], como mouse_buttons */
+	int      miceCount;                   /* ratones utilizables; nunca menor que 1 */
+	/* Puerto -> slot de raton, o -1 si a ese puerto no le toca ninguno (dos
+	 * pistolas con un solo raton). Lo reparte updateMice. */
+	int      mouseOfPort[MAX_PLAYERS];
 	
 	// Keyboard state for retro_keyboard_event callback (overlay support)
 	static const int MAX_RETRO_KEYS = 342;  // RETROK_LAST = 342
 	t_key_input keyboard_state[MAX_RETRO_KEYS];
-	t_key_input last_key_processed[MAX_RETRO_KEYS];
+	/* La ULTIMA tecla soltada, no un array por tecla. Estaba declarada
+	 * [MAX_RETRO_KEYS] pero se accedia siempre con '->', o sea el elemento 0: 341
+	 * elementos muertos (5.456 B) y un tipo que aparentaba lo que no era. */
+	t_key_input last_key_processed;
+
+	/* Tecla pulsada desde el teclado en pantalla, con el instante en que hay que
+	 * soltarla. Antes esto lo hacia un CreateThread POR PULSACION que escribia
+	 * keyboard_state, dormia 50 ms y lo apagaba: carrera con el hilo principal, un
+	 * hilo y un 'new' por tecla, y ademas despachaba el evento de teclado al core
+	 * desde un hilo que no era el suyo. Ahora la suelta el poll normal. */
+	struct t_sim_key {
+		uint16_t retro_key;
+		uint16_t retro_mod;
+		uint32_t character;
+		Uint32   releaseAt;
+		bool     active;
+		t_sim_key(): retro_key(0), retro_mod(0), character(0), releaseAt(0), active(false) {}
+	};
+	t_sim_key simKey;
 
 	// Estados del frame anterior
-    bool btn_last_state[MAX_PLAYERS][MAX_BUTTONS];
-    bool axis_last_state[MAX_PLAYERS][MAX_AXIS];
-    bool hats_last_state[MAX_PLAYERS][MAX_HATS];
+    bool btn_last_state[MAX_PLAYERS][MAX_SDL_BUTTONS];
+    bool axis_last_state[MAX_PLAYERS][MAX_SDL_AXIS_DIRS];
+    bool hats_last_state[MAX_PLAYERS][MAX_SDL_HAT_VALUES];
 
 	// Manejadores de repeticion
-    t_repeat_handler btn_repeat[MAX_PLAYERS][MAX_BUTTONS];
-    t_repeat_handler hat_repeat[MAX_PLAYERS][MAX_HATS];
-	t_repeat_handler axis_repeat[MAX_PLAYERS][MAX_AXIS];
+    t_repeat_handler btn_repeat[MAX_PLAYERS][MAX_SDL_BUTTONS];
+    t_repeat_handler hat_repeat[MAX_PLAYERS][MAX_SDL_HAT_VALUES];
+	t_repeat_handler axis_repeat[MAX_PLAYERS][MAX_SDL_AXIS_DIRS];
 
 	t_joy_mapper mapperFrontend;
 	t_joy_mapper mapperCore;
@@ -585,13 +830,20 @@ struct t_joy_state {
 	//Enables or disables the axis as pad only for the frontend
 	bool frontAxisAsPad;
 
+	/* 'names' es el nombre del PERFIL asignado a cada puerto: arranca siendo el del
+	 * mando, pero loadButtonsRetro lo sobrescribe con el name= que venga del fichero.
+	 *
+	 * 'physicalNames' es el nombre que da SDL_JoystickName y NO lo pisa nadie. Hace
+	 * falta separarlos para poder recuperar el perfil correcto segun el mando que
+	 * este conectado: sin esto, tras la primera carga ya no habia forma de saber que
+	 * mando hay de verdad en el puerto. Vacio = puerto sin mando. */
 	std::string names[MAX_PLAYERS];
-	bool axisAsPad[MAX_PLAYERS];
+	std::string physicalNames[MAX_PLAYERS];
 	int joyTypeIdx[MAX_PLAYERS];
 
 	// Disparo rapido (turbo/autofire). rapidFire indexado por (jugador, id RETRO 0..15);
-	// se usan solo los slots 0..15 de MAX_BUTTONS. Por defecto desactivado.
-	bool rapidFire[MAX_PLAYERS][MAX_BUTTONS];
+	// se usan solo los slots 0..15. Por defecto desactivado.
+	bool rapidFire[MAX_PLAYERS][MAX_TARGETS];
 	int  rapidFireRateIdx;   // 0=lento, 1=medio, 2=rapido
 	bool turboPhaseOn;       // fase on/off, recalculada 1 vez por frame en retro_input_poll
 
@@ -599,8 +851,9 @@ struct t_joy_state {
 		clear(btn_state);
 		clear(axis_state);
 		clear(hats_state);
+		clear(axisSimBtn);
+		clear(axisSimHat);
 		clear(g_analog_state, 0);
-		memset(axisAsPad, 0, sizeof(axisAsPad));
 		memset(joyTypeIdx, 0, sizeof(joyTypeIdx));
 		memset(rapidFire, 0, sizeof(rapidFire));
 		rapidFireRateIdx = 1;
@@ -608,6 +861,15 @@ struct t_joy_state {
 		turboPhaseOn = true;
 		mouse_x = mouse_y = mouse_rel_x = mouse_rel_y = 0;
 		memset(mouse_buttons, 0, sizeof(mouse_buttons));
+		miceCount = 1;
+		memset(mice_x, 0, sizeof(mice_x));
+		memset(mice_y, 0, sizeof(mice_y));
+		memset(mice_rel_x, 0, sizeof(mice_rel_x));
+		memset(mice_rel_y, 0, sizeof(mice_rel_y));
+		memset(mice_buttons, 0, sizeof(mice_buttons));
+		/* Todos los puertos al slot 0 = comportamiento de un solo raton. Es tambien
+		 * el valor bueno para Windows y para cuando updateMice no llega a correr. */
+		memset(mouseOfPort, 0, sizeof(mouseOfPort));
 		for (int i = 0; i < MAX_RETRO_KEYS; ++i) {
 			keyboard_state[i] = t_key_input();
 		}
@@ -617,6 +879,8 @@ struct t_joy_state {
 		clear(btn_state);
 		clear(axis_state);
 		clear(hats_state);
+		clear(axisSimBtn);
+		clear(axisSimHat);
 		clear(g_analog_state, 0);
 	}
 	
@@ -627,25 +891,33 @@ struct t_joy_state {
         memcpy(hats_last_state, hats_state, sizeof(hats_state));
     }
 	
+	/* OR con axisSim*: una direccion de stick convertida en boton/cruceta es
+	 * indistinguible aqui de una pulsacion real, que es lo que hace que funcione
+	 * con cualquier core sin depender del tipo de dispositivo del puerto. */
+	/* La cota superior de sdlBtn es nueva y hace falta: antes solo se comprobaba
+	 * "> -1" porque el espacio de destinos y el espacio SDL median los dos 31, asi que
+	 * el "btn < MAX_BUTTONS" de la izquierda acotaba los dos por accidente. Ahora que
+	 * cada uno tiene su tamano, un id de destino valido puede traer un indice SDL que
+	 * se salga del array de estado. */
 	bool getCoreBtn(unsigned int player, unsigned int btn){
 		int sdlBtn = mapperCore.getSdlBtn(player, btn);
-		if (player < MAX_PLAYERS && btn < MAX_BUTTONS && sdlBtn > -1){
-			return btn_state[player][sdlBtn];
+		if (player < MAX_PLAYERS && sdlBtn > -1 && sdlBtn < MAX_SDL_BUTTONS){
+			return btn_state[player][sdlBtn] || axisSimBtn[player][sdlBtn];
 		}
 		return false;
 	}
 
 	bool getCoreHat(unsigned int player, unsigned int btn){
 		int sdlBtn = mapperCore.getSdlHat(player, btn);
-		if (player < MAX_PLAYERS && btn < MAX_HATS && sdlBtn > -1){
-			return hats_state[player][sdlBtn];
+		if (player < MAX_PLAYERS && sdlBtn > -1 && sdlBtn < MAX_SDL_HAT_VALUES){
+			return hats_state[player][sdlBtn] || axisSimHat[player][sdlBtn];
 		}
 		return false;
 	}
 
 	bool getCoreAxis(unsigned int player, unsigned int btn){
 		int sdlBtn = mapperCore.getSdlAxis(player, btn);
-		if (player < MAX_PLAYERS && btn < MAX_AXIS && sdlBtn > -1){
+		if (player < MAX_PLAYERS && sdlBtn > -1 && sdlBtn < MAX_SDL_AXIS_DIRS){
 			return axis_state[player][sdlBtn];
 		}
 		return false;
@@ -655,16 +927,57 @@ struct t_joy_state {
 		return getCoreBtn(player, btn) || getCoreHat(player, btn) || getCoreAxis(player, btn);
 	}
 
+	/* Magnitud 0..32767 de una direccion FISICA del stick (indice virtual
+	 * eje*2+signo): solo la parte del recorrido que va en ese sentido. */
+	int getPhysAxisMagnitude(unsigned int player, int virtualIdx){
+		int axis, positive, raw;
+		if (player >= MAX_PLAYERS || virtualIdx < 0) return 0;
+
+		axis     = virtualIdx >> 1;
+		positive = virtualIdx & 1;
+		if (axis >= MAX_ANALOG_AXIS) return 0;
+
+		raw = g_analog_state[player][axis];
+		if (positive) return raw > 0 ? raw : 0;
+		return raw < 0 ? -raw : 0;
+	}
+
+	/* Cuanto llega a una direccion analogica del core. Como el mapeo va de fisico
+	 * a destino, hay que recorrer los ocho slots buscando los que APUNTEN aqui.
+	 * Sumar permite que dos direcciones fisicas alimenten la misma del core. */
+	int getAnalogTowards(unsigned int player, int coreVirtual){
+		int total = 0, s;
+		if (coreVirtual < 0) return 0;
+		for (s = 0; s < ANALOG_TARGETS; s++){
+			if (mapperCore.getAnalogDst(player, s) != coreVirtual) continue;
+			total += getPhysAxisMagnitude(player, analogSlotAxis[s]);
+		}
+		return total;
+	}
+
+	/* Valor con signo de un eje del core, compuesto de sus dos direcciones.
+	 * Restar una de otra da gratis el eje invertido y el cruzado entre sticks:
+	 * basta con que los slots apunten a la direccion contraria o a la del otro. */
+	int16_t getCoreAnalog(unsigned int player, int coreVirtualNeg, int coreVirtualPos){
+		int v = getAnalogTowards(player, coreVirtualPos)
+		      - getAnalogTowards(player, coreVirtualNeg);
+		if (v >  32767) v =  32767;
+		if (v < -32767) v = -32767;
+		return (int16_t)v;
+	}
+
+	/* getBtn/getHat reciben un id de DESTINO; getSdlBtn/getSdlHat, un indice SDL crudo.
+	 * Son dos espacios distintos, de ahi las dos constantes distintas. */
 	bool getBtn(unsigned int player, unsigned int btn){
 		int sdlBtn = mapperFrontend.getSdlBtn(player, btn);
-		if (player < MAX_PLAYERS && btn < MAX_BUTTONS  && sdlBtn > -1){
+		if (player < MAX_PLAYERS && sdlBtn > -1 && sdlBtn < MAX_SDL_BUTTONS){
 			return btn_state[player][sdlBtn];
 		}
 		return false;
 	}
 
 	bool getSdlBtn(unsigned int player, unsigned int btn){
-		if (player < MAX_PLAYERS && btn < MAX_BUTTONS){
+		if (player < MAX_PLAYERS && btn < MAX_SDL_BUTTONS){
 			return btn_state[player][btn];
 		}
 		return false;
@@ -672,14 +985,14 @@ struct t_joy_state {
 
 	bool getHat(unsigned int player, unsigned int btn){
 		int sdlBtn = mapperFrontend.getSdlHat(player, btn);
-		if (player < MAX_PLAYERS && btn < MAX_HATS && sdlBtn > -1){
+		if (player < MAX_PLAYERS && sdlBtn > -1 && sdlBtn < MAX_SDL_HAT_VALUES){
 			return hats_state[player][sdlBtn];
 		}
 		return false;
 	}
 
 	bool getSdlHat(unsigned int player, unsigned int btn){
-		if (player < MAX_PLAYERS && btn < MAX_HATS){
+		if (player < MAX_PLAYERS && btn < MAX_SDL_HAT_VALUES){
 			return hats_state[player][btn];
 		}
 		return false;
@@ -811,10 +1124,13 @@ class ConfigEmu{
 		menu_directory_recursive = false;
 		integerScale = false;
 		aspectRatio = 0;
+		shaderName = "";
 		shaderMode = 0;
 		scaleMode = 0;
 		scaleIntMode = 0;
 		execIdx = 0;
+		syncMode = 0;
+		music_file_index = 0;
     }
     ~ConfigEmu(){
     }
@@ -841,9 +1157,12 @@ class ConfigEmu{
     // i.e. yes: "emulator.exe -option1 -option2 rom"
     //       no: "emulator.exe rom -option1 -option2"
     bool options_before_rom;
-
     std::string assets;
-    
+    /* Musica de menu propia de este core, ruta relativa al directorio de la app.
+     * Vacia = usar la general de configMain[cfg::musicFile]. */
+    std::string music_file;
+	//Indice de la musica de fondo seleccionada
+	int music_file_index;
     std::string screen_shot_directory;
     //# A ROM file is a list of ROMs to use.  If set to "no", ROMs are
     //# scanned for in the rom_directory.  If set to "yes" a ROM file (which
@@ -879,7 +1198,13 @@ class ConfigEmu{
 	std::string title_bkg_assets;
 	//Override the main aspect ratio
 	int aspectRatio;
-	//Override the main shader mode
+	//Override the main shader mode. Se desdobla en dos:
+	//  shaderName = lo que se PERSISTE en el .cfg (nombre del preset de
+	//               assets\shaders; vacio = "Auto", usar el shader global).
+	//  shaderMode = indice VIVO en la lista de shaders, +1 porque el 0 del
+	//               menu es la entrada "Auto". Lo rellena
+	//               CfgLoader::resolveShaderModes() al arrancar.
+	std::string shaderName;
 	int shaderMode;
 	//Override the main scale mode
 	int scaleMode;
@@ -887,6 +1212,8 @@ class ConfigEmu{
 	int integerScale;
 	//Override the main Integer scale mode
 	int scaleIntMode;
+	//Override the main synchronization mode
+	int syncMode;
 };
 
 struct t_rom_paths{

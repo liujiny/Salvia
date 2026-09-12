@@ -1,4 +1,4 @@
-﻿void mb87078_init(void (*callback)(INT32, INT32));
+void mb87078_init(void (*callback)(INT32, INT32));
 void mb87078_exit();
 void mb87078_scan();
 void mb87078_reset();

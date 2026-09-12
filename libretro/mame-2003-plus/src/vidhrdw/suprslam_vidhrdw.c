@@ -1,4 +1,4 @@
-﻿/* Super Slams - vidhrdw, see notes in driver file */
+/* Super Slams - vidhrdw, see notes in driver file */
 
 #include "driver.h"
 #include "vidhrdw/konamiic.h"

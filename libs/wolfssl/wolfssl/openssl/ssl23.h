@@ -1,1 +1,1 @@
-﻿/* ssl23.h for openssl */
+/* ssl23.h for openssl */

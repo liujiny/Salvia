@@ -1,4 +1,4 @@
-﻿/* Space Bugger - Video Hardware */
+/* Space Bugger - Video Hardware */
 
 #include "driver.h"
 

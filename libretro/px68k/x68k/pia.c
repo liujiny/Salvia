@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  PIA.C - uPD8255 (only the bare minimum)
  */
 

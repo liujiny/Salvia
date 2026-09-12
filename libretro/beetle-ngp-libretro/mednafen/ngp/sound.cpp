@@ -1,4 +1,4 @@
-﻿#include <stdlib.h>
+#include <stdlib.h>
 
 #include "neopop.h"
 #include "sound.h"

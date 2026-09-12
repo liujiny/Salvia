@@ -1,4 +1,4 @@
-﻿// Misc functions module
+// Misc functions module
 #include <math.h>
 #include "burner.h"
 

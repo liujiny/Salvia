@@ -1,4 +1,4 @@
-﻿// Based on MAME sources copied to and from various drivers
+// Based on MAME sources copied to and from various drivers
 // who is the original author?
 
 #include "burnint.h"

@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup Memory
 
     \brief This function is similar to malloc(), but calls the memory

@@ -1,4 +1,4 @@
-﻿// FB Alpha Mario Bros driver module
+// FB Alpha Mario Bros driver module
 // Based on MAME driver by Mirko Buffoni
 
 #include "tiles_generic.h"

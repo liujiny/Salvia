@@ -1,4 +1,4 @@
-﻿/*
+/*
  * gpu_unai_driver.h
  *
  * Bridge between pcsxr-360's GP0 dispatch surface (xbox_soft/gpu.c +

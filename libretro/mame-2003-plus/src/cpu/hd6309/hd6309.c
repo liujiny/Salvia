@@ -1,4 +1,4 @@
-﻿/*** hd6309: Portable 6309 emulator ******************************************
+/*** hd6309: Portable 6309 emulator ******************************************
 
 	Copyright (C) John Butler 1997
 	Copyright (C) Tim Lindner 2000

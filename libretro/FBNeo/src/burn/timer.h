@@ -1,4 +1,4 @@
-﻿#ifndef __BURNTIMER__
+#ifndef __BURNTIMER__
 #define __BURNTIMER__
 
 // FM timers

@@ -1,4 +1,4 @@
-﻿// FB Neo Atari System 1 hardware driver module
+// FB Neo Atari System 1 hardware driver module
 // Based on MAME driver by Aaron Giles
 
 #include "tiles_generic.h"

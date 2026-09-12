@@ -1,4 +1,4 @@
-﻿#ifndef AF80_H_
+#ifndef AF80_H_
 #define AF80_H_
 
 #include "atari.h"

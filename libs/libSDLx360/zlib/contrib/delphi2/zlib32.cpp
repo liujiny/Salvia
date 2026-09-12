@@ -1,4 +1,4 @@
-﻿
+
 #include <windows.h>
 #pragma hdrstop
 #include <condefs.h>

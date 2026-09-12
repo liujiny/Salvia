@@ -1,4 +1,4 @@
-﻿/*** TMS34010: Portable TMS34010 emulator ***********************************
+/*** TMS34010: Portable TMS34010 emulator ***********************************
 
 	Copyright (C) Alex Pasadyn/Zsolt Vasvari 1998
 

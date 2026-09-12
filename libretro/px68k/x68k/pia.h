@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_PIA_H
+#ifndef _WINX68K_PIA_H
 #define _WINX68K_PIA_H
 
 #include <stdint.h>

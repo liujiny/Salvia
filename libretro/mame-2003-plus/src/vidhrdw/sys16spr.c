@@ -1,4 +1,4 @@
-﻿/* sys16spr.c
+/* sys16spr.c
 **
 **	This module maps spriteram for various Sega System16/System18 games to
 **	a shared abstraction represented by the sys16_sprite_attributes

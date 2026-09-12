@@ -1,4 +1,4 @@
-﻿#define SAMPLE_IGNORE		0x01 // don't ever play this sample
+#define SAMPLE_IGNORE		0x01 // don't ever play this sample
 #define SAMPLE_AUTOLOOP		0x02 // start the looping on start
 #define SAMPLE_NOLOOP		0x04 // don't allow this to loop
 

@@ -1,4 +1,4 @@
-﻿/*	MOLE ATTACK    YACHIYO  1982*/
+/*	MOLE ATTACK    YACHIYO  1982*/
 /*	known clones: "Holy Moly"*/
 /**/
 /*	emulated by Jason Nelson, Phil Stroffolino*/

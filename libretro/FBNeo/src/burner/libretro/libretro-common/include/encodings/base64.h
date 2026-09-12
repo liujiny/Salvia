@@ -1,4 +1,4 @@
-﻿#ifndef _LIBRETRO_ENCODINGS_BASE64_H
+#ifndef _LIBRETRO_ENCODINGS_BASE64_H
 #define _LIBRETRO_ENCODINGS_BASE64_H
 
 #include <stdint.h>

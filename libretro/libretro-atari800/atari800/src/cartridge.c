@@ -1,4 +1,4 @@
-﻿/*
+/*
  * cartridge.c - cartridge emulation
  *
  * Copyright (C) 2001-2010 Piotr Fusik

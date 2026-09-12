@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SH2 peripherals/"system on chip"
  * (C) notaz, 2013
  * (C) irixxxx, 2019-2024

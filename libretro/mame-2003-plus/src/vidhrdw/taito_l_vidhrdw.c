@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 
 
 extern unsigned char *taitol_rambanks;

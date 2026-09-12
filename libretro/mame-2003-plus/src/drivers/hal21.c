@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Hal21
 	ASO
 	Alpha Mission ('p3.6d' is a bad dump)

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * javanvm/sound.c - NestedVM-specific port code - sound output
  *
  * Copyright (c) 2001-2002 Jacek Poplawski (original atari_sdl.c)

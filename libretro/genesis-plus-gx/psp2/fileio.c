@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  fileio.c
  *
  *  Load a normal file, or ZIP/GZ archive into ROM buffer.

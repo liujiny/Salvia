@@ -1,4 +1,4 @@
-﻿void s24_fd1094_machine_init();
+void s24_fd1094_machine_init();
 
 // cpu # 0 or 1
 // cachesize is 8 for sys16, 16 for s24

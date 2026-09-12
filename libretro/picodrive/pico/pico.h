@@ -1,4 +1,4 @@
-﻿/*
+/*
  * PicoDrive
  * (c) Copyright Dave, 2004
  * (C) notaz, 2006-2010
@@ -82,6 +82,7 @@ extern void *p32x_bios_g, *p32x_bios_m, *p32x_bios_s;
 #define POPT_FM_YM2612      (1<<24) //x00 0000
 #define POPT_EN_FM_FILTER   (1<<25)
 #define POPT_EN_KBD         (1<<26)
+#define POPT_H32_LAYER_32X  (1<<27)
 
 #define PAHW_MCD    (1<<0)
 #define PAHW_32X    (1<<1)

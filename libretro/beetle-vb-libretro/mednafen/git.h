@@ -1,4 +1,4 @@
-﻿#ifndef _GIT_H
+#ifndef _GIT_H
 #define _GIT_H
 
 #include <string.h>

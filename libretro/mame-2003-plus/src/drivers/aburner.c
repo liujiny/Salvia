@@ -1,4 +1,4 @@
-﻿/*	After Burner Hardware
+/*	After Burner Hardware
 **	2xMC68000 + Z80
 **	YM2151 + Custom PCM
 **

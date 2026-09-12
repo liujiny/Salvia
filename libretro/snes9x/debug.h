@@ -1,4 +1,4 @@
-﻿/*****************************************************************************\
+/*****************************************************************************\
      Snes9x - Portable Super Nintendo Entertainment System (TM) emulator.
                 This file is licensed under the Snes9x License.
    For further information, consult the LICENSE file in the root directory.
@@ -18,12 +18,14 @@ struct SBreakPoint
 	uint16	Address;
 };
 
+#include <streams/file_stream_transforms.h>
+
 #define ENSURE_TRACE_OPEN(fp, file, mode) \
 	if (!fp) \
 	{ \
 		std::string fn = S9xGetDirectory(LOG_DIR); \
 		fn += SLASH_STR file; \
-		fp = fopen(fn.c_str(), mode); \
+		fp = rfopen(fn.c_str(), mode); \
 	}
 
 extern struct SBreakPoint	S9xBreakpoint[6];

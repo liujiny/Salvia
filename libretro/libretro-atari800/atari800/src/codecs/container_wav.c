@@ -1,4 +1,4 @@
-﻿/*
+/*
  * container_wav.c - support for WAV audio files
  *
  * Copyright (C) 1995-1998 David Firth

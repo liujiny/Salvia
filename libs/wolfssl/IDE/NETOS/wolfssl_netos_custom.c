@@ -1,4 +1,4 @@
-﻿/* wolfssl_netos_custom.c
+/* wolfssl_netos_custom.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

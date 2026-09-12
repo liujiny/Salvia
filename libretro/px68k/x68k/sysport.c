@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  SYSPORT.C - X68k System Port
  */
 

@@ -1,4 +1,4 @@
-﻿// 680x0 (Sixty Eight K) Interface
+// 680x0 (Sixty Eight K) Interface
 // Interface picked from pfba (https://github.com/Cpasjuste/pfba)
 #include "burnint.h"
 #include "m68000_intf.h"

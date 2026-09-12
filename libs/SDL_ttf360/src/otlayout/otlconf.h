@@ -1,4 +1,4 @@
-﻿#ifndef __OT_LAYOUT_CONFIG_H__
+#ifndef __OT_LAYOUT_CONFIG_H__
 #define __OT_LAYOUT_CONFIG_H__
 
  /************************************************************************/

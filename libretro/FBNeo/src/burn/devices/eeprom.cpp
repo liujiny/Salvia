@@ -1,4 +1,4 @@
-﻿// MAME sources by ????
+// MAME sources by ????
 
 #include "burnint.h"
 #include "eeprom.h"

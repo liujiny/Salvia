@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
 TODO:
 - Radarscope does a check on bit 6 of 7d00 which prevent it from working.
   It's a sound status flag, maybe signaling whan a tune is finished.

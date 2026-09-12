@@ -1,4 +1,4 @@
-﻿/* esp_sdk_wifi_lib.c
+/* esp_sdk_wifi_lib.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

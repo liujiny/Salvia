@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_CLAMP_H
+#ifndef __MDFN_CLAMP_H
 #define __MDFN_CLAMP_H
 
 #ifdef __cplusplus

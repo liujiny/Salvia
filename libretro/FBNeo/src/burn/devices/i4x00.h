@@ -1,4 +1,4 @@
-﻿extern INT32 i4x00_irq_enable;
+extern INT32 i4x00_irq_enable;
 extern INT32 i4x00_blitter_timer;
 extern UINT8 DrvRecalc;
 

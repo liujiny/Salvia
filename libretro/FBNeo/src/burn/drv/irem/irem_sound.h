@@ -1,4 +1,4 @@
-﻿#include "m6800_intf.h"
+#include "m6800_intf.h"
 #include "msm5205.h"
 #include "ay8910.h"
 

@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_SURFACE_H
+#ifndef __MDFN_SURFACE_H
 #define __MDFN_SURFACE_H
 
 #if defined(FRONTEND_SUPPORTS_RGB565)

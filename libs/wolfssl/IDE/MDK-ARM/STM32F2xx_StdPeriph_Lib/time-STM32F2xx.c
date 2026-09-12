@@ -1,4 +1,4 @@
-﻿/* time-STM32F2xx.c
+/* time-STM32F2xx.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MP3 decoding support using libmad:  Adapted from the SoX library at
  * http://sourceforge.net/projects/sox/, LGPLv2, Copyright (c) 2007-2009
  * SoX contributors, written by Fabrizio Gennari <fabrizio.ge@tiscali.it>,

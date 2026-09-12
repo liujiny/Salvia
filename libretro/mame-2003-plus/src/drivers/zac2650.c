@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Signetics 2650 CPU Games
  *
  * Zaccaria - The Invaders

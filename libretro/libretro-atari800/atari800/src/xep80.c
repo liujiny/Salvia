@@ -1,4 +1,4 @@
-﻿/*
+/*
  * xep80.c - XEP80 emulation
  *
  * Copyright (C) 2007 Mark Grebe

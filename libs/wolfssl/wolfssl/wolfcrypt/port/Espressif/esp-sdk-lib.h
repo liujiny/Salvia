@@ -1,4 +1,4 @@
-﻿/* esp-sdk-lib.h
+/* esp-sdk-lib.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

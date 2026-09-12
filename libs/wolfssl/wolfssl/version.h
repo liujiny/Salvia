@@ -1,4 +1,4 @@
-﻿/* wolfssl_version.h.in
+/* wolfssl_version.h.in
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

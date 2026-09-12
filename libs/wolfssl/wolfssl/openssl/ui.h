@@ -1,2 +1,2 @@
-﻿/* ui.h for openssl */
+/* ui.h for openssl */
 

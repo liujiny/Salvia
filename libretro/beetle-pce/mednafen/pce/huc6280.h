@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_PCE_HUC6280_H
+#ifndef __MDFN_PCE_HUC6280_H
 #define __MDFN_PCE_HUC6280_H
 
 class MDFN_ALIGN(128) HuC6280

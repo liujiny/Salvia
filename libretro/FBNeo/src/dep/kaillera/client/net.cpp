@@ -1,4 +1,4 @@
-﻿#ifdef _UNICODE
+#ifdef _UNICODE
 #undef _UNICODE
 #endif
 

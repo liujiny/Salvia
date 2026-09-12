@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \page wolfssl_API wolfSSL API Reference
     - \ref CertManager
     - \ref Memory

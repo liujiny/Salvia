@@ -1,4 +1,4 @@
-﻿// Truxton
+// Truxton
 
 #include "toaplan.h"
 

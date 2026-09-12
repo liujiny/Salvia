@@ -1,4 +1,4 @@
-﻿/* XzEnc.c -- Xz Encode
+/* XzEnc.c -- Xz Encode
 2011-02-07 : Igor Pavlov : Public domain */
 
 #include <stdlib.h>

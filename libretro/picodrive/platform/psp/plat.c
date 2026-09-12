@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Platform interface functions for PSP picodrive frontend
  *
  * (C) 2020 irixxxx

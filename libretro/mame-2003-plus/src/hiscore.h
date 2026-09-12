@@ -1,4 +1,4 @@
-﻿#ifndef HISCORE_H
+#ifndef HISCORE_H
 #define HISCORE_H
 
 void hs_open( const char *name );

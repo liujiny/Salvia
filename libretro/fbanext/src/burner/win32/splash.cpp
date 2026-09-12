@@ -1,4 +1,4 @@
-﻿// Splash screen code
+// Splash screen code
 #include "burner.h"
 #include <process.h>
 

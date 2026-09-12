@@ -1,4 +1,4 @@
-﻿
+
 /* png.c - location for general purpose libpng functions
  *
  * Last changed in libpng 1.5.11 [June 14, 2012]

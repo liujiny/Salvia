@@ -1,4 +1,4 @@
-﻿/*	$Id: dosio.c,v 1.2 2003/12/05 18:07:15 nonaka Exp $	*/
+/*	$Id: dosio.c,v 1.2 2003/12/05 18:07:15 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro

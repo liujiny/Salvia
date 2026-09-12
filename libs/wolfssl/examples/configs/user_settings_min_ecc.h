@@ -1,4 +1,4 @@
-﻿/* user_settings_min_ecc.h
+/* user_settings_min_ecc.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

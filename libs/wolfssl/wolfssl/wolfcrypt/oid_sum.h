@@ -1,4 +1,4 @@
-﻿/* oid_sum.h
+/* oid_sum.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

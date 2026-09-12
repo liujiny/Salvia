@@ -1,4 +1,4 @@
-﻿//
+//
 //  SPUDownloaderDelegate.h
 //  Sparkle
 //

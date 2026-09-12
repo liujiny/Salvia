@@ -1,4 +1,4 @@
-﻿
+
 #include "pgm.h"
 #include "v3021.h"
 #include "ics2115.h"

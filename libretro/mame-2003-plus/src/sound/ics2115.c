@@ -1,4 +1,4 @@
-﻿/*
+/*
    ICS 2115 sound synthesizer.
 
    By O. Galibert, with a lot of help from the nebula

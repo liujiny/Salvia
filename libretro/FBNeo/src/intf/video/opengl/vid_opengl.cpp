@@ -1,4 +1,4 @@
-﻿// OpenGL 3.3 Core Profile renderer
+// OpenGL 3.3 Core Profile renderer
 #include <GL/glew.h>
 #include <iostream>
 #include "burner.h"

@@ -1,4 +1,4 @@
-﻿/*
+/*
 **	Video Driver for Taito Samurai (1985)
 */
 

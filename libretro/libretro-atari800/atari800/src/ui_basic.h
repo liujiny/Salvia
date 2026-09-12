@@ -1,4 +1,4 @@
-﻿#ifndef UI_BASIC_H_
+#ifndef UI_BASIC_H_
 #define UI_BASIC_H_
 
 #include "ui.h"

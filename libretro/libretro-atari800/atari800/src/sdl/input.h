@@ -1,4 +1,4 @@
-﻿#ifndef SDL_INPUT_H_
+#ifndef SDL_INPUT_H_
 #define SDL_INPUT_H_
 
 #include <stdio.h>

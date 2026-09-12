@@ -1,4 +1,4 @@
-﻿#define NO_MAIN_DRIVER
+#define NO_MAIN_DRIVER
 #define BENCH_EMBEDDED
 #define NO_WRITEV
 #define WOLFSSL_USER_IO

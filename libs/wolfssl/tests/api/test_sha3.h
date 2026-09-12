@@ -1,4 +1,4 @@
-﻿/* test_sha3.h
+/* test_sha3.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

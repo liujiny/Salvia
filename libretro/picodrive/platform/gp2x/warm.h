@@ -1,4 +1,4 @@
-﻿/*
+/*
  * wARM - exporting ARM processor specific privileged services to userspace
  * library functions
  *

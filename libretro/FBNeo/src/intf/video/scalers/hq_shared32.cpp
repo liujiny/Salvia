@@ -1,4 +1,4 @@
-﻿// VisualBoyAdvance - Nintendo Gameboy/GameboyAdvance (TM) emulator.
+// VisualBoyAdvance - Nintendo Gameboy/GameboyAdvance (TM) emulator.
 // Copyright (C) 1999-2003 Forgotten
 // Copyright (C) 2005 Forgotten and the VBA development team
 

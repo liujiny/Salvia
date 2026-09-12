@@ -1,4 +1,4 @@
-﻿/* linuxkm_wc_port.h
+/* linuxkm_wc_port.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

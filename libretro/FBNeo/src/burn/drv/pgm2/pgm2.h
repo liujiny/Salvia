@@ -1,4 +1,4 @@
-﻿// pgm2.h - PGM2 (IGS036) platform header for FBNeo
+// pgm2.h - PGM2 (IGS036) platform header for FBNeo
 // Covers orleg2, kov2nl, kov3
 
 #pragma once

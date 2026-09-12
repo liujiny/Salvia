@@ -1,4 +1,4 @@
-﻿
+
 #include "burnint.h"
 #include "z80_intf.h"
 #include "msm6295.h"

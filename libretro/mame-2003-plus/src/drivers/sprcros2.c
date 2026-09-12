@@ -1,4 +1,4 @@
-﻿/*
+/*
 Super Cross II (JPN Ver.)
 (c)1986 GM Shoji
 

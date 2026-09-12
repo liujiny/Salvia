@@ -1,4 +1,4 @@
-﻿
+
 #define T5182_CLOCK     (14318180/4)
 
 enum

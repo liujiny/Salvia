@@ -1,4 +1,4 @@
-﻿#ifndef __INFO_H
+#ifndef __INFO_H
 #define __INFO_H
 
 /* Print the MAME database in XML format */

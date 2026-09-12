@@ -1,4 +1,4 @@
-﻿/* template main.h
+/* template main.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿#include "tiles_generic.h"
+#include "tiles_generic.h"
 #include "m6502_intf.h"
 #include "m6805_intf.h"
 #include "m6809_intf.h"

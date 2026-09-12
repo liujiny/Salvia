@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 
 extern UINT16 GenesisPaletteBase;
 extern UINT16 GenesisBgPalLookup[4];

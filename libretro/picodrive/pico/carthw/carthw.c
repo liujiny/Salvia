@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Support for a few cart mappers and some protection.
  * (C) notaz, 2008-2011
  * (C) irixxxx, 2021-2024

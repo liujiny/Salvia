@@ -1,4 +1,4 @@
-﻿//
+//
 // File: vk_sdk_platform.h
 //
 /*

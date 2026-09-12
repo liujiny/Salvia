@@ -1,4 +1,4 @@
-﻿/* TMS51xx and TMS52xx ROM Tables */
+/* TMS51xx and TMS52xx ROM Tables */
 
 /* The following table is assumed to be for TMS5100
  *

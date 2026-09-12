@@ -1,4 +1,4 @@
-﻿// Public Domain. See "unlicense" statement at the end of this file.
+// Public Domain. See "unlicense" statement at the end of this file.
 
 // NOTE: This is still very much work in progress and is only being updated as I need it. You don't want to be using this library
 //       in its current state.

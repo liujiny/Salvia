@@ -1,4 +1,4 @@
-﻿#ifndef _DSOUND_CORE_
+#ifndef _DSOUND_CORE_
 #define _DSOUND_CORE_
 
 #include <dsound.h>

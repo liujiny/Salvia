@@ -1,4 +1,4 @@
-﻿/* Cpu0_Main.c
+/* Cpu0_Main.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

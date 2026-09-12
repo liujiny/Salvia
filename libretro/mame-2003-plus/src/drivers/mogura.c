@@ -1,4 +1,4 @@
-﻿/* Mogura Desse */
+/* Mogura Desse */
 
 #include "driver.h"
 

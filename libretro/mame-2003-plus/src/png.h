@@ -1,4 +1,4 @@
-﻿
+
 #ifndef MAME_PNG_H
 #define MAME_PNG_H
 

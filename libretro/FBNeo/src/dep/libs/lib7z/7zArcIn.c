@@ -1,4 +1,4 @@
-﻿/* 7zArcIn.c -- 7z Input functions
+/* 7zArcIn.c -- 7z Input functions
 2023-09-07 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"

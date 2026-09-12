@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 #include "vidhrdw/generic.h"
 
 struct tilemap *bg_tilemap, *fg_tilemap, *tx_tilemap;

@@ -1,4 +1,4 @@
-﻿/* wolfssl_tsip_unit_test.c
+/* wolfssl_tsip_unit_test.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

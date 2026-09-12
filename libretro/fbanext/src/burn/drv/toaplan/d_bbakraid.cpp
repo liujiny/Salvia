@@ -1,4 +1,4 @@
-﻿#include "toaplan.h"
+#include "toaplan.h"
 #include "ymz280b.h"
 #include "eeprom.h"
 #include "timer.h"

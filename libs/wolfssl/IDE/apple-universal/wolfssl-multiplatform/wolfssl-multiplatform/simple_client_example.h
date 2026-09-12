@@ -1,4 +1,4 @@
-﻿/* simple_client_example.h
+/* simple_client_example.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿#ifndef XEP80_H_
+#ifndef XEP80_H_
 #define XEP80_H_
 
 #include "config.h"

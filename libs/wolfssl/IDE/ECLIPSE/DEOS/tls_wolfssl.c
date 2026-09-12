@@ -1,4 +1,4 @@
-﻿/* tls_wolfssl.c
+/* tls_wolfssl.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

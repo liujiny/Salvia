@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_LIBTEST_TESTUTIL_H
+#ifndef HEADER_CURL_LIBTEST_TESTUTIL_H
 #define HEADER_CURL_LIBTEST_TESTUTIL_H
 /***************************************************************************
  *                                  _   _ ____  _

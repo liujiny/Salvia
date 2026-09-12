@@ -1,4 +1,4 @@
-﻿/* curve25519.h
+/* curve25519.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

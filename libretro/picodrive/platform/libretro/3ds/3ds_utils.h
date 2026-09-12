@@ -1,4 +1,4 @@
-﻿#ifndef _3DS_UTILS_H
+#ifndef _3DS_UTILS_H
 #define _3DS_UTILS_H
 
 void ctr_flush_invalidate_cache(void);

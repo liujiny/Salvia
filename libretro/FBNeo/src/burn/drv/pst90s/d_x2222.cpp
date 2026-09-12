@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Oriental Soft X2222 Prototype Driver module
+// FinalBurn Neo Oriental Soft X2222 Prototype Driver module
 // Based on MAME driver by David Haywood
 
 #include "tiles_generic.h"

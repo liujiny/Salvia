@@ -1,4 +1,4 @@
-﻿/*** Tecmo Bowl (c)1987 Tecmo
+/*** Tecmo Bowl (c)1987 Tecmo
 
 driver by David Haywood
 wip 20/01/2002

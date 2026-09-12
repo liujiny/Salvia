@@ -1,4 +1,4 @@
-﻿//
+//
 // This file is adapted from:
 //
 // Shinonome 14dot font for JISX 0208, 1983/1990

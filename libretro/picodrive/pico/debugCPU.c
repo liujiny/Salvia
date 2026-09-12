@@ -1,4 +1,4 @@
-﻿/*
+/*
  * debug stuff
  * (C) notaz, 2006-2008
  *

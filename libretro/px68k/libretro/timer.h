@@ -1,4 +1,4 @@
-﻿#ifndef _WINXL_TIMER_H
+#ifndef _WINXL_TIMER_H
 #define _WINXL_TIMER_H
 
 extern uint32_t tick;

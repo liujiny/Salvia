@@ -1,4 +1,4 @@
-﻿/* PlatformIO wolfssl_test main.c
+/* PlatformIO wolfssl_test main.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

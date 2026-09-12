@@ -1,4 +1,4 @@
-﻿ 
+ 
 // To do:
 //	gondo needs rotary inputs hooked up and doesn't read the i8751 value at all - so coins don't work
 

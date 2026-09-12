@@ -1,4 +1,4 @@
-﻿#define ISOPAQUE 0
+#define ISOPAQUE 0
 
 // 16-bit rendering functions.
 #define BPP 16

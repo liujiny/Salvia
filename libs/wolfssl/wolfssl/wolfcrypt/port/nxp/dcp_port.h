@@ -1,4 +1,4 @@
-﻿/* dcp_port.h
+/* dcp_port.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

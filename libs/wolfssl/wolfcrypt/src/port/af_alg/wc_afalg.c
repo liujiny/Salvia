@@ -1,4 +1,4 @@
-﻿/* wc_afalg.c
+/* wc_afalg.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

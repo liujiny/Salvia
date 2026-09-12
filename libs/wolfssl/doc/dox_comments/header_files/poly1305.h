@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup Poly1305
 
     \brief This function sets the key for a Poly1305 context structure,

@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 #include "generic.h"
 #include "vidhrdw/generic.h"
 

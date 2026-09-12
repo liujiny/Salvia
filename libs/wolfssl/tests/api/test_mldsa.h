@@ -1,4 +1,4 @@
-﻿/* test_mldsa.h
+/* test_mldsa.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

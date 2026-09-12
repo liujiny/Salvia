@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  PALETTE.C - Text/BG/Graphic Palette
  */
 

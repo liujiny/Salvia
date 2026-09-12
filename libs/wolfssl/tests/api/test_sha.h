@@ -1,4 +1,4 @@
-﻿/* test_sha.h
+/* test_sha.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

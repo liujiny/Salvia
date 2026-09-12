@@ -1,4 +1,4 @@
-﻿#ifndef _FBA_ENDIAN_H
+#ifndef _FBA_ENDIAN_H
 #define _FBA_ENDIAN_H
 
 #ifndef _XBOX

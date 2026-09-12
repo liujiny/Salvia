@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -57,7 +57,6 @@ static const unsigned long KEYRETRASO = 500;
 static const int JOYHATOFFSET = 100;
 static const int JOYAXISOFFSET = 200;
 static const int DEADZONE = 10000;
-static const int DEADZONE_ANAL = 300;
 static const unsigned long DBLCLICKSPEED = 300; //tiempo en ms para poder hacer un doble click
 static const unsigned long KEYDOWNSPEED = 50;
 static const unsigned long MOUSEVISIBLE = 8000;
@@ -70,6 +69,7 @@ static const char *CD_FILTER = ".bin .cue .img .mdf .pbp .cbn .iso .chd .m3u";
 static const char *TMP_DIR = "tmp";
 static const std::string BIOS_ONLY = "@bios-only";
 static const std::string ASSETS_ICONS_DIR = "\\assets\\xmb\\retrosystem\\png\\";
+static const std::string MENUTMP = "menu.tmp";
 
 const bool SMOOTH_RESIZE = true;
 
@@ -103,6 +103,7 @@ typedef enum {
 	clAskBg, 	
 	clAskLine, 
 	clAskText, 
+	clHighligtOption, 
     clTotalColors
 } enumColors;
 
@@ -321,13 +322,14 @@ typedef enum {
         page_white_picture,
         page_white_zip,
 		ico_video,
+		ico_audio,
 		ico_settings,
 		ico_settings_core,
 		ico_subsettings,
 		ico_remap,
 		ico_savestates,
 		ico_saving,
-		ico_return,
+		ico_resume,
 		ico_scrapper,
 		ico_achievements,
 		ico_shutdown,
@@ -335,6 +337,29 @@ typedef enum {
 		ico_cheats,
 		ico_clock,
 		ico_mouse,
+		ico_reload,
+		ico_turbo,
+		ico_download,
+		ico_input_dpad_u,
+		ico_input_dpad_d,
+		ico_input_dpad_l,
+		ico_input_dpad_r,
+		ico_input_btn_d,
+		ico_input_btn_r,
+		ico_input_btn_l,
+		ico_input_btn_u,
+		ico_input_lt,
+		ico_input_rt,
+		ico_input_select,
+		ico_input_start,
+		ico_input_stick_l3,
+		ico_input_stick_r3,
+		ico_input_l2,
+		ico_input_r2,
+		ico_analog_u,
+		ico_analog_d,
+		ico_analog_l,
+		ico_analog_r,
 		max_icons
 }enumIco;
 
@@ -367,6 +392,8 @@ typedef enum {cart_gba,
 			  cart_atari5200,
 			  cart_c64,
 			  cart_x68k,
+			  cart_amiga,
+			  cart_cd32,
 			  max_carts};
 
 extern float aspectRatioValues[]; 
@@ -382,6 +409,7 @@ extern const std::string CORE_OPT_EXT;
 extern const std::string RETROPAD_INI;
 extern const std::string ROUTE_ACHIEVEMENT_TRANSLATIONS;
 extern const std::string ROUTE_SCRAP_TRANSLATIONS;
+extern const std::string ROUTE_ASSETS_BGMUSIC;
 extern const std::string PREFIX_DEFAULTS;
 extern const std::string BG_FILENAME;
 extern const std::string TITLE_EMU_FILENAME;
@@ -390,14 +418,30 @@ extern const std::string QUAKE_LIST_URL;
 const int QUAKE_MAPS_COUNT = 1; 
 extern const std::string QUAKE_MAPS_URL[QUAKE_MAPS_COUNT];
 extern const std::string START_FROM_EXCEPTION;
-extern const char *SDL_BTN_TO_XBOX[12];
-extern std::string SDL_JOY_TO_XBOX[6];
-extern std::string SDL_HAT_TO_XBOX[9];
+#define SDL_BTN_TO_XBOX_SIZE 12
+/* Indexada por el "boton virtual" de eje: idx = eje*2 + (valor>0), que es lo que
+ * generan GestorMenus::updateAxis y joystick.cpp al leer SDL_JOYAXISMOTION.
+ * Tenia 6 entradas y solo cubria el stick izquierdo (0..3) y el eje 2: el stick
+ * derecho cae en 4..7 en la 360 y en 6..9 en Windows (ver salvia.cpp,
+ * RETRO_DEVICE_INDEX_ANALOG_RIGHT), asi que se leia fuera del array. */
+#define SDL_JOY_TO_XBOX_SIZE 10
+/* Indexada por el VALOR de hat de SDL, que es una mascara de bits: las
+ * diagonales valen 3, 6, 9 y 12, asi que hay que llegar hasta 12. */
+#define SDL_HAT_TO_XBOX_SIZE 13
+extern const char *SDL_BTN_TO_XBOX[SDL_BTN_TO_XBOX_SIZE];
+extern std::string SDL_JOY_TO_XBOX[SDL_JOY_TO_XBOX_SIZE];
+extern std::string SDL_HAT_TO_XBOX[SDL_HAT_TO_XBOX_SIZE];
 extern std::string FRONTEND_BTN_TXT[MAXJOYBUTTONS];
 extern const std::string SCRAPPING_DAT;
 extern const std::string PASS_MASK;
 extern const char SYMBOLS_TO_SPACE[];
 extern const char SYMBOLS_TO_REMOVE[];
+
+#define LIGHTGUN_SIZES_COUNT 4
+extern const int LIGHTGUN_SIZES[LIGHTGUN_SIZES_COUNT];
+
+#define LIGHTGUN_THICKNESS_COUNT 4
+extern const int LIGHTGUN_THICKNESS[LIGHTGUN_THICKNESS_COUNT];
 
 typedef enum {
     launch_system,          //0
@@ -412,7 +456,6 @@ enum SYNC_TYPES{
 	SYNC_NONE,
 	SYNC_FAST_FORWARD
 };
-
 
 /* SDL 1.2: Definir mascaras segun el orden de bytes del sistema */
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -675,6 +718,34 @@ class Constant{
 			#endif
 			}
 
+		/* Contador crudo y su frecuencia en ticks por milisegundo.  Para el
+		   bucle de espera activa del limitador: comparar ticks evita la
+		   division en coma flotante de getTicks() en cada iteracion (la
+		   division no esta pipelineada en el PPC de Xenon). */
+		static double getTickFreqMs() {
+			#if defined(_WIN32) || defined(_WIN64) || defined(_XBOX)
+				static double freqMs = 0.0;
+				if (freqMs == 0.0) {
+					LARGE_INTEGER freq;
+					QueryPerformanceFrequency(&freq);
+					freqMs = (double)freq.QuadPart / 1000.0;
+				}
+				return freqMs;
+			#else
+				return 1.0;
+			#endif
+		}
+
+		static long long getRawTicks() {
+			#if defined(_WIN32) || defined(_WIN64) || defined(_XBOX)
+				LARGE_INTEGER counter;
+				QueryPerformanceCounter(&counter);
+				return (long long)counter.QuadPart;
+			#else
+				return (long long)SDL_GetTicks();
+			#endif
+		}
+
 		static std::string sanitizePathForXbox(const std::string& fullPath) {
 			// 1. Separar ruta y nombre
 			std::size_t lastSlash = fullPath.find_last_of("\\/");
@@ -922,6 +993,27 @@ class Constant{
 				resultado.erase(resultado.length()-1);
 			}
 
+			return resultado;
+		}
+
+		static std::string separarCamelCase(const std::string& texto) {
+			std::string resultado = "";
+    
+			for (std::size_t i = 0; i < texto.length(); ++i) {
+				// Comprobamos condiciones a partir de la segunda letra
+				if (i > 0) {
+					char actual = texto[i];
+					char anterior = texto[i - 1];
+            
+					// Anyade espacio solo si la actual es mayuscula, 
+					// la anterior era minuscula y ninguna es un espacio.
+					if (::isupper(actual) && ::islower(anterior) && anterior != ' ' && actual != ' ') {
+						resultado += ' ';
+					}
+				}
+				resultado += texto[i];
+			}
+    
 			return resultado;
 		}
 

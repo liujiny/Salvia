@@ -1,4 +1,4 @@
-﻿// GTE Divider - UNR table from pcsx_rearmed (257 bytes, cache-friendly)
+// GTE Divider - UNR table from pcsx_rearmed (257 bytes, cache-friendly)
 // Replaces original 64KB initial_guess table to avoid L1 D-cache pollution
 // on Xbox 360 Xenon (32KB L1 D-cache per core)
 #include "gte.h"

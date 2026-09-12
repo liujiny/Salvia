@@ -1,4 +1,4 @@
-﻿// K051960
+// K051960
 
 #include "tiles_generic.h"
 #include "konamiic.h"

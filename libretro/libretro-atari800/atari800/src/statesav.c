@@ -1,4 +1,4 @@
-﻿/*
+/*
  * statesav.c - saving the emulator's state to a file
  *
  * Copyright (C) 1995-1998 David Firth

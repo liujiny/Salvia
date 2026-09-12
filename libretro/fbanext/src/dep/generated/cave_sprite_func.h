@@ -1,4 +1,4 @@
-﻿#define EIGHTBIT 1
+#define EIGHTBIT 1
 #define ROT 0
 
 #define BPP 16

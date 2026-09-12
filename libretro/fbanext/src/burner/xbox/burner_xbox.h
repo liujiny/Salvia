@@ -1,4 +1,4 @@
-﻿#ifndef BURNER_XBOX_H
+#ifndef BURNER_XBOX_H
 #define BURNER_XBOX_H
 
 #define _WIN32_WINNT 0x0500

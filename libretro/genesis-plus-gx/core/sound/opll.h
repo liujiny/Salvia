@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (C) 2019 Nuke.YKT
  * 
  *  Redistribution and use of this code or any derivative works are permitted

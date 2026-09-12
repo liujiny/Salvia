@@ -1,4 +1,4 @@
-﻿/* maxq10xx.c
+/* maxq10xx.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

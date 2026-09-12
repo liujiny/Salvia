@@ -1,4 +1,4 @@
-﻿/* MtDec.c -- Multi-thread Decoder
+/* MtDec.c -- Multi-thread Decoder
 2024-02-20 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"

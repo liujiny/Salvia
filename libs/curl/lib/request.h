@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_REQUEST_H
+#ifndef HEADER_CURL_REQUEST_H
 #define HEADER_CURL_REQUEST_H
 /***************************************************************************
  *                                  _   _ ____  _

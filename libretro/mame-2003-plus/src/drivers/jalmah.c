@@ -1,4 +1,4 @@
-﻿/* Jaleco Mahjong Games */
+/* Jaleco Mahjong Games */
 /* Board:	MJ-8956 */
 
 /*

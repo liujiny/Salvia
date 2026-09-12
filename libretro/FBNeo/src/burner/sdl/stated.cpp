@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 
 // The automatic save
 int QuickState(int bSave)

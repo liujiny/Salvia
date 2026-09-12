@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifndef __SH3COMN_H__
 #define __SH3COMN_H__

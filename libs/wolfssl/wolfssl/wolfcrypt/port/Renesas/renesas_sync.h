@@ -1,4 +1,4 @@
-﻿/* renesas_sync.h
+/* renesas_sync.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Playmark Power Ball / Hot Mind / Magic Sticks / Atom bootleg hardware
+// FinalBurn Neo Playmark Power Ball / Hot Mind / Magic Sticks / Atom bootleg hardware
 // Bssed on MAME driver by David Haywood and Pierpaolo Prazzoli
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-﻿#ifndef OGLVIEWPORT_H
+#ifndef OGLVIEWPORT_H
 #define OGLVIEWPORT_H
 
 #include <QGLWidget>

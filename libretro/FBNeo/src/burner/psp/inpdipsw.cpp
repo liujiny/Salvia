@@ -1,4 +1,4 @@
-﻿// Burner DipSwitches Dialog module
+// Burner DipSwitches Dialog module
 #include "burner.h"
 
 static unsigned char nPrevDIPSettings[4];

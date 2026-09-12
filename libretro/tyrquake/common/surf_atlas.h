@@ -1,4 +1,4 @@
-﻿/*
+/*
  * surf_atlas.h -- RHI-agnostic surface texture atlas
  *
  * Manages a single fixed-size 2D atlas storing brush-surface

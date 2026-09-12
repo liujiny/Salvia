@@ -1,4 +1,4 @@
-﻿#ifndef HEADER__G65816CM
+#ifndef HEADER__G65816CM
 #define HEADER__G65816CM
 
 #define g65816i_branching(A)

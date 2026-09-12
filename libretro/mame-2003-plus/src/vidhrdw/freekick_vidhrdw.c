@@ -1,4 +1,4 @@
-﻿/* Free Kick Video Hardware */
+/* Free Kick Video Hardware */
 
 #include "driver.h"
 #include "vidhrdw/generic.h"

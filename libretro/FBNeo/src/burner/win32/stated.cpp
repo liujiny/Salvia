@@ -1,4 +1,4 @@
-﻿// State dialog module
+// State dialog module
 #include "burner.h"
 #include "neocdlist.h"
 

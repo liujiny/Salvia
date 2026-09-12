@@ -1,4 +1,4 @@
-﻿#ifndef __SEGAIC_H
+#ifndef __SEGAIC_H
 #define __SEGAIC_H
 
 /* system24temp_ functions / variables are from shared rewrite files,

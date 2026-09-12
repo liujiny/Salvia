@@ -1,4 +1,4 @@
-﻿#ifndef _RENDER_DIRECT3D_H_
+#ifndef _RENDER_DIRECT3D_H_
 #define _RENDER_DIRECT3D_H_
 
 #ifdef __cplusplus 

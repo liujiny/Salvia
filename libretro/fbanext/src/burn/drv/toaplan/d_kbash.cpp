@@ -1,4 +1,4 @@
-﻿#include "toaplan.h"
+#include "toaplan.h"
 #include "nec_intf.h"
 // Knuckle Bash
 

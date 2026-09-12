@@ -1,4 +1,4 @@
-﻿/* this file may be included several times by other parts of */
+/* this file may be included several times by other parts of */
 /* the OpenType Layout library.. don't add #ifdef .. #endif  */
 /* delimiters to it...                                       */
 

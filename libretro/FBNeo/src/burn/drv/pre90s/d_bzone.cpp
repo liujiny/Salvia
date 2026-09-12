@@ -1,4 +1,4 @@
-﻿// FB Alpha Battlezone / Bradley Tank Trainer / Red Baron driver module
+// FB Alpha Battlezone / Bradley Tank Trainer / Red Baron driver module
 // Based on MAME driver by Brad Oliver and Nicola Salmoria
 
 #include "tiles_generic.h"

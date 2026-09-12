@@ -1,4 +1,4 @@
-﻿void K051649Update(INT16 *pBuf, INT32 samples);
+void K051649Update(INT16 *pBuf, INT32 samples);
 void K051649Init(INT32 clock);
 void K051649SetRoute(double nVolume, INT32 nRouteDir);
 void K051649SetSync(INT32 (*pCPUCyclesCB)(), INT32 nCPUMhz);

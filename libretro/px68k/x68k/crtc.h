@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_CRTC_H
+#ifndef _WINX68K_CRTC_H
 #define _WINX68K_CRTC_H
 
 #include <stdint.h>

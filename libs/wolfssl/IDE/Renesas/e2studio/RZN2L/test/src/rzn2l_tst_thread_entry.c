@@ -1,4 +1,4 @@
-﻿/* rzn2l_tst_thread_entry.c
+/* rzn2l_tst_thread_entry.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

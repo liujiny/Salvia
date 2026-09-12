@@ -1,4 +1,4 @@
-﻿/*
+/*
  * gpu_duck_bitfield.h
  *
  * VS2010-compatible rewrite of SwanStation's common/bitfield.h.

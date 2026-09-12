@@ -1,4 +1,4 @@
-﻿#ifndef LIBRETRO_CORE_OPTIONS_H__
+#ifndef LIBRETRO_CORE_OPTIONS_H__
 #define LIBRETRO_CORE_OPTIONS_H__
 
 #include <stdlib.h>
@@ -175,7 +175,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       "px68k_midi_output",
       "MIDI Output (Restart)",
       NULL,
-      "Enable software MIDI.",
+      "Emulate the CZ-6BM1 MIDI board. Needs a MIDI interface from the frontend (in Salvia: a .sf2 SoundFont in the system directory); with no MIDI output available, games that detect the board will play their music silently instead of using the internal FM/ADPCM sound.",
       NULL,
       "audio",
       {
@@ -189,7 +189,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       "px68k_midi_output_type",
       "MIDI Output Type",
       NULL,
-      "Sets MIDI output type.",
+      "Selects which reset SysEx is sent to the MIDI module when the emulation starts.",
       NULL,
       "audio",
       {
@@ -332,6 +332,21 @@ struct retro_core_option_v2_definition option_defs_us[] = {
    },
 
    {
+      "px68k_save_sram",
+      "Save SRAM (machine NVRAM)",
+      NULL,
+      "When enabled, the machine SRAM (boot device, clock, key-repeat and other SWITCH.X settings) is saved to sram.dat and reloaded on startup. When disabled, the machine always boots with a fresh SRAM, which the IPL re-initialises -- useful if a stale sram.dat causes trouble.",
+      NULL,
+      "media",
+      {
+         { "enabled",  NULL },
+         { "disabled", NULL },
+         { NULL,       NULL },
+      },
+      "disabled"
+   },
+
+   {
       "px68k_rumble_on_disk_read",
       "Rumble on FDD Reads",
       NULL,
@@ -356,10 +371,29 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       "input",
       {
          { "Mouse",    NULL},
-         { "Joystick", NULL}, /* unimplemented yet */
+         { "Joystick", NULL},
          { NULL,       NULL },
       },
       "Mouse"
+   },
+   {
+      "px68k_joy_mouse_speed",
+      "Joypad Pointer Speed",
+      NULL,
+      "Pixels per frame at full deflection when the joypad drives the mouse pointer (Joy/Mouse set to Joystick).",
+      NULL,
+      "input",
+      {
+         { "2",  NULL },
+         { "4",  NULL },
+         { "6",  NULL },
+         { "8",  NULL },
+         { "12", NULL },
+         { "16", NULL },
+         { "24", NULL },
+         { NULL, NULL },
+      },
+      "8"
    },
    {
       "px68k_vbtn_swap",
@@ -518,7 +552,7 @@ struct retro_core_options_v2 *options_intl[RETRO_LANGUAGE_LAST] = {
    &options_us,      /* RETRO_LANGUAGE_ENGLISH */
    NULL,           /* RETRO_LANGUAGE_JAPANESE */
    &options_fr,      /* RETRO_LANGUAGE_FRENCH */
-   NULL,           /* RETRO_LANGUAGE_SPANISH */
+   &options_es,      /* RETRO_LANGUAGE_SPANISH */
    NULL,           /* RETRO_LANGUAGE_GERMAN */
    NULL,           /* RETRO_LANGUAGE_ITALIAN */
    NULL,           /* RETRO_LANGUAGE_DUTCH */

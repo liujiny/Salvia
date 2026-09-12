@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 #include "cpuintrf.h"
 #include "state.h"
 #include "drz80_z80.h"

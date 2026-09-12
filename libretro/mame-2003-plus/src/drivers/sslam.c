@@ -1,4 +1,4 @@
-﻿/* Super Slam (c)1993 Playmark */
+/* Super Slam (c)1993 Playmark */
 
 /*
 

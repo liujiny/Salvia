@@ -1,4 +1,4 @@
-﻿/* 
+/* 
 
 SDL_gfxPrimitives.h: graphics primitives for SDL
 

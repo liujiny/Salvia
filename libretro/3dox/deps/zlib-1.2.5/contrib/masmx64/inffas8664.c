@@ -1,4 +1,4 @@
-﻿/* inffas8664.c is a hand tuned assembler version of inffast.c - fast decoding
+/* inffas8664.c is a hand tuned assembler version of inffast.c - fast decoding
  * version for AMD64 on Windows using Microsoft C compiler
  *
  * Copyright (C) 1995-2003 Mark Adler

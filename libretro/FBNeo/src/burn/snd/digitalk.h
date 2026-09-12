@@ -1,4 +1,4 @@
-﻿#ifndef _DIGITALKER_H_
+#ifndef _DIGITALKER_H_
 #define _DIGITALKER_H_
 
 void digitalker_init(UINT8 *rom, INT32 romsize, INT32 clock, INT32 (*pCPUCyclesCB)(), INT32 nCPUMhz, INT32 AddToStream);

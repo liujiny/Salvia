@@ -1,4 +1,4 @@
-﻿// FB Neo MSX arcade driver module, by dink. Memory mapping code (megarom) from fMSX
+// FB Neo MSX arcade driver module, by dink. Memory mapping code (megarom) from fMSX
 //
 // Oddities:
 //  VoidRunner and Milk Race freeze when selecting between kbd/joy. (VoidRunner has a kludge, but it doesn't work for Milk Race)

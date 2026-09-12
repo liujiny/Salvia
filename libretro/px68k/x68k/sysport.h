@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_SYSPORT_H
+#ifndef _WINX68K_SYSPORT_H
 #define _WINX68K_SYSPORT_H
 
 #include <stdint.h>

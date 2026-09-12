@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  RTC.C - RTC (Real Time Clock / RICOH RP5C15)
  */
 

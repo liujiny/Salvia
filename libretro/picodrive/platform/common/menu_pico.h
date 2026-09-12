@@ -1,4 +1,4 @@
-﻿#ifndef __MENU_PICO_H__
+#ifndef __MENU_PICO_H__
 #define __MENU_PICO_H__
 
 #include "../libpicofe/menu.h"
@@ -101,6 +101,7 @@ typedef enum
 	MA_32XOPT_PWM,
 	MA_32XOPT_MSH2_CYCLES,
 	MA_32XOPT_SSH2_CYCLES,
+	MA_32XOPT_H32_LAYER,
 	MA_SMSOPT_HARDWARE,
 	MA_SMSOPT_MAPPER,
 	MA_SMSOPT_GHOSTING,

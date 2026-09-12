@@ -1,4 +1,4 @@
-﻿#ifndef LIBOPERA_VDL_H_INCLUDED
+#ifndef LIBOPERA_VDL_H_INCLUDED
 #define LIBOPERA_VDL_H_INCLUDED
 
 /* === VDL DMA control === */

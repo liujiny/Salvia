@@ -1,4 +1,4 @@
-﻿extern UINT8 SMSPaletteRecalc;
+extern UINT8 SMSPaletteRecalc;
 
 extern UINT8 SMSReset;
 extern UINT8 MastInput[2];

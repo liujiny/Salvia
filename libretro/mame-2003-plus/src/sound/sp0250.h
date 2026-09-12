@@ -1,4 +1,4 @@
-﻿#ifndef __SP0250_H__
+#ifndef __SP0250_H__
 #define __SP0250_H__
 
 struct sp0250_interface {

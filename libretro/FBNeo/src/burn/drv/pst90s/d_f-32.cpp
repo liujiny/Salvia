@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo F-E1-32 drier module
+// FinalBurn Neo F-E1-32 drier module
 // Based on MAME driver by Pierpaolo Prazzoli
 
 #include "tiles_generic.h"

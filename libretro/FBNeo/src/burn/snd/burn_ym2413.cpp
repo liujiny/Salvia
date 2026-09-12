@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "burn_ym2413.h"
 
 void (*BurnYM2413Render)(INT16* pSoundBuf, INT32 nSegmentLength);

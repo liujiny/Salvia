@@ -1,4 +1,4 @@
-﻿#ifndef PAL_BLENDING_H_
+#ifndef PAL_BLENDING_H_
 #define PAL_BLENDING_H_
 
 #include "atari.h"

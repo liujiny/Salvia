@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SH2 recompiler
  * (C) notaz, 2009,2010,2013
  * (C) irixxxx, 2018-2024

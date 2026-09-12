@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup Random
     \brief  Init Global WhiteWood Netrandomのコンテキスト
     \return 0  成功

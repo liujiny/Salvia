@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup ECC
 
     \brief This function generates a new ecc_key and stores it in key.

@@ -1,4 +1,4 @@
-﻿/* wolfcrypt/test/test_paths.h
+/* wolfcrypt/test/test_paths.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

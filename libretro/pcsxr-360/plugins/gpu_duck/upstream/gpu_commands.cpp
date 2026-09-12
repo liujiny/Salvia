@@ -1,4 +1,4 @@
-﻿#include "common/string_util.h"
+#include "common/string_util.h"
 #include "gpu.h"
 #include "interrupt_controller.h"
 #include "system.h"

@@ -1,4 +1,4 @@
-﻿extern UINT8 PCEPaletteRecalc;
+extern UINT8 PCEPaletteRecalc;
 
 extern UINT8 PCEReset;
 extern UINT8 PCEJoy1[12];

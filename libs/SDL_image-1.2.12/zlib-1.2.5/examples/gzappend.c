@@ -1,4 +1,4 @@
-﻿/* gzappend -- command to append to a gzip file
+/* gzappend -- command to append to a gzip file
 
   Copyright (C) 2003 Mark Adler, all rights reserved
   version 1.1, 4 Nov 2003

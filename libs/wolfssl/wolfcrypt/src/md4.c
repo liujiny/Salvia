@@ -1,4 +1,4 @@
-﻿/* md4.c
+/* md4.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Sega System 24
  *
  * Kudos to Charles MacDonald (http://cgfm2.emuviews.com) for his

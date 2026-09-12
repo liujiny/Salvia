@@ -1,4 +1,4 @@
-﻿// NMK004 device
+// NMK004 device
 // Based on MAME device by David Haywood and trap15
 
 #include "burnint.h"

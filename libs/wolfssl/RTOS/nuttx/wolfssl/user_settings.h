@@ -1,4 +1,4 @@
-﻿#include <nuttx/config.h>
+#include <nuttx/config.h>
 
 /* Library */
 #define SINGLE_THREADED

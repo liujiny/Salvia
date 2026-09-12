@@ -1,4 +1,4 @@
-﻿// FB Alpha - World Cup '90 driver
+// FB Alpha - World Cup '90 driver
 
 #include "tiles_generic.h"
 #include "z80_intf.h"

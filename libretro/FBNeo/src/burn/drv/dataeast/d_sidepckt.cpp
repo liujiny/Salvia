@@ -1,4 +1,4 @@
-﻿// based on MAME driver by Ernesto Corvi
+// based on MAME driver by Ernesto Corvi
 
 #include "tiles_generic.h"
 #include "m6809_intf.h"

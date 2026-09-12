@@ -1,4 +1,4 @@
-﻿// Burner Input Editor Dialog module
+// Burner Input Editor Dialog module
 #include "burner.h"
 
 HWND hInpdDlg = NULL;							// Handle to the Input Dialog

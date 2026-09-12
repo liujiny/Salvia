@@ -1,4 +1,4 @@
-﻿/* provides Atari800DC version */
+/* provides Atari800DC version */
 
 #ifndef __VERSIONDC_H_
 #define __VERSIONDC_H_

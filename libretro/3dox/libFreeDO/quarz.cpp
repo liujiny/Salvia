@@ -1,4 +1,4 @@
-п»ї/*
+/*
 	3DOplay sources v1.7.3 based on FreeDOcore
 	3doplay.do.am
 	Developer: Viktor Ivanov
@@ -38,8 +38,8 @@ Felix Lazarev
 
 int ARM_CLOCK=10000000;
 #define SND_CLOCK       44100
-//#define NTSC_CLOCK      12270000        //818*500(пїЅпїЅпїЅпїЅпїЅ)  //15 пїЅпїЅпїЅ
-//#define PAL_CLOCK       14750000        //944*625(пїЅпїЅпїЅпїЅпїЅ)  //15625 пїЅпїЅ
+//#define NTSC_CLOCK      12270000        //818*500(строк)  //15 КГц
+//#define PAL_CLOCK       14750000        //944*625(строк)  //15625 Гц
 
  
 struct QDatum
@@ -149,7 +149,7 @@ void  _qrz_PushARMCycles(unsigned int clks)
 
 #if 1
 	uint32 arm,cnt;
-	int timers=21000000; //пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	int timers=21000000; //стандарт
 
 	arm=(clks<<24)/(ARM_CLOCK);
 	qrz_AccARM+=arm*(ARM_CLOCK);

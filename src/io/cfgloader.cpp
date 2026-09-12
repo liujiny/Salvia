@@ -1,4 +1,4 @@
-﻿#include "cfgloader.h"
+#include "cfgloader.h"
 #include <utils/langmanager.h>
 #include <const/constant.h>
 #include <const/cfgconst.h>
@@ -6,6 +6,7 @@
 #include <io/filelist.h>
 #include <io/dirutil.h>
 #include <io/fileio.h>
+#include <video/shaderpreset.h>
 
 #include <libretro/libretro.h>
 
@@ -19,6 +20,7 @@ extern "C"{
 }
 
 cfg::t_cfg_props CfgLoader::configMain [cfg::MAIN_CFG_MAX];
+std::string CfgLoader::appliedFileParmsCore;
 
 CfgLoader::CfgLoader(){
 	emuCfgPos = 0;
@@ -27,6 +29,12 @@ CfgLoader::CfgLoader(){
 	initMainConfig();
 	loadMainConfig();
 	loadCoreParams();
+
+	// Se cargan los textos una vez que hemos cargado la configuracion y ya tenemos idioma asignado
+	const std::string mainLang = this->configMain[cfg::mainLang].valueStr;
+	LanguageManager::instance()->loadLanguage(Constant::getAppDir() + "\\assets\\i18n\\" + mainLang + ".ini");
+	findAllBgMusic();
+	findAllSoundfonts();
 }
 
 CfgLoader::~CfgLoader(){
@@ -73,21 +81,17 @@ void CfgLoader::initMainConfig(){
 	configMain[cfg::scaleMode] = cfg::t_cfg_props("scaleMode", (int)FULLSCREEN);
 	configMain[cfg::scaleMode].desc = "#Scaler used in SW mode. Not used";
 
-	configMain[cfg::shaderMode] = cfg::t_cfg_props("shaderMode", (int)SHADER_BILINEAR);
-	configMain[cfg::shaderMode].desc = "#Shader selected"
-										"\n#SHADER_NEAREST,         0"
-										"\n#SHADER_BILINEAR,        1"
-										"\n#SHADER_BILINEAR_STD,    2"
-										"\n#SHADER_LCD_GRID,        3"
-										"\n#SHADER_SCANLINES,       4"
-										"\n#SHADER_CRT,             5"
-										"\n#SHADER_CRT_LOTTES,      6"
-										"\n#SHADER_CRT_EASYMODE,    7"
-										"\n#SHADER_HQ2X,            8"
-										"\n#SHADER_HQ3X,            9"
-										"\n#SHADER_HQ4X,            10"
-										"\n#SHADER_XBR_LV2_FAST,    11"
-										"\n#SHADER_XBR_HYLLIAN,     12";
+	/* El shader se guarda por NOMBRE de preset (el fichero .hlslp de
+	 * assets\shaders, sin extension) en vez de por indice: la lista es
+	 * dinamica y un indice dejaria de apuntar a lo mismo en cuanto se anadiese
+	 * o quitase un preset. El indice vivo se mantiene en valueInt, que es a lo
+	 * que se ata el menu; resolveShaderModes() sincroniza los dos.
+	 * Los valores numericos 0..12 de versiones anteriores se migran solos. */
+	configMain[cfg::shaderMode] = cfg::t_cfg_props("shaderMode",
+		std::string(ShaderRegistry::defaultId()));
+	configMain[cfg::shaderMode].desc =
+		"#Video shader: name of a preset in assets\\shaders (without the .hlslp extension)."
+		"\n#If the preset is missing, it falls back to the default one.";
 
 	configMain[cfg::syncMode] = cfg::t_cfg_props("syncMode", (int)OPT_SYNC_VIDEO);
 	configMain[cfg::syncMode].desc = "#Video Synchronization mode"
@@ -127,6 +131,52 @@ void CfgLoader::initMainConfig(){
 										"\n#SCALE FIXED 3X       4"
 										"\n#SCALE FIXED 4X       5"
 										"\n#SCALE FIXED 5X       6";
+
+	/* Volumen de la musica de menu.  Se guarda el INDICE en pasos de 10%, igual
+	 * que scaleIntMode o animBG guardan indices: es lo que espera el widget
+	 * OpcionLista del menu.  Por defecto 7 = 70%, para que la musica quede por
+	 * debajo de los efectos del frontend y no moleste. */
+	configMain[cfg::musicEnabled] = cfg::t_cfg_props("musicEnabled", true);
+	configMain[cfg::musicEnabled].desc = "#Enable or disable the menu music completely";
+
+	configMain[cfg::musicVolume] = cfg::t_cfg_props("musicVolume", (int)7);
+	configMain[cfg::musicVolume].desc = "#Menu music volume, in 10% steps"
+										"\n#0 = mute ... 10 = 100%";
+
+	/* Musica GENERAL: la que suena cuando el core activo no define la suya en
+	 * su .cfg (clave 'music_file').  Ruta relativa al directorio de la app. */
+	configMain[cfg::musicFile] = cfg::t_cfg_props("musicFile", std::string("assets\\music\\menu.mp3"));
+	configMain[cfg::musicFile].desc = "#Menu music file, relative to the app directory."
+										"\n#Used when the active core does not define its own 'music_file'."
+										"\n#Leave empty for no music.";
+
+	/* Sintetizador MIDI del frontend.  Los cores no sintetizan MIDI: los que
+	 * tienen musica MIDI (px68k, dosbox-pure, prboom) mandan bytes crudos y hace
+	 * falta un SoundFont para convertirlos en sonido. */
+	configMain[cfg::midiEnabled] = cfg::t_cfg_props("midiEnabled", true);
+	configMain[cfg::midiEnabled].desc = "#Enable the built-in General MIDI synthesizer."
+										"\n#Needs a .sf2 SoundFont in the system directory; without one it stays off.";
+
+	/* Indice dentro de soundfontFiles, que se rellena escaneando el directorio
+	 * 'system' al arrancar.  0 = ninguno. */
+	configMain[cfg::midiSoundfont] = cfg::t_cfg_props("midiSoundfont", (int)0);
+	configMain[cfg::midiSoundfont].desc = "#Index of the .sf2 SoundFont to use, from the ones found"
+		"\n#in the system directory (0 = none)."
+		"\n#Keep it small on Xbox 360: samples are expanded to float,"
+		"\n#so a bank takes about twice its file size in RAM.";
+
+	configMain[cfg::midiVolume] = cfg::t_cfg_props("midiVolume", (int)8);
+	configMain[cfg::midiVolume].desc = "#MIDI synthesizer volume, in 10% steps"
+										"\n#0 = mute ... 10 = 100%";
+
+	/* Que modulo MIDI cree el juego que tiene delante.  En automatico se deduce
+	 * del SysEx de reset que manda el core, que es lo que quiere el 99% de los
+	 * casos; los otros dos valores son para juegos que no lo mandan. */
+	configMain[cfg::midiModule] = cfg::t_cfg_props("midiModule", (int)0);
+	configMain[cfg::midiModule].desc = "#MIDI module the game expects."
+										"\n#0 = auto-detect from the reset SysEx the core sends"
+										"\n#1 = General MIDI"
+										"\n#2 = Roland MT-32 / LA (translates MT-32 programs to GM)";
 
 	configMain[cfg::animBG] = cfg::t_cfg_props("animBG", (int)BG_TILES);
 	configMain[cfg::animBG].desc = "#Set the frontend background" 
@@ -187,12 +237,24 @@ void CfgLoader::initMainConfig(){
 	configMain[cfg::overscan_y].desc = "#Sets the frontend overscan to enlarge or shrink the y axis of the frontend screen"
 		"\n#It doesn't affect the game screen";
 
+	configMain[cfg::lightgunCrossEnabled] = cfg::t_cfg_props("lightgunCrossEnabled", true);
+	configMain[cfg::lightgunCrossEnabled].desc = "#Enable or disable the lightgun crosshair when selected";
+
+	configMain[cfg::lightgunCrossSize] = cfg::t_cfg_props("lightgunCrossSize", (int)0);
+	configMain[cfg::lightgunCrossSize].desc = "#Set the size of the lightgun crosshair";
+
+	configMain[cfg::lightgunThickness] = cfg::t_cfg_props("lightgunThickness", (int)1);
+	configMain[cfg::lightgunThickness].desc = "#Set the thickness of the lightgun crosshair";
+	
+	
+
 	struct retro_system_info info;
 	memset(&info, 0, sizeof(info));
 	retro_get_system_info(&info);
 	configMain[cfg::libretro_core].setPropValue(std::string(info.library_name));
 	configMain[cfg::libretro_core_version].setPropValue(std::string(info.library_version));
 	configMain[cfg::libretro_core_extensions].setPropValue(std::string(info.valid_extensions));
+	configMain[cfg::lastOptSel].setPropValue((int)-1);
 }
 
 /**
@@ -272,6 +334,56 @@ void CfgLoader::loadMainConfig(){
 	salviaConfig->config.name = "Options";
 	salviaConfig->config.title_bkg_assets = "assets\\cfg";
 	emulators.push_back(std::move(salviaConfig));
+
+	resolveShaderModes();
+}
+
+/* Traduce el nombre de preset guardado en la configuracion al indice vivo que
+ * usan el menu y XBOX_SelectEffect. Se llama al final de loadMainConfig, con el
+ * registro de shaders ya cargado (salvia.cpp lo hace antes de construir el
+ * CfgLoader).
+ *
+ * Acepta tambien los valores numericos 0..12 que guardaban las versiones
+ * anteriores: ShaderRegistry::migrateLegacyId los convierte al nombre
+ * equivalente, asi que un .cfg antiguo sigue arrancando con el mismo filtro. */
+void CfgLoader::resolveShaderModes(){
+	ShaderRegistry* shaders = ShaderRegistry::instance();
+
+	/* --- Shader global --- */
+	std::string wanted = configMain[cfg::shaderMode].valueStr;
+	int idx = shaders->indexOfStored(wanted);
+	if (idx < 0){
+		if (!wanted.empty())
+			LOG_ERROR("El shader '%s' no existe en assets\\shaders; se usa '%s'\n",
+			          wanted.c_str(), ShaderRegistry::defaultId());
+		idx = shaders->indexOf(ShaderRegistry::defaultId());
+		if (idx < 0) idx = 0;
+	}
+	configMain[cfg::shaderMode].valueInt = idx;
+	configMain[cfg::shaderMode].valueStr = shaders->idAt(idx);
+
+	/* --- Override por emulador. El 0 del menu es "Auto", de ahi el +1. --- */
+	for (std::size_t i = 0; i < emulators.size(); i++){
+		ConfigEmu& cfg = emulators[i]->config;
+		std::string name = cfg.shaderName;
+		if (name.empty() || name == "-1"){
+			cfg.shaderMode = 0;
+			cfg.shaderName = "";
+			continue;
+		}
+		int e = shaders->indexOfStored(name);
+		if (e < 0){
+			/* Si el preset ya no esta, se degrada a Auto (usar el global) y no
+			 * a otro shader cualquiera, que seria una sorpresa peor. */
+			LOG_ERROR("%s: el shader '%s' no existe; se usa Auto\n",
+			          cfg.name.c_str(), name.c_str());
+			cfg.shaderMode = 0;
+			cfg.shaderName = "";
+		} else {
+			cfg.shaderMode = e + 1;
+			cfg.shaderName = shaders->idAt(e);
+		}
+	}
 }
 
 void CfgLoader::checkSystemLang(){
@@ -466,6 +578,8 @@ void CfgLoader::loadEmuConfig(std::string emuname){
 						cfgEmu->config.screen_shot_directory = value;
 					} else if (key.compare("assets") == 0){
 						cfgEmu->config.assets = value;
+					} else if (key.compare("music_file") == 0){
+						cfgEmu->config.music_file = value;
 					} else if (key.compare("use_rom_file") == 0){
 						cfgEmu->config.use_rom_file = value.compare("yes") == 0 ? true : false;
 					} else if (key.compare("rom_directory") == 0){
@@ -503,8 +617,13 @@ void CfgLoader::loadEmuConfig(std::string emuname){
 						//This option is to override the configMain, so the -1 value is for the auto option
 						cfgEmu->config.scaleIntMode = Constant::strToTipo<int>(value) + 1;
 					} else if (key.compare("shaderMode") == 0){
+						/* Nombre de preset (o un indice antiguo). Se guarda en crudo y
+						 * se resuelve a indice en resolveShaderModes(), cuando el
+						 * registro de shaders ya esta cargado. */
+						cfgEmu->config.shaderName = value;
+					} else if (key.compare("syncMode") == 0){
 						//This option is to override the configMain, so the -1 value is for the auto option
-						cfgEmu->config.shaderMode = Constant::strToTipo<int>(value) + 1;
+						cfgEmu->config.syncMode = Constant::strToTipo<int>(value) + 1;
 					}
 				}
 			}             
@@ -622,6 +741,10 @@ std::string CfgLoader::saveMainParams(){
 	//actualizamos algunos parametros que dependen de un indice externo
 	configMain[cfg::scrapRegion].setPropValue(region[idxRegion].shortName);
 	configMain[cfg::scrapLang].setPropValue(idioma[idxIdioma].shortName);
+	/* El menu mueve el INDICE vivo (valueInt); lo que se persiste es el nombre
+	 * del preset, porque la lista de assets\shaders es dinamica. */
+	configMain[cfg::shaderMode].setPropValue(
+		ShaderRegistry::instance()->idAt(configMain[cfg::shaderMode].valueInt));
 
 	for (int i=0; i < cfg::MAIN_CFG_MAX; i++){
 		if (configMain[i].name.empty()) continue;
@@ -667,12 +790,31 @@ std::string CfgLoader::saveCoreParams(){
 		fileCoreCfg.push_back(it->first + "=" + Constant::TipoToStr(it->second->selected));
     }
 
-	std::string corepath = getCoreCfgPath();
+	std::string corepath = getCoreCfgPath(true);
 	FileList::guardarVector(corepath, fileCoreCfg);
+
+	appliedFileParmsCore = dirutil::getFileName(corepath);
 	return LanguageManager::instance()->get("msg.cfg.savelocation") + corepath;
 }
 
+bool CfgLoader::deleteCoreParams(){
+	dirutil dir;
+	const std::string corepath = getCoreCfgPath();
+	if (!corepath.empty() && dir.fileExists(corepath.c_str()) && !dir.isDir(corepath.c_str())){
+		dir.borrarArchivo(corepath);
+		return true;
+	}
+	return false;
+}
+
 void CfgLoader::loadCoreParams(){
+#ifdef SYSTEM_OPT
+	//We recover the menu status to set the emuCfgPos and to store the cfg::lastOptSel
+	struct ListStatus statusMenu;
+	if (recoverGameMenuPos(statusMenu) == 0){
+		configMain[cfg::lastOptSel].setPropValue(statusMenu.emuLoaded);
+	}
+#endif
 	applyCoreParamsFile(getCoreCfgPath());
 }
 
@@ -686,6 +828,7 @@ bool CfgLoader::applyCoreParamsFile(const std::string& path){
 	FileList::cargarVector(path, fileConfig);
 	if (fileConfig.empty()) return false;
 
+	appliedFileParmsCore = dirutil::getFileName(path);
 	std::size_t pos = 0;
 	for (unsigned int i=0; i<fileConfig.size(); i++){
 		std::string linea = fileConfig.at(i);
@@ -717,6 +860,7 @@ std::string CfgLoader::getGameCoreCfgPath(const std::string& gamePath){
 // declarado por el core (defaultSelected, poblado por applyEntry en
 // SET_CORE_OPTIONS). Base para recargar limpio al cambiar de juego.
 void CfgLoader::resetCoreParamsToDefaults(){
+	appliedFileParmsCore = LanguageManager::instance()->get("menu.core.options.msg.default");
 	for (std::map<std::string, std::unique_ptr<cfg::t_emu_props> >::iterator it = startupLibretroParams.begin();
 	     it != startupLibretroParams.end(); ++it) {
 		cfg::t_emu_props *p = it->second.get();
@@ -761,18 +905,132 @@ std::string CfgLoader::saveGameCoreParams(const std::string& gamePath){
 
 	std::string gamecfg = getGameCoreCfgPath(gamePath);
 	FileList::guardarVector(gamecfg, fileCoreCfg);
+
+	appliedFileParmsCore = dirutil::getFileName(gamecfg);
 	return LanguageManager::instance()->get("msg.cfg.savelocation") + gamecfg;
 }
 
-std::string CfgLoader::getCoreCfgPath(){
+bool CfgLoader::deleteGameParams(const std::string& gamePath){
+	dirutil dir;
+	std::string gamecfg = getGameCoreCfgPath(gamePath);
+	if (!gamePath.empty() && dir.fileExists(gamecfg.c_str()) && !dir.isDir(gamePath.c_str())){
+		dir.borrarArchivo(gamecfg);
+		return true;
+	}
+	return false;
+}
+
+std::string CfgLoader::getCoreCfgPath(bool save){
 	std::size_t last = configMain[cfg::path_prefix].valueStr.length() <= 0 ? 0 : configMain[cfg::path_prefix].valueStr.length() - 1;
 	bool lastFileSep = true;
 	if (last < configMain[cfg::path_prefix].valueStr.length()){
 		configMain[cfg::path_prefix].valueStr[last] = Constant::getFileSep()[0];
 	}
 
-	return configMain[cfg::path_prefix].valueStr + (lastFileSep ? "" : Constant::getFileSep()) + 
-		"config" + Constant::getFileSep() + "core_" + configMain[cfg::libretro_core].valueStr + CORE_OPT_EXT;
+	std::string prefixOpt = configMain[cfg::libretro_core].valueStr;
+	std::string pathOpt = configMain[cfg::path_prefix].valueStr + (lastFileSep ? "" : Constant::getFileSep()) + 
+		"config" + Constant::getFileSep() + "core_" + prefixOpt + CORE_OPT_EXT;
+
+// If SYSTEM_OPT is defined, a system configuration file has greater preference in comparison to the core configuration
+// For example, the PUAE core can emulate 3 different systems: Amiga 500, Amiga 1200 and Amiga CD32. For this systems
+// it might be desirable to have independent configuration (Amiga 1200 is to slow so we enable frameskip, but it's not
+// needed for Amiga 500)
+#ifdef SYSTEM_OPT
+
+	//emuCfgPos will be set at the beginning to the last selected emulator
+	int systemSelected = this->emuCfgPos;
+	vector<string> v = Constant::splitChar(emulators.at(systemSelected)->config.system, '_');
+
+	//if the actual selected emulator is not found in the preprocessor defined, 
+	//load the last valid one stored in cfg::lastOptSel
+	if (!v.empty() && v.back().find(string(SYSTEM_OPT)) == string::npos){
+		systemSelected = configMain[cfg::lastOptSel].valueInt;
+		v = Constant::splitChar(emulators.at(systemSelected)->config.system, '_');
+	}
+
+	if (!v.empty() && v.back().find(string(SYSTEM_OPT)) != string::npos){
+		configMain[cfg::lastOptSel].setPropValue(systemSelected);
+		prefixOpt = v.back();
+
+		std::string tmpPathOpt = configMain[cfg::path_prefix].valueStr + (lastFileSep ? "" : Constant::getFileSep()) + 
+		"config" + Constant::getFileSep() + "core_" + prefixOpt + CORE_OPT_EXT;
+
+		if (dirutil::fileExists(tmpPathOpt.c_str()) || save){
+			pathOpt = tmpPathOpt;
+		}
+	}
+#endif
+
+	return pathOpt;
+}
+
+/**
+ * 
+ */
+int CfgLoader::recoverGameMenuPos(struct ListStatus &read_struct){
+    FILE* infile;
+    string filepath = Constant::getAppDir() + Constant::getFileSep() + MENUTMP;
+    int ret = 0;
+
+    // Open person.dat for reading
+    infile = fopen(filepath.c_str(), "rb");
+    if (infile == NULL) {
+        cerr << "Error openning file: " << filepath << endl;
+        return 1;
+    }
+
+    if (fread(&read_struct, sizeof(read_struct), 1, infile) > 0){
+        LOG_DEBUG("emupos: %d; inipos: %d; endpos: %d; curpos: %d; maxlines: %d; layout: %d; animateBkg: %d", read_struct.emuLoaded,  
+			read_struct.iniPos, read_struct.endPos, read_struct.curPos, read_struct.maxLines, read_struct.layout, read_struct.animateBkg);
+        //Setting the emulator selected        
+        emuCfgPos = read_struct.emuLoaded;
+    } else {
+        ret = 1;
+    }
+
+    fclose(infile);
+    return ret;
+}
+
+void CfgLoader::findAllBgMusic(){
+	const std::string autoOverrideTxt = LanguageManager::instance()->get("menu.core.overrides.auto");
+	//Find all the mp3 files for the background music
+	dirutil dir;
+	std::string assetsDir = dirutil::getPathPrefix(ROUTE_ASSETS_BGMUSIC);
+	vector<unique_ptr<FileProps>> files;
+	dir.listFiles(assetsDir.c_str(), files, ".mp3", "", true, false);
+	
+	musicFiles.push_back(autoOverrideTxt);
+	for (unsigned int i=0; i < files.size(); i++){
+		musicFiles.push_back(files[i]->filename);
+	}
+}
+
+/* SoundFonts disponibles para el sintetizador MIDI.  Se escanea el MISMO
+ * directorio que se le anuncia a los cores como system dir
+ * (RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY), que es donde el usuario ya deja las
+ * BIOS: un sitio menos que explicar.
+ *
+ * El indice 0 se reserva para "ninguno", que es lo que apaga el sintetizador
+ * sin tener que tocar midiEnabled. */
+void CfgLoader::findAllSoundfonts(){
+	dirutil dir;
+	std::vector<std::unique_ptr<FileProps>> files;
+
+	soundfontFiles.clear();
+	/* Los .ini de idioma no viven en el repo, asi que una clave nueva sale como
+	 * "[menu.options.midi.none]" hasta que alguien la anada.  Se detecta igual
+	 * que en GestorMenus::trOrDefault y se cae a un texto en ingles. */
+	{
+		std::string none = LanguageManager::instance()->get("menu.options.midi.none");
+		if (none.empty() || none[0] == '[') none = "None";
+		soundfontFiles.push_back(none);
+	}
+
+	dir.listFiles(configMain[cfg::libretrosystem].valueStr.c_str(), files, ".sf2", "", true, false);
+	for (unsigned int i = 0; i < files.size(); i++){
+		soundfontFiles.push_back(files[i]->filename);
+	}
 }
 
 // Metodo para guardar la configuracion en un archivo
@@ -784,6 +1042,18 @@ std::string CfgLoader::saveCoreOverrideParams(int emuIdx){
 	const std::string rutaArchivo = cfg.cfgFilePath;
     std::ofstream archivo(rutaArchivo.c_str());
     if (!archivo.is_open()) return "";
+
+	//Set the music based on its index
+	if (cfg.music_file_index > 0 && cfg.music_file_index < (int)this->musicFiles.size()){
+		cfg.music_file = dirutil::getPathPrefix(this->musicFiles[cfg.music_file_index], ROUTE_ASSETS_BGMUSIC);
+	} else {
+		cfg.music_file.clear();
+	}
+
+    /* El menu trabaja con el indice vivo (0 = "Auto"); lo que se persiste es el
+     * nombre del preset. Se sincroniza justo antes de volcar. */
+    cfg.shaderName = (cfg.shaderMode > 0)
+        ? ShaderRegistry::instance()->idAt(cfg.shaderMode - 1) : std::string("");
 
     // 1. Escribimos los campos de tipo string de forma masiva
     struct MappingStr { const char* nombre; const char* descripcion; const std::string ConfigEmu::*puntero; };
@@ -798,12 +1068,18 @@ std::string CfgLoader::saveCoreOverrideParams(int emuIdx){
         {"rom_directory", "ROM Directory", &ConfigEmu::rom_directory},
         {"rom_extension", "List of supported extensions for ROMs (without the \".\")", &ConfigEmu::rom_extension},
         {"assets", "This is the directory where images and information are stored.", &ConfigEmu::assets},
+		{"music_file", "Menu music for this core, relative to the app directory."
+					   "\n#Leave empty to use the general one from the main config (musicFile).", &ConfigEmu::music_file},
 		{"title_bkg_assets", "Instead of loading the title and background from the assets directory, we load them from this path."
 							 "\n#This is useful if, for example, we have many Mame images that are actually the same as those in fbneo.", &ConfigEmu::title_bkg_assets},
         {"screen_shot_directory", "This is the directory where the screenshots in .png format are located.", &ConfigEmu::screen_shot_directory},
         {"mame_roms_xml", "Xml file with Mame game names", &ConfigEmu::mame_roms_xml},
         {"map_file", "This is the list of pre-scanned ROMs (not supported yet).", &ConfigEmu::map_file},
-        {"keyboard_type", "Keyboard type. Implemented for: msx and spectrum", &ConfigEmu::keyboard_type}
+        {"keyboard_type", "Keyboard type. Implemented for: msx and spectrum", &ConfigEmu::keyboard_type},
+		{"network_default_servers", "List of servers to use. Quake specific", &ConfigEmu::network_default_servers},
+        {"shaderMode", "Video shader override: name of a preset in assets\\shaders"
+		"\n#(without the .hlslp extension). Leave EMPTY to use the global shader."
+		, &ConfigEmu::shaderName}
     };
     
     for (std::size_t i = 0; i < sizeof(strings)/sizeof(strings[0]); ++i) {
@@ -854,21 +1130,6 @@ std::string CfgLoader::saveCoreOverrideParams(int emuIdx){
 		"\n#RATIO_5_4      6"
 		"\n#RATIO_16_9     7"
 		"\n#RATIO_16_10    8", &ConfigEmu::aspectRatio},
-        {"shaderMode", "Shader selected"
-		"\n#AUTO                   -1"
-		"\n#SHADER_NEAREST,         0"
-		"\n#SHADER_BILINEAR,        1"
-		"\n#SHADER_BILINEAR_STD,    2"
-		"\n#SHADER_LCD_GRID,        3"
-		"\n#SHADER_SCANLINES,       4"
-		"\n#SHADER_CRT,             5"
-		"\n#SHADER_CRT_LOTTES,      6"
-		"\n#SHADER_CRT_EASYMODE,    7"
-		"\n#SHADER_HQ2X,            8"
-		"\n#SHADER_HQ3X,            9"
-		"\n#SHADER_HQ4X,            10"
-		"\n#SHADER_XBR_LV2_FAST,    11"
-		"\n#SHADER_XBR_HYLLIAN,     12", &ConfigEmu::shaderMode},
         {"scaleMode", "Scaler in SW mode. Not used", &ConfigEmu::scaleMode},
         {"integerScale", "Enable or disable the screen integer scale"
 		"\n#AUTO                   -1"
@@ -882,7 +1143,12 @@ std::string CfgLoader::saveCoreOverrideParams(int emuIdx){
 		"\n#SCALE FIXED 2X		 3"
 		"\n#SCALE FIXED 3X	     4"
 		"\n#SCALE FIXED 4X		 5"
-		"\n#SCALE FIXED 5X		 6", &ConfigEmu::scaleIntMode}
+		"\n#SCALE FIXED 5X		 6", &ConfigEmu::scaleIntMode},
+		{"syncMode", "Synchronization mode"
+		"\n#AUTO           -1"
+		"\n#SYNC_TO_AUDIO	0"
+		"\n#SYNC_TO_VIDEO   1"
+		"\n#SYNC_NONE       2", &ConfigEmu::syncMode}
     };
 
 	//The override list, has the option "auto", which is represented as -1. That's why we subtract 1

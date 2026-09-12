@@ -1,4 +1,4 @@
-﻿/* esp32_mp.c
+/* esp32_mp.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

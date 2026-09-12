@@ -1,4 +1,4 @@
-﻿/*
+/*
   Dragonball Z
   Banpresto, 1993
 

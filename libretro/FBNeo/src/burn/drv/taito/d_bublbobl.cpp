@@ -1,4 +1,4 @@
-﻿// Based on MAME driver by Chris Moore, Nicola Salmoria
+// Based on MAME driver by Chris Moore, Nicola Salmoria
 
 // .. FBH!
 

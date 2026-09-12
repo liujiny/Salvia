@@ -1,4 +1,4 @@
-﻿typedef enum { ES, CS, SS, DS } SREGS;
+typedef enum { ES, CS, SS, DS } SREGS;
 typedef enum { AW, CW, DW, BW, SP, BP, IX, IY } WREGS;
 
 #define NEC_NMI_INT_VECTOR 2

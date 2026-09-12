@@ -1,4 +1,4 @@
-﻿/* Ramtek M79 Ambush */
+/* Ramtek M79 Ambush */
 
 #include "driver.h"
 #include "vidhrdw/generic.h"

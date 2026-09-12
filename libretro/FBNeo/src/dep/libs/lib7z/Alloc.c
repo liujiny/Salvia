@@ -1,4 +1,4 @@
-﻿/* Alloc.c -- Memory allocation functions
+/* Alloc.c -- Memory allocation functions
 2024-02-18 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"

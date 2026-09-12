@@ -1,4 +1,4 @@
-﻿/* api_decl.h
+/* api_decl.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

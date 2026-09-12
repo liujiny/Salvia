@@ -1,4 +1,4 @@
-﻿/* test_ossl_bn.h
+/* test_ossl_bn.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿// Atari EE-ROM (X2212), impl. by dink
+// Atari EE-ROM (X2212), impl. by dink
 
 UINT8 x2212_read(INT32 chip, UINT16 offset);
 void x2212_write(INT32 chip, UINT16 offset, UINT8 data);

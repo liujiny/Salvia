@@ -1,4 +1,4 @@
-﻿/* fe_x25519_128.h
+/* fe_x25519_128.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

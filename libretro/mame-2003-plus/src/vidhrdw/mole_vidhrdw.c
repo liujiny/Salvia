@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
   vidhrdw/mole.c
   Functions to emulate the video hardware of Mole Attack!.
   Mole Attack's Video hardware is essentially two banks of 512 characters.

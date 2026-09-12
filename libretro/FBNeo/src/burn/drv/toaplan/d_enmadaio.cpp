@@ -1,4 +1,4 @@
-﻿#include "toaplan.h"
+#include "toaplan.h"
 // Enma Daio
 
 static UINT8 DrvButton[8] = {0, 0, 0, 0, 0, 0, 0, 0};

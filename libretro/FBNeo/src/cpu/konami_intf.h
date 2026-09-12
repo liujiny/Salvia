@@ -1,4 +1,4 @@
-﻿void konamiWrite(UINT16 address, UINT8 data);
+void konamiWrite(UINT16 address, UINT8 data);
 UINT8 konamiRead(UINT16 address);
 UINT8 konamiFetch(UINT16 address);
 

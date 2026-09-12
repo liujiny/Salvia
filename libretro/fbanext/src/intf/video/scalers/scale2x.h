@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of the Scale2x project.
  *
  * Copyright (C) 2001-2003 Andrea Mazzoleni

@@ -1,4 +1,4 @@
-﻿#ifndef AES_H
+#ifndef AES_H
 #define AES_H
 
 /* This file is sourced from https://github.com/kokke/tiny-AES-c, with unused code excised.

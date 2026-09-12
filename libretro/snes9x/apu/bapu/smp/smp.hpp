@@ -1,4 +1,4 @@
-﻿class SMP : public Processor {
+class SMP : public Processor {
 public:
   static const uint8 iplrom[64];
   uint8 *apuram;
@@ -15,7 +15,6 @@ public:
 
   void load_state(uint8 **);
   void save_state(uint8 **);
-  void save_spc (uint8 *);
   SMP();
   ~SMP();
 

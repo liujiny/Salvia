@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Art and Magic 68K/TMS34010 hardware driver module
+// FinalBurn Neo Art and Magic 68K/TMS34010 hardware driver module
 // Based on MAME driver by Aaron Giles, Nicola Salmoria
 
 #include "tiles_generic.h"

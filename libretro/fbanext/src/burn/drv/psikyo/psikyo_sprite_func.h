@@ -1,4 +1,4 @@
-﻿#define ROT 0
+#define ROT 0
 #define BPP 16
 #define ROWSCROLL 0
 

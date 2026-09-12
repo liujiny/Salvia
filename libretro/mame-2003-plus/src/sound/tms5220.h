@@ -1,4 +1,4 @@
-﻿#ifndef tms5220_h
+#ifndef tms5220_h
 #define tms5220_h
 
 void tms5220_reset(void);

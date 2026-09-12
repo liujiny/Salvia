@@ -1,4 +1,4 @@
-﻿/* IGS - The Great Wall */
+/* IGS - The Great Wall */
 
 /* hardware is probably very similar to China Dragon / Dragon World */
 

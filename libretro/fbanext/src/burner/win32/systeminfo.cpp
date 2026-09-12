@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 #include "build_details.h"
 #include <tlhelp32.h>
 #include <setupapi.h>

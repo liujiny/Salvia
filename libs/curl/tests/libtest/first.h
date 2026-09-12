@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_LIBTEST_FIRST_H
+#ifndef HEADER_LIBTEST_FIRST_H
 #define HEADER_LIBTEST_FIRST_H
 /***************************************************************************
  *                                  _   _ ____  _

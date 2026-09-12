@@ -1,4 +1,4 @@
-﻿/*
+/*
    Hyllian's 3xBR v3.3a-b-c
    
    Copyright (C) 2011, 2012 Hyllian/Jararaca - sergiogdb@gmail.com

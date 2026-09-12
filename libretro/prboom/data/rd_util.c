@@ -1,4 +1,4 @@
-﻿// Copyright (c) 1993-2011 PrBoom developers (see AUTHORS)
+// Copyright (c) 1993-2011 PrBoom developers (see AUTHORS)
 // Licence: GPLv2 or later (see COPYING)
 
 // Useful utility functions

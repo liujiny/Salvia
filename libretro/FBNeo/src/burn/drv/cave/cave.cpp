@@ -1,4 +1,4 @@
-﻿#include "cave.h"
+#include "cave.h"
 
 INT32 nCaveXSize = 0, nCaveYSize = 0;
 INT32 nCaveXOffset = 0, nCaveYOffset = 0;

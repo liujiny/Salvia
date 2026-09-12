@@ -1,4 +1,4 @@
-﻿void i5000sndInit(UINT8 *rom, INT32 clock, INT32 length);
+void i5000sndInit(UINT8 *rom, INT32 clock, INT32 length);
 void i5000sndExit();
 void i5000sndReset();
 void i5000sndUpdate(INT16 *output, INT32 length);

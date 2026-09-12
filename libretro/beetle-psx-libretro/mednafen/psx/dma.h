@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_PSX_DMA_H
+#ifndef __MDFN_PSX_DMA_H
 #define __MDFN_PSX_DMA_H
 
 int32_t DMA_Update(const int32_t timestamp);

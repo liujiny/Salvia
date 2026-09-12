@@ -1,4 +1,4 @@
-﻿#include "toaplan.h"
+#include "toaplan.h"
 
 UINT8* ExtraTROM;
 UINT8* ExtraTRAM;

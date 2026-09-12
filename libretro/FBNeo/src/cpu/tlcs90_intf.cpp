@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "tlcs90_intf.h"
 
 static UINT8 (*read)(UINT32) = NULL;

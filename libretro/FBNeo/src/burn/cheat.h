@@ -1,4 +1,4 @@
-﻿#define CHEAT_MAX_ADDRESS (512)
+#define CHEAT_MAX_ADDRESS (512)
 #define CHEAT_MAX_OPTIONS (512)
 #define CHEAT_MAX_NAME	  (128)
 

@@ -1,4 +1,4 @@
-﻿/* lkcapi_ecdsa_glue.c -- glue logic to register ECDSA wolfCrypt
+/* lkcapi_ecdsa_glue.c -- glue logic to register ECDSA wolfCrypt
  * implementations with the Linux Kernel Cryptosystem
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.

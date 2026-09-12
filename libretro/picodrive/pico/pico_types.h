@@ -1,4 +1,4 @@
-﻿#ifndef PICO_TYPES
+#ifndef PICO_TYPES
 #define PICO_TYPES
 
 #include <stdint.h>

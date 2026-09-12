@@ -1,4 +1,4 @@
-﻿#ifdef __WIN32__
+#ifdef __WIN32__
 #include <windows.h>
 #else
 #define MessageBox(owner, text, caption, type) printf("%s: %s\n", caption, text)

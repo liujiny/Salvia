@@ -1,4 +1,4 @@
-﻿/* Hit Me driver by the EMUL8, led by Dan Boris
+/* Hit Me driver by the EMUL8, led by Dan Boris
 
    It doesn't work?  should the timer stuff have changed?
 

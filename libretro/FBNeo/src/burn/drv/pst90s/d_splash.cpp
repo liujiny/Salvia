@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Splash hardware driver module
+// FinalBurn Neo Splash hardware driver module
 // Based on MAME driver by Manuel Abadia, David Haywood
 
 #include "tiles_generic.h"

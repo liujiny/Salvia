@@ -1,4 +1,4 @@
-﻿/* wolf-tasks.c
+/* wolf-tasks.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of the Advance project.
  *
  * Copyright (C) 2004 Andrea Mazzoleni

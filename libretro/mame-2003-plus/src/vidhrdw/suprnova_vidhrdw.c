@@ -1,4 +1,4 @@
-﻿/* Super Kaneko Nova System Vidhrdw */
+/* Super Kaneko Nova System Vidhrdw */
 
 /*
 TODO:

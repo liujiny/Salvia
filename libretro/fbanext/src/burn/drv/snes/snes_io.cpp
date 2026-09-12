@@ -1,4 +1,4 @@
-﻿/*Snem 0.1 by Tom Walker
+/*Snem 0.1 by Tom Walker
 I/O, or $42xx*/
 
 #include "snes.h"

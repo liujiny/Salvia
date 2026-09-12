@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2003 Ryan A. Nunn
 
 This program is free software; you can redistribute it and/or

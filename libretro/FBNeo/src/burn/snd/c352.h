@@ -1,4 +1,4 @@
-﻿void c352_init(INT32 clock, INT32 divider, UINT8 *c352_rom, INT32 c352_romsize, INT32 AddToStream);
+void c352_init(INT32 clock, INT32 divider, UINT8 *c352_rom, INT32 c352_romsize, INT32 AddToStream);
 void c352_set_sync(INT32 (*pCPUCyclesCB)(), INT32 nCPUMhz);
 void c352_exit();
 void c352_scan(INT32 nAction, INT32 *);

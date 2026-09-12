@@ -1,4 +1,4 @@
-﻿/* Sort.c -- Sort functions
+/* Sort.c -- Sort functions
 : Igor Pavlov : Public domain */
 
 #include "Precomp.h"

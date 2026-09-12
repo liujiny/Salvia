@@ -1,4 +1,4 @@
-﻿#ifndef NMK004_H
+#ifndef NMK004_H
 #define NMK004_H
 
 void NMK004_init(void);

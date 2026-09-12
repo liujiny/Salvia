@@ -1,4 +1,4 @@
-﻿/* Mednafen - NES/Famicom Emulator
+/* Mednafen - NES/Famicom Emulator
  *
  * Copyright notice for this file:
  *  Copyright (C) 2002 Xodnizel

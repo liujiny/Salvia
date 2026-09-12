@@ -1,4 +1,4 @@
-﻿#ifndef GBA_H
+#ifndef GBA_H
 #define GBA_H
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * peops_prof.h - per-bucket profiling for the PEOPS soft rasteriser.
  *
  * The dispatcher in gpu.c (PEOPS_GPUwriteDataMem) routes every GP0 opcode

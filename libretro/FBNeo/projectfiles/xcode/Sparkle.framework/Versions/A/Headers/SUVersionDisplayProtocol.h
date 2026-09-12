@@ -1,4 +1,4 @@
-﻿//
+//
 //  SUVersionDisplayProtocol.h
 //  EyeTV
 //

@@ -1,4 +1,4 @@
-﻿#include "General.h"
+#include "General.h"
 #include "FileIO.h"
 #include "ConfigDialog.h"
 #include "Chankast.h"

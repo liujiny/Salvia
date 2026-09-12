@@ -1,4 +1,4 @@
-﻿#include "vidhrdw/generic.h"
+#include "vidhrdw/generic.h"
 
 static int bgcharbank;
 static struct tilemap *bg_tilemap, *fg_tilemap;

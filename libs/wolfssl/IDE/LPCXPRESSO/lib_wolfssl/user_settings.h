@@ -1,4 +1,4 @@
-﻿#include <stdint.h>
+#include <stdint.h>
 
 /* Configuration */
 #define WOLFSSL_USER_IO

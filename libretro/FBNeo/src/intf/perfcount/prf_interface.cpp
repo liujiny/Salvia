@@ -1,4 +1,4 @@
-﻿// Profiling support
+// Profiling support
 #include "burner.h"
 
 bool bProfileOkay = false;

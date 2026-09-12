@@ -1,4 +1,4 @@
-﻿
+
 #define SINGLE_THREADED  /* or define RTOS option */
 
 #define WOLFSSL_USER_IO  /* Use own TCP/IP lib */

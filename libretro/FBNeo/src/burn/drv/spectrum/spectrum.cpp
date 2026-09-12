@@ -1,4 +1,4 @@
-﻿// ideas:
+// ideas:
 // RAWTAP (.wav): needs some finishing
 
 // FinalBurn NEO ZX Spectrum driver.  NEO edition!

@@ -1,4 +1,4 @@
-﻿#ifndef RGLGEN_DECL_H__
+#ifndef RGLGEN_DECL_H__
 #define RGLGEN_DECL_H__
 #ifdef __cplusplus
 extern "C" {

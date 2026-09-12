@@ -1,4 +1,4 @@
-﻿/*	Space Harrier Hardware
+/*	Space Harrier Hardware
 **
 **	2xMC68000 + Z80
 **	YM2151 or YM2203 + Custom PCM

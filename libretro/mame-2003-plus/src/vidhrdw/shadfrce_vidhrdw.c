@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 #include "vidhrdw/generic.h"
 
 static struct tilemap *shadfrce_fgtilemap, *shadfrce_bg0tilemap,  *shadfrce_bg1tilemap;

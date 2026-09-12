@@ -1,4 +1,4 @@
-﻿/* fips_rand.h
+/* fips_rand.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

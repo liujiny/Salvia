@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
 
 There is strong evidence that the following Namco custom chips are all
 instances of the same 4-bit MCU, the Fujitsu MB8851 (42-pin DIP package)

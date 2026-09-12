@@ -1,1 +1,1 @@
-﻿/* dummy ecc_fp.c for dist */
+/* dummy ecc_fp.c for dist */

@@ -1,4 +1,4 @@
-﻿#include "tiles_generic.h"
+#include "tiles_generic.h"
 
 #define MAX_TILEMAPS	64	// number of tile maps allowed
 #define MAX_GFXNUM

@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup openSSL
     \brief  それぞれのwolfssl_evp_cipherポインタのゲッター関数。最初にプログラム内でwolfssl_evp_init（）を1回呼び出す必要があります。wolfssl_des_ecbマクロは、wolfssl_evp_des_ede3_ecb（）に対して定義する必要があります。
     \return pointer  DES EDE3操作のためのwolfssl_evp_cipherポインタを返します。

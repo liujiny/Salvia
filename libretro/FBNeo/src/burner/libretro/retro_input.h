@@ -1,4 +1,4 @@
-﻿#ifndef __RETRO_INPUT__
+#ifndef __RETRO_INPUT__
 #define __RETRO_INPUT__
 
 struct KeyBind

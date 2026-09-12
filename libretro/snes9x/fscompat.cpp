@@ -1,4 +1,4 @@
-﻿/*****************************************************************************\
+/*****************************************************************************\
      Snes9x - Portable Super Nintendo Entertainment System (TM) emulator.
                 This file is licensed under the Snes9x License.
    For further information, consult the LICENSE file in the root directory.
@@ -11,12 +11,6 @@
 #include "fscompat.h"
 #include "port.h"
 #include "memmap.h"
-
-#ifdef _MSC_VER
-    // Definimos los equivalentes de Microsoft para funciones POSIX
-    #define strcasecmp _stricmp
-    #define strncasecmp _strnicmp
-#endif
 
 using std::string;
 

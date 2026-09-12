@@ -1,4 +1,4 @@
-﻿#ifndef RC_EXPORT_H
+#ifndef RC_EXPORT_H
 #define RC_EXPORT_H
 
 /* These macros control how callbacks and public functions are defined */

@@ -1,4 +1,4 @@
-﻿#include "unzip.h"
+#include "unzip.h"
 
 #include <stdlib.h>
 #include <string.h>

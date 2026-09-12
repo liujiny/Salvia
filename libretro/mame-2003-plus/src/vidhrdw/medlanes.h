@@ -1,4 +1,4 @@
-﻿#define HORZ_RES		32
+#define HORZ_RES		32
 #define VERT_RES		24
 #define HORZ_CHR        8
 #define VERT_CHR		10

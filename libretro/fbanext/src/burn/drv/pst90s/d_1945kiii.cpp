@@ -1,4 +1,4 @@
-﻿// FB Alpha 1945K-III driver module
+// FB Alpha 1945K-III driver module
 // Port to Finalburn Alpha by OopsWare. 2007
 
 #include "tiles_generic.h"

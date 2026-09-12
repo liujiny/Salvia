@@ -1,4 +1,4 @@
-﻿#ifndef ROMS_ATARI_BASIC_H_
+#ifndef ROMS_ATARI_BASIC_H_
 #define ROMS_ATARI_BASIC_H_
 
 #include "atari.h"

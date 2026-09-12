@@ -1,4 +1,4 @@
-﻿#ifndef UGUI_TOOLS_H_
+#ifndef UGUI_TOOLS_H_
 #define UGUI_TOOLS_H_
 
 #ifdef __cplusplus

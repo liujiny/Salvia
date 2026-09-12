@@ -56,12 +56,4 @@ tools/XexTool.txt
 production/**
 *.pdb
 *.xdb
-*.sdf
-*.opensdf
-*.suo
-*.user
-*.db
-ipch/
-Distro360/
-Debug/
-Release/
+*.bak

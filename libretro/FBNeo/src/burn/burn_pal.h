@@ -1,4 +1,4 @@
-﻿// Common RAM-based palette decoding functions
+// Common RAM-based palette decoding functions
 
 // point these to destination palette and to palette ram
 

@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Sega/Yamaha YMF292-F (SCSP = Saturn Custom Sound Processor) emulation
 	By ElSemi
 	MAME/M1 conversion and cleanup by R. Belmont

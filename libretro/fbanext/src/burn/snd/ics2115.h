@@ -1,4 +1,4 @@
-﻿extern UINT8 *ICSSNDROM;
+extern UINT8 *ICSSNDROM;
 extern UINT32 nICSSNDROMLen;
 
 extern UINT8 ics2115read(UINT8 offset);

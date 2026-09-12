@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_PSX_INPUT_NEGCONRUMBLE_H
+#ifndef __MDFN_PSX_INPUT_NEGCONRUMBLE_H
 #define __MDFN_PSX_INPUT_NEGCONRUMBLE_H
 
 #include <string>

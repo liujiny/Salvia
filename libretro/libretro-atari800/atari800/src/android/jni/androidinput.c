@@ -1,4 +1,4 @@
-﻿/*
+/*
  * androidinput.c - handle touch & keyboard events from android
  *
  * Copyright (C) 2010 Kostas Nakos

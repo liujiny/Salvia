@@ -1,4 +1,4 @@
-﻿extern INT32 EnableHiscores;
+extern INT32 EnableHiscores;
 
 void HiscoreInit();
 void HiscoreReset();

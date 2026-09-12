@@ -1,4 +1,4 @@
-﻿#include "libopera/opera_bios.h"
+#include "libopera/opera_bios.h"
 
 #include "opera_lr_callbacks.h"
 

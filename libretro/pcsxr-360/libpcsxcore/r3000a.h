@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
  *   Copyright (C) 2007 Ryan Schultz, PCSX-df Team, PCSX team              *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -204,6 +204,13 @@ typedef struct {
 } psxRegisters;
 
 extern psxRegisters psxRegs;
+
+/* [XBOX360] I-cache del interprete (psxinterpreter.c).  Ver el comentario de
+ * Config.IcacheEmulation en psxcommon.h. */
+void psxIcacheClear(void);
+void psxIcacheConfigure(void);
+u32  psxIcacheFetchCompile(u32 pc);
+void psxIcacheStats(u32 *n, u32 *pc, u32 *cached, u32 *ram);
 
 #define set_event(e, c) do { \
 	psxRegs.interrupt |= (1 << (e)); \

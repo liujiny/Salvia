@@ -1,4 +1,4 @@
-﻿/* Aquarium (c)1996 Excellent Systems */
+/* Aquarium (c)1996 Excellent Systems */
 
 /* the hardware is similar to gcpinbal.c, probably should merge it at some point */
 

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * sound_dos.c - high level sound routines for DOS port
  *
  * Copyright (c) 1998-2000 Matthew Conte

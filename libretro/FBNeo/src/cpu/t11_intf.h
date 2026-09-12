@@ -1,4 +1,4 @@
-﻿#include "t11.h"
+#include "t11.h"
 
 void t11Init(INT32 mode, INT32 (*irqcallback)(INT32));
 void t11Reset();

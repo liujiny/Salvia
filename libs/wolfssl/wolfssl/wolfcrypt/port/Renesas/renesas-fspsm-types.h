@@ -1,4 +1,4 @@
-﻿/* renesas-fsp-crypt.h
+/* renesas-fsp-crypt.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

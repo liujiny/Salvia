@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Dong Sung Pasha Pasha 2 driver module
+// FinalBurn Neo Dong Sung Pasha Pasha 2 driver module
 // Based on MAME driver by Pierpaolo Prazzoli
 
 #include "tiles_generic.h"

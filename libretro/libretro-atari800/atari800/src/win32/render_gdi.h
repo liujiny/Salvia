@@ -1,4 +1,4 @@
-﻿#ifndef _RENDER_GDI_H_
+#ifndef _RENDER_GDI_H_
 #define _RENDER_GDI_H_
 
 #include "screen_win32.h" 

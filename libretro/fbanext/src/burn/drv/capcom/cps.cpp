@@ -1,4 +1,4 @@
-﻿#include "cps.h"
+#include "cps.h"
 // CPS (general)
 
 INT32 Cps = 0;							// 1 = CPS1, 2 = CPS2, 3 = CPS Changer

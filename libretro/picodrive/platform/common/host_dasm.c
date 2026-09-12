@@ -1,4 +1,4 @@
-﻿/*
+/*
  * DRC host disassembler interface for MIPS/ARM32 for use without binutils
  * (C) irixxxx, 2018-2021
  */

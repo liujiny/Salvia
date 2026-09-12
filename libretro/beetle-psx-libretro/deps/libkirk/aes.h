@@ -1,4 +1,4 @@
-﻿#ifndef __RIJNDAEL_H
+#ifndef __RIJNDAEL_H
 #define __RIJNDAEL_H
 
 #include "kirk_engine.h"

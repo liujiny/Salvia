@@ -1,4 +1,4 @@
-﻿/* fe_operations.h
+/* fe_operations.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

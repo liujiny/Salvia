@@ -1,4 +1,4 @@
-﻿#ifndef YM3812INTF_H
+#ifndef YM3812INTF_H
 #define YM3812INTF_H
 
 

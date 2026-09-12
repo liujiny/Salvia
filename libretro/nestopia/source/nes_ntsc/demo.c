@@ -1,4 +1,4 @@
-﻿/* Displays and saves NTSC filtered image. Mouse controls sharpness and gamma.
+/* Displays and saves NTSC filtered image. Mouse controls sharpness and gamma.
 Defaults to using "test.bmp" for input and "filtered.bmp" for output. Input
 image must be an uncompressed BMP. Also writes "nes.pal" RGB color file on exit.
 

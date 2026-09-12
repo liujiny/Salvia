@@ -1,4 +1,4 @@
-﻿/*
+/*
  * atari_vga.c - DOS VGA mode specific port code
  *
  * Copyright (c) 1996 Ivo van Poorten

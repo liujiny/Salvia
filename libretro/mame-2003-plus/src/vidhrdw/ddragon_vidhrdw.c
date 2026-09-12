@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
 
   Video Hardware for some Technos games:
     Double Dragon, Double Dragon bootleg, Double Dragon II and China Gate

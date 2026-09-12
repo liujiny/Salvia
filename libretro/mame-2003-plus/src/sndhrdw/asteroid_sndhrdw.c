@@ -1,4 +1,4 @@
-﻿/*****************************************************************************
+/*****************************************************************************
  *
  * Asteroids Analog Sound system interface into discrete sound emulation
  * input mapping system.

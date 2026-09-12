@@ -1,4 +1,4 @@
-﻿#ifndef MDFN_FILE_H
+#ifndef MDFN_FILE_H
 #define MDFN_FILE_H
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-﻿/* vidhrdw/spbactn.c - see drivers/spbactn.c for more info */
+/* vidhrdw/spbactn.c - see drivers/spbactn.c for more info */
 /* rather similar to galspnbl.c */
 
 #include "driver.h"

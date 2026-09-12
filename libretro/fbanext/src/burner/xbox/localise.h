@@ -1,4 +1,4 @@
-﻿#ifndef _LOCALISE_H_
+#ifndef _LOCALISE_H_
 #define _LOCALISE_H_
 
 extern bool bLanguageActive;

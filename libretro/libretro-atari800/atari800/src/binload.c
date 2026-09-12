@@ -1,4 +1,4 @@
-﻿/*
+/*
  * binload.c - load a binary executable file
  *
  * Copyright (C) 1995-1998 David Firth

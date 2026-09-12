@@ -1,4 +1,4 @@
-﻿// Functions for recording & replaying input
+// Functions for recording & replaying input
 #include "burner.h"
 #include <commdlg.h>
 #include "inputbuf.h"

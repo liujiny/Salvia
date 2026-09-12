@@ -1,4 +1,4 @@
-﻿// custom misc paths, by regret
+// custom misc paths, by regret
 #include "burner.h"
  
 TCHAR szMiscPaths[PATH_SUM][MAX_PATH] = {

@@ -1,4 +1,4 @@
-﻿/*
+/*
   tms9900.h
 
   C Header file for TMS9900 core

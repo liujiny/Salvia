@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2010, Braden "Blzut3" Obrzut <admin@maniacsvault.net>
+// Copyright (c) 2010, Braden "Blzut3" Obrzut <admin@maniacsvault.net>
 // Copyright (c) 2019, Fernando Carmona Varo  <ferkiwi@gmail.com>
 // All rights reserved.
 //

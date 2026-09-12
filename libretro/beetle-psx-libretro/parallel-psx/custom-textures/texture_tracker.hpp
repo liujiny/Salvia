@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "../atlas/atlas.hpp"
 #include <set>

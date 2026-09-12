@@ -1,4 +1,4 @@
-﻿#ifndef __V30MZ_H_
+#ifndef __V30MZ_H_
 #define __V30MZ_H_
 
 #include <boolean.h>

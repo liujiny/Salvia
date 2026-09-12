@@ -1,4 +1,4 @@
-﻿/* sniffer_error.h
+/* sniffer_error.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

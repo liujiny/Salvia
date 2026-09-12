@@ -1,4 +1,4 @@
-﻿// DirectX9 Enhanced video output
+// DirectX9 Enhanced video output
 #include "burner.h"
 #include "vid_softfx.h"
 

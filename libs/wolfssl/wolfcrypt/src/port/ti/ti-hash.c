@@ -1,4 +1,4 @@
-﻿/* port/ti/ti-hash.c
+/* port/ti/ti-hash.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

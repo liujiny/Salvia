@@ -1,4 +1,4 @@
-﻿#ifndef HC55516_H
+#ifndef HC55516_H
 #define HC55516_H
 
 #define MAX_HC55516		4

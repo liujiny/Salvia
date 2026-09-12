@@ -1,4 +1,4 @@
-﻿#if Z180_EXACT
+#if Z180_EXACT
 /* tmp1 value for ini/inir/outi/otir for [C.1-0][io.1-0] */
 static UINT8 irep_tmp1[4][4] = {
 	{0,0,1,0},{0,1,0,1},{1,0,1,1},{0,1,1,0}

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <string>
 #include <map>
@@ -12,9 +12,12 @@ namespace cfg {
 	typedef enum {emulators = 0, debug, resolution_width, resolution_height, fullscreen, path_prefix, aspectRatio, packedImages,
 			scaleMode, scaleIntMode, syncMode, shaderMode, fastForwardMult, libretrosystem, libretro_save, libretro_state, libretro_core, libretro_core_version, 
 			libretro_core_extensions, roms_path,
-			showFps, integerScale, animBG,
+			showFps, integerScale, animBG, musicVolume, musicEnabled, musicFile,
+			midiEnabled, midiSoundfont, midiVolume, midiModule,
 			mainLang, scrapRegion, scrapLang, scrapOrigin, scrapUser, scrapPass, apikeytgdb, raUser, raPass, enableAchievements, hardcoreRA,
 			showEmptyEmulators, overscan_x, overscan_y, resolutionIndex,
+			lightgunCrossEnabled, lightgunCrossSize, lightgunThickness,
+			lastOptSel,
 			MAIN_CFG_MAX} MAIN_CFG_PROPS_KEYS;
 
 	typedef enum{generalConfig = 0, name,
@@ -38,7 +41,7 @@ namespace cfg {
 			*this = std::move(other);
 		}
 
-		// Operador de asignaci�n de movimiento
+		// Operador de asignacion de movimiento
 		t_emu_props& operator=(t_emu_props&& other) {
 			if (this != &other) {
 				values      = std::move(other.values);

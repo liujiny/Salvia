@@ -1,4 +1,4 @@
-﻿// keyboard support for Pico/SC-3000
+// keyboard support for Pico/SC-3000
 
 // keyboard description
 struct key {

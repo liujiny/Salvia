@@ -1,4 +1,4 @@
-﻿#ifndef _GENIE_DECODE_H__
+#ifndef _GENIE_DECODE_H__
 #define _GENIE_DECODE_H__
 
 #ifdef __cplusplus

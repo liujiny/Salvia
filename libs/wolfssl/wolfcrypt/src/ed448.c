@@ -1,4 +1,4 @@
-﻿/* ed448.c
+/* ed448.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Render Hardware Interface (RHI)
  *
  * Vtable-based abstraction over the renderer backend.  At

@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 // #include "burn_sound.h" // included in burnint.h, above!
 #include "timer.h"
 

@@ -1,4 +1,4 @@
-﻿#include <ft2build.h>
+#include <ft2build.h>
 #include FT_SYSTEM_STREAM_H
 
 #include <stdio.h>

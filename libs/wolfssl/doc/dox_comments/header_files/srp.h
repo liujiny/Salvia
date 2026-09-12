@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup SRP
 
     \brief Initializes the Srp struct for usage.

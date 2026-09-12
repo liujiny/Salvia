@@ -1,4 +1,4 @@
-﻿#if !defined(_STATE_H)
+#if !defined(_STATE_H)
 
 #ifdef __cplusplus
  extern "C" {

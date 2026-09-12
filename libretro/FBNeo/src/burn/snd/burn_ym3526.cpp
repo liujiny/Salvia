@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "burn_ym3526.h"
 
 void (*BurnYM3526Update)(INT16* pSoundBuf, INT32 nSegmentEnd);

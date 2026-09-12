@@ -1,4 +1,4 @@
-﻿// FB Neo Space Invaders driver module
+// FB Neo Space Invaders driver module
 // Based on MAME driver by Michael Strutts, Nicola Salmoria, Tormod Tjaberg, Mirko Buffoni,
 // Lee Taylor, Valerio Verrando, Marco Cassili, Zsolt Vasvari and others
 

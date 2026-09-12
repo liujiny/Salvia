@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MUL* and MULU* do not set OV correctly
  * DIVX: the second operand should be treated as dword instead of word
  * GETATE, GETPTE and GETRA should not be used

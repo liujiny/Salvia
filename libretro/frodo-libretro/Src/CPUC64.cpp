@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  CPUC64.cpp - 6510 (C64) emulation (line based)
  *
  *  Frodo (C) 1994-1997,2002-2005 Christian Bauer

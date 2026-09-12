@@ -1,4 +1,4 @@
-﻿#ifndef __VB_VSU_H
+#ifndef __VB_VSU_H
 #define __VB_VSU_H
 
 #include "../include/blip/Blip_Buffer.h"

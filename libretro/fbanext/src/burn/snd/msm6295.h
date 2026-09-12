@@ -1,4 +1,4 @@
-﻿// MSM6295 module header
+// MSM6295 module header
 
 #define MAX_MSM6295 (2)
 

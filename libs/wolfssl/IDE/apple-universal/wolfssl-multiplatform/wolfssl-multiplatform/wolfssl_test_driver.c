@@ -1,4 +1,4 @@
-﻿/* wolfssl_test_driver.c
+/* wolfssl_test_driver.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

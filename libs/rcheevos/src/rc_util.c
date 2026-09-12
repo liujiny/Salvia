@@ -1,4 +1,4 @@
-﻿#include "rc_util.h"
+#include "rc_util.h"
 
 #include "rc_compat.h"
 #include "rc_error.h"

@@ -1,4 +1,4 @@
-﻿/* Copyright  (C) 2010-2020 The RetroArch team
+/* Copyright  (C) 2010-2020 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (msvc.h).
@@ -38,12 +38,17 @@ extern "C"  {
    #ifndef snprintf
       #define snprintf c99_snprintf_retro__
    #endif
-   int c99_snprintf_retro__(char *outBuf, size_t size, const char *format, ...);
+   int c99_snprintf_retro__(char *s, size_t len, const char *format, ...);
 
    #ifndef vsnprintf
       #define vsnprintf c99_vsnprintf_retro__
    #endif
-   int c99_vsnprintf_retro__(char *outBuf, size_t size, const char *format, va_list ap);
+   int c99_vsnprintf_retro__(char *s, size_t len, const char *format, va_list ap);
+
+#ifdef _XBOX
+   # define S_IRUSR  S_IREAD                      /* read, user */
+   # define S_IWUSR  S_IWRITE                     /* write, user */
+#endif
 #endif
 
 #ifdef __cplusplus

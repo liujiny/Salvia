@@ -1,4 +1,4 @@
-﻿/* wc_xmss.c
+/* wc_xmss.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

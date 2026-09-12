@@ -1,4 +1,4 @@
-﻿// IGS PGM System Encryptions
+// IGS PGM System Encryptions
 
 #include "pgm.h"
 #include "bitswap.h"

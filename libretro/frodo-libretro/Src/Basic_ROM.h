@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Basic_ROM.h - C64 BASIC ROM
  *
  *  Frodo (C) 1994-1997,2002-2005 Christian Bauer

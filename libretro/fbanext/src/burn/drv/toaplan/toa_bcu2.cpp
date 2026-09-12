@@ -1,4 +1,4 @@
-﻿#include "toaplan.h"
+#include "toaplan.h"
 
 INT32 ToaOpaquePriority;
 

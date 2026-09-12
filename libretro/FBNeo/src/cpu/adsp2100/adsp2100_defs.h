@@ -1,4 +1,4 @@
-﻿#ifndef ADSP2100_DEFS
+#ifndef ADSP2100_DEFS
 #define ADSP2100_DEFS
 
 #include <stdint.h>

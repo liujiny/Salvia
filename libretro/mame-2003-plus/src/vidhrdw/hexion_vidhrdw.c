@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 
 
 static data8_t *vram[2],*unkram;

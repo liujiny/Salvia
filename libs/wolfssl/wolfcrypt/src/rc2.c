@@ -1,4 +1,4 @@
-﻿/* rc2.c
+/* rc2.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

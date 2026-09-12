@@ -1,4 +1,4 @@
-﻿// FB Neo IPS Mangler^H^H^H^H^H^H^HManager
+// FB Neo IPS Mangler^H^H^H^H^H^H^HManager
 #include "burner.h"
 
 #define NUM_LANGUAGES		12

@@ -1,4 +1,4 @@
-﻿/* kcapi_hash.h
+/* kcapi_hash.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

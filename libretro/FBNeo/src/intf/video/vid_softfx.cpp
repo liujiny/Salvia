@@ -1,4 +1,4 @@
-﻿// Software blitter effects
+// Software blitter effects
 
 // TODO: use .c/cpp version of scalers instead of asm (if avail.) for maximal
 // compatibility with 64bit exe

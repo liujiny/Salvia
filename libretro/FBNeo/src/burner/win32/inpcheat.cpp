@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 
 HWND hInpCheatDlg = NULL;				// Handle to the Cheat Dialog
 

@@ -1,4 +1,4 @@
-﻿// FB Alpha Tank Busters driver module
+// FB Alpha Tank Busters driver module
 // Based on MAME driver by Jarek Burczynski
 
 // Notes:

@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup wolfCrypt
 
     \brief This function will return the OID for the wc_HashType provided.

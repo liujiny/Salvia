@@ -1,4 +1,4 @@
-﻿/*
+/*
   Taito L-System
 
   Monoprocessor games (1 main z80, no sound z80)

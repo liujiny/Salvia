@@ -1,4 +1,4 @@
-﻿#include "burn_ym3812.h"
+#include "burn_ym3812.h"
 #include "burn_ym2151.h"
 #include "burn_ym2203.h"
 #include "msm6295.h"

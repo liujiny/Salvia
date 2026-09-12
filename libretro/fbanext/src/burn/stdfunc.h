@@ -1,4 +1,4 @@
-﻿// Standard ROM/input/DIP info functions
+// Standard ROM/input/DIP info functions
 
 // A function to pick a rom, or return NULL if i is out of range
 #define STD_ROM_PICK(Name)												\

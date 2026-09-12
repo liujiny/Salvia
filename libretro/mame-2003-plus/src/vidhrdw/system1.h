@@ -1,4 +1,4 @@
-﻿#ifndef _system1_H_
+#ifndef _system1_H_
 #define _system1_H_
 
 #include "driver.h"

@@ -1,4 +1,4 @@
-﻿#ifndef HDTEXTURES_H
+#ifndef HDTEXTURES_H
 #define HDTEXTURES_H
 
 /*

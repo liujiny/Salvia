@@ -1,4 +1,4 @@
-﻿// Driver Init module
+// Driver Init module
 #include "burner.h"
 #include "neocdlist.h"
 

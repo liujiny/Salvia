@@ -1,4 +1,4 @@
-﻿
+
 UINT8 tms34061_latch_read();
 void tms34061_latch_write(UINT8 data);
 UINT8 tms34061_read(INT32 col, INT32 row, INT32 func);

@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_SMTP_H
+#ifndef HEADER_CURL_SMTP_H
 #define HEADER_CURL_SMTP_H
 /***************************************************************************
  *                                  _   _ ____  _

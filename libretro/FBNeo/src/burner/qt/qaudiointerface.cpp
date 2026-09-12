@@ -1,4 +1,4 @@
-﻿#include <QtWidgets>
+#include <QtWidgets>
 #include <QtMultimedia>
 #include "burner.h"
 #include "qaudiointerface.h"

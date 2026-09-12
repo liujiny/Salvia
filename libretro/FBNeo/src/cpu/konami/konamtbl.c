@@ -1,4 +1,4 @@
-﻿KONAMI_INLINE void abx(void);
+KONAMI_INLINE void abx(void);
 KONAMI_INLINE void adca_di(void);
 KONAMI_INLINE void adca_ex(void);
 KONAMI_INLINE void adca_im(void);

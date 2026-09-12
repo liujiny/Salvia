@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 
 #include <SDL.h>
 #include <gfx/SDL_gfxPrimitives.h>
@@ -19,7 +19,7 @@ inline int rect(SDL_Surface * dst, Sint16 x1, Sint16 y1,
 }
 
 inline void DrawRectAlpha(SDL_Surface* dest, SDL_Rect rect, SDL_Color color, Uint8 alpha) {
-    // 1. Crear una superficie temporal del tamaï¿½o del rectï¿½ngulo
+    // 1. Crear una superficie temporal del tamaño del rectángulo
 	SDL_Surface* temp = SDL_CreateRGBSurface(dest->flags, rect.w, rect.h, dest->format->BitsPerPixel, 
                                              dest->format->Rmask, dest->format->Gmask, dest->format->Bmask, dest->format->Amask);
     
@@ -30,7 +30,7 @@ inline void DrawRectAlpha(SDL_Surface* dest, SDL_Rect rect, SDL_Color color, Uin
     // 3. Establecer el nivel de transparencia global de la superficie
     SDL_SetAlpha(temp, SDL_SRCALPHA, alpha);
     
-    // 4. Hacer el Blit a la superficie de destino (aquï¿½ ocurre la mezcla)
+    // 4. Hacer el Blit a la superficie de destino (aquí ocurre la mezcla)
     SDL_Rect dstPos = { rect.x, rect.y, 0, 0 };
     SDL_BlitSurface(temp, NULL, dest, &dstPos);
     
@@ -41,19 +41,19 @@ inline void DrawRectAlpha(SDL_Surface* dest, SDL_Rect rect, SDL_Color color, Uin
 /*inline void DrawRectAlpha(SDL_Surface* dest, SDL_Rect rect, SDL_Color color, Uint8 alpha) {
     static SDL_Surface* alphaPixel = NULL;
     
-    // 1. Crear el pï¿½xel base una sola vez
+    // 1. Crear el píxel base una sola vez
     if (alphaPixel == NULL) {
         alphaPixel = SDL_CreateRGBSurface(SDL_SWSURFACE, 1, 1, 32, 
                                           0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF);
     }
 
-    // 2. Cambiar el color y el alpha del pï¿½xel (Operaciones instantï¿½neas)
+    // 2. Cambiar el color y el alpha del píxel (Operaciones instantáneas)
     Uint32 colorMapped = SDL_MapRGB(alphaPixel->format, color.r, color.g, color.b);
     SDL_FillRect(alphaPixel, NULL, colorMapped);
     SDL_SetAlpha(alphaPixel, SDL_SRCALPHA, alpha);
 
-    // 3. Estirar el pï¿½xel al tamaï¿½o del rectï¿½ngulo (Stretch Blit)
-    // SDL_SoftStretch es mucho mï¿½s rï¿½pido que crear una superficie entera
+    // 3. Estirar el píxel al tamaño del rectángulo (Stretch Blit)
+    // SDL_SoftStretch es mucho más rápido que crear una superficie entera
     SDL_Rect srcRect = { 0, 0, 1, 1 };
     SDL_Rect dstRect = { rect.x, rect.y, rect.w, rect.h };
     SDL_SoftStretch(alphaPixel, &srcRect, dest, &dstRect);

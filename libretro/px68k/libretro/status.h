@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_STATUSBAR_H
+#ifndef _WINX68K_STATUSBAR_H
 #define _WINX68K_STATUSBAR_H
 
 #ifdef __cplusplus

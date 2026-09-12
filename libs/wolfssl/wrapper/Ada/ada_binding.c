@@ -1,4 +1,4 @@
-﻿/* ada_binding.c
+/* ada_binding.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

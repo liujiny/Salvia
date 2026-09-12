@@ -1,4 +1,4 @@
-﻿// TC0220IOC
+// TC0220IOC
 // Based on MAME sources by Nicola Salmoria
 
 #include "burnint.h"

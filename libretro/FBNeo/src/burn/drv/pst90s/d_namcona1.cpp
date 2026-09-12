@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Namco System NA-1/NA-2 driver module
+// FinalBurn Neo Namco System NA-1/NA-2 driver module
 // Based on MAME (0.103) driver by Phil Stroffolino
 
 #include "tiles_generic.h"

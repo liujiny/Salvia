@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 #include <string.h>
 
 #define MAX_LST_GAMES		35000

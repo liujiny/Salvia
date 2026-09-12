@@ -1,4 +1,4 @@
-﻿/*
+/*
  * PicoDrive
  * (C) notaz, 2007-2010
  * (C) irixxxx, 2019-2024
@@ -683,6 +683,7 @@ void emu_prep_defconfig(void)
 	defaultConfig.msh2_khz = PICO_MSH2_HZ / 1000;
 	defaultConfig.ssh2_khz = PICO_SSH2_HZ / 1000;
 	defaultConfig.max_skip = 4;
+	defaultConfig.h32_layer = 0;
 
 	// platform specific overrides
 	pemu_prep_defconfig();

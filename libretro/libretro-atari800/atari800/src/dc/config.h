@@ -1,4 +1,4 @@
-﻿/* config header for SEGA Dreamcast port using Kallistios (http://cadcdev.sourceforge.net) */
+/* config header for SEGA Dreamcast port using Kallistios (http://cadcdev.sourceforge.net) */
 
 #ifndef CONFIG_H
 #define CONFIG_H

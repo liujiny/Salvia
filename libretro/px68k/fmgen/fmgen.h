@@ -1,4 +1,4 @@
-ï»¿// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 //	FM Sound Generator
 //	Copyright (C) cisc 1998, 2001.
 // ---------------------------------------------------------------------------
@@ -10,8 +10,8 @@
 #include "common.h"
 
 // ---------------------------------------------------------------------------
-//	ï¿½ï¿½ï¿½ï¿½ï¿½Î£ï¿½
-//	ï¿½ï¿½Åªï¿½Æ¡ï¿½ï¿½Ö¥ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½
+//	Äê¿ô¤½¤Î£±
+//	ÀÅÅª¥Æ¡¼¥Ö¥ë¤Î¥µ¥¤¥º
 
 #define FM_LFOBITS		8
 #define FM_TLBITS		7
@@ -22,7 +22,7 @@
 #define FM_LFOENTS		(1 << FM_LFOBITS)
 #define FM_TLPOS		(FM_TLENTS/4)
 
-//	ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½ï¿½ï¿½ï¿½Ù¤ï¿½ 2^(1/256)
+//	¥µ¥¤¥óÇÈ¤ÎÀºÅÙ¤Ï 2^(1/256)
 #define FM_CLENTS		(0x1000 * 2)	// sin + TL + LFO
 
 // ---------------------------------------------------------------------------
@@ -87,13 +87,13 @@ namespace FM
 		uint32_t	PGCalc();
 		uint32_t	PGCalcL();
 
-		uint32_t	dp_;		// ï¿½ï¿½P
+		uint32_t	dp_;		// ¦¤P
 		uint32_t	detune_;		// Detune
 		uint32_t	detune2_;	// DT2
 		uint32_t	multiple_;	// Multiple
-		uint32_t	pg_count_;	// Phase ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-		uint32_t	pg_diff_;	// Phase ï¿½ï¿½Ê¬ï¿½ï¿½
-		int32_t		pg_diff_lfo_;	// Phase ï¿½ï¿½Ê¬ï¿½ï¿½ >> x
+		uint32_t	pg_count_;	// Phase ¸½ºßÃÍ
+		uint32_t	pg_diff_;	// Phase º¹Ê¬ÃÍ
+		int32_t		pg_diff_lfo_;	// Phase º¹Ê¬ÃÍ >> x
 
 	//	Envelop Generator ---------------------------------------------------
 		void	EGCalc();
@@ -104,14 +104,14 @@ namespace FM
 		void	EGUpdate();
 		ISample LogToLin(uint32_t a);
 
-		OpType		type_;		// OP ï¿½Î¼ï¿½ï¿½ï¿½ (M, N...)
+		OpType		type_;		// OP ¤Î¼ïÎà (M, N...)
 		uint32_t	bn_;		// Block/Note
-		int		eg_level_;	// EG ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½
-		int		eg_level_on_next_phase_;	// ï¿½ï¿½ï¿½ï¿½ eg_phase_ ï¿½Ë°Ü¤ï¿½ï¿½ï¿½
-		int		eg_count_;		// EG ï¿½Î¼ï¿½ï¿½ï¿½ï¿½Ñ°Ü¤Þ¤Ç¤Î»ï¿½ï¿½ï¿½
-		int		eg_count_diff_;	// eg_count_ ï¿½Îºï¿½Ê¬
-		int		eg_out_;		// EG+TL ï¿½ï¿½ï¿½ï¤»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-		int		tl_out_;		// TL Ê¬ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½
+		int		eg_level_;	// EG ¤Î½ÐÎÏÃÍ
+		int		eg_level_on_next_phase_;	// ¼¡¤Î eg_phase_ ¤Ë°Ü¤ëÃÍ
+		int		eg_count_;		// EG ¤Î¼¡¤ÎÊÑ°Ü¤Þ¤Ç¤Î»þ´Ö
+		int		eg_count_diff_;	// eg_count_ ¤Îº¹Ê¬
+		int		eg_out_;		// EG+TL ¤ò¹ç¤ï¤»¤¿½ÐÎÏÃÍ
+		int		tl_out_;		// TL Ê¬¤Î½ÐÎÏÃÍ
 //		int		pm_depth_;		// PM depth
 //		int		am_depth_;		// AM depth
 		int		eg_rate_;
@@ -138,7 +138,7 @@ namespace FM
 
 		bool	keyon_;
 		bool	amon_;		// enable Amplitude Modulation
-		bool	param_changed_;	// ï¿½Ñ¥ï¿½á¡¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ì¤¿
+		bool	param_changed_;	// ¥Ñ¥é¥á¡¼¥¿¤¬¹¹¿·¤µ¤ì¤¿
 		bool	mute_;
 		
 	//	Tables ---------------------------------------------------------------
@@ -190,8 +190,8 @@ namespace FM
 		static const uint8_t fbtable[8];
 		uint32_t fb;
 		int	 buf[4];
-		int*	 in[3];			// ï¿½ï¿½ OP ï¿½ï¿½ï¿½ï¿½ï¿½Ï¥Ý¥ï¿½ï¿½ï¿½
-		int*	 out[3];		// ï¿½ï¿½ OP ï¿½Î½ï¿½ï¿½Ï¥Ý¥ï¿½ï¿½ï¿½
+		int*	 in[3];			// ³Æ OP ¤ÎÆþÎÏ¥Ý¥¤¥ó¥¿
+		int*	 out[3];		// ³Æ OP ¤Î½ÐÎÏ¥Ý¥¤¥ó¥¿
 		int*	 pms;
 		
 		Chip*	 chip_;

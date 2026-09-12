@@ -1,4 +1,4 @@
-﻿// Tilemap defines
+// Tilemap defines
 
 // use in place of "which" to have this applied to all initialized tilemaps
 // works for: GenericTilemapSetEnable(), GenericTilemapSetFlip(), GenericTilemapSetOffsets()

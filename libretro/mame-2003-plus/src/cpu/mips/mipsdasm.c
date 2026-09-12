@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MIPS disassembler for the MAME project written by smf
  *
  */

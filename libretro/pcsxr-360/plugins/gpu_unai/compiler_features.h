@@ -1,4 +1,4 @@
-﻿/* compiler_features.h — Xbox 360 MSVC PPC stub.
+/* compiler_features.h — Xbox 360 MSVC PPC stub.
  *
  * Replacement for pcsx_rearmed/include/compiler_features.h.  Upstream
  * relies on GCC builtins (__builtin_expect/clz, __attribute__((noinline)),

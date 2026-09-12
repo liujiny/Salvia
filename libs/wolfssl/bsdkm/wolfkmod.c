@@ -1,4 +1,4 @@
-﻿/* wolfkmod.c -- wolfssl FreeBSD kernel module.
+/* wolfkmod.c -- wolfssl FreeBSD kernel module.
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

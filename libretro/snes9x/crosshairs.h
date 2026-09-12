@@ -1,4 +1,4 @@
-﻿/*****************************************************************************\
+/*****************************************************************************\
      Snes9x - Portable Super Nintendo Entertainment System (TM) emulator.
                 This file is licensed under the Snes9x License.
    For further information, consult the LICENSE file in the root directory.
@@ -46,7 +46,6 @@ enum crosscontrols
 };
 
 void S9xSetControllerCrosshair (enum crosscontrols ctl, int8 idx, const char *fg, const char *bg);
-void S9xGetControllerCrosshair (enum crosscontrols ctl, int8 *idx, const char **fg, const char **bg);
 
 // In gfx.cpp, much like S9xDisplayChar() except it takes the parameters
 // listed and looks up GFX.Screen.

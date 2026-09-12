@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Do not modify this module directly.  It is generated code, written by blitgen.c
  *
  * The implementation is not yet optimal.

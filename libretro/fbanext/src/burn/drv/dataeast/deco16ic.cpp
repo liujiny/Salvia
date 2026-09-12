@@ -1,4 +1,4 @@
-﻿/*
+/*
 TO DO!
 
 // column scroll needs improved does 'size' (16/8) sized columns rather than 1pxl

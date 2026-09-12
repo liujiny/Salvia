@@ -1,4 +1,4 @@
-﻿// Burner Input Constant dialog module
+// Burner Input Constant dialog module
 #include "burner.h"
 
 HWND hInpcDlg = NULL;								// Handle to the Input Dialog

@@ -1,4 +1,4 @@
-﻿/* test_curve448.c
+/* test_curve448.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

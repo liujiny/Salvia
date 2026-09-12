@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo TIA-MC1 driver module
+// FinalBurn Neo TIA-MC1 driver module
 // Based on MAME driver by Eugene Sandulenko, w/special thanks to Shiru for his standalone emulator and documentation
 
 #include "tiles_generic.h"

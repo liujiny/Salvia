@@ -1,4 +1,4 @@
-﻿void ArmWriteByte(UINT32 addr, UINT8 data);
+void ArmWriteByte(UINT32 addr, UINT8 data);
 void ArmWriteLong(UINT32 addr, UINT32 data);
 UINT8  ArmReadByte(UINT32 addr);
 UINT32 ArmReadLong(UINT32 addr);

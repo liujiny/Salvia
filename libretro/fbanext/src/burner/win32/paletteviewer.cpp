@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 
 static HWND hPaletteViewerDlg	= NULL;
 static HWND hParent		= NULL;

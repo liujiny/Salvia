@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 
 #include <const/constant.h>
 #include <beans/structures.h>
@@ -25,7 +25,7 @@ const static int MAX_COMBINATIONS = 3;
 
 struct HotkeyConfig {
     HOTKEYS_LIST action;
-    int triggerButton; // ID del botï¿½n de SDL (ej: A, B, X, Y)
+    int triggerButton; // ID del botón de SDL (ej: A, B, X, Y)
 };
 
 

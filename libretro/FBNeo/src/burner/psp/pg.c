@@ -1,4 +1,4 @@
-ï»¿// primitive graphics for Hello World sce
+// primitive graphics for Hello World sce
 
 #include "pg.h"
 #include "font.c"
@@ -126,7 +126,7 @@ void pgBitBlt(unsigned long x,unsigned long y,unsigned long w,unsigned long h,un
 
 }
 
-//ï¿½æ‚­ï¿½í‚©ï¿½ï¿½È‚ï¿½x2 - LCK
+//‚æ‚­‚í‚©‚ñ‚È‚¢x2 - LCK
 void pgBitBltN2(unsigned long x,unsigned long y,unsigned long h,unsigned long *d)
 {
 	unsigned long *v0;		//pointer to vram

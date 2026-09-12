@@ -1,4 +1,4 @@
-﻿#include "renderer.hpp"
+#include "renderer.hpp"
 #include "renderer_pipelines.hpp"
 #ifndef NDEBUG
 #include "timer.hpp"

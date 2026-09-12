@@ -1,4 +1,4 @@
-﻿/* w64wrapper.c w64wrapper unit tests
+/* w64wrapper.c w64wrapper unit tests
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 #include "spng.h"
 
 #define SSHOT_NOERROR 0

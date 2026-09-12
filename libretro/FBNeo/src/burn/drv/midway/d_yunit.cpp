@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Williams Midway Z/Y Unit driver module
+// FinalBurn Neo Williams Midway Z/Y Unit driver module
 // Based on MAME driver by Alex Pasadyn, Zsolt Vasvari, Ernesto Corvi, Aaron Giles
 
 #include "tiles_generic.h"

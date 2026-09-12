@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Copyright (C) 2024-2024  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *

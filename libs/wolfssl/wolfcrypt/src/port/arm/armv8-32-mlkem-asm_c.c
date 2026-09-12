@@ -1,4 +1,4 @@
-﻿/* armv8-32-mlkem-asm
+/* armv8-32-mlkem-asm
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

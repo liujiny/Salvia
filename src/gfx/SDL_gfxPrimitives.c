@@ -1,4 +1,4 @@
-ï»¿/* 
+/* 
 
 SDL_gfxPrimitives.c: graphics primitives for SDL surfaces
 
@@ -4072,7 +4072,7 @@ __declspec(naked) long int
 #include <ppcintrinsics.h>
 
 static __inline long int lrint(double x) {
-    // Usa la instrucciï¿½n de hardware 'fctiw' de PowerPC
+    // Usa la instrucción de hardware 'fctiw' de PowerPC
     return (long int)__fctiw(x);
 }
 

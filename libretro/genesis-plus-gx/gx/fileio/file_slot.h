@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  file_slot.c
  *
  *  FAT and Memory Card SRAM/Savestate files managment

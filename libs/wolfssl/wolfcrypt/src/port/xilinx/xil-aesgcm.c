@@ -1,4 +1,4 @@
-﻿/* xil-aesgcm.c
+/* xil-aesgcm.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

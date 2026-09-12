@@ -1,4 +1,4 @@
-﻿uint8 SMP::disassemble_read(uint16 addr) {
+uint8 SMP::disassemble_read(uint16 addr) {
   if(addr >= 0xffc0) return smp.iplrom[addr & 0x3f];
   return smp.apuram[addr];
 }

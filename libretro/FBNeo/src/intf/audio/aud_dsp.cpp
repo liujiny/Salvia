@@ -1,4 +1,4 @@
-﻿// DSP_ComaC module
+// DSP_ComaC module
 // ----------------
 //   by Daniel Moreno - ComaC (2001)  < comac2k@teleline.es >
 //

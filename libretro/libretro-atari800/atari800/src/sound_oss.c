@@ -1,4 +1,4 @@
-﻿/*
+/*
  * sound_oss.c - Open Sound System driver
  *
  * Copyright (C) 1995-1998 David Firth

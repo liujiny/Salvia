@@ -1,4 +1,4 @@
-﻿#ifndef CODECS_CONTAINER_H_
+#ifndef CODECS_CONTAINER_H_
 #define CODECS_CONTAINER_H_
 
 #include "atari.h"

@@ -1,4 +1,4 @@
-﻿/* renesas_tsip_util.c
+/* renesas_tsip_util.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

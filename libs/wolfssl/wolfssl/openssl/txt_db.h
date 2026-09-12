@@ -1,4 +1,4 @@
-﻿/* txt_db.h
+/* txt_db.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

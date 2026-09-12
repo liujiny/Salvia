@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Sega System 32 driver module
+// FinalBurn Neo Sega System 32 driver module
 // Based on MAME driver by Aaron Giles
 
 /*

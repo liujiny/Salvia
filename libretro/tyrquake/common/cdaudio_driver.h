@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2006 Kevin Shanahan
 
 This program is free software; you can redistribute it and/or

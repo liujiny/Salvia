@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  C64_SC.cpp - Put the pieces together (Frodo SC)
  *
  *  Frodo (C) 1994-1997,2002-2005 Christian Bauer

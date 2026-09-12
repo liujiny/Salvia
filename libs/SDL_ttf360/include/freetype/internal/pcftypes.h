@@ -1,4 +1,4 @@
-﻿/*  pcftypes.h
+/*  pcftypes.h
 
   FreeType font driver for pcf fonts
 

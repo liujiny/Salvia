@@ -1,4 +1,4 @@
-﻿#ifndef _EMUMAIN_H
+#ifndef _EMUMAIN_H
 #define _EMUMAIN_H
 
 

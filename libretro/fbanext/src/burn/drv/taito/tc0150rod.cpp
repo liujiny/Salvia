@@ -1,4 +1,4 @@
-﻿// TC0150ROD
+// TC0150ROD
 
 #include "tiles_generic.h"
 #include "taito_ic.h"

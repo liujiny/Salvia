@@ -1,4 +1,4 @@
-﻿#include "../sh2.h"
+#include "../sh2.h"
 
 #ifdef DRC_CMP
 #include "../compiler.h"

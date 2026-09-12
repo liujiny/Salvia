@@ -1,4 +1,4 @@
-﻿/* lpc_18xx_startup.c
+/* lpc_18xx_startup.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

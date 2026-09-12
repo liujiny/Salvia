@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Helper for use with the PSP Software Development Kit - http://www.pspdev.org
  * -----------------------------------------------------------------------
  * Licensed under GPL

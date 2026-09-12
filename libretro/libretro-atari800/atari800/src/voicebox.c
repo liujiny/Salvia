@@ -1,4 +1,4 @@
-﻿/*
+/*
  * voicebox.c - Emulation of the Alien Group Voice Box I and II
  *
  * Copyright (C) 2010 Atari800 development team (see DOC/CREDITS)

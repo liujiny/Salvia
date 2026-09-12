@@ -1,4 +1,4 @@
-﻿// FB Alpha F-1 Grand Prix driver module
+// FB Alpha F-1 Grand Prix driver module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

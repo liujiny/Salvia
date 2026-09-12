@@ -1,4 +1,4 @@
-﻿/*
+/*
  * cassette.c - cassette emulation
  *
  * Copyright (C) 2001 Piotr Fusik

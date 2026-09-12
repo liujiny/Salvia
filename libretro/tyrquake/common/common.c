@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 1996-1997 Id Software, Inc.
 Copyright (C) 2002-2009 John Fitzgibbons and others
 Copyright (C) 2010-2014 QuakeSpasm developers

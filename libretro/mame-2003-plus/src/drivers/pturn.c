@@ -1,4 +1,4 @@
-﻿/*
+/*
 Parallel Turn
 (c) Jaleco, 1984
 driver by Tomasz Slanina and Tatsuyuki Satoh

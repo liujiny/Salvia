@@ -1,4 +1,4 @@
-﻿
+
 /* Spew out a long sequence of the byte 251.  When fed to bzip2
    versions 1.0.0 or 1.0.1, causes it to die with internal error
    1007 in blocksort.c.  This assertion misses an extremely rare

@@ -1,4 +1,4 @@
-﻿#ifndef Z180_H
+#ifndef Z180_H
 #define Z180_H
 
 #include "cpuintrf.h"

@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_KEYBOARD_H
+#ifndef _WINX68K_KEYBOARD_H
 #define _WINX68K_KEYBOARD_H
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-﻿/* minigzip.c contains minimal changes required to be compiled with zlibWrapper:
+/* minigzip.c contains minimal changes required to be compiled with zlibWrapper:
  * - #include "zlib.h" was changed to #include "zstd_zlibwrapper.h"        */
 
 /* minigzip.c -- simulate gzip using the zlib compression library

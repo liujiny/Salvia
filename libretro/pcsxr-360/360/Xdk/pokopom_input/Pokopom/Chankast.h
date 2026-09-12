@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "nullDC_Devices.h"
 
 #ifdef _WIN32

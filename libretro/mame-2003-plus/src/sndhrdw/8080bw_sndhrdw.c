@@ -1,4 +1,4 @@
-﻿/* 8080bw.c *********************************
+/* 8080bw.c *********************************
  updated: 1997-04-09 08:46 TT
  updated  20-3-1998 LT Added color changes on base explosion
  *

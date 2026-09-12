@@ -1,4 +1,4 @@
-﻿#ifndef AFILE_H_
+#ifndef AFILE_H_
 #define AFILE_H_
 
 /* File types returned by AFILE_DetectFileType() and AFILE_OpenFile(). */

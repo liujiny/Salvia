@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_MEMORY_H
+#ifndef _WINX68K_MEMORY_H
 #define _WINX68K_MEMORY_H
 
 #include <stdint.h>

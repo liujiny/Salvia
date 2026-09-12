@@ -1,4 +1,4 @@
-﻿/* config.h.  Generated from config.h.in by configure.  */
+/* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 #ifndef __CONFIG_H__
@@ -10,31 +10,24 @@
 #include <compat/msvc.h>
 #endif
 
-#define SURFACE_PIXEL_DEPTH 2
+/* Bytes per surface pixel.  Runtime, not a constant: the "Color Format"
+ * core option selects RGB565 (2) or a 32-bit truecolor format (4) once at
+ * load, before any surface is allocated.  vid_pixelbytes lives in
+ * vid_mode.c and stays 2 until the libretro layer negotiates otherwise, so
+ * every consumer that predates the option behaves exactly as before.
+ * Only used in ordinary expressions -- never in preprocessor arithmetic. */
+extern int vid_pixelbytes;
+#define SURFACE_PIXEL_DEPTH vid_pixelbytes
 extern int SCREENWIDTH;
 extern int SCREENHEIGHT;
-#define SCREENPITCH (SCREENWIDTH*SURFACE_PIXEL_DEPTH)
+extern int SCREENPITCH;
 
 #define SURFACE_WIDTH SCREENWIDTH
 #define SURFACE_BYTE_PITCH SCREENPITCH
 #define SURFACE_SHORT_PITCH SCREENWIDTH
-#define SURFACE_INT_PITCH (SCREENWIDTH/2)
 
 #ifdef GEKKO
 #define HAVE_STRLWR
-#endif
-
-#ifdef HAVE_NET
-
-/* Define to 1 if you have the `inet_aton' function. */
-#define HAVE_INET_ATON 1
-
-/* Define to 1 if you have the `inet_ntop' function. */
-#define HAVE_INET_NTOP 1
-
-/* Define to 1 if you have the `inet_pton' function. */
-#define HAVE_INET_PTON 1
-
 #endif
 
 /* Define to 1 if you have the `vsnprintf' function. */
@@ -63,11 +56,8 @@ extern int SCREENHEIGHT;
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "2.5.0"
 
-/* Set to the attribute to apply to struct definitions to make them packed.
- * MSVC uses #pragma pack instead (see doomdata.h), so PACKEDATTR is empty. */
-#ifdef _MSC_VER
-#define PACKEDATTR
-#elif defined(__MINGW32__)
+/* Set to the attribute to apply to struct definitions to make them packed */
+#ifdef __MINGW32__
 /* Use gcc_struct to work around http://gcc.gnu.org/PR52991 */
 #define PACKEDATTR __attribute__((packed, gcc_struct))
 #else
@@ -81,12 +71,10 @@ extern int SCREENHEIGHT;
    illegally freed blocks */
 #define ZONEIDCHECK 1
 
-/* Define to strcasecmp, if we have it.
- * On MSVC, compat/msvc.h already maps strcasecmp -> _stricmp,
- * so these macros are not needed and would conflict. */
-#ifndef _MSC_VER
+/* Define to strcasecmp, if we have it */
 #define stricmp strcasecmp
+
+/* Define to strncasecmp, if we have it */
 #define strnicmp strncasecmp
-#endif
 
 #endif

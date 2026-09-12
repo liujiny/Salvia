@@ -1,4 +1,4 @@
-﻿/* set to 1 to display tape time offset */
+/* set to 1 to display tape time offset */
 #define TAPE_UI_DISPLAY 0
 
 #ifdef MAME_DEBUG

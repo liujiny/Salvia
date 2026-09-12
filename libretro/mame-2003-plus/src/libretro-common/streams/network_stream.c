@@ -1,4 +1,4 @@
-﻿/* Copyright  (C) 2022 The RetroArch team
+/* Copyright  (C) 2022 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (network_stream.c).

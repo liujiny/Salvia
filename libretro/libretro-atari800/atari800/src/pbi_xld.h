@@ -1,4 +1,4 @@
-﻿#ifndef PBI_XLD_H_
+#ifndef PBI_XLD_H_
 #define PBI_XLD_H_
 
 #include "atari.h"

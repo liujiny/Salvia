@@ -1,4 +1,4 @@
-﻿VIDEO_START( funkyjet );
+VIDEO_START( funkyjet );
 VIDEO_UPDATE( funkyjet );
 
 WRITE16_HANDLER( funkyjet_pf2_data_w );

@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Namco System NB-1 driver module
+// FinalBurn Neo Namco System NB-1 driver module
 // Based on MAME driver by Phil Stroffolino
 
 #include "tiles_generic.h"

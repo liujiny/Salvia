@@ -1,4 +1,4 @@
-﻿/*---
+/*---
 
 Pirates      (c)1994 NIX  (DEC 14 1994 17:32:29) displayed in cabinet test mode
 Genix Family (c)1994 NIX  (MAY 10 1994 14:21:20) displayed in cabinet test mode

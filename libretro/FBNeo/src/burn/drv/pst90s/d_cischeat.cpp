@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Jaleco Cisco Heat / Big Run / Grand Prix Star / Arm Champs II / Wild Pilot / Scud hammer driver module
+// FinalBurn Neo Jaleco Cisco Heat / Big Run / Grand Prix Star / Arm Champs II / Wild Pilot / Scud hammer driver module
 // Based on MAME driver by Luca Elia
 
 /*

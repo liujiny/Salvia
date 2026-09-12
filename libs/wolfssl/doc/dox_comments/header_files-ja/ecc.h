@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup ECC
     \brief  この関数は新しいECC_KEYを生成し、それをキーに格納します。
     \return 0  成功に戻りました。

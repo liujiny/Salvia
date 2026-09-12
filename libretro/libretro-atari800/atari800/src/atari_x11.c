@@ -1,4 +1,4 @@
-﻿/*
+/*
  * atari_x11.c - X11 specific port code
  *
  * Copyright (c) 1995-1998 David Firth

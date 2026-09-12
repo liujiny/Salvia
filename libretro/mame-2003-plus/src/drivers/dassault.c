@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
 
   Thunder Zone       (c) 1991 Data East Corporation (World 2 players)
   Desert Assault     (c) 1991 Data East Corporation (USA 4 players)

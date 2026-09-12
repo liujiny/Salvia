@@ -1,4 +1,4 @@
-﻿// Atari EA-ROM, impl. by dink
+// Atari EA-ROM, impl. by dink
 
 UINT8 earom_read(UINT16 /*address*/);
 void earom_write(UINT16 offset, UINT8 data);

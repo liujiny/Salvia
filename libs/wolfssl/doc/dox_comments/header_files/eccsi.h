@@ -1,4 +1,4 @@
-﻿
+
 /*!
     \ingroup ECCSI_Setup
 */

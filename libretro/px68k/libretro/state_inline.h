@@ -1,4 +1,4 @@
-﻿#ifndef _STATE_IN_HPP
+#ifndef _STATE_IN_HPP
 #define _STATE_IN_HPP
 
 #define SFVARN_BOOL(x, n) { &(x), 1, PX68KSTATE_RLSB | PX68KSTATE_BOOL, n }

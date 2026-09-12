@@ -1,4 +1,4 @@
-﻿/*
+/*
  * video_zmbv.c - Video codec for Zip Motion Blocks Video
  *
  * This is a derivative work of code from the FFmpeg project. The FFmpeg code

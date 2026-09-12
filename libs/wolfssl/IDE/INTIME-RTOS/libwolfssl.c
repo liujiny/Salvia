@@ -1,4 +1,4 @@
-﻿// libwolfssl.c
+// libwolfssl.c
 // Defines the entry point for the DLL application
 
 #include <rt.h>

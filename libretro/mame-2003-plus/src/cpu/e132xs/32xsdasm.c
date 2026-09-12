@@ -1,4 +1,4 @@
-﻿/*
+/*
 
  Hyperstone E1-32XS disassembler
  written by Pierpaolo Prazzoli

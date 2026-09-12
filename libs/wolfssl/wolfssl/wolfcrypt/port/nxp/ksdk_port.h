@@ -1,4 +1,4 @@
-﻿/* ksdk_port.h
+/* ksdk_port.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

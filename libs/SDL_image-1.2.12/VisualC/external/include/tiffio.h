@@ -1,4 +1,4 @@
-﻿/* $Id: tiffio.h,v 1.88 2011-05-17 00:21:17 fwarmerdam Exp $ */
+/* $Id: tiffio.h,v 1.88 2011-05-17 00:21:17 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 
 
 /* macro to convert 4-bit unsigned samples to 8-bit signed samples */

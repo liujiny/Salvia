@@ -1,4 +1,4 @@
-﻿#ifndef XBYAK_XBYAK_UTIL_H_
+#ifndef XBYAK_XBYAK_UTIL_H_
 #define XBYAK_XBYAK_UTIL_H_
 
 /**

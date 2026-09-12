@@ -1,4 +1,4 @@
-﻿#include "cps.h"
+#include "cps.h"
 
 struct GfxRange {
 	INT32 Type;

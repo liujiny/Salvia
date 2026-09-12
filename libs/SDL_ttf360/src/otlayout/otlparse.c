@@ -1,4 +1,4 @@
-﻿#include "otlparse.h"
+#include "otlparse.h"
 #include "otlutils.h"
 
   static void

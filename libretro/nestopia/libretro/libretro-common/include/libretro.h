@@ -1,4 +1,4 @@
-﻿/*!
+/*!
  * libretro.h is a simple API that allows for the creation of games and emulators.
  *
  * @file libretro.h

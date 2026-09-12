@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Human-readable config file management for PicoDrive
  * (C) notaz, 2008-2010
  *

@@ -1,4 +1,4 @@
-﻿#include "gal.h"
+#include "gal.h"
 
 static INT32 ScrambleInit();
 

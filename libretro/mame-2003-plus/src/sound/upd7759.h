@@ -1,4 +1,4 @@
-﻿#ifndef UPD7759S_H
+#ifndef UPD7759S_H
 #define UPD7759S_H
 
 #define MAX_UPD7759 2

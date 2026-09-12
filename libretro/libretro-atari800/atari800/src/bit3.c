@@ -1,4 +1,4 @@
-﻿/*
+/*
  * bit3.c - Emulation of the Bit3 Full View 80 column card.
  *
  * Copyright (C) 2009 Perry McFarlane

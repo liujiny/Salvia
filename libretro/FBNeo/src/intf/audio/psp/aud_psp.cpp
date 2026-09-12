@@ -1,4 +1,4 @@
-﻿// psp sound module
+// psp sound module
 #include "burner.h"
 #include <math.h>
 #include <pspaudio.h>

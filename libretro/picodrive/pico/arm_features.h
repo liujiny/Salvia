@@ -1,4 +1,4 @@
-﻿#ifndef __ARM_FEATURES_H__
+#ifndef __ARM_FEATURES_H__
 #define __ARM_FEATURES_H__
 
 #if defined(__ARM_ARCH_7__) || defined(__ARM_ARCH_7A__) \

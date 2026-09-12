@@ -1,4 +1,4 @@
-﻿// Burner Config for Game file module
+// Burner Config for Game file module
 #include "burner.h"
 
 const INT32 nConfigMinVersion = 0x020921;

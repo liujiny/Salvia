@@ -1,4 +1,4 @@
-﻿#include "tiles_generic.h"
+#include "tiles_generic.h"
 #include "z80_intf.h"
 
 #include "driver.h"

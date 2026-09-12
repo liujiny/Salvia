@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  VIC.h - 6569R5 emulation (line based)
  *
  *  Frodo (C) 1994-1997,2002-2005 Christian Bauer

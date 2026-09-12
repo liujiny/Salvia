@@ -1,4 +1,4 @@
-﻿#ifndef CODECS_VIDEO_ZMBV_H_
+#ifndef CODECS_VIDEO_ZMBV_H_
 #define CODECS_VIDEO_ZMBV_H_
 
 #include "atari.h"

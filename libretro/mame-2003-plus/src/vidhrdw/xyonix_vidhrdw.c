@@ -1,4 +1,4 @@
-﻿
+
 #include "driver.h"
 
 extern data8_t *xyonix_vidram;

@@ -1,4 +1,4 @@
-﻿/* tilemap.c
+/* tilemap.c
 
 	When the videoram for a tile changes, call tilemap_mark_tile_dirty
 	with the appropriate memory offset.

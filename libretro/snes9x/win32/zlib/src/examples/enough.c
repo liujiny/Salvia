@@ -1,4 +1,4 @@
-﻿/* enough.c -- determine the maximum size of inflate's Huffman code tables over
+/* enough.c -- determine the maximum size of inflate's Huffman code tables over
  * all possible valid and complete Huffman codes, subject to a length limit.
  * Copyright (C) 2007, 2008, 2012 Mark Adler
  * Version 1.4  18 August 2012  Mark Adler

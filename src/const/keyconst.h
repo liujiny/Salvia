@@ -1,4 +1,4 @@
-﻿#include <libretro/libretro.h>
+#include <libretro/libretro.h>
 #include <SDL.h>
 
 const uint16_t SDL_TO_LIBRETRO_KEYS[SDLK_LAST] = {

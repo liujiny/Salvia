@@ -1,4 +1,4 @@
-﻿/* user_settings_tls12.h
+/* user_settings_tls12.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

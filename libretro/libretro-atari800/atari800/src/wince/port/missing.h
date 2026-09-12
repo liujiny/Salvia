@@ -1,4 +1,4 @@
-﻿/* Missing types and forward declarations for windows ce port */
+/* Missing types and forward declarations for windows ce port */
 
 #ifndef _WCEMISSING_H_
 #define _WCEMISSING_H_

@@ -1,4 +1,4 @@
-﻿#include <stdint.h>
+#include <stdint.h>
 #include <beans/structures.h>
 
 namespace Filter { namespace HQ2x {

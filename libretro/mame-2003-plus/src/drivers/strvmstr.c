@@ -1,4 +1,4 @@
-﻿/*
+/*
 
  Super Trivia Master (c) 1986 Enerdyne Technologies Inc. (El Cajon, CA 92020)
 

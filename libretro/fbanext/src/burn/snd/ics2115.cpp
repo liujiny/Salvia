@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  ICS 2115 sound synthesizer.
  
    ICS WaveFront ICS2115V Wavetable Midi Synthesizer, 

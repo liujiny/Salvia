@@ -1,4 +1,4 @@
-﻿#ifndef _BURN_ENDIAN_H
+#ifndef _BURN_ENDIAN_H
 #define _BURN_ENDIAN_H
 
 #ifdef LSB_FIRST

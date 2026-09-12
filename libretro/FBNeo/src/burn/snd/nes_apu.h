@@ -1,4 +1,4 @@
-﻿// mix in nes apu &/| ext (ext = vrc, namco163, fds, etc)
+// mix in nes apu &/| ext (ext = vrc, namco163, fds, etc)
 enum nesapu_mixermodes { MIXER_APU = 0x01, MIXER_EXT = 0x02 };
 extern INT32 nesapu_mixermode;
 

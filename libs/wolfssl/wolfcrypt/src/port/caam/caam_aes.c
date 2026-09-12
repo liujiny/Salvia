@@ -1,4 +1,4 @@
-﻿/* caam_aes.c
+/* caam_aes.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

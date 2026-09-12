@@ -1,4 +1,4 @@
-﻿// Midway SSIO audio / input module
+// Midway SSIO audio / input module
 // Based on MAME sources by Aaron Giles
 
 #include "burnint.h"

@@ -1,4 +1,4 @@
-﻿#include "atari.h"
+#include "atari.h"
 
 #define NO_CART 0
 #define A5200_CART 1

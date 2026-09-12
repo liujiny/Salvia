@@ -1,4 +1,4 @@
-﻿/* public domain */
+/* public domain */
 /* gcc -O3 -o djb2 djb2.c */
 
 #include <stdio.h>

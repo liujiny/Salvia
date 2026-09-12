@@ -1,4 +1,4 @@
-﻿#ifndef LIBRETRO_LR_INPUT_H_INCLUDED
+#ifndef LIBRETRO_LR_INPUT_H_INCLUDED
 #define LIBRETRO_LR_INPUT_H_INCLUDED
 
 #include "libretro.h"

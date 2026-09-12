@@ -1,4 +1,4 @@
-﻿#ifndef DAC_H
+#ifndef DAC_H
 #define DAC_H
 
 #ifdef __cplusplus

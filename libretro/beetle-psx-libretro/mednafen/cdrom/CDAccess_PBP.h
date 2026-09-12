@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_CDACCESS_PBP_H
+#ifndef __MDFN_CDACCESS_PBP_H
 #define __MDFN_CDACCESS_PBP_H
 
 #include <boolean.h>

@@ -1,4 +1,4 @@
-﻿static void i_add_br8(void);
+static void i_add_br8(void);
 static void i_add_wr16(void);
 static void i_add_r8b(void);
 static void i_add_r16w(void);

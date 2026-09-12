@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  MFP.C - MFP (Multi-Function Peripheral)
  */
 

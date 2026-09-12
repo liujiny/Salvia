@@ -1,4 +1,4 @@
-﻿// FB Alpha Rohga Armor Force / Wizard Fire / Nitro Ball / Schmeiser Robo driver module
+// FB Alpha Rohga Armor Force / Wizard Fire / Nitro Ball / Schmeiser Robo driver module
 // Based on MAME driver by Bryan McPhail
 
 #include "tiles_generic.h"

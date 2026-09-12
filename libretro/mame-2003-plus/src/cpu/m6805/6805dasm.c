@@ -1,4 +1,4 @@
-﻿/*
+/*
  *   A quick-hack 68(7)05 disassembler
  *
  *   Note: this is not the good and proper way to disassemble anything, but it works

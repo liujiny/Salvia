@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup MD5
 
     \brief This function initializes md5. This is automatically

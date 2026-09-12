@@ -1,4 +1,4 @@
-﻿/* ge_low_mem.c
+/* ge_low_mem.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

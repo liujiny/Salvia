@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_TVRAM_H
+#ifndef _WINX68K_TVRAM_H
 #define _WINX68K_TVRAM_H
 
 #include <stdint.h>

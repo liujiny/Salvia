@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "pic16c5x_intf.h"
 
 // masks (changes with init, depending on chip)

@@ -1,4 +1,4 @@
-﻿
+
 #if __WORDSIZE == 64
 #define JIT_INSTR_MAX 224
     0,	/* data */

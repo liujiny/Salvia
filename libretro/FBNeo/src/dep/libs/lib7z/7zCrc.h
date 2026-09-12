@@ -1,4 +1,4 @@
-﻿/* 7zCrc.h -- CRC32 calculation
+/* 7zCrc.h -- CRC32 calculation
 2024-01-22 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_7Z_CRC_H

@@ -1,4 +1,4 @@
-﻿/*
+/*
     vlm5030.c
 
     VLM5030 emulator

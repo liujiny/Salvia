@@ -1,4 +1,4 @@
-﻿#ifndef BEETLE_PSX_GLOBALS_H__
+#ifndef BEETLE_PSX_GLOBALS_H__
 #define BEETLE_PSX_GLOBALS_H__
 
 #include <boolean.h>

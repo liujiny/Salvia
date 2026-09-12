@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Display.h - C64 graphics display, emulator window handling
  *
  *  Frodo (C) 1994-1997,2002-2009 Christian Bauer

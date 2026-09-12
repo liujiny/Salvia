@@ -1,4 +1,4 @@
-﻿#ifndef YM2151INTF_H
+#ifndef YM2151INTF_H
 #define YM2151INTF_H
 
 #define MAX_2151 2

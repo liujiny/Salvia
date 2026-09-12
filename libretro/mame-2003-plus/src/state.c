@@ -1,4 +1,4 @@
-﻿/* State save/load functions */
+/* State save/load functions */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

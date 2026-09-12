@@ -1,4 +1,4 @@
-﻿// license:BSD-3-Clause
+// license:BSD-3-Clause
 // copyright-holders:Manuel Abadia, David Haywood
 /***************************************************************************
                     Gaelco Sound Hardware

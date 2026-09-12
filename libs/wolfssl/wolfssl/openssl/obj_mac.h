@@ -1,4 +1,4 @@
-﻿/* obj_mac.h
+/* obj_mac.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

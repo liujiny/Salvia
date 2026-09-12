@@ -1,4 +1,4 @@
-﻿/*
+/*
 China Gate.
 By Paul Hampson from First Principles
 (IE: Roms + a description of their contents and a list of CPUs on board.)

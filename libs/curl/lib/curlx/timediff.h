@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_TIMEDIFF_H
+#ifndef HEADER_CURL_TIMEDIFF_H
 #define HEADER_CURL_TIMEDIFF_H
 /***************************************************************************
  *                                  _   _ ____  _

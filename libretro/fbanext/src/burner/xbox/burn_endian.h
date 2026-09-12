@@ -1,4 +1,4 @@
-﻿// xbox 360 endian specific
+// xbox 360 endian specific
 
 #ifndef XBOXENDIAN_H
 #define XBOXENDIAN_H

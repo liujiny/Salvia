@@ -1,4 +1,4 @@
-﻿/* Xxh64.h -- XXH64 hash calculation interfaces
+/* Xxh64.h -- XXH64 hash calculation interfaces
 2023-08-18 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_XXH64_H

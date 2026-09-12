@@ -1,4 +1,4 @@
-﻿#ifndef RC_CLIENT_EXTERNAL_H
+#ifndef RC_CLIENT_EXTERNAL_H
 #define RC_CLIENT_EXTERNAL_H
 
 #include "rc_client.h"

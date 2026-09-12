@@ -1,4 +1,4 @@
-﻿/*
+/*
  * gpu_duck_gpu_types.h
  *
  * VS2010-compatible port of SwanStation's gpu_types.h.

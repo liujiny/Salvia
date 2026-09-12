@@ -1,4 +1,4 @@
-﻿/* appoooh.h */
+/* appoooh.h */
 
 extern unsigned char *spriteram,*spriteram_2;
 

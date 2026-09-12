@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "burn_sound.h"
 
 INT16 Precalc[4096 *4];

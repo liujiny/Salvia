@@ -1,4 +1,4 @@
-﻿/*
+/*
     render.c --
     Display rendering.
 */

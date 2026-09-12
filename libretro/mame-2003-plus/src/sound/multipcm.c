@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Sega System 32 Multi/Model 1 custom PCM chip (315-5560) emulation.
  *
  * by R. Belmont.  Info from AMUSE, Hoot, and the YMF278B (OPL4).

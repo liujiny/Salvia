@@ -1,4 +1,4 @@
-﻿
+
 void se3208NewFrame();
 INT32 se3208GetActive();
 INT32 se3208TotalCycles();

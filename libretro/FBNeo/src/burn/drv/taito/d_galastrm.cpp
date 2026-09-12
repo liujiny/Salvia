@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Taito Galactic Storm driver module
+// FinalBurn Neo Taito Galactic Storm driver module
 // Based on MAME driver by Hau
 
 #include "tiles_generic.h"

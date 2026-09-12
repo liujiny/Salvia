@@ -1,4 +1,4 @@
-﻿#include "flags.h"
+#include "flags.h"
 #include "inline.h"
 
 #include "boolean.h"

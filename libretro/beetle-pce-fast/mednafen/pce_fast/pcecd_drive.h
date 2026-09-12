@@ -1,4 +1,4 @@
-﻿#ifndef __PCEFAST_PCECD_Drive_H
+#ifndef __PCEFAST_PCECD_Drive_H
 #define __PCEFAST_PCECD_Drive_H
 
 #include <boolean.h>

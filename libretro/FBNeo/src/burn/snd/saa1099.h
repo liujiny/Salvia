@@ -1,4 +1,4 @@
-﻿void saa1099Update(INT32 chip, INT16 *output, INT32 samples);
+void saa1099Update(INT32 chip, INT16 *output, INT32 samples);
 void saa1099Reset(INT32 chip);
 void saa1099Init(INT32 chip, INT32 clock, INT32 bAdd);
 void saa1099SetRoute(INT32 chip, INT32 nIndex, double nVolume, INT32 nRouteDir);

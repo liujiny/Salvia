@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 
 data8_t *usg_videoram,*usg_charram;
 

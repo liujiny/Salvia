@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_VTLS_CONFIG_H
+#ifndef HEADER_CURL_VTLS_CONFIG_H
 #define HEADER_CURL_VTLS_CONFIG_H
 /***************************************************************************
  *                                  _   _ ____  _

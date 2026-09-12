@@ -1,4 +1,4 @@
-﻿#include "system.h"
+#include "system.h"
 
 #include "c65c02.h"
 

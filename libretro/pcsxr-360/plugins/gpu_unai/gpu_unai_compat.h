@@ -1,4 +1,4 @@
-﻿/* gpu_unai_compat.h
+/* gpu_unai_compat.h
  *
  * Adapter layer for porting gpu_unai (PCSX-ReARMed) to Xbox 360 / pcsxr-360.
  *

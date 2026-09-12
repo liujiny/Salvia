@@ -1,4 +1,4 @@
-﻿// Burn - Rom Loading module
+// Burn - Rom Loading module
 #include "burnint.h"
 
 // Load a rom and separate out the bytes by nGap

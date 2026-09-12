@@ -1,4 +1,4 @@
-﻿// Cave hardware tilemaps
+// Cave hardware tilemaps
 
 #include "cave.h"
 

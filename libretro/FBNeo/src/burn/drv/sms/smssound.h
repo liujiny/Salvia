@@ -1,4 +1,4 @@
-﻿
+
 #ifndef _SMSSOUND_H_
 #define _SMSSOUND_H_
 

@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_WINUI_H
+#ifndef _WINX68K_WINUI_H
 #define _WINX68K_WINUI_H
 
 #include <stdint.h>

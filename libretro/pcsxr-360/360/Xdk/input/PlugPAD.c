@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Basic Analog PAD plugin for PCSX Gamecube
 	by emu_kidid based on the DC/MacOSX HID plugin
 

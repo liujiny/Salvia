@@ -1,4 +1,4 @@
-﻿/*
+/*
  05/01/2003  MooglyGuy/Ryan Holtz
 	- Corrected second AY (shouldn't have been there)
 	- Added first AY's status read

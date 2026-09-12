@@ -1,4 +1,4 @@
-﻿// LowPass2 module
+// LowPass2 module
 // ---------------
 //   by Daniel Moreno - ComaC (2001)  < comac2k@teleline.es >
 //

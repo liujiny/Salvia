@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_FILEWRAPPER_H
+#ifndef __MDFN_FILEWRAPPER_H
 #define __MDFN_FILEWRAPPER_H
 
 #include <streams/file_stream.h>

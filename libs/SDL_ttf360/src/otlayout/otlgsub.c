@@ -1,4 +1,4 @@
-﻿#include "otlgsub.h"
+#include "otlgsub.h"
 #include "otlcommn.h"
 
  /************************************************************************/

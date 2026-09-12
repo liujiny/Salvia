@@ -1,4 +1,4 @@
-﻿#include "tiles_generic.h"
+#include "tiles_generic.h"
 #include "taito_ic.h"
 #include "taito.h"
 

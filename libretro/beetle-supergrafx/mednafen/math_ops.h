@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_MATH_OPS_H
+#ifndef __MDFN_MATH_OPS_H
 #define __MDFN_MATH_OPS_H
 
 // Source: http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2

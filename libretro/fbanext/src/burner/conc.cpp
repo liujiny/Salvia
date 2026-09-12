@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 
 static bool SkipComma(TCHAR** s)
 {

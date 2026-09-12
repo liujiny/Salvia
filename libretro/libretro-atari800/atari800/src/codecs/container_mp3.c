@@ -1,4 +1,4 @@
-﻿/*
+/*
  * container_mp3.c - support for MP3 audio files
  *
  * Copyright (C) 2021 Rob McMullen

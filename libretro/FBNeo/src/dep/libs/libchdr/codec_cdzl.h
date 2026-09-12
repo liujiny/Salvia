@@ -1,4 +1,4 @@
-﻿#ifndef LIBCHDR_CODEC_CDZL_H
+#ifndef LIBCHDR_CODEC_CDZL_H
 #define LIBCHDR_CODEC_CDZL_H
 
 #include <stdint.h>

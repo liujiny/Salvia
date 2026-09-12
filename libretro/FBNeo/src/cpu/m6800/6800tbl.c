@@ -1,4 +1,4 @@
-﻿M6800_INLINE void aba(void);
+M6800_INLINE void aba(void);
 M6800_INLINE void abx(void);
 M6800_INLINE void adca_di(void);
 M6800_INLINE void adca_ex(void);

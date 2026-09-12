@@ -1,4 +1,4 @@
-﻿#ifndef __I386INTF_H
+#ifndef __I386INTF_H
 #define __I386INTF_H
 
 //#include "memory.h"

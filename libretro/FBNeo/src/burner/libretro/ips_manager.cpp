@@ -1,5 +1,5 @@
-ï»¿#ifdef _WIN32
-  #include <yvals.h> // Cabecera interna de VS para configurar tipos bï¿½sicos
+#ifdef _WIN32
+  #include <yvals.h> // Cabecera interna de VS para configurar tipos básicos
   #include <xfunctional>
   #define _PTR_FUN_DEFINED
 #endif

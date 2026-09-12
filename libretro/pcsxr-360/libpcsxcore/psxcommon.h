@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
  *   Copyright (C) 2007 Ryan Schultz, PCSX-df Team, PCSX team              *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -163,9 +163,42 @@ typedef struct {
 	boolean RCntFix;
 	boolean UseNet;
 	boolean VSyncWA;
+	/* [XBOX360] Emulacion de la I-CACHE del R3000A (4 KB, 256 lineas de 16
+	 * bytes, mapeo directo).  Necesaria para el motor de Studio 33/Psygnosis:
+	 * Formula One 99 / 2001 / Arcade copian un stub de 16 bytes a una
+	 * direccion elegida para NO aliasar en cache con el descompresor, lo
+	 * ejecutan una vez para meterlo en la I-cache, descomprimen 1,63 MB
+	 * ENCIMA de su copia en RAM y lo vuelven a llamar: en hardware corre
+	 * desde la cache.  Sin esto ejecutamos los datos que lo pisaron.
+	 * Solo aplica al INTERPRETE (el dynarec no pasa por diagFetch). */
+	boolean IcacheEmulation;
+	/* [XBOX360] La misma I-cache, pero para el RECOMPILADOR: el compilador lee
+	 * las instrucciones a traves de ella, asi que si el juego pisa la RAM sin
+	 * hacer flush, al recompilar el bloque salen los bytes CACHEADOS y no la
+	 * basura nueva.  Es la semantica del hardware, pero pone en riesgo el SMC
+	 * legitimo sin flush -> por eso va en opcion aparte y APAGADA por defecto.
+	 * El contador [ICDIV] mide cuantas veces cache y RAM difieren de verdad. */
+	boolean IcacheDynarec;
 	u8 Cpu; // CPU_DYNAREC or CPU_INTERPRETER
 	u8 PsxType; // PSX_TYPE_NTSC or PSX_TYPE_PAL
 	u8 CpuBias;
+	/* [XBOX360] Ciclos emulados cobrados por CADA 100 instrucciones del
+	 * R3000A (200 = 2.00 ciclos/instruccion = el CpuBias=2 historico).
+	 * Existe porque CpuBias es ENTERO y el valor de referencia de upstream
+	 * pcsx_rearmed es 1.75 (CYCLE_MULT_DEFAULT 175), que con un entero no
+	 * se puede expresar.  Lo consume el dynarec en iStoreCycle(); el
+	 * interprete se queda con CpuBias redondeado (solo se usa para
+	 * biseccion, no para jugar).  Ver pcsxr360_cycle_multiplier.
+	 *
+	 * Que significa: el VBlank llega cada 565045 ciclos SIEMPRE (va por
+	 * reloj, no por trabajo), asi que este numero fija cuantas
+	 * instrucciones puede ejecutar el juego por frame:
+	 *   200 -> 282522 instr/frame   (lo que teniamos)
+	 *   175 -> 322882 instr/frame   (default de upstream)
+	 *   100 -> 565045 instr/frame   (overclock x2 respecto al hardware)
+	 * Un juego que no termina su frame a tiempo salta al siguiente campo y
+	 * su logica se va a 30 Hz aunque el frontend siga marcando 60 fps. */
+	u32 CpuCycleMult;
 	boolean CpuRunning;
 	boolean Widescreen;
 #ifdef _WIN32

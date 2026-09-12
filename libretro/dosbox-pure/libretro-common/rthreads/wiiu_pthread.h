@@ -1,4 +1,4 @@
-﻿#ifndef _WIIU_PTHREAD_WRAP_WIIU_
+#ifndef _WIIU_PTHREAD_WRAP_WIIU_
 #define _WIIU_PTHREAD_WRAP_WIIU_
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-﻿// Media module
+// Media module
 #include "burner.h"
 
 int MediaInit()

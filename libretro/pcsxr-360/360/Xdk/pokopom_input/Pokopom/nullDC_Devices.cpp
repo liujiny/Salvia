@@ -1,4 +1,4 @@
-﻿#include "General.h"
+#include "General.h"
 #include "nullDC_Devices.h"
 #include "Input.h"
 #include "FileIO.h"

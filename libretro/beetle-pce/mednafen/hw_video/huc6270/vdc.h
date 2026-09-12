@@ -1,4 +1,4 @@
-﻿#ifndef __PCE_VDC_H
+#ifndef __PCE_VDC_H
 #define __PCE_VDC_H
 
 #include <mednafen/lepacker.h>

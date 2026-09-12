@@ -1,4 +1,4 @@
-﻿#include <uiobjects/object.h>
+#include <uiobjects/object.h>
 
 Object::~Object(){
 }

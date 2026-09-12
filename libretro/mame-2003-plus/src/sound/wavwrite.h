@@ -1,4 +1,4 @@
-﻿void *wav_open(const char *filename, int sample_rate, int channels);
+void *wav_open(const char *filename, int sample_rate, int channels);
 void wav_close(void *wavptr);
 
 void wav_add_data_16(void *wavptr, INT16 *data, int samples);

@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_PSX_MASMEM_H
+#ifndef __MDFN_PSX_MASMEM_H
 #define __MDFN_PSX_MASMEM_H
 
 #include "mednafen-types.h"

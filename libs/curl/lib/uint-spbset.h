@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_UINT_SPBSET_H
+#ifndef HEADER_CURL_UINT_SPBSET_H
 #define HEADER_CURL_UINT_SPBSET_H
 /***************************************************************************
  *                                  _   _ ____  _

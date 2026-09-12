@@ -1,4 +1,4 @@
-﻿/* Configure library by modifying this file */
+/* Configure library by modifying this file */
 
 #ifndef MD_NTSC_CONFIG_H
 #define MD_NTSC_CONFIG_H

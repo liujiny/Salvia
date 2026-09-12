@@ -1,4 +1,4 @@
-﻿// Support functions for blitters that use DirectX
+// Support functions for blitters that use DirectX
 #include "burner.h"
 #include "vid_directx_support.h"
 

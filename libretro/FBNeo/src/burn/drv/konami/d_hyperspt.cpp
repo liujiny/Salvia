@@ -1,4 +1,4 @@
-﻿// FB Alpha Hyper Sports driver module
+// FB Alpha Hyper Sports driver module
 // Based on MAME driver by Chris Hardy
 
 #include "tiles_generic.h"

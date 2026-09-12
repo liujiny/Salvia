@@ -1,4 +1,4 @@
-﻿/*  Pcsx - Pc Psx Emulator
+/*  Pcsx - Pc Psx Emulator
  *  Copyright (C) 1999-2003  Pcsx Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -2194,10 +2194,24 @@ CP2_FUNC(GPF);
 CP2_FUNC(GPL);
 CP2_FUNCNC(NCCT);
 
-static void recHLE() {
+/* Entradas realmente inicializadas de psxHLEt (psxhle.c): [256] declaradas,
+ * 8 rellenadas, el resto NULL. */
+#define PSXHLE_HANDLERS_REC 8u
 
-    //CALLFunc((u32) psxHLEt[psxRegs.code & 0xffff]);
-    CALLFunc((u32) psxHLEt[psxRegs.code & 0x7f]);
+static void recHLE() {
+    /* [XBOX360] Mismo guard que el interprete (ver psxHLE en
+     * psxinterpreter.c).  Aqui era aun peor: psxHLEt[code & 0x7f] con la
+     * tabla de 256 entradas y solo 8 inicializadas emitia
+     * CALLFunc((u32) NULL) para los indices 8..127, es decir una llamada
+     * COMPILADA a la direccion 0.  Con BIOS real no hay trampas HLE
+     * plantadas, asi que 0x3b se compila como no-op (igual que recNULL). */
+    u32 hleCode = psxRegs.code & 0x03ffffffu;
+
+    if (!Config.HLE || hleCode >= PSXHLE_HANDLERS_REC ||
+        psxHLEt[hleCode] == NULL)
+        return;
+
+    CALLFunc((u32) psxHLEt[hleCode]);
     ppcRec.branch = 2;
     iRet();
 }

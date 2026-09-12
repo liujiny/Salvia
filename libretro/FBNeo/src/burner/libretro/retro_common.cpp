@@ -1,4 +1,4 @@
-﻿#include "retro_common.h"
+#include "retro_common.h"
 #include "retro_input.h"
 #ifndef NO_PGM2
 #include "retro_pgm2_cards.h"

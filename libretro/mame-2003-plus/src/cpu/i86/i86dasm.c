@@ -1,4 +1,4 @@
-﻿/*
+/*
  * 2asm: Convert binary files to 80*86 assembler. Version 1.00
  * Adapted by Andrea Mazzoleni for use with MAME
  * HJB 990321:

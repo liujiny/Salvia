@@ -1,1 +1,1 @@
-﻿#include "dr_flac_decoding.c"
+#include "dr_flac_decoding.c"

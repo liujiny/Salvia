@@ -1,4 +1,4 @@
-﻿#include "sys16.h"
+#include "sys16.h"
 #include "fd1094.h"
 
 #define S16_NUMCACHE 8

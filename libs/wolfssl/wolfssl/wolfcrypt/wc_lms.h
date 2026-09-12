@@ -1,4 +1,4 @@
-﻿/* wc_lms.h
+/* wc_lms.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

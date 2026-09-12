@@ -1,4 +1,4 @@
-﻿/* Ogg/Vorbis streaming music support. */
+/* Ogg/Vorbis streaming music support. */
 
 #if !defined(_SND_VORBIS_H_)
 #define _SND_VORBIS_H_ 1

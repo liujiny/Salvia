@@ -1,4 +1,4 @@
-﻿/*
+/*
   Kaillera client API v0.84
   (c) 2001 Christophe Thibault
 

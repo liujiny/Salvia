@@ -1,4 +1,4 @@
-﻿/* x509_vfy.h
+/* x509_vfy.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

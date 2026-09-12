@@ -1,4 +1,4 @@
-﻿#ifndef _WOLFEXAMPLES_H_
+#ifndef _WOLFEXAMPLES_H_
 #define _WOLFEXAMPLES_H_
 
 #include <rt.h>

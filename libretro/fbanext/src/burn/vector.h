@@ -1,4 +1,4 @@
-﻿
+
 void draw_vector(UINT32 *palette);
 void vector_init();
 void vector_reset();

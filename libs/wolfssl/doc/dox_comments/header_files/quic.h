@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup QUIC
 
     \brief Callback invoked when secrets are generated during a handshake.

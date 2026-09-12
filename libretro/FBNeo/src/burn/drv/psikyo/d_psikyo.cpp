@@ -1,4 +1,4 @@
-﻿// Psikyo MC68EC020 based hardware
+// Psikyo MC68EC020 based hardware
 // Driver and Emulation by Jan Klaassen
 #include "psikyo.h"
 #include "burn_ym2610.h"

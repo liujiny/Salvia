@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Xbox 360 build: stubs para los cores que se excluyen del build por
  *  cuestiones de tamano o por errores de compilacion bajo XDK.  Los
  *  ficheros originales son:

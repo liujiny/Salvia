@@ -1,4 +1,4 @@
-﻿#ifndef MZPOKEYSND_H_
+#ifndef MZPOKEYSND_H_
 #define MZPOKEYSND_H_
 
 #include "atari.h"

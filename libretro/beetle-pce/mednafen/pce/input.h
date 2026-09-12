@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_PCE_INPUT_H
+#ifndef __MDFN_PCE_INPUT_H
 #define __MDFN_PCE_INPUT_H
 
 class PCE_Input_Device

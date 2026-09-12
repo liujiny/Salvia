@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Tube Panic driver module
+// FinalBurn Neo Tube Panic driver module
 // Based on MAME 0.128 driver by Jarek Burczynski
 
 #include "tiles_generic.h"

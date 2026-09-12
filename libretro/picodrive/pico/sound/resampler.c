@@ -1,4 +1,4 @@
-﻿/* Configurable fixed point resampling SINC filter for mono and stereo audio.
+/* Configurable fixed point resampling SINC filter for mono and stereo audio.
  *
  * (C) 2022 irixxxx
  *

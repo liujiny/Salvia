@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 #include "news.h"
 
 

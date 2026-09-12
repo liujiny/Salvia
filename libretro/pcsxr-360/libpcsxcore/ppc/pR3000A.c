@@ -1,4 +1,4 @@
-﻿/*  Pcsx - Pc Psx Emulator
+/*  Pcsx - Pc Psx Emulator
  *  Copyright (C) 1999-2003  Pcsx Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -36,6 +36,14 @@ void __declspec(naked) __icbi(int offset, const void * base)
 }
 
 u32 *psxRecLUT;
+
+/* Wrappers drenantes del ring GPU (libpcsxcore/gpu.c).  El fast-path del
+ * dynarec para lecturas de registros GPU con direccion constante DEBE usar
+ * estos, no los punteros de plugin crudos GPU_readData/GPU_readStatus: sin
+ * drenar el ring, el main observa estado GPU que el hilo consumidor aun no
+ * termino (cuelgue del FMV con SwanStation).  Coinciden con gpu.h. */
+extern u32 gpuReadData(void);
+extern u32 gpuReadStatus(void);
 
 #undef _Op_
 #define _Op_     _fOp_(psxRegs.code)
@@ -756,9 +764,30 @@ static void Return()
 }
 
 static void iStoreCycle() {
+	u32 instrs, mult;
 	// what is idlecyclecount doing ?
 	/* store cycle */
-	count = (idlecyclecount + (pc - pcold) / 4) * BIAS;
+	/* [XBOX360] Antes: count = instrs * BIAS, con BIAS entero (=2).  Ahora
+	 * en centesimas (Config.CpuCycleMult), para poder expresar el 1.75 de
+	 * upstream pcsx_rearmed (CYCLE_MULT_DEFAULT 175) y para exponerlo como
+	 * core option.  Se resuelve en tiempo de COMPILACION del bloque, asi que
+	 * `count` sigue siendo un inmediato constante del ADDI: coste 0 en
+	 * runtime.  Ver el comentario de CpuCycleMult en psxcommon.h.
+	 *
+	 * Redondeo AL MAS CERCANO (+50), igual que el CLOCK_ADJUST de upstream
+	 * (new_dynarec.c: (x * m + s * 50) / 100).  Antes redondeaba al alza
+	 * (+99), que sobrecarga los bloques cortos: con mult=175 un bloque de 3
+	 * instrucciones cobraba 6 ciclos en vez de 5, un 20% de mas, y eso le
+	 * quita presupuesto a la logica del juego.
+	 *
+	 * El +50 no puede dar 0 con la core option acotada a >=50 (el minimo
+	 * real es 1 instruccion * 50 -> (50+50)/100 = 1), pero el suelo se deja
+	 * explicito: un bloque a coste 0 no haria avanzar el reloj y colgaria
+	 * los eventos (VBlank incluido) en un bucle cerrado. */
+	mult = Config.CpuCycleMult ? Config.CpuCycleMult : 200u;
+	instrs = idlecyclecount + (pc - pcold) / 4;
+	count = (instrs * mult + 50u) / 100u;
+	if (count == 0) count = 1;
 	ADDI(PutHWRegSpecial(CYCLECOUNT), GetHWRegSpecial(CYCLECOUNT), count);
 }
 
@@ -806,7 +835,7 @@ static int iLoadTest() {
 static void SetBranch() {
 	int treg;
 	branch = 1;
-	psxRegs.code = PSXMu32_2(pc);
+	psxRegs.code = psxIcacheFetchCompile(pc);
 	pc+=4;
 
 	if (iLoadTest() == 1) {
@@ -871,7 +900,7 @@ static void SetBranch() {
 static void iJump(u32 branchPC) {
 	u32 *b1, *b2;
 	branch = 1;
-	psxRegs.code = PSXMu32_2(pc);
+	psxRegs.code = psxIcacheFetchCompile(pc);
 	pc+=4;
 
 	if (iLoadTest() == 1) {
@@ -940,7 +969,7 @@ static void iBranch(u32 branchPC, int savectx) {
 	}
 	
 	branch = 1;
-	psxRegs.code = PSXMu32_2(pc);
+	psxRegs.code = psxIcacheFetchCompile(pc);
 
 	// the delay test is only made when the branch is taken
 	// savectx == 0 will mean that :)
@@ -1884,7 +1913,7 @@ static void recLW() {
 
 					DisposeHWReg(iRegs[_Rt_].reg);
 					InvalidateCPURegs();
-					CALLFunc((u32)GPU_readData);
+					CALLFunc((u32)gpuReadData);   /* wrapper drenante, no el plugin crudo */
 
 					SetDstCPUReg(3);
 					PutHWReg32(_Rt_);
@@ -1895,7 +1924,7 @@ static void recLW() {
 
 					DisposeHWReg(iRegs[_Rt_].reg);
 					InvalidateCPURegs();
-					CALLFunc((u32)GPU_readStatus);
+					CALLFunc((u32)gpuReadStatus);   /* wrapper drenante, no el plugin crudo */
 					
 					SetDstCPUReg(3);
 					PutHWReg32(_Rt_);
@@ -2528,7 +2557,6 @@ void execI();
 
 static void recRecompile() {
 	//static int recCount = 0;
-	char *p;
 	u32 *ptr;
 	u32 a;
 	int i;
@@ -2577,8 +2605,12 @@ static void recRecompile() {
 		u32 adr = pc & 0x1fffff;
 		u32 op;
 
-		p = (char *)PSXM_2(pc);
-		psxRegs.code = SWAP32(*(u32 *)p);
+		/* [XBOX360] El compilador lee POR LA I-CACHE: si el juego piso este
+		 * codigo en RAM sin hacer flush (Formula One 99 y su stub de 16 bytes
+		 * en 0x80023000), al recompilar hay que emitir los bytes CACHEADOS,
+		 * que son los que ejecutaria el hardware.  Con la opcion apagada esto
+		 * devuelve exactamente SWAP32(*(u32 *)PSXM_2(pc)). */
+		psxRegs.code = psxIcacheFetchCompile(pc);
 
 		pc+=4; 
 		count++;

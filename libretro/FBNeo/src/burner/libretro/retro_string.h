@@ -1,4 +1,4 @@
-﻿#ifndef __RETRO_STRING__
+#ifndef __RETRO_STRING__
 #define __RETRO_STRING__
 
 #define NUM_STRING	171

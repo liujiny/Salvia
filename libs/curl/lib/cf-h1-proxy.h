@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_H1_PROXY_H
+#ifndef HEADER_CURL_H1_PROXY_H
 #define HEADER_CURL_H1_PROXY_H
 /***************************************************************************
  *                                  _   _ ____  _

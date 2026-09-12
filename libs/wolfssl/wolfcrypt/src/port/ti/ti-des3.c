@@ -1,4 +1,4 @@
-﻿/* port/ti/ti-des.c
+/* port/ti/ti-des.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

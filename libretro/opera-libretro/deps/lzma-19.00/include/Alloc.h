@@ -1,4 +1,4 @@
-﻿/* Alloc.h -- Memory allocation functions
+/* Alloc.h -- Memory allocation functions
 2018-02-19 : Igor Pavlov : Public domain */
 
 #ifndef __COMMON_ALLOC_H

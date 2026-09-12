@@ -1,4 +1,4 @@
-﻿static int startGame=0; // game at top of list as it is displayed on the menu
+static int startGame=0; // game at top of list as it is displayed on the menu
 static int gamesperscreen=12;
 static int gametoplay=0;
 

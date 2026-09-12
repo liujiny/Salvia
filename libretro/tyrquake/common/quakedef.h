@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 1996-1997 Id Software, Inc.
 
 This program is free software; you can redistribute it and/or
@@ -61,6 +61,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define CACHE_SIZE	32	/* used to align key data structures */
 #define CACHE_PAD_ARRAY(elements, type)	\
     ((elements) + ((CACHE_SIZE - 1) / sizeof(type)) + 1)
+
+/* Cache-line alignment that compiles on both MSVC and GCC/Clang.
+   MSVC wants __declspec(align(n)) as a prefix; GCC/Clang want
+   __attribute__((aligned(n))) as a suffix.  Wrap the whole
+   declaration so each compiler sees the placement it expects. */
+#if defined(_MSC_VER)
+#define CACHE_ALIGN_DECL(decl)	__declspec(align(CACHE_SIZE)) decl
+#else
+#define CACHE_ALIGN_DECL(decl)	decl __attribute__((aligned(CACHE_SIZE)))
+#endif
 
 #define	MINIMUM_MEMORY		0x550000
 #define	MINIMUM_MEMORY_LEVELPAK	(MINIMUM_MEMORY + 0x100000)

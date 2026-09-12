@@ -1,4 +1,4 @@
-﻿/*
+/*
  * sdl/palette.c - SDL library specific port code - table of display palettes
  *
  * Copyright (c) 2010 Tomasz Krasuski

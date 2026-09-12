@@ -1,4 +1,4 @@
-﻿/* vidhrdw/stlforce.c - see main driver for other notes */
+/* vidhrdw/stlforce.c - see main driver for other notes */
 
 #include "driver.h"
 

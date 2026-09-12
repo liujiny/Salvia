@@ -1,4 +1,4 @@
-﻿#ifndef __FT_CORE_H__
+#ifndef __FT_CORE_H__
 #define __FT_CORE_H__
 
 #include <ft2build.h>

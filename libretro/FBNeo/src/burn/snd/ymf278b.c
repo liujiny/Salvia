@@ -1,4 +1,4 @@
-﻿/*
+/*
    Based on MAME sources by R. Belmont, Olivier Galibert, hap
 
    YMF278B  FM + Wave table Synthesizer (OPL4)

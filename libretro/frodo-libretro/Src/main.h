@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  main.h - Main program
  *
  *  Frodo Copyright (C) Christian Bauer

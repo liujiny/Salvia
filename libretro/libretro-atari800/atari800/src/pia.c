@@ -1,4 +1,4 @@
-﻿/*
+/*
  * pia.c - PIA chip emulation
  *
  * Copyright (C) 1995-1998 David Firth

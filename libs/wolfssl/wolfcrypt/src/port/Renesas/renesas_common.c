@@ -1,4 +1,4 @@
-﻿/* renesas_common.c
+/* renesas_common.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

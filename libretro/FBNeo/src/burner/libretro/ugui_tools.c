@@ -1,4 +1,4 @@
-﻿#include <stdlib.h>
+#include <stdlib.h>
 #include <string/stdstring.h>
 #include <ugui_tools.h>
 #include <stdio.h>

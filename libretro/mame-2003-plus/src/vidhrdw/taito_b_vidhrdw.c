@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 #include "vidhrdw/generic.h"
 
 data16_t *taitob_scroll;

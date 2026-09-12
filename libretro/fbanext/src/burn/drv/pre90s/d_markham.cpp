@@ -1,4 +1,4 @@
-﻿ // FB Alpha Markham driver module
+ // FB Alpha Markham driver module
 // Based on MAME driver by Uki
 
 #include "tiles_generic.h"

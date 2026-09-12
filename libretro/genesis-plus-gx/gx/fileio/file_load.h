@@ -1,4 +1,4 @@
-﻿/*
+/*
  * file_load.c
  * 
  *  File loading support

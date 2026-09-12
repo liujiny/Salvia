@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file memdbg.h
  */
 #ifndef MEMDBG_H

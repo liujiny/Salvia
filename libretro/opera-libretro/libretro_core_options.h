@@ -1,4 +1,4 @@
-﻿#ifndef LIBRETRO_CORE_OPTIONS_H__
+#ifndef LIBRETRO_CORE_OPTIONS_H__
 #define LIBRETRO_CORE_OPTIONS_H__
 
 /* Initialises any dynamic core options values

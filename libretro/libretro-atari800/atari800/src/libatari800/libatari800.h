@@ -1,4 +1,4 @@
-﻿#ifndef LIBATARI800_H_
+#ifndef LIBATARI800_H_
 #define LIBATARI800_H_
 
 #ifndef UBYTE

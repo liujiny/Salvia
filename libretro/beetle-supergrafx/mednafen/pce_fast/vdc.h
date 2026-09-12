@@ -1,4 +1,4 @@
-﻿#ifndef _PCE_VDC_H
+#ifndef _PCE_VDC_H
 #define _PCE_VDC_H
 
 #define REGSETP(_reg, _data, _msb) { _reg &= 0xFF << ((_msb) ? 0 : 8); _reg |= (_data) << ((_msb) ? 8 : 0); }

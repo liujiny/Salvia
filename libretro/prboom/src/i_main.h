@@ -1,4 +1,4 @@
-﻿/* Emacs style mode select   -*- C++ -*-
+/* Emacs style mode select   -*- C++ -*-
  *-----------------------------------------------------------------------------
  *
  *
@@ -38,7 +38,5 @@
 
 void I_Init(void);
 void I_SafeExit(int rc);
-
-extern int (*I_GetTime)(void);
 
 #endif

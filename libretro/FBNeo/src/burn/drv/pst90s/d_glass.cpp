@@ -1,4 +1,4 @@
-﻿// FB Alpha G hardware driver module
+// FB Alpha G hardware driver module
 // Based on MAME driver by Manuel Abadia
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-﻿#ifndef _VID_EFFECT_H
+#ifndef _VID_EFFECT_H
 #define _VID_EFFECT_H
 
 struct IDirect3DDevice9;

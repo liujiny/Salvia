@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Tatsumi Lock-on driver module
+// FinalBurn Neo Tatsumi Lock-on driver module
 // Based on MAME driver by Philip Bennett
 
 #include "tiles_generic.h"

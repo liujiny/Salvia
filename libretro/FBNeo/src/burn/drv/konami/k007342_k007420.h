@@ -1,4 +1,4 @@
-﻿extern UINT8 *K007342VidRAM[1];
+extern UINT8 *K007342VidRAM[1];
 extern UINT8 *K007342ScrRAM[1];
 extern UINT8  K007342Regs[1][8];
 extern UINT8 *K007420RAM[1];

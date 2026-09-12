@@ -1,4 +1,4 @@
-﻿// PC080SN & PC090OJ based games
+// PC080SN & PC090OJ based games
 // Based on MAME drivers by Bryan McPhail, Nicola Salmoria, Jarek Burczynski, and David Graves
 
 // Notes:

@@ -1,4 +1,4 @@
-﻿
+
 /* A test program written to test robustness to decompression of
    corrupted data.  Usage is 
        unzcrash filename

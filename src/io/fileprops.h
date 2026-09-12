@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 
 #include <string>
 #include <const/Constant.h>
@@ -89,9 +89,9 @@ class FileProps{
             return comparar(c) >= 0;
         }
 		
-		// Operador de asignaciï¿½n
+		// Operador de asignación
 		FileProps& operator=(const FileProps &c) {
-			if (this != &c) { // Evitar auto-asignaciï¿½n
+			if (this != &c) { // Evitar auto-asignación
 				filename = c.filename;
 				filetype = c.filetype;
 				dir = c.dir;
@@ -102,7 +102,7 @@ class FileProps{
 				modificationTime = c.modificationTime;
 				iCreationTime = c.iCreationTime;
 				iModificationTime = c.iModificationTime;
-				compareMethod = c.compareMethod; // ï¿½No olvides este!
+				compareMethod = c.compareMethod; // ¡No olvides este!
 			}
 			return *this;
 		}

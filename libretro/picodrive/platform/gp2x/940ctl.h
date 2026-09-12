@@ -1,4 +1,4 @@
-﻿void sharedmem940_init(void);
+void sharedmem940_init(void);
 void sharedmem940_finish(void);
 
 void YM2612Init_940(int baseclock, int rate, int ssg);

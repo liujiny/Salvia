@@ -1,4 +1,4 @@
-﻿/* pic32mz-crypt.c
+/* pic32mz-crypt.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

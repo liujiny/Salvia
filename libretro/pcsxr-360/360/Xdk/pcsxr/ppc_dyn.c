@@ -1,7 +1,7 @@
-ï»¿#include "psxcommon.h"
+#include "psxcommon.h"
 #include <setjmp.h>
 /**
-Lorsque le compiler copile une function il ajoute un prologue pour securitï¿½
+Lorsque le compiler copile une function il ajoute un prologue pour securité
 naked permet de gerer le prologue soit meme
 mci [cOz]
 

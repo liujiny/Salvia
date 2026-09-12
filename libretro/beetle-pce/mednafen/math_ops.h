@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_MATH_OPS_H
+#ifndef __MDFN_MATH_OPS_H
 #define __MDFN_MATH_OPS_H
 
 // Some compilers' optimizers and some platforms might fubar the generated code from these macros,

@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_SCHANNEL_H
+#ifndef HEADER_CURL_SCHANNEL_H
 #define HEADER_CURL_SCHANNEL_H
 /***************************************************************************
  *                                  _   _ ____  _

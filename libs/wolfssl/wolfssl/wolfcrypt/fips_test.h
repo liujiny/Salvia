@@ -1,4 +1,4 @@
-﻿/* fips_test.h
+/* fips_test.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

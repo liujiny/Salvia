@@ -1,4 +1,4 @@
-﻿/* caam_driver.c
+/* caam_driver.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

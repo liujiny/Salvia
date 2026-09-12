@@ -1,4 +1,4 @@
-﻿#include "file/file_path.h"
+#include "file/file_path.h"
 #include "libretro.h"
 #include "libretro_core_options.h"
 #include "retro_miscellaneous.h"

@@ -1,4 +1,4 @@
-﻿#include "sys16.h"
+#include "sys16.h"
 
 #define MAX_MIRRORS		256
 #define LOG_MAPPER		0

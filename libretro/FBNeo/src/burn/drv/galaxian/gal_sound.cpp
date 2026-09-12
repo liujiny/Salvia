@@ -1,4 +1,4 @@
-﻿#include "gal.h"
+#include "gal.h"
 #include "biquad.h"
 
 UINT8 GalSoundType;

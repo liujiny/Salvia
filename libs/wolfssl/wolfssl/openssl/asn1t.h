@@ -1,4 +1,4 @@
-﻿/* asn1t.h
+/* asn1t.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

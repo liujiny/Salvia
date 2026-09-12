@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_SMB_H
+#ifndef HEADER_CURL_SMB_H
 #define HEADER_CURL_SMB_H
 /***************************************************************************
  *                                  _   _ ____  _

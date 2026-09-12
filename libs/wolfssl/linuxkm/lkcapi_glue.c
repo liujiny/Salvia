@@ -1,4 +1,4 @@
-﻿/* lkcapi_glue.c -- glue logic to register wolfCrypt implementations with
+/* lkcapi_glue.c -- glue logic to register wolfCrypt implementations with
  * the Linux Kernel Cryptosystem
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.

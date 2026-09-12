@@ -1,4 +1,4 @@
-﻿// TC0280GRD
+// TC0280GRD
 
 #include "tiles_generic.h"
 #include "taito_ic.h"

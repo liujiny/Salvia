@@ -1,4 +1,4 @@
-﻿#ifndef _GUI_H
+#ifndef _GUI_H
 #define _GUI_H
 
 #ifndef EXEC_TYPES_H

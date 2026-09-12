@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_CONFIG_XBOX360_H
+#ifndef HEADER_CURL_CONFIG_XBOX360_H
 #define HEADER_CURL_CONFIG_XBOX360_H
 
 /* Hand-crafted config for Xbox 360 with wolfSSL */

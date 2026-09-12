@@ -1,4 +1,4 @@
-﻿// ARM9 interface for FBNeo - memory mapping, handler dispatch
+// ARM9 interface for FBNeo - memory mapping, handler dispatch
 // Modeled on arm7_intf.cpp with Arm9 naming for ARM946E-S (IGS036)
 
 #include "burnint.h"

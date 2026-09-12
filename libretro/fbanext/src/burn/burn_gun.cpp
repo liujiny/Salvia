@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "burn_gun.h"
 
 // Generic Light Gun support for FBA

@@ -1,4 +1,4 @@
-﻿#include "tiles_generic.h"
+#include "tiles_generic.h"
 
 int bac06_depth = 4;
 int bac06_yadjust = 0;

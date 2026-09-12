@@ -1,4 +1,4 @@
-﻿/*****************************************************************************/
+/*****************************************************************************/
 /*                                                                           */
 /* Module:  TIA Chip Sound Simulator Includes, V1.1                          */
 /* Purpose: Define global function prototypes and structures for the TIA     */

@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 
 #ifdef MAME_DEBUG
 #include "driver.h"

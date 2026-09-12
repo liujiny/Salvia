@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_PINGPONG_H
+#ifndef HEADER_CURL_PINGPONG_H
 #define HEADER_CURL_PINGPONG_H
 /***************************************************************************
  *                                  _   _ ____  _

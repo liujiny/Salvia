@@ -1,4 +1,4 @@
-﻿#ifndef VRAM_H
+#ifndef VRAM_H
 #define VRAM_H
 
 layout(location = 1) in mediump vec2 vUV;

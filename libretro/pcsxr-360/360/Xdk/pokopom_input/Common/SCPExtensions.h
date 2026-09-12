@@ -1,4 +1,4 @@
-﻿/* Scarlet.Crush's
+/* Scarlet.Crush's
  * XInput Wrapper for DS3 and Play.com USB Dual DS2 Controller 
  * http://forums.pcsx2.net/Thread-XInput-Wrapper-for-DS3-and-Play-com-USB-Dual-DS2-Controller
  */

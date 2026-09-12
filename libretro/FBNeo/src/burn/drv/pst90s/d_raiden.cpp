@@ -1,4 +1,4 @@
-﻿// Raiden(c) 1990 Seibu Kaihatsu
+// Raiden(c) 1990 Seibu Kaihatsu
 // driver by Oliver Bergmann, Bryan McPhail, Randy Mongenel
 
 // port to FB Alpha by OopsWare

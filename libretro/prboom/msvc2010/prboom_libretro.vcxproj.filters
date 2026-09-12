@@ -30,6 +30,12 @@
     <Filter Include="Header Files\compat">
       <UniqueIdentifier>{A1B2C3D4-0002-0001-0001-000000000003}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\core\heretic">
+      <UniqueIdentifier>{5feb4108-4e37-4ea6-8032-727189d245d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\hexen">
+      <UniqueIdentifier>{6d45353f-f45c-4378-8160-c7ebab43057f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <!-- ============================================================ -->
   <!-- Source File Filters                                          -->
@@ -151,9 +157,6 @@
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="..\src\madplayer.c">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\md5.c">
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="..\src\memio.c">
@@ -312,35 +315,209 @@
     <ClCompile Include="..\src\z_zone.c">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="..\deps\libmad\bit.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\libretro\libretro-common\formats\png\rpng.c">
+      <Filter>Source Files\libretro-common</Filter>
     </ClCompile>
-    <ClCompile Include="..\deps\libmad\decoder.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\libretro\libretro-common\formats\png\rpng_apng.c">
+      <Filter>Source Files\libretro-common</Filter>
     </ClCompile>
-    <ClCompile Include="..\deps\libmad\fixed.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\libretro\libretro-common\formats\jpeg\rjpeg.c">
+      <Filter>Source Files\libretro-common</Filter>
     </ClCompile>
-    <ClCompile Include="..\deps\libmad\frame.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\libretro\libretro-common\formats\wav\rwav.c">
+      <Filter>Source Files\libretro-common</Filter>
     </ClCompile>
-    <ClCompile Include="..\deps\libmad\huffman.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\libretro\libretro-common\streams\trans_stream.c">
+      <Filter>Source Files\libretro-common</Filter>
     </ClCompile>
-    <ClCompile Include="..\deps\libmad\layer3.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\libretro\libretro-common\streams\trans_stream_deflate.c">
+      <Filter>Source Files\libretro-common</Filter>
     </ClCompile>
-    <ClCompile Include="..\deps\libmad\layer12.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\libretro\libretro-common\streams\trans_stream_pipe.c">
+      <Filter>Source Files\libretro-common</Filter>
     </ClCompile>
-    <ClCompile Include="..\deps\libmad\stream.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\libretro\libretro-common\encodings\encoding_crc32.c">
+      <Filter>Source Files\libretro-common</Filter>
     </ClCompile>
-    <ClCompile Include="..\deps\libmad\synth.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\libretro\libretro-common\encodings\encoding_deflate.c">
+      <Filter>Source Files\libretro-common</Filter>
     </ClCompile>
-    <ClCompile Include="..\deps\libmad\timer.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\libretro\libretro-common\formats\vorbis\rvorbis.c">
+      <Filter>Source Files\libretro-common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libretro\libretro-common\formats\mp3\rmp3.c">
+      <Filter>Source Files\libretro-common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libretro\libretro-common\formats\mod\rmodtracker.c">
+      <Filter>Source Files\libretro-common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libretro\libretro-common\formats\audio_transfer.c">
+      <Filter>Source Files\libretro-common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libretro\libretro-common\formats\data_transfer.c">
+      <Filter>Source Files\libretro-common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libretro\libretro-common\formats\image_transfer.c">
+      <Filter>Source Files\libretro-common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libretro\libretro-common\memmap\memmap.c">
+      <Filter>Source Files\libretro-common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dsda_hacked.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\i_cpu_features.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\map_format.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scanner.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\udmf.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\w_pk3.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\heretic\f_finale.c">
+      <Filter>Source Files\core\heretic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\heretic\in_lude.c">
+      <Filter>Source Files\core\heretic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\heretic\info.c">
+      <Filter>Source Files\core\heretic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\heretic\p_action.c">
+      <Filter>Source Files\core\heretic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\heretic\sounds.c">
+      <Filter>Source Files\core\heretic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\f_finale.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\in_lude.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\info.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\p_acs.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\p_anim.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\p_lightning.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\p_mapinfo.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\p_spec_hexen.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\po_man.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\sn_sonix.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\sounds.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hexen\sv_save.c">
+      <Filter>Source Files\core\hexen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libretro_midiout.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\modplayer.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\oggplayer.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\r_drawcmd.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\r_drawtc.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\r_rendermt.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\u_decorate.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\u_zsndinfo.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vid_mode.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\p_conversation.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\p_lineportal.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\p_sectorportal.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\p_skybox.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\p_slope.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\p_vslope.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\p_zacs.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\u_png.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\u_zsecact.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\u_ztextures.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\r_decal.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\r_dynlight.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\r_voxel.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\u_brightmap.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\u_decaldef.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\u_dynlight.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\u_voxel.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\u_zanimdefs.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\u_zmapinfo.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\p_ffloor.c">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
   </ItemGroup>
   <!-- ============================================================ -->

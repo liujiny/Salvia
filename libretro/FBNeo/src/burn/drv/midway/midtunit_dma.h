@@ -1,4 +1,4 @@
-﻿// license:???
+// license:???
 // copyright-holders:Alex Pasadyn, Zsolt Vasvari, Kurt Mahan, Ernesto Corvi, Aaron Giles
 /*************************************************************************
 

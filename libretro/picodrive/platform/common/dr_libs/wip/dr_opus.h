@@ -1,4 +1,4 @@
-﻿/*
+/*
 Opus audio decoder. Choice of public domain or MIT-0. See license statements at the end of this file.
 dr_opus - v0.0.0 (Unreleased) - xxxx-xx-xx
 

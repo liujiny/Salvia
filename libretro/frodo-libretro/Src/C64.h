@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  C64.h - Put the pieces together
  *
  *  Frodo Copyright (C) Christian Bauer

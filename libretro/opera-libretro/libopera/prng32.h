@@ -1,4 +1,4 @@
-﻿#ifndef LIBOPERA_PRNG32_H_INCLUDED
+#ifndef LIBOPERA_PRNG32_H_INCLUDED
 #define LIBOPERA_PRNG32_H_INCLUDED
 
 #include <stdint.h>

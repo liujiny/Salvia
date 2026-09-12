@@ -1,4 +1,4 @@
-﻿#ifndef CFG_H_
+#ifndef CFG_H_
 #define CFG_H_
 
 /* Load Atari800 text configuration file. */

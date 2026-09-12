@@ -1,4 +1,4 @@
-﻿// TC0640FIO
+// TC0640FIO
 
 #include "burnint.h"
 #include "taito_ic.h"

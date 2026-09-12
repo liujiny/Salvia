@@ -1,4 +1,4 @@
-﻿#ifndef __ICS2115_H__
+#ifndef __ICS2115_H__
 #define __ICS2115_H__
 
 struct ics2115_interface {

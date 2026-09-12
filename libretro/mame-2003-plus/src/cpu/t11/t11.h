@@ -1,4 +1,4 @@
-﻿/*** T-11: Portable DEC T-11 emulator ******************************************/
+/*** T-11: Portable DEC T-11 emulator ******************************************/
 
 #ifndef _T11_H
 #define _T11_H

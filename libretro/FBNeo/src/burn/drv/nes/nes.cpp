@@ -1,4 +1,4 @@
-﻿// FBNEO NES/Famicom and FDS emulator
+// FBNEO NES/Famicom and FDS emulator
 // (c)2019-2020 dink, kev, iq_132, Gab75
 
 #include "tiles_generic.h"

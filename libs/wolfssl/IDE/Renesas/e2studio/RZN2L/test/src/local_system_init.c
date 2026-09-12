@@ -1,4 +1,4 @@
-﻿/* local_system_init.c
+/* local_system_init.c
  *
  * Custom configuration for wolfCrypt/wolfSSL.
  * Enabled via WOLFSSL_USER_SETTINGS.

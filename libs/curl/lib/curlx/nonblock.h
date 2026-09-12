@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_NONBLOCK_H
+#ifndef HEADER_CURL_NONBLOCK_H
 #define HEADER_CURL_NONBLOCK_H
 /***************************************************************************
  *                                  _   _ ____  _

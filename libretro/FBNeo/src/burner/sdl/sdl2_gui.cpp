@@ -1,4 +1,4 @@
-﻿#include <SDL_image.h>
+#include <SDL_image.h>
 #include "burner.h"
 #include "sdl2_gui_common.h"
 #include "misc_image.h"

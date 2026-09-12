@@ -1,4 +1,4 @@
-﻿#ifndef _H_YM2413_
+#ifndef _H_YM2413_
 #define _H_YM2413_
 
 /* select output bits size of output : 8 or 16 */

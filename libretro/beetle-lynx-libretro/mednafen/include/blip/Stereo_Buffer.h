@@ -1,4 +1,4 @@
-﻿
+
 // Simple stereo Blip_Buffer for sound emulators whose oscillators output
 // either on the left only, center, or right only.
 

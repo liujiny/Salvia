@@ -1,4 +1,4 @@
-﻿// ARM9 interface header for FBNeo
+// ARM9 interface header for FBNeo
 // Modeled on arm7_intf.h with Arm9 naming for ARM946E-S CPU (IGS036)
 
 #pragma once

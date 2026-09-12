@@ -1,4 +1,4 @@
-﻿#ifndef LIBATARI800_VIDEO_H_
+#ifndef LIBATARI800_VIDEO_H_
 #define LIBATARI800_VIDEO_H_
 
 #include <stdio.h>

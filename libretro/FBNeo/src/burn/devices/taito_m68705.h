@@ -1,4 +1,4 @@
-﻿#include "m6805_intf.h"
+#include "m6805_intf.h"
 
 struct m68705_interface {
 	void (*portA_out)(UINT8 *data);

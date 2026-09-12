@@ -1,4 +1,4 @@
-﻿/* ed25519.c
+/* ed25519.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

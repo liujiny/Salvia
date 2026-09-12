@@ -1,4 +1,4 @@
-﻿#ifndef QAUDIOINTERFACE_H
+#ifndef QAUDIOINTERFACE_H
 #define QAUDIOINTERFACE_H
 
 #include <QAudioFormat>

@@ -1,4 +1,4 @@
-﻿/* SNES NTSC video filter */
+/* SNES NTSC video filter */
 
 /* snes_ntsc 0.2.2 */
 #ifndef SNES_NTSC_H

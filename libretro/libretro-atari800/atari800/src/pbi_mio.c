@@ -1,4 +1,4 @@
-﻿/*
+/*
  * pbi_mio.c - ICD MIO board emulation
  *
  * Copyright (C) 2007-2008 Perry McFarlane

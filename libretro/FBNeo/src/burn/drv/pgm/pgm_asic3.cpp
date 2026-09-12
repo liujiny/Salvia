@@ -1,4 +1,4 @@
-﻿#include "pgm.h"
+#include "pgm.h"
 #include "bitswap.h"
 
 /*

@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
 
   Snow Brothers (Toaplan) / SemiCom Hardware
   uses Kaneko's Pandora sprite chip (also used in DJ Boy, Air Buster ..)

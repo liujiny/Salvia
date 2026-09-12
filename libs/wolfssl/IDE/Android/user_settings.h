@@ -1,4 +1,4 @@
-﻿/* Custom build settings for Android */
+/* Custom build settings for Android */
 
 #ifndef _WOLF_USER_SETTINGS_H_
 #define _WOLF_USER_SETTINGS_H_

@@ -1,4 +1,4 @@
-﻿void astrocde_snd_init(INT32 ndev, INT32 route);
+void astrocde_snd_init(INT32 ndev, INT32 route);
 void astrocde_snd_reset();
 void astrocde_snd_exit();
 void astrocde_snd_scan(INT32 nAction, INT32 *pnMin);

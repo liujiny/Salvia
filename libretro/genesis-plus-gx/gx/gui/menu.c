@@ -1,4 +1,4 @@
-ï»¿/****************************************************************************
+/****************************************************************************
  *  menu.c
  *
  *  Genesis Plus GX menu
@@ -3863,7 +3863,7 @@ static void showcredits(void)
     FONT_writeCenter("wiiuse by Michael Laforest (Para)", 18, 0, 640, 1100 - offset, (GXColor)WHITE);
     FONT_writeCenter("libWiiDRC by Fix94", 18, 0, 640, 1118 - offset, (GXColor)WHITE);
 #endif
-    FONT_writeCenter("asndlib & OGG player by Francisco Muï¿½oz (Hermes)", 18, 0, 640, 1136 - offset, (GXColor)WHITE);
+    FONT_writeCenter("asndlib & OGG player by Francisco Muñoz (Hermes)", 18, 0, 640, 1136 - offset, (GXColor)WHITE);
     FONT_writeCenter("libpng by their respective authors", 18, 0, 640, 1154 - offset, (GXColor)WHITE);
     FONT_writeCenter("devkitPPC by Wintermute", 18, 0, 640, 1172 - offset, (GXColor)WHITE);
 

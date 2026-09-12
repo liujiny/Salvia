@@ -1,4 +1,4 @@
-﻿#ifndef STATESAV_H_
+#ifndef STATESAV_H_
 #define STATESAV_H_
 
 #include "config.h"

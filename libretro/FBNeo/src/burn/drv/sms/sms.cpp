@@ -1,4 +1,4 @@
-﻿/*
+/*
     sms.c --
     Sega Master System console emulation.
 */

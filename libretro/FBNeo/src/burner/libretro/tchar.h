@@ -1,4 +1,4 @@
-﻿#ifndef __PORT_TYPEDEFS_H
+#ifndef __PORT_TYPEDEFS_H
 #define __PORT_TYPEDEFS_H
 
 #include "libretro.h"

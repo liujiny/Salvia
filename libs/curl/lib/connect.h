@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_CONNECT_H
+#ifndef HEADER_CURL_CONNECT_H
 #define HEADER_CURL_CONNECT_H
 /***************************************************************************
  *                                  _   _ ____  _

@@ -1,4 +1,4 @@
-﻿#ifndef _UPD7810_H_
+#ifndef _UPD7810_H_
 #define _UPD7810_H_
 
 #ifdef __cplusplus

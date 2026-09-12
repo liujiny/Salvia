@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  1541fs.cpp - 1541 emulation in host file system
  *
  *  Frodo (C) 1994-1997,2002-2005 Christian Bauer

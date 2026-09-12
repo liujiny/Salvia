@@ -1,4 +1,4 @@
-﻿/* z80.h: z80 emulation core
+/* z80.h: z80 emulation core
    Copyright (c) 1999-2003 Philip Kendall
 
    $Id: z80.h 4640 2012-01-21 13:26:35Z pak21 $

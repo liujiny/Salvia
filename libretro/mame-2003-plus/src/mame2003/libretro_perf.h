@@ -1,4 +1,4 @@
-﻿#ifndef _LIBRETRO_PERF_H
+#ifndef _LIBRETRO_PERF_H
 #define _LIBRETRO_PERF_H
 
 #include "libretro.h"

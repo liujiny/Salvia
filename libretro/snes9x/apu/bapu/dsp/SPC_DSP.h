@@ -1,4 +1,4 @@
-﻿// Highly accurate SNES SPC-700 DSP emulator
+// Highly accurate SNES SPC-700 DSP emulator
 
 // snes_spc 0.9.0
 #ifndef SPC_DSP_H
@@ -21,8 +21,6 @@ public:
 	// doesn't generate any.
 	typedef short sample_t;
 	void set_output( sample_t* out, int out_size );
-
-	void set_output( Resampler* resampler );
 
 	// Number of samples written to output since it was last set, always
 	// a multiple of 2. Undefined if more samples were generated than
@@ -136,8 +134,6 @@ public:
 	};
 private:
 	enum { brr_block_size = 9 };
-
-	Resampler *resampler;
 
 	struct state_t
 	{

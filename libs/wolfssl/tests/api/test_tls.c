@@ -1,4 +1,4 @@
-﻿/* test_tls.c
+/* test_tls.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

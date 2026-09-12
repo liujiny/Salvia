@@ -1,4 +1,4 @@
-﻿/*
+/*
  * pbi_xld.c - 1450XLD and 1400XL emulation
  *
  * Copyright (C) 2007-2008 Perry McFarlane

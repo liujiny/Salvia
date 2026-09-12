@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (C) 2017 FIX94
  *
  * This software may be modified and distributed under the terms

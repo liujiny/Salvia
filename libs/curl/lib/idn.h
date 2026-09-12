@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_IDN_H
+#ifndef HEADER_CURL_IDN_H
 #define HEADER_CURL_IDN_H
 /***************************************************************************
  *                                  _   _ ____  _

@@ -1,4 +1,4 @@
-﻿#ifndef COLOURS_EXTERNAL_H_
+#ifndef COLOURS_EXTERNAL_H_
 #define COLOURS_EXTERNAL_H_
 
 #include <stdio.h> /* for FILENAME_MAX */

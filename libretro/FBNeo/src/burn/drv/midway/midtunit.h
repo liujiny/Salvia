@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 
 extern UINT8 nTUnitJoy1[32];

@@ -1,4 +1,4 @@
-﻿#include <math.h>
+#include <math.h>
 #include <algorithm>
 #include "beetle_psx_globals.h"
 

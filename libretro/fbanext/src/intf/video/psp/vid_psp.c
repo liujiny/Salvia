@@ -1,4 +1,4 @@
-﻿#include "vid_psp.h"
+#include "vid_psp.h"
 
 #define SLICE_SIZE 32 // change this to experiment with different page-cache sizes
 

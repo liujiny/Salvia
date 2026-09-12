@@ -1,4 +1,4 @@
-﻿/* renesas_fspsm_util.c
+/* renesas_fspsm_util.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

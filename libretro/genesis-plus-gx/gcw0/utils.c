@@ -1,4 +1,4 @@
-﻿#include <sys/stat.h>
+#include <sys/stat.h>
 #include <dirent.h>
 
 #include "utils.h"

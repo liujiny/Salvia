@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (C) 2013 - Hans-Kristian Arntzen
  *
  * Permission is hereby granted, free of charge, 

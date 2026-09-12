@@ -1,4 +1,4 @@
-﻿/* Compiler.h : Compiler specific defines and pragmas
+/* Compiler.h : Compiler specific defines and pragmas
 2024-01-22 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_COMPILER_H

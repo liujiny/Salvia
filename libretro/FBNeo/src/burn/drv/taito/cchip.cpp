@@ -1,4 +1,4 @@
-﻿// Based on C-Chip emulation by Jonathan Gevaryahu, David Haywood
+// Based on C-Chip emulation by Jonathan Gevaryahu, David Haywood
 // Ultra-super double thanks to Caps0ff for dumping the C-Chips
 
 #include "burnint.h"

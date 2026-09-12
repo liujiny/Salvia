@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
 
   Crude Buster (World version FX)		(c) 1990 Data East Corporation
   Crude Buster (World version FU)		(c) 1990 Data East Corporation

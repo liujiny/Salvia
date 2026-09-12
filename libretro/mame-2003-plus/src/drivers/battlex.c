@@ -1,4 +1,4 @@
-﻿/* battlex.c - by David Haywood
+/* battlex.c - by David Haywood
 
     Stephh's notes :
     - I don't know exactly how to call the "Free Play" Dip Switch 8(

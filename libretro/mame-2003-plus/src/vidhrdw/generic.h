@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 
 #ifdef __cplusplus
 extern "C" {

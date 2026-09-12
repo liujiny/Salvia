@@ -1,4 +1,4 @@
-﻿// FB Alpha "Legendary Wings" driver module
+// FB Alpha "Legendary Wings" driver module
 // Based on MAME driver by Paul Leaman
 
 #include "tiles_generic.h"

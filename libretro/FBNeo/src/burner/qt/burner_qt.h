@@ -1,4 +1,4 @@
-﻿#ifndef _BURNER_QT_H
+#ifndef _BURNER_QT_H
 #define _BURNER_QT_H
 
 typedef unsigned char BYTE;

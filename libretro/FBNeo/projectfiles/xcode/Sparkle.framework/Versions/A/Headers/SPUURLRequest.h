@@ -1,4 +1,4 @@
-﻿//
+//
 //  SPUURLRequest.h
 //  Sparkle
 //

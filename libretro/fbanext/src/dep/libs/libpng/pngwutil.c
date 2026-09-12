@@ -1,4 +1,4 @@
-﻿
+
 /* pngwutil.c - utilities to write a PNG file
  *
  * Last changed in libpng 1.6.2 [April 25, 2013]

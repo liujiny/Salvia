@@ -1,4 +1,4 @@
-﻿#ifndef FILEIO_H_INCLUDED
+#ifndef FILEIO_H_INCLUDED
 #define FILEIO_H_INCLUDED
 
 #include <fstream>

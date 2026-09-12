@@ -1,4 +1,4 @@
-﻿#include <ft2build.h>
+#include <ft2build.h>
 #include FT_EXCEPT_H
 
 

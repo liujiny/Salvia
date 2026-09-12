@@ -1,4 +1,4 @@
-﻿/*
+/*
    minibz2
       libbz2.dll test program.
       by Yoshioka Tsuneo (tsuneo@rr.iij4u.or.jp)

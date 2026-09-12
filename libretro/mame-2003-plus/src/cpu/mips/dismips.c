@@ -1,4 +1,4 @@
-﻿/*
+/*
  * standalone MIPS disassembler by smf
  *
  * based on DIS68k by Aaron Giles

@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup Signature
 
     \brief This function returns the maximum size of the resulting signature.

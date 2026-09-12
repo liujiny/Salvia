@@ -1,4 +1,4 @@
-﻿/*
+/*
  * atari_ps2.c - Sony PlayStation 2 port code
  *
  * Copyright (c) 2005 Troy Ayers and Piotr Fusik

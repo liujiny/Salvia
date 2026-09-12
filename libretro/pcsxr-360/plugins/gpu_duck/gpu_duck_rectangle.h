@@ -1,4 +1,4 @@
-﻿/*
+/*
  * gpu_duck_rectangle.h
  *
  * VS2010-compatible rewrite of SwanStation's common/rectangle.h.

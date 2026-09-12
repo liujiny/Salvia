@@ -1,4 +1,4 @@
-﻿#include "so/soutils.h"
+#include "so/soutils.h"
 
 #ifdef _XBOX
 

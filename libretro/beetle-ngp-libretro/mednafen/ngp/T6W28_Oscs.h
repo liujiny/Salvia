@@ -1,4 +1,4 @@
-﻿
+
 // Private oscillators used by T6W28_Apu
 
 // T6W28_Snd_Emu

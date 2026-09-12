@@ -1,4 +1,4 @@
-﻿#ifndef _LIBRETRO_WINX68K_COMMON_H
+#ifndef _LIBRETRO_WINX68K_COMMON_H
 #define _LIBRETRO_WINX68K_COMMON_H
 
 #include "compiler.h"

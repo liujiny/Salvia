@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_XDF_H
+#ifndef _WINX68K_XDF_H
 #define _WINX68K_XDF_H
 
 void XDF_Init(void);

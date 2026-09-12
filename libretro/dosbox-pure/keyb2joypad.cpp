@@ -1,4 +1,4 @@
-﻿// Original data from the Keyb2Joypad Project
+// Original data from the Keyb2Joypad Project
 // Copyright Jemy Murphy and bigjim - Used with permission
 // Amendments and fixes done by the DOSBox Pure project
 

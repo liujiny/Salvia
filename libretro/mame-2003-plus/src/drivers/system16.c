@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Sega System16 Hardware
 	major cleanup in progress - still a lot to do!H
 

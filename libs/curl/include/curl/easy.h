@@ -1,4 +1,4 @@
-﻿#ifndef CURLINC_EASY_H
+#ifndef CURLINC_EASY_H
 #define CURLINC_EASY_H
 /***************************************************************************
  *                                  _   _ ____  _

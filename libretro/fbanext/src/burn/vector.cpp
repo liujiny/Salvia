@@ -1,4 +1,4 @@
-﻿
+
 #include "tiles_generic.h"
 #include "math.h"
 

@@ -1,4 +1,4 @@
-﻿#include "cps.h"
+#include "cps.h"
 #include "timekpr.h"
 
 #define CPS1_68K_PROGRAM_BYTESWAP			1

@@ -1,4 +1,4 @@
-﻿// FB Neo Taito Z Driver
+// FB Neo Taito Z Driver
 // Based on MAME driver by David Graves
 
 #include "tiles_generic.h"

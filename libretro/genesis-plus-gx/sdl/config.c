@@ -1,4 +1,4 @@
-﻿
+
 #include "shared.h"
 
 t_config config;

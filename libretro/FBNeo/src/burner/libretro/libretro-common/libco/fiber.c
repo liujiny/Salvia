@@ -1,4 +1,4 @@
-﻿/*
+/*
   libco.win (2008-01-28)
   authors: Nach, byuu
   license: public domain

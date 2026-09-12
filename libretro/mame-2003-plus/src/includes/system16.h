@@ -1,4 +1,4 @@
-﻿#define SYS16_SPR_FLIPX						0x01
+#define SYS16_SPR_FLIPX						0x01
 #define SYS16_SPR_VISIBLE					0x04
 #define SYS16_SPR_DRAW_TO_LEFT				0x08
 #define SYS16_SPR_SPECIAL					0x10

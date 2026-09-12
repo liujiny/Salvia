@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifndef __E132XS_H__
 #define __E132XS_H__

@@ -1,4 +1,4 @@
-п»ї/*
+/*
 	3DOplay sources v1.7.3 based on FreeDOcore
 	3doplay.do.am
 	Developer: Viktor Ivanov
@@ -134,7 +134,7 @@ void  _sport_WriteAccess(unsigned int index, unsigned int mask)
 		return;
 	}
 
-       // io_interface(EXT_DEBUG_PRINT,(void*)str.print("::::SPORT:::: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, Index=0x%8.8X, Mask=0x%8.8X",index, mask).CStr());
+       // io_interface(EXT_DEBUG_PRINT,(void*)str.print("::::SPORT:::: Подозрительная запись, Index=0x%8.8X, Mask=0x%8.8X",index, mask).CStr());
 }
 
 

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * ui_basic.c - Atari look&feel user interface driver
  *
  * Copyright (C) 1995-1998 David Firth

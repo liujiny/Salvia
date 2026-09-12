@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <stddef.h>
 
 #include <pico/pico_int.h>

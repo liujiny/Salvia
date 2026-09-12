@@ -1,4 +1,4 @@
-ï»¿#include <http/httputil.h>
+#include <http/httputil.h>
 #include <const/constant.h>
 #include <stdarg.h>
 
@@ -27,14 +27,14 @@ void CurlClient::init(){
 		XNADDR xnAddr;
 		DWORD dwStatus;
 		int intentos = 0;
-		const int MAX_INTENTOS = 25; // 25 * 200ms = 5 segundos mï¿½ximo
+		const int MAX_INTENTOS = 25; // 25 * 200ms = 5 segundos máximo
 
 		LOG_DEBUG("Iniciando comprobacion de red en Xbox 360...\n");
 
 		do {
 			dwStatus = XNetGetTitleXnAddr(&xnAddr);
 			
-			// Si da NONE de inmediato, no hay inicializaciï¿½n o hardware bï¿½sico
+			// Si da NONE de inmediato, no hay inicialización o hardware básico
 			if (dwStatus == XNET_GET_XNADDR_NONE) {
 				LOG_DEBUG("Error: Red no inicializada o sin conexion (NONE).\n");
 				return;
@@ -49,9 +49,9 @@ void CurlClient::init(){
 
 		} while (dwStatus == XNET_GET_XNADDR_PENDING && intentos < MAX_INTENTOS);
 
-		// VALIDACIï¿½N REAL DE IP: 
-		// Debe tener asignada una IP Estï¿½tica, por DHCP o por PPPoE.
-		// Si no tiene ninguno de estos bits, la IP no es vï¿½lida para trafico.
+		// VALIDACIÓN REAL DE IP: 
+		// Debe tener asignada una IP Estática, por DHCP o por PPPoE.
+		// Si no tiene ninguno de estos bits, la IP no es válida para trafico.
 		DWORD maskIP = XNET_GET_XNADDR_STATIC | XNET_GET_XNADDR_DHCP | XNET_GET_XNADDR_PPPOE;
 		if ((dwStatus & maskIP) == 0) {
 			LOG_DEBUG("Timeout o Error: La Xbox no obtuvo una IP valida.\n");
@@ -89,7 +89,7 @@ void CurlClient::init(){
 	// Diagnostico de capacidades de la libcurl compilada
 	{
 		curl_version_info_data *vinfo = curl_version_info(CURLVERSION_NOW);
-		LOG_DEBUG("cURL: %s\n", curl_version()); // Aï¿½adido \n para formateo de log
+		LOG_DEBUG("cURL: %s\n", curl_version()); // Añadido \n para formateo de log
 		if (vinfo) {
 			LOG_DEBUG("  HTTP2=%s BROTLI=%s LIBZ=%s\n",
 				(vinfo->features & CURL_VERSION_HTTP2)  ? "SI" : "NO",
@@ -508,8 +508,8 @@ extern "C" {
 		return &h;
 	}
 
-	// 1. Soluciï¿½n para inet_aton
-    // Convierte una cadena "X.X.X.X" en una estructura de direcciï¿½n de red (in_addr)
+	// 1. Solución para inet_aton
+    // Convierte una cadena "X.X.X.X" en una estructura de dirección de red (in_addr)
     int inet_aton(const char *cp, struct in_addr *inp) {
         unsigned int b1, b2, b3, b4;
         
@@ -518,7 +518,7 @@ extern "C" {
             return 0; // Error de parseo
         }
         
-        // Validamos que ningï¿½n byte exceda el lï¿½mite de 255
+        // Validamos que ningún byte exceda el límite de 255
         if (b1 > 255 || b2 > 255 || b3 > 255 || b4 > 255) {
             return 0;
         }
@@ -529,13 +529,13 @@ extern "C" {
         inp->S_un.S_un_b.s_b3 = (unsigned char)b3;
         inp->S_un.S_un_b.s_b4 = (unsigned char)b4;
         
-        return 1; // ï¿½xito
+        return 1; // Éxito
     }
 
-    // 2. Soluciï¿½n para inet_ntoa
+    // 2. Solución para inet_ntoa
     // Convierte una estructura in_addr en texto legible "X.X.X.X"
     char* inet_ntoa(struct in_addr in) {
-        // Usamos una variable estï¿½tica local compartiendo el comportamiento del original thread-unsafe
+        // Usamos una variable estática local compartiendo el comportamiento del original thread-unsafe
         static char buffer[32]; 
         
         sprintf_s(buffer, sizeof(buffer), "%d.%d.%d.%d",
@@ -547,8 +547,8 @@ extern "C" {
         return buffer;
     }
 
-    // 3. Soluciï¿½n para inet_pton
-    // Equivalente seguro multiespecificaciï¿½n, TyrQuake solo la usa para AF_INET (IPv4)
+    // 3. Solución para inet_pton
+    // Equivalente seguro multiespecificación, TyrQuake solo la usa para AF_INET (IPv4)
     int inet_pton(int af, const char *src, void *dst) {
         if (af != AF_INET) {
             return -1; // Xbox 360 no da soporte nativo a IPv6 (AF_INET6) en este entorno
@@ -558,7 +558,7 @@ extern "C" {
             return 0;
         }
 
-        // Delegamos de forma limpia en nuestra funciï¿½n inet_aton ya definida arriba
+        // Delegamos de forma limpia en nuestra función inet_aton ya definida arriba
         return inet_aton(src, (struct in_addr*)dst);
     }
 

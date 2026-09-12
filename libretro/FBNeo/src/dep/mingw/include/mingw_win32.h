@@ -1,4 +1,4 @@
-﻿// Additions to the Cygwin/MinGW win32 headers
+// Additions to the Cygwin/MinGW win32 headers
 // ***********************************************************************************************************//
 // Updated August 18, 2008 - Made adjustmens for newer versions of MinGW Win32 API definitions (CaptainCPS-X)   //
 // ***********************************************************************************************************//

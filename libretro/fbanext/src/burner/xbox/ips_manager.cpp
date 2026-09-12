@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 
 #define NUM_LANGUAGES		12
 #define MAX_NODES			1024

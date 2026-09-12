@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup Password
 
     \brief This function implements the Password Based Key Derivation

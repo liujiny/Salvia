@@ -1,4 +1,4 @@
-﻿/* wolfcaam_seco.h
+/* wolfcaam_seco.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

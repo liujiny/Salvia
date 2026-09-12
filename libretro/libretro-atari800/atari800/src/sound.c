@@ -1,4 +1,4 @@
-﻿/*
+/*
  * sound.c - platform-independent interface for platform-specific sound output.
  *
  * Copyright (C) 2013 Tomasz Krasuski

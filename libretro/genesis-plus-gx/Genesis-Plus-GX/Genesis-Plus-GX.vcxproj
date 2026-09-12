@@ -213,9 +213,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\core\cart_hw\areplay.c" />
     <ClCompile Include="..\core\cart_hw\eeprom_93c.c" />
     <ClCompile Include="..\core\cart_hw\eeprom_i2c.c" />
@@ -338,6 +335,8 @@
     <ClInclude Include="..\core\types.h" />
     <ClInclude Include="..\core\vdp_ctrl.h" />
     <ClInclude Include="..\core\vdp_render.h" />
+    <ClInclude Include="..\libretro\libretro_core_options.h" />
+    <ClInclude Include="..\libretro\libretro_core_options_intl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

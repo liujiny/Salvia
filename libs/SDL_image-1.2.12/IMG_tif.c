@@ -1,4 +1,4 @@
-﻿/*
+/*
   SDL_image:  An example image loading library for use with SDL
   Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
 

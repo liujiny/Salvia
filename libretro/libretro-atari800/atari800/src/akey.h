@@ -1,4 +1,4 @@
-﻿#ifndef AKEY_H_
+#ifndef AKEY_H_
 #define AKEY_H_
 /* akey.h: Atari key codes */
 

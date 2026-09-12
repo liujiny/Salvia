@@ -1,4 +1,4 @@
-﻿#define SETA_NUM_CHANNELS	16
+#define SETA_NUM_CHANNELS	16
 #define SETA_NUM_BANKS 		(0x100000 / 0x20000)
 
 #define FREQ_BASE_BITS		8					// Frequency fixed decimal shift bits

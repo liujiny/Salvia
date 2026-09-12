@@ -1,4 +1,4 @@
-﻿#ifndef CURLINC_CCSIDCURL_H
+#ifndef CURLINC_CCSIDCURL_H
 #define CURLINC_CCSIDCURL_H
 /***************************************************************************
  *                                  _   _ ____  _

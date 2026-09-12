@@ -1,4 +1,4 @@
-﻿#define RegWord(ModRM) Wreg(Mod_RM.reg.w[ModRM])
+#define RegWord(ModRM) Wreg(Mod_RM.reg.w[ModRM])
 #define RegByte(ModRM) Breg(Mod_RM.reg.b[ModRM])
 
 #define GetRMWord(ModRM) \

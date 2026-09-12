@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 
 // d_cps1.cpp
 #define CPS1_68K_PROGRAM_BYTESWAP			1

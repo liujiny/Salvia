@@ -1,4 +1,4 @@
-﻿#ifndef FLAC__PRIVATE__MD5_H
+#ifndef FLAC__PRIVATE__MD5_H
 #define FLAC__PRIVATE__MD5_H
 
 /*

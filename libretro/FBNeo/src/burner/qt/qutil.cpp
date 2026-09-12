@@ -1,4 +1,4 @@
-﻿#include <QFileDialog>
+#include <QFileDialog>
 #include <QDebug>
 #include "qutil.h"
 

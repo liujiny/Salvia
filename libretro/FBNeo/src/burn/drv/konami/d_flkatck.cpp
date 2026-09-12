@@ -1,4 +1,4 @@
-﻿// FB Alpha Flack Attack driver module
+// FB Alpha Flack Attack driver module
 // Based on MAME driver by Manuel Abadia
 
 #include "tiles_generic.h"

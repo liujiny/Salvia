@@ -1,4 +1,4 @@
-﻿/*
+/*
  * win_d3d9.h - Capa de video D3D9 para Windows (Opcion B).
  *
  * Reproduce a nivel de aplicacion lo que el driver SDL de Xbox 360
@@ -10,9 +10,13 @@
  * modulo solo se encarga del render. Se obtiene el HWND con SDL_GetWMInfo
  * y se crea un IDirect3D9 propio sobre esa ventana.
  *
- * Los pixel shaders son los MISMOS que en Xbox: el HLSL vive en
- * libs/libSDLx360/SDL/src/video/xbox/SDL_shaders_src.h (header neutro
- * compartido por ambas plataformas).
+ * Los pixel shaders son los MISMOS que en Xbox, pero ya no viven en el
+ * binario: se cargan de <appDir>\assets\shaders (presets .hlslp + cuerpos
+ * .hlsl, formato estilo RetroArch). La capa de aplicacion los descubre y
+ * parsea en src/video/shaderpreset.cpp y publica la tabla resultante por la
+ * API C de src/video/salvia_shader_api.h, que este modulo implementa. Lo
+ * unico que sigue embebido es el passthrough de SDL_shaders_src.h, como
+ * fallback para que jamas se enganche un pixel shader NULL.
  */
 #pragma once
 
@@ -56,6 +60,8 @@ void         SDL_XBOX_SetDisplayOverflow(int overflow);
 void         SDL_XBOX_SetRotation(int rotation);
 void         SDL_XBOX_SetVSync(int enable);
 SDL_Surface* SDL_XBOX_GetOverlay(void);
+/* Rect de la imagen del juego en pixeles del overlay. */
+void         SDL_XBOX_GetGameRectOnOverlay(int *x, int *y, int *w, int *h);
 void         SDL_XBOX_SetOverlayEnabled(int enabled);
 void         SDL_XBOX_SetOverscan(int x, int y);
 

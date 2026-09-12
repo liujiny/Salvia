@@ -1,4 +1,4 @@
-﻿// Module for input using SDL
+// Module for input using SDL
 #include <SDL.h>
 
 #include "burner.h"

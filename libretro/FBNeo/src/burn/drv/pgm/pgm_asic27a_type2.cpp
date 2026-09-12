@@ -1,4 +1,4 @@
-﻿#include "pgm.h"
+#include "pgm.h"
 
 /*
 	IGS Asic27a (type 2) proper emulation

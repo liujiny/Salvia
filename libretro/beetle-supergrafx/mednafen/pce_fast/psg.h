@@ -1,4 +1,4 @@
-﻿#ifndef _PCEFast_PSG_H
+#ifndef _PCEFast_PSG_H
 #define _PCEFast_PSG_H
 
 #include <blip/Blip_Buffer.h>

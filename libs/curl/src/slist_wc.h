@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_SLIST_WC_H
+#ifndef HEADER_CURL_SLIST_WC_H
 #define HEADER_CURL_SLIST_WC_H
 /***************************************************************************
  *                                  _   _ ____  _

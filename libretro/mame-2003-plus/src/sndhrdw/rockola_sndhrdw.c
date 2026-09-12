@@ -1,4 +1,4 @@
-﻿/* from Andrew Scott (ascott@utkux.utcc.utk.edu) */
+/* from Andrew Scott (ascott@utkux.utcc.utk.edu) */
 
 /*
   updated by BUT

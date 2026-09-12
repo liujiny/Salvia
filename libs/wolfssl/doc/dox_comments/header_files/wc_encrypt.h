@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup AES
     \brief Decrypts a cipher from the input buffer in, and places the
     resulting plain text in the output buffer out using cipher block

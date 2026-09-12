@@ -1,4 +1,4 @@
-﻿typedef void (*OPL3_TIMERHANDLER)(INT32, INT32 timer,double period);
+typedef void (*OPL3_TIMERHANDLER)(INT32, INT32 timer,double period);
 typedef void (*OPL3_IRQHANDLER)(INT32, INT32 irq);
 
 void ymf271_init(int clock, UINT8 *rom, INT32 romsize, void (*irq_cb)(INT32, INT32), void (*timer_cb)(INT32, INT32, double));

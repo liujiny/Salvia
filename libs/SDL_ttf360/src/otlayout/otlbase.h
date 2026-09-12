@@ -1,4 +1,4 @@
-﻿#ifndef __OTL_BASE_H__
+#ifndef __OTL_BASE_H__
 #define __OTL_BASE_H__
 
 #include "otlayout.h"

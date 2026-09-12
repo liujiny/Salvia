@@ -1,4 +1,4 @@
-﻿/* fitblk.c: example of fitting compressed output to a specified size
+/* fitblk.c: example of fitting compressed output to a specified size
    Not copyrighted -- provided to the public domain
    Version 1.1  25 November 2004  Mark Adler */
 

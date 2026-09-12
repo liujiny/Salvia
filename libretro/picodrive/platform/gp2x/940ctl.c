@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Code for communication with ARM940 and control of it.
  * (C) notaz, 2006-2009
  *

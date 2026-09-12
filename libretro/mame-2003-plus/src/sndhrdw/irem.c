@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 #include "irem.h"
 #include "cpu/m6800/m6800.h"
 

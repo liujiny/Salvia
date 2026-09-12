@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 
 #define INT_INFO_STRINGS (8)
 

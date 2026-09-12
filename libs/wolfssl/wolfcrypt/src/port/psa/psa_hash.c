@@ -1,4 +1,4 @@
-﻿/* psa_hash.c
+/* psa_hash.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

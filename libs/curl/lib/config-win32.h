@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_CONFIG_WIN32_H
+#ifndef HEADER_CURL_CONFIG_WIN32_H
 #define HEADER_CURL_CONFIG_WIN32_H
 /***************************************************************************
  *                                  _   _ ____  _

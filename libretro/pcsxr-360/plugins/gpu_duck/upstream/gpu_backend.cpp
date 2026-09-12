@@ -1,4 +1,4 @@
-﻿#include "gpu_backend.h"
+#include "gpu_backend.h"
 #include "common/align.h"
 #include "common/state_wrapper.h"
 #include "common/timer.h"

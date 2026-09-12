@@ -1,4 +1,4 @@
-﻿/*
+/*
  * DrZ80 Version 1.0
  * Z80 Emulator by Reesy
  * Copyright 2005 Reesy

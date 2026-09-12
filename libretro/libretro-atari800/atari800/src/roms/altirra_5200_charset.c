@@ -1,4 +1,4 @@
-﻿/*
+/*
  * altirra_5200_charset.c - 5200 character set ROM
  */
 

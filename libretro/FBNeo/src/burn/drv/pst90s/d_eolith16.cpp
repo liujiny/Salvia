@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Eolith 16-bit Hyperstone driver module
+// FinalBurn Neo Eolith 16-bit Hyperstone driver module
 // Based on MAME driver by Pierpaolo Prazzoli
 
 #include "tiles_generic.h"

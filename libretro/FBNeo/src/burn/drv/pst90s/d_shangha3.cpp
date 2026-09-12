@@ -1,4 +1,4 @@
-﻿// FB Neo Shanghai 3 / Hebereke no Popoon / Blocken driver module
+// FB Neo Shanghai 3 / Hebereke no Popoon / Blocken driver module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

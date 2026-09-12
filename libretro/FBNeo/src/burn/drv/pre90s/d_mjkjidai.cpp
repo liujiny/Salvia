@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Mahjong Kyou Jidai driver module
+// FinalBurn Neo Mahjong Kyou Jidai driver module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

@@ -1,4 +1,4 @@
-﻿/* tilemap.h */
+/* tilemap.h */
 
 #ifndef TILEMAP_H
 #define TILEMAP_H

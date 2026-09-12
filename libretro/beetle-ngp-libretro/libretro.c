@@ -1,4 +1,4 @@
-﻿#include <libretro.h>
+#include <libretro.h>
 #include <string.h>
 #include <string/stdstring.h>
 #include <streams/file_stream.h>

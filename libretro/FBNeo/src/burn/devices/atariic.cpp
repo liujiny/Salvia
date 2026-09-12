@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "m68000_intf.h"
 #include "m6502_intf.h"
 #include "slapstic.h"

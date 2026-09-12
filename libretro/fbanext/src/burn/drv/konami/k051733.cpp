@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 
 static UINT8 K051733Ram[0x20];
 

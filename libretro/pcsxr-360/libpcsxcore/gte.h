@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
  *   PCSX-Revolution - PlayStation Emulator for Nintendo Wii               *
  *   Copyright (C) 2009-2010  PCSX-Revolution Dev Team                     *
  *   <http://code.google.com/p/pcsx-revolution/>                           *

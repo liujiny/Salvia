@@ -1,4 +1,4 @@
-﻿// FB Alpha Backfire! driver module
+// FB Alpha Backfire! driver module
 // Based on MAME driver by David Haywood
 
 // note: shifter is very buggy, disabled for now.

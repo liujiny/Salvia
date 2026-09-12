@@ -1,4 +1,4 @@
-﻿/*
+/*
  * line renderer
  * (c) Copyright Dave, 2004
  * (C) notaz, 2006-2010

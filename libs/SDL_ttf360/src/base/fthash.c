@@ -1,4 +1,4 @@
-﻿#include <ft2build.h>
+#include <ft2build.h>
 #include FT_TYPES_H
 #include FT_INTERNAL_HASH_H
 #include FT_INTERNAL_MEMORY_H

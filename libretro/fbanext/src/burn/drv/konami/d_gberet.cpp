@@ -1,4 +1,4 @@
-﻿// FB Alpha Green Beret driver module
+// FB Alpha Green Beret driver module
 // Based on MAME driver by Nicola Salmoria
 
 #include "tiles_generic.h"

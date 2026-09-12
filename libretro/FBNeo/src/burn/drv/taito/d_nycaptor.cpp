@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo N.Y. Captor driver module
+// FinalBurn Neo N.Y. Captor driver module
 // Based on MAME driver by Tomasz Slanina
 
 #include "tiles_generic.h"

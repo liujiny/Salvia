@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "h6280/h6280.h"
 #include "h6280_intf.h"
 

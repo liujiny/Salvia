@@ -1,4 +1,4 @@
-﻿#include "burner.h"
+#include "burner.h"
 
 const int MAXPLAYER = 4;
 static int nPlayerInputs[MAXPLAYER], nCommonInputs, nDIPInputs;

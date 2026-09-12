@@ -1,4 +1,4 @@
-﻿// Burner data file module (for ROM managers)
+// Burner data file module (for ROM managers)
 // written    2001 LoqiqX
 // updated 11/2003 by LvR -- essentially a rewrite
 

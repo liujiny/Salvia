@@ -1,4 +1,4 @@
-﻿#ifndef Z80_H_
+#ifndef Z80_H_
 #define Z80_H_
 
 #include "osd_cpu.h"

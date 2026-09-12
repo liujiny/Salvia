@@ -1,4 +1,4 @@
-﻿#include <QtCore>
+#include <QtCore>
 #include <QGraphicsEffect>
 #include "aboutdialog.h"
 #include "ui_aboutdialog.h"

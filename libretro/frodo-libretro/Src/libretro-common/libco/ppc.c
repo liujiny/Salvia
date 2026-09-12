@@ -1,4 +1,4 @@
-﻿/*
+/*
   libco.ppc (2010-10-17)
   author: blargg
   license: public domain

@@ -1,4 +1,4 @@
-﻿// FB Alpha Jackie Chan driver module
+// FB Alpha Jackie Chan driver module
 // Based on MAME driver by David Haywood
 
 // Note: a version of sknssprite device is included in this file. it's kept

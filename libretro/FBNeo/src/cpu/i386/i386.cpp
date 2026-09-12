@@ -1,4 +1,4 @@
-﻿/*
+/*
     Intel 386 emulator
 
     Written by Ville Linde

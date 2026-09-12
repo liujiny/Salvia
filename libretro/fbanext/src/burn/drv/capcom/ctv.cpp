@@ -1,4 +1,4 @@
-﻿#include "cps.h"
+#include "cps.h"
 
 // CPS Tile Variants
 // horizontal/vertical clip rolls

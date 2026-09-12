@@ -1,4 +1,4 @@
-﻿#ifndef OPERA_LR_NVRAM_H_INCLUDED
+#ifndef OPERA_LR_NVRAM_H_INCLUDED
 #define OPERA_LR_NVRAM_H_INCLUDED
 
 #include <stdint.h>

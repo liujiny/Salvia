@@ -1,4 +1,4 @@
-﻿// FB Neo Equites driver module
+// FB Neo Equites driver module
 // Based on MAME driver by Acho A. Tang, Nicola Salmoria
 
 #include "tiles_generic.h"

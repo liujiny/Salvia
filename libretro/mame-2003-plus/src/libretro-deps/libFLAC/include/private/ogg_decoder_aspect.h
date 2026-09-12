@@ -1,4 +1,4 @@
-﻿/* libFLAC - Free Lossless Audio Codec
+/* libFLAC - Free Lossless Audio Codec
  * Copyright (C) 2002-2009  Josh Coalson
  * Copyright (C) 2011-2013  Xiph.Org Foundation
  *

@@ -1,4 +1,4 @@
-﻿#include "v60.h"
+#include "v60.h"
 
 void v60Init();
 void v70Init();

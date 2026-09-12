@@ -1,4 +1,4 @@
-﻿#ifndef C68000_H
+#ifndef C68000_H
 #define C68000_H
 #include "cyclone.h"
 

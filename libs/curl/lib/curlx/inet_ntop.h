@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_INET_NTOP_H
+#ifndef HEADER_CURL_INET_NTOP_H
 #define HEADER_CURL_INET_NTOP_H
 /***************************************************************************
  *                                  _   _ ____  _

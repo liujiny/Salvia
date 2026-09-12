@@ -1,4 +1,4 @@
-﻿#include "constant.h"
+#include "constant.h"
 
 std::string Constant::appDir;
 std::string Constant::appExecutable;
@@ -26,7 +26,11 @@ svColor Constant::colors[clTotalColors] = {
 	{{69,69,69}	 , 255},		//clAskBg 	
 	{{91,91,91}	 , 255},		//clAskLine 
 	{{190,190,190}, 255},		//clAskText 
+	{{0,255,197}, 255}		    //clHighligtOption
 }; 
+
+const int LIGHTGUN_SIZES[LIGHTGUN_SIZES_COUNT] = {100, 80, 60, 40};
+const int LIGHTGUN_THICKNESS[LIGHTGUN_THICKNESS_COUNT] = {1, 3, 5, 7};
 
 const char *MEDIAS_TO_FIND[] = {"sstitle", "ss", "box-2D"};
 const char *ASSETS_DIR[] = {"snaptit", "snap", "box2d", "synopsis"};
@@ -38,6 +42,7 @@ const std::string CORE_OPT_EXT = ".opt";
 const std::string RETROPAD_INI = "retropad.ini";
 const std::string ROUTE_ACHIEVEMENT_TRANSLATIONS = "\\assets\\extra\\achievement_translations.cfg";
 const std::string ROUTE_SCRAP_TRANSLATIONS = "\\assets\\extra\\scrap_translations.cfg";
+const std::string ROUTE_ASSETS_BGMUSIC = "assets\\music";
 const std::string PREFIX_DEFAULTS = "defaults_";
 const std::string BG_FILENAME = "background";
 //Url to obtain a list of available quake  servers
@@ -66,20 +71,44 @@ const char *ICONS_PATH[] = {"menu_log.png",		// page_white_text
 	"image.png",								// page_white_picture
 	"zip.png",									// page_white_zip
 	"menu_osd.png",								// ico_video
+	"menu_audio.png", 							// ico_audio
 	"setting.png",								// ico_settings
 	"core-options.png",							// ico_settings_core
 	"subsetting.png",							// ico_subsettings
 	"core-input-remapping-options.png",			// ico_remap
 	"loadstate.png",							// ico_savestates
 	"menu_saving.png",							// ico_saving
-	"resume.png",								// ico_return
+	"resume.png",								// ico_resume
 	"screenshot.png",							// ico_scrapper
 	"achievement-list.png",						// ico_achievements
 	"menu_shutdown.png",						// ico_shutdown
 	"menu_help.png",							// ico_help
 	"core-cheat-options.png",					// ico_cheats
 	"clock.png",								// ico_clock	
-	"input_MOUSE.png"							// ico_mouse
+	"input_MOUSE.png",							// ico_mouse
+	"reload.png",								// ico_reload
+	"input_TURBO.png",							// ico_turbo
+	"menu_download.png",						// ico_download
+	"input_DPAD-U.png",							// ico_input_dpad_u
+	"input_DPAD-D.png",							// ico_input_dpad_d
+	"input_DPAD-L.png",							// ico_input_dpad_l
+	"input_DPAD-R.png",							// ico_input_dpad_r
+	"input_BTN-D.png",							// ico_input_btn_d
+	"input_BTN-R.png",							// ico_input_btn_r
+	"input_BTN-L.png",							// ico_input_btn_l
+	"input_BTN-U.png",							// ico_input_btn_u
+	"input_LT.png",								// ico_input_lt
+	"input_RT.png",								// ico_input_rt
+	"input_SELECT.png",							// ico_input_select
+	"input_START.png",							// ico_input_start
+	"input_STCK-P.png",							// ico_input_stick_l3
+	"input_STCK-P.png",							// ico_input_stick_r3
+	"input_LB.png",								// ico_input_l2
+	"input_RB.png",								// ico_input_r2
+	"input_STCK-U.png",						    // ico_analog_u
+	"input_STCK-D.png",							// ico_analog_d
+	"input_STCK-L.png",							// ico_analog_l
+	"input_STCK-R.png"							// ico_analog_r
 };
 
 const char *ICONS_CARTS_PATH[] = {"Nintendo - Game Boy Advance-content.png",  // cart_gba
@@ -110,7 +139,9 @@ const char *ICONS_CARTS_PATH[] = {"Nintendo - Game Boy Advance-content.png",  //
 	"Atari - 800-content.png",												  // cart_atari800
 	"Atari - 5200-content.png",												  // cart_atari5200
 	"Commodore - 64-content.png",											  // cart_c64
-	"Sharp - X68000-content.png"											  // cart_x68k
+	"Sharp - X68000-content.png",											  // cart_x68k
+	"Commodore - Amiga-content.png",										  // cart_amiga
+	"Amiga - CD32-content.png"												  // cart_cd32	
 };
 
 // Nombres de sistema de libretro-database (ficheros rdb/ y carpetas cht/), indexado por
@@ -145,18 +176,55 @@ const char *RDB_SYSTEM_NAMES[] = {
 	"Atari - 8-bit Family",							   // cart_atari800
 	"Atari - 5200",									   // cart_atari5200
 	"",												   // cart_c64
-	""												   // cart_x68k
+	"",												   // cart_x68k
+	"",				    							   // cart_amiga
+	""												   // cart_cd32
 };
 
+/* El indice es eje*2 + (valor>0), y que eje es cada stick NO coincide entre
+ * plataformas (ver salvia.cpp, RETRO_DEVICE_INDEX_ANALOG_RIGHT):
+ *   Xbox 360: eje 0/1 = stick izq X/Y, eje 2/3 = stick der X/Y. Los gatillos
+ *             son botones, no ejes (SDL de Lantus), asi que no aparecen aqui.
+ *   Windows : eje 0/1 = stick izq X/Y, eje 2 = gatillos combinados,
+ *             eje 3 = stick der Y, eje 4 = stick der X. */
 #ifdef _XBOX
-	const char *SDL_BTN_TO_XBOX[12] = {"A", "B", "X", "Y", "LB", "RB", "L3", "R3", "Start", "Back", "LT", "RT"};
-	std::string SDL_JOY_TO_XBOX[6] = {"Left", "Right", "Up", "Down", "LT", "RT"};
+	const char *SDL_BTN_TO_XBOX[SDL_BTN_TO_XBOX_SIZE] = {"A", "B", "X", "Y", "LB", "RB", "L3", "R3", "Start", "Back", "LT", "RT"};
+	std::string SDL_JOY_TO_XBOX[SDL_JOY_TO_XBOX_SIZE] = {
+		"L-Left", "L-Right", /* 0,1  eje 0: stick izq X-/X+ */
+		"L-Up",   "L-Down",  /* 2,3  eje 1: stick izq Y-/Y+ */
+		"R-Left", "R-Right", /* 4,5  eje 2: stick der X-/X+ */
+		"R-Up",   "R-Down",  /* 6,7  eje 3: stick der Y-/Y+ */
+		"",       ""         /* 8,9  sin uso en la 360      */
+	};
 #else
-	const char *SDL_BTN_TO_XBOX[12] = {"A", "B", "X", "Y", "L", "R", "Select", "Start", "L3", "R3", "", ""};
-	std::string SDL_JOY_TO_XBOX[6] = {"Left", "Right", "Up", "Down", "R2", "L2"};
+	const char *SDL_BTN_TO_XBOX[SDL_BTN_TO_XBOX_SIZE] = {"A", "B", "X", "Y", "L", "R", "Select", "Start", "L3", "R3", "", ""};
+	std::string SDL_JOY_TO_XBOX[SDL_JOY_TO_XBOX_SIZE] = {
+		"L-Left", "L-Right", /* 0,1  eje 0: stick izq X-/X+     */
+		"L-Up",   "L-Down",  /* 2,3  eje 1: stick izq Y-/Y+     */
+		"R2",     "L2",      /* 4,5  eje 2: gatillos combinados */
+		"R-Up",   "R-Down",  /* 6,7  eje 3: stick der Y-/Y+     */
+		"R-Left", "R-Right"  /* 8,9  eje 4: stick der X-/X+     */
+	};
 #endif
 //Translated later on the first lines of GestorMenus::inicializar
-std::string SDL_HAT_TO_XBOX[9] = {"","Up","Right", "", "Down", "","","", "Left"};
+/* Indexada por el valor de hat de SDL, que es una MASCARA: las diagonales son
+ * RIGHTUP=3, RIGHTDOWN=6, LEFTUP=9 y LEFTDOWN=12. Antes el array llegaba a 8 y
+ * las dos ultimas se salian. */
+std::string SDL_HAT_TO_XBOX[SDL_HAT_TO_XBOX_SIZE] = {
+	"",      /*  0 CENTERED  */
+	"Up",    /*  1 UP        */
+	"Right", /*  2 RIGHT     */
+	"",      /*  3 RIGHTUP   */
+	"Down",  /*  4 DOWN      */
+	"",      /*  5 ---       */
+	"",      /*  6 RIGHTDOWN */
+	"",      /*  7 ---       */
+	"Left",  /*  8 LEFT      */
+	"",      /*  9 LEFTUP    */
+	"",      /* 10 ---       */
+	"",      /* 11 ---       */
+	""       /* 12 LEFTDOWN  */
+};
 std::string FRONTEND_BTN_TXT[MAXJOYBUTTONS];
 
 const char *JOY_DESCRIPTIONS[] = {"JOY_BUTTON_A",

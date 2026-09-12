@@ -1,4 +1,4 @@
-﻿/* TMS5110 ROM Tables */
+/* TMS5110 ROM Tables */
 
 /* This is the energy lookup table (4-bits -> 10-bits) */
 const static unsigned short energytable[0x10]={

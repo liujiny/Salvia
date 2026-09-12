@@ -1,4 +1,4 @@
-﻿/*
+/*
    SWI HLE - matematica de punto fijo del Portfolio OS del 3DO.
    Port de opera-libretro (opera_fixedpoint_math.c / opera_swi_hle_0x5XXXX.h).
 

@@ -1,4 +1,4 @@
-﻿#include "shaders_common.h"
+#include "shaders_common.h"
 
 static const char *image_load_vertex = GLSL_VERTEX(
       // Vertex shader for uploading textures from the VRAM texture buffer

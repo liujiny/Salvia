@@ -1,4 +1,4 @@
-﻿/* ppc32-sha256-asm
+/* ppc32-sha256-asm
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

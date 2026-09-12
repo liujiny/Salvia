@@ -1,4 +1,4 @@
-﻿/* x509_str.c
+/* x509_str.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

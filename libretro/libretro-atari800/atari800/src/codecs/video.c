@@ -1,4 +1,4 @@
-﻿/*
+/*
  * video.c - interface for video codecs
  *
  * Copyright (C) 2021 Rob McMullen

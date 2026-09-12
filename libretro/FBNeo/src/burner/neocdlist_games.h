@@ -1,4 +1,4 @@
-﻿#ifndef _neocdlist_games_
+#ifndef _neocdlist_games_
 #define _neocdlist_games_
 
 struct NGCDGAME games[] =

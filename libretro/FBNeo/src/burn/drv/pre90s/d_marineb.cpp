@@ -1,4 +1,4 @@
-﻿// Based on original MAME driver writen by Zsolt Vasvari
+// Based on original MAME driver writen by Zsolt Vasvari
 // updated with all the romsets by dink, Oct. 2015
 
 #include "tiles_generic.h"

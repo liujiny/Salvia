@@ -1,4 +1,4 @@
-﻿#define DO_MOV_AM();	DO_AM_I();
+#define DO_MOV_AM();	DO_AM_I();
 #define DO_ADD_AM();	DO_AM_I();
 #define DO_SUB_AM();	DO_AM_I();
 #define DO_CMP_AM();	DO_AM_I();

@@ -1,4 +1,4 @@
-﻿#include "gal.h"
+#include "gal.h"
 
 GalRenderBackground GalRenderBackgroundFunction;
 GalCalcPalette GalCalcPaletteFunction;

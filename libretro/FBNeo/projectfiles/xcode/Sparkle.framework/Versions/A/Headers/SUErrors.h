@@ -1,4 +1,4 @@
-﻿//
+//
 //  SUErrors.h
 //  Sparkle
 //

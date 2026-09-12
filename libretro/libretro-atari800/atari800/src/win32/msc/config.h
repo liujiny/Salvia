@@ -1,4 +1,4 @@
-﻿/* config.h for DirectX version of Atari800 compiled with MSVC 6. */
+/* config.h for DirectX version of Atari800 compiled with MSVC 6. */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if building universal (internal helper macro) */

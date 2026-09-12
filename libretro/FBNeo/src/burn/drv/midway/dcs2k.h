@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 enum {
 	DCS_2K = 0,

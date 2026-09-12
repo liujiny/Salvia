@@ -1,4 +1,4 @@
-﻿/* time-dummy.c.c
+/* time-dummy.c.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

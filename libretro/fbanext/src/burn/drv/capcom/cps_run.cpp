@@ -1,4 +1,4 @@
-﻿// CPS - Run
+// CPS - Run
 #include "cps.h"
 
 // Inputs:

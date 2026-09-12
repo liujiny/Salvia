@@ -1,4 +1,4 @@
-﻿/* Sega System 32 Protection related functions */
+/* Sega System 32 Protection related functions */
 
 #include "driver.h"
 #include "includes/segas32.h"

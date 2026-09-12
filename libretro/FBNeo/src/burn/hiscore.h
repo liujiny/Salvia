@@ -1,4 +1,4 @@
-﻿extern INT32 EnableHiscores;
+extern INT32 EnableHiscores;
 
 // don't init hiscore memory range with ~0 @ reset.
 // in some games, f.ex system16b (aliensyn, everything else) rom is mapped

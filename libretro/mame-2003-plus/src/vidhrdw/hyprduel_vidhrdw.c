@@ -1,4 +1,4 @@
-﻿/* based on driver from vidhrdw/metro.c by Luca Elia */
+/* based on driver from vidhrdw/metro.c by Luca Elia */
 /* modified by Eisuke Watanabe */
 
 /***************************************************************************

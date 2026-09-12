@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_VSSH_SSH_H
+#ifndef HEADER_CURL_VSSH_SSH_H
 #define HEADER_CURL_VSSH_SSH_H
 /***************************************************************************
  *                                  _   _ ____  _

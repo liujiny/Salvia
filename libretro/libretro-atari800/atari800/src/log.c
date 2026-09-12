@@ -1,4 +1,4 @@
-﻿/*
+/*
  * log.c - A logging facility for debugging
  *
  * Copyright (C) 1995-1998 David Firth

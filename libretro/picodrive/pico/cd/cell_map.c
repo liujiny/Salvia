@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Convert "cell arrange" address to normal address.
  * (C) notaz, 2008
  *

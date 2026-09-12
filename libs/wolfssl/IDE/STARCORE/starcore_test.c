@@ -1,4 +1,4 @@
-﻿/* starcore_test.c
+/* starcore_test.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

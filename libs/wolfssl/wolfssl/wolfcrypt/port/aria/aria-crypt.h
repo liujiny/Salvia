@@ -1,4 +1,4 @@
-﻿/* aria-crypt.h
+/* aria-crypt.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

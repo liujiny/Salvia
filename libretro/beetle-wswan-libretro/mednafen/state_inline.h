@@ -1,4 +1,4 @@
-﻿#ifndef _STATE_IN_HPP
+#ifndef _STATE_IN_HPP
 #define _STATE_IN_HPP
 
 #define SFVARN_BOOL(x, n) { &(x), 1, MDFNSTATE_RLSB | MDFNSTATE_BOOL, n }

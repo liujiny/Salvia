@@ -1,4 +1,4 @@
-﻿OP(illegal,2)
+OP(illegal,2)
 {
 	logerror("Z180 #%d ill. opcode $ed $%02x\n",
 			cpu_getactivecpu(), cpu_readop((_PCD-1)&0xffff));

@@ -1,4 +1,4 @@
-﻿#ifndef RC_HASH_INTERNAL_H
+#ifndef RC_HASH_INTERNAL_H
 #define RC_HASH_INTERNAL_H
 
 #include "rc_hash.h"

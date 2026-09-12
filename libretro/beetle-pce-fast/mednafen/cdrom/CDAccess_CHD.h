@@ -1,4 +1,4 @@
-﻿/* CDAccess_CHD.h -- C conversion */
+/* CDAccess_CHD.h -- C conversion */
 #ifndef __MDFN_CDACCESS_CHD_H
 #define __MDFN_CDACCESS_CHD_H
 

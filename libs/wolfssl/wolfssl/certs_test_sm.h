@@ -1,4 +1,4 @@
-﻿/* certs_test_sm.h */
+/* certs_test_sm.h */
 /* This file was generated using: ./gencertbuf.pl */
 
 #ifndef WOLFSSL_CERTS_TEST_SM_H

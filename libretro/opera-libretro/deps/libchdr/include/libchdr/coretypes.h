@@ -1,4 +1,4 @@
-﻿#ifndef __CORETYPES_H__
+#ifndef __CORETYPES_H__
 #define __CORETYPES_H__
 
 #include <stdint.h>

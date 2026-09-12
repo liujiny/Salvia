@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SSP1601 to ARM recompiler
  * (C) notaz, 2008,2009,2010
  * (C) irixxxx, 2019-2023

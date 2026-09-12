@@ -1,4 +1,4 @@
-﻿// primitive graphics for Hello World PSP
+// primitive graphics for Hello World PSP
 #ifndef __PG_H__
 #define __PG_H__
 

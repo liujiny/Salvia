@@ -1,4 +1,4 @@
-﻿// pgm2_crypt.cpp - IGS036 (PGM2) ROM decryption for FBNeo
+// pgm2_crypt.cpp - IGS036 (PGM2) ROM decryption for FBNeo
 //
 // IGS036 uses a substitution cipher on 16-bit halfwords.  Each game has a
 // unique 256-byte key table that is provided by the internal ARM9 boot ROM

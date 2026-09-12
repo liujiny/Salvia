@@ -1,4 +1,4 @@
-﻿#ifndef CASSETTE_H_
+#ifndef CASSETTE_H_
 #define CASSETTE_H_
 
 #include <stdio.h>		/* for FILE and FILENAME_MAX */

@@ -1,4 +1,4 @@
-﻿/* renesas_cmn.h
+/* renesas_cmn.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿/* test_ascon.c
+/* test_ascon.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

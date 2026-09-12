@@ -1,4 +1,4 @@
-﻿#ifndef LIBATARI800_INPUT_H_
+#ifndef LIBATARI800_INPUT_H_
 #define LIBATARI800_INPUT_H_
 
 #include "atari.h"

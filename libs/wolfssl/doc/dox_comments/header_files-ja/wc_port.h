@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup wolfCrypt
     \brief  WolfCryptによって使用されるリソースを初期化するために使用されます。
     \return 0  成功すると。

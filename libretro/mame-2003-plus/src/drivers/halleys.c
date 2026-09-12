@@ -1,4 +1,4 @@
-﻿/*
+/*
 Halley's Comet, 1986 Taito
 
 	Halley's Comet was created by Fukio Mitsuji (MTJ),

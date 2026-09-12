@@ -1,4 +1,4 @@
-﻿/* md5.c
+/* md5.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

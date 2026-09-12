@@ -1,4 +1,4 @@
-﻿/*
+/*
  * atari_rpi.c - Raspberry Pi support by djdron
  *
  * Copyright (c) 2013 Atari800 development team (see DOC/CREDITS)

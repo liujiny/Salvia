@@ -1,4 +1,4 @@
-﻿// Based on piSNES by Squid
+// Based on piSNES by Squid
 // https://github.com/squidrpi/pisnes
 
 #include <stdlib.h>

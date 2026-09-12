@@ -1,4 +1,4 @@
-﻿#ifndef TMS34010_INTF_H
+#ifndef TMS34010_INTF_H
 #define TMS34010_INTF_H
 
 #include "tms34010/tms34010.h"

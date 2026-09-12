@@ -1,4 +1,4 @@
-﻿/* test_blake2.h
+/* test_blake2.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

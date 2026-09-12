@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Sigma Akazukin driver module
+// FinalBurn Neo Sigma Akazukin driver module
 // Based on MAME driver by Alberto Salso, Ignacio Seki
 
 #include "tiles_generic.h"

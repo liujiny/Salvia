@@ -1,4 +1,4 @@
-﻿#include "hexspinbox.h"
+#include "hexspinbox.h"
 #include <QHBoxLayout>
 
 HexSpinBox::HexSpinBox(QWidget *parent) :

@@ -1,4 +1,4 @@
-﻿#define ROT 0
+#define ROT 0
 #define BPP 16
 #define FLIP 0
 #define ZOOM 0

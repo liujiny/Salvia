@@ -1,4 +1,4 @@
-﻿#ifndef __YMF278B_H__
+#ifndef __YMF278B_H__
 #define __YMF278B_H__
 
 #ifdef FBA															/* !!! FBA */

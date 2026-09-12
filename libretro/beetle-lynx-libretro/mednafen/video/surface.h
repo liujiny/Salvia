@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_SURFACE_H
+#ifndef __MDFN_SURFACE_H
 #define __MDFN_SURFACE_H
 
 #include "mednafen-types.h"

@@ -1,4 +1,4 @@
-﻿#ifndef _HVC_H_
+#ifndef _HVC_H_
 #define _HVC_H_
 
 UINT8 vc_ntsc_192[] =

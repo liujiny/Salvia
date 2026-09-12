@@ -1,4 +1,4 @@
-﻿#define NOMINMAX
+#define NOMINMAX
 #include <uiobjects/object.h>
 #include <io/cfgloader.h>
 #include <io/joystick.h>
@@ -14,11 +14,13 @@
 #include <vector>
 #include <string>
 
-// --- Definici�n de tipos de opciones ---
-enum TipoOpcion { OPC_BOOLEANA, OPC_LISTA, OPC_LISTA_REF, OPC_SUBMENU, OPC_INT, OPC_KEY, OPC_EXEC, OPC_SHOW_TXT, OPC_SHOW_TXT_VAL, OPC_SAVESTATE, OPC_ACHIEVEMENT, 
+// --- Definicion de tipos de opciones ---
+enum TipoOpcion { OPC_BOOLEANA, OPC_LISTA, OPC_LISTA_REF, OPC_SUBMENU, OPC_INT, OPC_KEY, OPC_EXEC, OPC_SHOW_TXT, OPC_SHOW_TXT_VAL, OPC_SHOW_DYNTXT_VAL, OPC_SAVESTATE, OPC_ACHIEVEMENT, 
 	OPC_FAQ_SEARCH, OPC_FAQ_SELECT, OPC_FAQ_TXT, OPC_SHOW_IMG, OPC_UNDEFINED};
 
-enum TipoKey{KEY_JOY_BTN,KEY_JOY_HAT,KEY_JOY_AXIS, KEY_JOY_MAX};
+/* KEY_JOY_ANALOG: la opcion apunta a una DIRECCION ANALOGICA del core, no a un
+ * boton digital. Se lee de mapperCore.analogDst, no de las tres tablas normales. */
+enum TipoKey{KEY_JOY_BTN,KEY_JOY_HAT,KEY_JOY_AXIS, KEY_JOY_ANALOG, KEY_JOY_MAX};
 enum ACTION_ASK{ASK_CARGAR, ASK_GUARDAR, ASK_ELIMINAR, MAX_ASK};
 enum CONFIG_STATUS{NORMAL,POLLING_INPUTS,ASK_SAVESTATES, EXIT_CONFIG, EXIT_EMULATION, START_SCRAPPING, MAX_CONFIG_STATUS};
 
@@ -78,9 +80,10 @@ public:
     TipoOpcion tipo;
 	int icon;
 	bool editable;
+	bool visible;
 
-    Opcion(std::string t, TipoOpcion tp) : titulo(t), tipo(tp), icon(-1), editable(false) {}
-	Opcion(std::string t, TipoOpcion tp, int ico) : titulo(t), tipo(tp), icon(ico), editable(false) {}
+    Opcion(std::string t, TipoOpcion tp) : titulo(t), tipo(tp), icon(-1), editable(false), visible(true) {}
+	Opcion(std::string t, TipoOpcion tp, int ico) : titulo(t), tipo(tp), icon(ico), editable(false), visible(true) {}
 	virtual std::string ejecutar() = 0; // Metodo virtual puro
     virtual ~Opcion() {}
 };
@@ -182,6 +185,25 @@ public:
     }
 };
 
+class OpcionTxtAndDynValue : public Opcion {
+public:
+    const std::string* valor; // Puntero al string estático/dinámico externo
+    CallbackValue callback;
+    void* context;
+
+    // El constructor recibe el string externo por referencia y guarda su dirección (&v)
+    OpcionTxtAndDynValue(std::string t, const std::string& v) 
+        : Opcion(t, OPC_SHOW_DYNTXT_VAL), valor(&v), callback(NULL), context(NULL) {}
+
+    std::string ejecutar() override {
+        if (callback != NULL) {
+            // Pasamos la dirección del string original (que es lo que almacena el puntero)
+            return callback(context, (void *)valor); 
+        }
+        return "";
+    }
+};
+
 class OpcionAchievement : public Opcion {
 public:
 	AchievementState achievement;
@@ -229,7 +251,7 @@ public:
 	CallbackValue callback; // Funcion estatica
     void* context;          // El "this" de GestorMenus
 
-    OpcionBool(std::string t, bool* v) : Opcion(t, OPC_BOOLEANA), valor(v), callback(NULL), context(NULL) {}
+    OpcionBool(std::string t, bool* v, int ico = -1) : Opcion(t, OPC_BOOLEANA, ico), valor(v), callback(NULL), context(NULL) {};
 
 	std::string ejecutar() override {
 		if (callback != NULL && valor != NULL) {
@@ -330,7 +352,7 @@ public:
 	Uint32 lastTimeAsked;
 	TipoKey tipoKey;
 
-	OpcionKey(std::string t, t_joy_state *pjoyInputs, t_joy_mapper * pjoyMapper, int pgamepadId, int pBtn, TipoKey ptipoKey, std::string desc): Opcion(t, OPC_KEY){
+	OpcionKey(std::string t, t_joy_state *pjoyInputs, t_joy_mapper * pjoyMapper, int pgamepadId, int pBtn, TipoKey ptipoKey, std::string desc, int ico = -1): Opcion(t, OPC_KEY){
 		btn = pBtn;
 		gamepadId = pgamepadId;
 		tipoKey = ptipoKey;
@@ -340,6 +362,7 @@ public:
 		joyInputs = pjoyInputs;
 		joyMapper = pjoyMapper;
 		intRef = NULL;
+		this->icon = ico;
 	}
 	
 	std::string ejecutar() override {
@@ -407,6 +430,11 @@ private:
 			config = NULL;
 		}
 	};
+
+	struct t_joyMenuData{
+		Menu* menu;
+		Joystick* joystick;
+	} ;
 
     // Lista de todos los menus para liberar memoria al final
     std::vector<Menu*> todosLosMenus;
@@ -477,7 +505,15 @@ private:
 	void poblarMenuAssignFrontend(Menu* menuHotkeys, Joystick *joystick);
 	void poblarMenuRapidFire(Menu* menuRapidFire, Joystick *joystick);
 	void poblarMenuCoreOverrides(Menu *menu, CfgLoader *refConfig);
+	void poblarMenuVideo(Menu* menuVideo, CfgLoader *refConfig);
+	void poblarMenuPad(Menu* menuEntrada, CfgLoader *refConfig, Joystick *joystick);
+	void poblarMenuEmulacion(Menu* menuEmulation, CfgLoader *refConfig);
+	void poblarMenuAudio(Menu* menuLightgun, CfgLoader *refConfig);
+	void poblarMenuLogros(Menu* parentAchievements, CfgLoader *refConfig);
+	void poblarMenuLightgun(Menu* menuAudio, CfgLoader *refConfig);
 	void checkMultipleSystemCore(CfgLoader *refConfig, Menu *menu, int coreIdx);
+	void addMusicOptionList(CfgLoader *refConfig, int posCore, std::vector<Opcion*> &opciones);
+
 	std::string guardarJoysticks(Joystick* joy);
 	std::string guardarGameJoysticks(Joystick* joy);
 	std::string guardarCoreJoysticks(Joystick* joy);
@@ -524,6 +560,7 @@ public:
 	void setGameLoaded(std::string gn){
 		this->gameFaqsMenu.gameName = gn;
 	}
+	std::string trOrDefault(const std::string &key, const char *fallback);
 
 	Menu* menuGameFilter;
 	void iniciarFiltros(GameDataFields& gameDataFieldsFilter);
@@ -564,6 +601,11 @@ public:
 		*l->indice = 0;
 	}
 
+	/* Coloca el cursor en newPos y recoloca la ventana visible en un solo
+	 * paso.  Lo comparten navegar/nextPage/prevPage, que solo se diferencian
+	 * en el destino que calculan.  Lleva dentro el guard de menuActual/status
+	 * que antes vivia en navegar(). */
+	void moveTo(int newPos);
 	void nextPos();
     void prevPos();
 	void nextPage();
@@ -600,6 +642,12 @@ public:
 	static std::string gameGuidesSearchAction(void* inst, void *value);
 	static std::string gameGuideAction(void* inst, void *value);
 	static std::string selectBackground(void* inst, void *index, void *values);
+	static std::string selectMusicVolume(void* inst, void *index, void *values);
+	static std::string toggleMusicEnabled(void* inst, void *value);
+	static std::string toggleMidiEnabled(void* inst, void *value);
+	static std::string selectMidiSoundfont(void* inst, void *index, void *values);
+	static std::string selectMidiVolume(void* inst, void *index, void *values);
+	static std::string selectMidiModule(void* inst, void *index, void *values);
 	static std::string selectResolution(void* inst, void *index, void *values);
 
 	static void onUserText(const std::string& text, void* userData);
@@ -633,4 +681,3 @@ public:
         return (instanciaGestor->*execfunc)(data);
     }
 };
-

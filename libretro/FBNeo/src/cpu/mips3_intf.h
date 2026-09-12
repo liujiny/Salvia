@@ -1,4 +1,4 @@
-﻿#ifndef MIPS3_INTF
+#ifndef MIPS3_INTF
 #define MIPS3_INTF
 
 #include "mips3/mips3_common.h"

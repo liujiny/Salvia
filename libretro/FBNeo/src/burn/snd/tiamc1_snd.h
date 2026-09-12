@@ -1,4 +1,4 @@
-﻿// tia mc1 sound core
+// tia mc1 sound core
 void tiamc1_sound_init();
 void tiamc1_sound_init_kot();
 void tiamc1_sound_exit();

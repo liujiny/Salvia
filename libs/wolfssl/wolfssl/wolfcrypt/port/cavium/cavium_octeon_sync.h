@@ -1,4 +1,4 @@
-﻿/* cavium_octeon_sync.h
+/* cavium_octeon_sync.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

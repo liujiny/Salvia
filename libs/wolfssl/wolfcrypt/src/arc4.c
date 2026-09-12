@@ -1,4 +1,4 @@
-﻿/* arc4.c
+/* arc4.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

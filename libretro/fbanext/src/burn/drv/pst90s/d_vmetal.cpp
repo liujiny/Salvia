@@ -1,4 +1,4 @@
-﻿// FB Alpha Varia Metal driver module
+// FB Alpha Varia Metal driver module
 // Based on MAME driver by 
 
 // There is a bug in the background scrolling of some levels

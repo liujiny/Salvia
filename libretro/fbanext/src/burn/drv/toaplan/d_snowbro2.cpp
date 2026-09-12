@@ -1,4 +1,4 @@
-﻿#include "toaplan.h"
+#include "toaplan.h"
 // Snow Bros. 2
 
 static UINT8 DrvButton[8] = {0, 0, 0, 0, 0, 0, 0, 0};

@@ -1,4 +1,4 @@
-﻿/*
+/*
     Diet Go Go
     Driver by Bryan McPhail and David Haywood.
 	

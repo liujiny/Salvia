@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_MEMPATCHER_DRIVER_H
+#ifndef __MDFN_MEMPATCHER_DRIVER_H
 #define __MDFN_MEMPATCHER_DRIVER_H
 
 int MDFNI_DecodePAR(const char *code, uint32 *a, uint8 *v, uint8 *c, char *type);

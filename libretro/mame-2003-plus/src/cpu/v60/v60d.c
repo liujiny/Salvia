@@ -1,4 +1,4 @@
-﻿
+
 #include "cpuintrf.h"
 #include "osd_cpu.h"
 #include "mame2003.h"

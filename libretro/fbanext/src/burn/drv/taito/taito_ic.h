@@ -1,4 +1,4 @@
-﻿extern INT32 TaitoIC_SupermanCChipInUse;
+extern INT32 TaitoIC_SupermanCChipInUse;
 extern INT32 TaitoIC_MegabCChipInUse;
 extern INT32 TaitoIC_RainbowCChipInUse;
 extern INT32 TaitoIC_OpwolfCChipInUse;

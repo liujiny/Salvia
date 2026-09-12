@@ -1,4 +1,4 @@
-﻿/* namcona1.h */
+/* namcona1.h */
 #ifndef _NAMCONA_
 #define _NAMCONA_
 

@@ -1,4 +1,4 @@
-﻿// FB Alpha Cops'n Robbers driver module
+// FB Alpha Cops'n Robbers driver module
 // Based on MAME driver by Zsolt Vasvari
 
 // to do:

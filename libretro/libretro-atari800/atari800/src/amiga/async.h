@@ -1,4 +1,4 @@
-﻿#ifndef _ASYNC_H_
+#ifndef _ASYNC_H_
 #define _ASYNC_H_
 
 #include <exec/types.h>

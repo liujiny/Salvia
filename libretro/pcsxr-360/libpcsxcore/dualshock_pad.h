@@ -1,4 +1,4 @@
-﻿/* DualShock state machine for PCSX-R 360.
+/* DualShock state machine for PCSX-R 360.
  *
  * Portado de Pokopom (KrossX, GPLv3) — plugin de input PSX/PS2
  * incluido en 360/Xdk/pokopom_input/Pokopom/Controller.cpp.  Implementa

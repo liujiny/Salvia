@@ -1,4 +1,4 @@
-﻿enum
+enum
 {
 	MCU_NONE,
 	MCU_EXTRMATN,

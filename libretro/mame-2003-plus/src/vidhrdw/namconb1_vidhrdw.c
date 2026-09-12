@@ -1,4 +1,4 @@
-﻿/* vidhrdw/namconb1.c */
+/* vidhrdw/namconb1.c */
 
 #include "driver.h"
 #include "vidhrdw/generic.h"

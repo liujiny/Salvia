@@ -1,4 +1,4 @@
-﻿VIDEO_START( lemmings );
+VIDEO_START( lemmings );
 VIDEO_STOP( lemmings );
 VIDEO_EOF( lemmings );
 VIDEO_UPDATE( lemmings );

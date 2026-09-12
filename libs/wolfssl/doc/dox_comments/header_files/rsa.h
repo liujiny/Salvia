@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup RSA
 
     \brief This function initializes a provided RsaKey struct. It also takes

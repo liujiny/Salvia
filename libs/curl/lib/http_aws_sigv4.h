@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_HTTP_AWS_SIGV4_H
+#ifndef HEADER_CURL_HTTP_AWS_SIGV4_H
 #define HEADER_CURL_HTTP_AWS_SIGV4_H
 /***************************************************************************
  *                                  _   _ ____  _

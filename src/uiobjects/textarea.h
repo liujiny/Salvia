@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <uiobjects/object.h>
 #include <beans/structures.h>

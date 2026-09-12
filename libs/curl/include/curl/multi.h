@@ -1,4 +1,4 @@
-﻿#ifndef CURLINC_MULTI_H
+#ifndef CURLINC_MULTI_H
 #define CURLINC_MULTI_H
 /***************************************************************************
  *                                  _   _ ____  _

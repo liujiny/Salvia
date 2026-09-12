@@ -1,4 +1,4 @@
-﻿/*
+/*
  * screen.cpp - WinCE port specific code
  *
  * Copyright (C) 2001-2002 Vasyl Tsvirkunov

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * sdl/main.c - SDL library specific port code - main interface
  *
  * Copyright (c) 2001-2002 Jacek Poplawski

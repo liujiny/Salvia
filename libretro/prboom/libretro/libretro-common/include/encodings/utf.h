@@ -1,4 +1,4 @@
-﻿/* Copyright  (C) 2010-2020 The RetroArch team
+/* Copyright  (C) 2010-2020 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (utf.h).
@@ -131,6 +131,8 @@ wchar_t *utf8_to_utf16_string_alloc(const char *str);
  * @return Returned pointer MUST be freed by the caller if non-NULL.
  **/
 char *utf16_to_utf8_string_alloc(const wchar_t *str);
+
+bool local_to_utf8_string(const char *in, char *s, size_t len);
 
 RETRO_END_DECLS
 

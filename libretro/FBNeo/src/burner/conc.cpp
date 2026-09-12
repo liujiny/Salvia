@@ -1,4 +1,4 @@
-﻿// Burner cheat-file loader
+// Burner cheat-file loader
 #include "burner.h"
 #include "neocdlist.h"
 

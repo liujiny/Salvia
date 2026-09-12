@@ -1,4 +1,4 @@
-﻿/* PicoDrive's wrapper for emu2413
+/* PicoDrive's wrapper for emu2413
  */
 
 #include <stddef.h>

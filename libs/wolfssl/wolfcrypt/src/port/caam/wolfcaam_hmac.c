@@ -1,4 +1,4 @@
-﻿/* wolfcaam_hmac.c
+/* wolfcaam_hmac.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

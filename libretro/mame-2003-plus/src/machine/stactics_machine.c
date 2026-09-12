@@ -1,4 +1,4 @@
-﻿
+
 #include "driver.h"
 
 /* needed in vidhrdw/stactics.c */

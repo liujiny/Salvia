@@ -1,4 +1,4 @@
-﻿// Intel x87 FPU opcodes
+// Intel x87 FPU opcodes
 
 #define ST(x)	(I.fpu_reg[(I.fpu_top + (x)) & 7])
 #define FPU_INFINITY_DOUBLE		U64(0x7ff0000000000000)

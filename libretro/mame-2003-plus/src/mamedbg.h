@@ -1,4 +1,4 @@
-﻿#ifndef _MAMEDBG_H
+#ifndef _MAMEDBG_H
 #define _MAMEDBG_H
 
 #include "mame.h"

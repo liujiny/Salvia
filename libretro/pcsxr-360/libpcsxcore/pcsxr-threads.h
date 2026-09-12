@@ -1,4 +1,4 @@
-﻿#ifndef __PCSXR_THREADS_H__
+#ifndef __PCSXR_THREADS_H__
 #define __PCSXR_THREADS_H__
 
 /* [XBOX360] Implementacion de las primitivas de hilo que espera el

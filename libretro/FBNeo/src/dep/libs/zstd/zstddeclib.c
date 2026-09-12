@@ -1,4 +1,4 @@
-﻿/**
+/**
  * \file zstddeclib.c
  * Single-file Zstandard decompressor.
  *

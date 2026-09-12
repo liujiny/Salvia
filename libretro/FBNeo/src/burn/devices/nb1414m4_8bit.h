@@ -1,4 +1,4 @@
-﻿void nb_1414m4_init8b();
+void nb_1414m4_init8b();
 void nb_1414m4_scan8b();
 void nb_1414m4_exec8b(UINT16 mcu_cmd,UINT8 *vram,UINT16 *scrollx,UINT16 *scrolly,INT32 emakimode);
 

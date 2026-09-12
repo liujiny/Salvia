@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 
 static unsigned char bg_color,  old_bg_color;
 #define mainsnk_offset 8

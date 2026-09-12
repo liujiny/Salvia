@@ -1,4 +1,4 @@
-﻿extern void *giz_screen;
+extern void *giz_screen;
 
 void giz_init();
 void giz_deinit(void);

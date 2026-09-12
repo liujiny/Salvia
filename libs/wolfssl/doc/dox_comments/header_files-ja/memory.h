@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup Memory
     \brief  この関数はmalloc（）と似ていますが、WolfSSLが使用するように構成されているメモリ割り当て関数を呼び出します。デフォルトでは、WolfSSLはmalloc（）を使用します。これは、WolfSSLメモリ抽象化レイヤを使用して変更できます -  wolfssl_setAllocator（）を参照してください。注WOLFSSL_MALLOCは、WOLFSSLによって直接呼び出されませんが、代わりにMacro XMallocによって呼び出されます。デフォルトのビルドの場合、size引数のみが存在します。wolfssl_static_memoryビルドを使用する場合は、ヒープとタイプ引数が含まれます。
     \return pointer  成功した場合、この関数は割り当てられたメモリへのポインタを返します。

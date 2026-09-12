@@ -1,4 +1,4 @@
-﻿#define MW_VERBOSE 0
+#define MW_VERBOSE 0
 
 /*
  * vidhrdw/mystwarr.c - Konami "Pre-GX" video hardware (here there be dragons)

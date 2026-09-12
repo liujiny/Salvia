@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_STREAM_H
+#ifndef __MDFN_STREAM_H
 #define __MDFN_STREAM_H
 
 // TODO/WIP

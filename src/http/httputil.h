@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 
 #include <string>
 #include <vector>
@@ -49,7 +49,7 @@ class CurlClient {
 
 		static volatile long g_abortScrapping; 
 
-		// Funciï¿½n principal de descarga
+		// Función principal de descarga
 		bool fetchUrl(const std::string&, std::string&, float*);
 		bool postUrl(const std::string&, const std::string&, std::string&, float*);
 		bool postUrl(const std::string&, const std::string&, const std::string&, std::string&, float*);
@@ -96,11 +96,11 @@ class CurlClient {
 		long lastHttpCode;
 		CURL* m_curl; // handle reutilizable: conserva cookies (en memoria) entre peticiones
 
-		// Callback estï¿½tico para recibir datos
+		// Callback estático para recibir datos
 		static std::size_t __cdecl WriteCallback(void *contents, std::size_t size, std::size_t nmemb, void *userp);
-		// Callback estï¿½tico para el progreso
+		// Callback estático para el progreso
 		static int __cdecl ProgressCallback(void* clientp, double dltotal, double dlnow, double ultotal, double ulnow);
-		// Esta funciï¿½n se ejecuta despuï¿½s de socket() pero antes de connect()
+		// Esta función se ejecuta después de socket() pero antes de connect()
 		static int __cdecl curl_sockopt_callback(void *clientp, curl_socket_t curlfd, curlsocktype purpose);
 		// Callback para mostrar informacion de depuracion
 		static int __cdecl debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr);
@@ -127,16 +127,16 @@ class CurlClient {
 //		// Lanzar la consulta
 //		if (XNetDnsLookup("portquiz.net", hDnsEvent, &pTest) == 0) {
 //        
-//			// El pequeï¿½o Sleep que descubrimos que estabiliza el iStatus
+//			// El pequeño Sleep que descubrimos que estabiliza el iStatus
 //			Sleep(200); 
 //
-//			// Esperar si todavï¿½a estï¿½ pendiente
+//			// Esperar si todavía está pendiente
 //			if (pTest->iStatus == 0x103) { 
 //				WaitForSingleObject(hDnsEvent, 5000);
 //			}
 //
 //			if (pTest->iStatus == 0) {
-//				// La IP estï¿½ en pTest->aina[0]
+//				// La IP está en pTest->aina[0]
 //				// Usamos los bytes de la estructura S_un para formatear la cadena
 //				char ipMsg[128];
 //				sprintf(ipMsg, "DNS OK! IP Resuelta: %d.%d.%d.%d\n", 
@@ -210,7 +210,7 @@ class CurlClient {
 //		SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 //		if (s == INVALID_SOCKET) return;
 //
-//		// 2. Registrar la ruta en XNet (Vital para comunicaciï¿½n PC-Xbox)
+//		// 2. Registrar la ruta en XNet (Vital para comunicación PC-Xbox)
 //		IN_ADDR ipPC;
 //		ipPC.s_addr = inet_addr("141.94.139.59");
 //		XNetInAddrToXnAddr(ipPC, NULL, NULL); 
@@ -225,7 +225,7 @@ class CurlClient {
 //		target.sin_addr = ipPC;
 //
 //		// 4. Intentar conectar
-//		// Como es no bloqueante, devolverï¿½ SOCKET_ERROR y el error serï¿½ WSAEWOULDBLOCK
+//		// Como es no bloqueante, devolverá SOCKET_ERROR y el error será WSAEWOULDBLOCK
 //		connect(s, (struct sockaddr*)&target, sizeof(target));
 //
 //		// 5. Configurar el timeout con select()
@@ -239,11 +239,11 @@ class CurlClient {
 //
 //		OutputDebugStringA("Intentando conectar al PC (141.94.139.59:80)...\n");
 //
-//		// select() esperarï¿½ hasta que el socket estï¿½ listo para escribir (conectado)
+//		// select() esperará hasta que el socket esté listo para escribir (conectado)
 //		int total = select(0, NULL, &writeSet, NULL, &tv);
 //
 //		if (total > 0 && FD_ISSET(s, &writeSet)) {
-//			OutputDebugStringA("ï¿½CONEXIï¿½N LOCAL EXITOSA!\n");
+//			OutputDebugStringA("¡CONEXIÓN LOCAL EXITOSA!\n");
 //		} else {
 //			int err = WSAGetLastError();
 //			char msg[64];
@@ -262,7 +262,7 @@ class CurlClient {
 //		SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 //    
 //		// 1. OMITIR XNetInAddrToXnAddr si te da 10022. 
-//		// En su lugar, vamos a forzar una pequeï¿½a espera antes del connect.
+//		// En su lugar, vamos a forzar una pequeña espera antes del connect.
 //		Sleep(1000); 
 //
 //		sockaddr_in target;
@@ -271,21 +271,21 @@ class CurlClient {
 //		target.sin_addr.s_addr = inet_addr("141.94.139.59");
 //
 //		// 2. Usar CONNECT BLOQUEANTE pero con un Timeout de Recibo
-//		// Esto es mï¿½s compatible con el stack sencillo de la 360
+//		// Esto es más compatible con el stack sencillo de la 360
 //		int timeout = 10000; // 3 segundos
 //		setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
 //		setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(timeout));
 //
-//		OutputDebugStringA("Intentando conexiï¿½n directa (Bloqueante)...\n");
+//		OutputDebugStringA("Intentando conexión directa (Bloqueante)...\n");
 //    
-//		// Si el connect falla aquï¿½ con 10060, es problema de FIREWALL o RUTA
+//		// Si el connect falla aquí con 10060, es problema de FIREWALL o RUTA
 //		if (connect(s, (struct sockaddr*)&target, sizeof(target)) == SOCKET_ERROR) {
 //			int err = WSAGetLastError();
 //			char msg[64];
 //			sprintf(msg, "Error de conexion: %d\n", err);
 //			OutputDebugStringA(msg);
 //		} else {
-//			OutputDebugStringA("ï¿½CONEXIï¿½N LOCAL EXITOSA!\n");
+//			OutputDebugStringA("¡CONEXIÓN LOCAL EXITOSA!\n");
 //		}
 //
 //		closesocket(s);
@@ -306,18 +306,18 @@ class CurlClient {
 //		} while (dwStatus == XNET_GET_XNADDR_PENDING || xnAddr.ina.s_addr == 0);
 //
 //		// 2. IMPORTANTE: Registrar la IP de destino en el stack de seguridad
-//		// Aunque sea una IP de internet, esto le dice a la Xbox que "confï¿½e" en esta ruta
+//		// Aunque sea una IP de internet, esto le dice a la Xbox que "confíe" en esta ruta
 //		IN_ADDR targetIP;
 //		targetIP.s_addr = inet_addr("35.180.139.74"); // PortQuiz
 //		
 //		// 1. Notificar a la capa XNet que vamos a conectar a esta IP
-//		// Esto intenta establecer la asociaciï¿½n de seguridad (SA)
+//		// Esto intenta establecer la asociación de seguridad (SA)
 //		int result = XNetConnect(targetIP); 
 //
 //		if (result != 0) {
 //			int err = WSAGetLastError();
 //			char msg[64];
-//			sprintf(msg, "XNetConnect fallï¿½ con cï¿½digo: %d", result);
+//			sprintf(msg, "XNetConnect falló con código: %d", result);
 //			OutputDebugStringA(msg);
 //		} else {
 //			int err = WSAGetLastError();
@@ -326,12 +326,12 @@ class CurlClient {
 //			OutputDebugStringA(msg);
 //		}
 //
-//		// Esta llamada es mï¿½gica en el XDK: "Pre-autoriza" la conexiï¿½n
+//		// Esta llamada es mágica en el XDK: "Pre-autoriza" la conexión
 //		//XNetInAddrToXnAddr(targetIP, NULL, NULL); 
 //
 //		SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 //    
-//		// 3. Aumentar el buffer de envï¿½o/recepciï¿½n (ayuda con la estabilidad en 360)
+//		// 3. Aumentar el buffer de envío/recepción (ayuda con la estabilidad en 360)
 //		int bufSize = 64 * 1024;
 //		setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char*)&bufSize, sizeof(bufSize));
 //
@@ -353,7 +353,7 @@ class CurlClient {
 //		timeval tv = {5, 0}; // 5 segundos
 //
 //		if (select(0, NULL, &writeSet, NULL, &tv) > 0) {
-//			OutputDebugStringA("ï¿½CONEXIï¿½N EXITOSA!\n");
+//			OutputDebugStringA("¡CONEXIÓN EXITOSA!\n");
 //		} else {
 //			int err = WSAGetLastError();
 //			char msg[64];
@@ -384,7 +384,7 @@ class CurlClient {
 //		timeval tv = {2, 0}; // 2 segundos son suficientes para red local
 //
 //		if (select(0, NULL, &writeSet, NULL, &tv) > 0) {
-//			OutputDebugStringA("ï¿½RED LOCAL FUNCIONA!\n");
+//			OutputDebugStringA("¡RED LOCAL FUNCIONA!\n");
 //		} else {
 //			OutputDebugStringA("Fallo local. Revisa el Firewall del PC.\n");
 //		}
@@ -407,7 +407,7 @@ class CurlClient {
 //		OutputDebugStringA(debugBuffer);
 //
 //		// 2. Mostrar la IP (en hexadecimal)
-//		// Para "192.168.0.1" deberï¿½a ser 0xC0A80001
+//		// Para "192.168.0.1" debería ser 0xC0A80001
 //		sprintf(debugBuffer, "DEBUG: IP Red (hex): 0x%08X\n", ip.host);
 //		OutputDebugStringA(debugBuffer);
 //
@@ -472,7 +472,7 @@ class CurlClient {
 //			if (result != 0) {
 //				int err = WSAGetLastError();
 //				char msg[64];
-//				sprintf(msg, "XNetConnect fallï¿½ con cï¿½digo: %d", result);
+//				sprintf(msg, "XNetConnect falló con código: %d", result);
 //				OutputDebugStringA(msg);
 //			} else {
 //				int err = WSAGetLastError();

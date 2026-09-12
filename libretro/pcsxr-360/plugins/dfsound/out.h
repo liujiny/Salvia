@@ -1,4 +1,4 @@
-﻿#ifndef __P_OUT_H__
+#ifndef __P_OUT_H__
 #define __P_OUT_H__
 
 /* Output-driver abstraction (port from pcsx_rearmed).

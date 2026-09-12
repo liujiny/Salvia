@@ -1,4 +1,4 @@
-﻿/*
+/*
 Jumping Cross - (c) 1984 SNK
 driver by Tomasz Slanina
 

@@ -1,4 +1,4 @@
-﻿// FB Alpha Arkanoid driver module
+// FB Alpha Arkanoid driver module
 // Based on MAME driver by Brad Oliver and MANY others.
 
 #include "tiles_generic.h"

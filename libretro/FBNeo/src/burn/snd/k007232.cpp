@@ -1,4 +1,4 @@
-﻿// copyright-holders:Nicola Salmoria,Hiromitsu Shioya
+// copyright-holders:Nicola Salmoria,Hiromitsu Shioya
 /*********************************************************/
 /*    Konami PCM controller                              */
 /*********************************************************/

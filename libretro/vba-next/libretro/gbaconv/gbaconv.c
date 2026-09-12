@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <stdint.h>
 #ifndef __PS3__
 #include <getopt.h>

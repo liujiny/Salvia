@@ -1,4 +1,4 @@
-﻿/* Mednafen - Multi-system Emulator
+/* Mednafen - Multi-system Emulator
  *
  * Copyright notice for this file:
  *  Copyright (C) 2004 Ki

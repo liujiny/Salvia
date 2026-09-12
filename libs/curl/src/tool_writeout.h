@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_TOOL_WRITEOUT_H
+#ifndef HEADER_CURL_TOOL_WRITEOUT_H
 #define HEADER_CURL_TOOL_WRITEOUT_H
 /***************************************************************************
  *                                  _   _ ____  _

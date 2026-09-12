@@ -1,4 +1,4 @@
-﻿
+
 /* spew out a thoroughly gigantic file designed so that bzip2
    can compress it reasonably rapidly.  This is to help test
    support for large files (> 2GB) in a reasonable amount of time.

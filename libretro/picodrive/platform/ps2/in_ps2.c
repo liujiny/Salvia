@@ -1,4 +1,4 @@
-﻿/*
+/*
  * PicoDrive input driver for PS2
  *
  * (C) fjtrujy,irixxxx 2024

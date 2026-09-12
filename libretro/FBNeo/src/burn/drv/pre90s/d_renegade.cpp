@@ -1,4 +1,4 @@
-﻿// FB Neo Renegade driver module
+// FB Neo Renegade driver module
 // Based on MAME driver by Phil Stroffolino, Carlos A. Lozano, Rob Rosenbrock
 
 // todo: clean up this mess. -dink

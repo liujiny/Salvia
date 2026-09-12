@@ -1,4 +1,4 @@
-﻿/* async_client.c
+/* async_client.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

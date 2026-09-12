@@ -1,4 +1,4 @@
-﻿#include "opera_fixedpoint_math.h"
+#include "opera_fixedpoint_math.h"
 
 static
 frac16

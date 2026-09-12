@@ -1,4 +1,4 @@
-﻿/*
+/*
     fmintf.c --
 	Interface to EMU2413 and YM2413 emulators.
 */

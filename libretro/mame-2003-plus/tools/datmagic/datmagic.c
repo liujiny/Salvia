@@ -1,4 +1,4 @@
-﻿/*
+/*
 
 	Beta version 6  -  Jan. 17th 2021
 	by: mahoneyt944 - MAME 2003-Plus Team.

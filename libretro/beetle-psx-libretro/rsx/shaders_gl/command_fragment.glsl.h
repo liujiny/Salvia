@@ -1,4 +1,4 @@
-﻿#include "shaders_common.h"
+#include "shaders_common.h"
 
 #undef command_fragment_name_
 

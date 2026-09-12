@@ -1,4 +1,4 @@
-﻿/* Sega ST-V (Sega Titan Video)
+/* Sega ST-V (Sega Titan Video)
 
 built to run the rom test mode only, don't consider anything here too accurate ;-)
 we only run 1 sh2, not both, vidhrdw is just made to display bios text, interrupts

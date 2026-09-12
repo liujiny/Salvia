@@ -1,4 +1,4 @@
-﻿#ifndef __FT_SYSTEM_IO_H__
+#ifndef __FT_SYSTEM_IO_H__
 #define __FT_SYSTEM_IO_H__
 
  /************************************************************************/

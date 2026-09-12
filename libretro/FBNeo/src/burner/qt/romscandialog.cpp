@@ -1,4 +1,4 @@
-﻿#include <QtWidgets>
+#include <QtWidgets>
 #include "romscandialog.h"
 #include "ui_romscandialog.h"
 #include "burner.h"

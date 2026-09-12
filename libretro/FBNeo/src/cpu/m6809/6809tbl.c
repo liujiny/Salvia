@@ -1,4 +1,4 @@
-﻿M6809_INLINE void abx(void);
+M6809_INLINE void abx(void);
 M6809_INLINE void adca_di(void);
 M6809_INLINE void adca_ex(void);
 M6809_INLINE void adca_im(void);

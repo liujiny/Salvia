@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "m6800_intf.h"
 
 #define MAX_CPU		1

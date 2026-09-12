@@ -1,4 +1,4 @@
-﻿/* vidhrdw/pass.c - see drivers/pass.c for more info */
+/* vidhrdw/pass.c - see drivers/pass.c for more info */
 
 #include "driver.h"
 

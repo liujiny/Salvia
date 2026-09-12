@@ -1,4 +1,4 @@
-﻿/* inffas86.c is a hand tuned assembler version of
+/* inffas86.c is a hand tuned assembler version of
  *
  * inffast.c -- fast decoding
  * Copyright (C) 1995-2003 Mark Adler

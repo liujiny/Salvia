@@ -1,4 +1,4 @@
-﻿#ifndef _DIRECTX9_CORE_
+#ifndef _DIRECTX9_CORE_
 #define _DIRECTX9_CORE_
 
 #include <d3d9.h>

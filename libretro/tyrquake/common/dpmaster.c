@@ -1,4 +1,4 @@
-﻿#include "quakedef.h"
+#include "quakedef.h"
 #include "console.h"
 #include "net.h"
 #include "net_udp.h"

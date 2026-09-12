@@ -1,4 +1,4 @@
-﻿/* test-main.c
+/* test-main.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

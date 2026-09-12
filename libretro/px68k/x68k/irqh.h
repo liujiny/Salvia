@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_IRQ_H
+#ifndef _WINX68K_IRQ_H
 #define _WINX68K_IRQ_H
 
 #include <stdint.h>

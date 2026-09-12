@@ -1,4 +1,4 @@
-﻿#ifndef FILE_EXPORT_H_
+#ifndef FILE_EXPORT_H_
 #define FILE_EXPORT_H_
 
 #include "atari.h"

@@ -1,4 +1,4 @@
-﻿/* LzFind.h -- Match finder for LZ algorithms
+/* LzFind.h -- Match finder for LZ algorithms
 2024-01-22 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_LZ_FIND_H

@@ -1,4 +1,4 @@
-﻿extern UINT8 *TaitoF3SoundRom;		// 1 MB
+extern UINT8 *TaitoF3SoundRom;		// 1 MB
 extern UINT8 *TaitoF3SoundRam;		// 64 KB
 extern UINT8 *TaitoF3ES5506Rom;		// variable...
 extern UINT8 *TaitoF3SharedRam;		// 2 KB

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * cpu.h - 6502 CPU emulation
  *
  * Copyright (C) 1995-1998 David Firth

@@ -1,4 +1,4 @@
-﻿// Based on original MAME driver writen by Zsolt Vasvari
+// Based on original MAME driver writen by Zsolt Vasvari
 
 
 #include "tiles_generic.h"

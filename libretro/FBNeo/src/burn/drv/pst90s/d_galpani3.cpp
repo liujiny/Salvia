@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Kaneko Gals Panic 3 driver module
+// FinalBurn Neo Kaneko Gals Panic 3 driver module
 // Based on MAME driver by David Haywood
 
 #include "tiles_generic.h"

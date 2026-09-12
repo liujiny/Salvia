@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_MIDI_H
+#ifndef _WINX68K_MIDI_H
 #define _WINX68K_MIDI_H
 
 #include <stdint.h>

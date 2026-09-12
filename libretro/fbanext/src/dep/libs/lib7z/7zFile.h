@@ -1,4 +1,4 @@
-﻿/* 7zFile.h -- File IO
+/* 7zFile.h -- File IO
 2009-11-24 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_FILE_H

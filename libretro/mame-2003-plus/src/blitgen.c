@@ -1,4 +1,4 @@
-﻿/**
+/**
  * This module emits a full set of blitters, as "mameblit.c"
  */
 

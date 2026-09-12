@@ -1,4 +1,4 @@
-﻿/* namconb1.h */
+/* namconb1.h */
 
 #define NAMCONB1_COLS		36
 #define NAMCONB1_ROWS		28

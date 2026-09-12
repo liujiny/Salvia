@@ -1,4 +1,4 @@
-﻿//
+//
 //  Dynamic Huffman Encoder/Decoder
 //
 //  implemented by Gangta

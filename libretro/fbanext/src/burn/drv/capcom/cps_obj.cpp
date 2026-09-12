@@ -1,4 +1,4 @@
-﻿#include "cps.h"
+#include "cps.h"
 // CPS Objs (sprites)
 
 INT32 nCpsObjectBank;

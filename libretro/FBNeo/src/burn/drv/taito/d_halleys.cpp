@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Halley's Comet driver module
+// FinalBurn Neo Halley's Comet driver module
 // Based on MAME driver by Phil Stroffolino, Acho A. Tang
 
 #include "tiles_generic.h"

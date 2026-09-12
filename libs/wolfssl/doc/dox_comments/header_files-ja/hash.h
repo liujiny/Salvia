@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup wolfCrypt
     \brief  この関数は提供されたwc_hashtypeのOIDを返します。
     \return OID  戻り値0を超えてください

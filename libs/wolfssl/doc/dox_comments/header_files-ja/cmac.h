@@ -1,4 +1,4 @@
-﻿/*!
+/*!
      \ingroup CMAC
      \brief Cmac構造体をデフォルト値で初期化します
      \return 成功したら0を返します

@@ -1,4 +1,4 @@
-﻿// midway t unit
+// midway t unit
 
 #include "tiles_generic.h"
 #include "midtunit.h"

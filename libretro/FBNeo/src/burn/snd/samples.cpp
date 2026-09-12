@@ -1,4 +1,4 @@
-﻿// FB Neo sample player module
+// FB Neo sample player module
 
 #include "burnint.h"
 #include "samples.h"

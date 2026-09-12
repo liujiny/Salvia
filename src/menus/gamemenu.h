@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <string>
 #include <sstream>
@@ -49,7 +49,6 @@ static const string SYNOPSIS = "synopsis";
 static const string YEAR = "year";
 static const string MANUFACTURER = "manufacturer";
 static const string SYSTEM = "system";
-static const string MENUTMP = "menu.tmp";
 static const string FS_IMAGES[] = {BOX2D, SNAP, SNAPTIT};
 
 extern std::string videoScaleStrings[TOTAL_VIDEO_SCALE];
@@ -143,7 +142,6 @@ class GameMenu : public Engine{
 		FILE_STATUS extractFileFromZip(const std::string& internalPath, const std::string& extractionPath, ZipBrowser& zb, ListMenu &listMenu);
 		std::string GetMD5(const std::string& input);
         int saveGameMenuPos(ListMenu &);
-        int recoverGameMenuPos(ListMenu &, struct ListStatus &);
         void showMessage(string);
 		bool updateFps();
 		CfgLoader * getCfgLoader();
@@ -163,35 +161,12 @@ class GameMenu : public Engine{
 			HLSLBackground_setActive((isMenu && animBG >= BG_HLSL && animBG < BG_NONE) ? (animBG - BG_HLSL + 1) : 0);
 		}
 
-		void setEmuStatus(int tmpStat){
-			if (status == EMU_MENU_IMAGE_VIEWER){
-				//No queremos volver al visor de imagenes
-				lastStatus = EMU_MENU;
-			} else {
-				lastStatus = status;
-			}
-			status = tmpStat;
-			//Fondo HLSL del menu: estado retenido decidido en cada transicion
-			applyMenuBackground();
-			//Siempre que cambiemos de estado de emulacion,
-			//reseteamos los botones del joystick
-			joystick->inputs.clearAll();
-
-			if (status == EMU_STARTED && lastStatus != EMU_STARTED){
-				BadgeDownloader::instance().stop();
-				//Restauramos el shader porque parece haber algun problema con HLSLBackground::draw
-				checkDisplayOptions();
-			}
-		}
-
+		void setEmuStatus(int tmpStat);
 		int getEmuStatus(){return status;}
 		int getLastStatus(){return lastStatus;}
-		bool isOnscreenKeybEnabled(){
-			return onscreenKeyboard;
-		}
-		void setOnscreenKeyboard(bool enabled){
-			onscreenKeyboard = enabled;
-		}
+
+		bool isOnscreenKeybEnabled(){return onscreenKeyboard;}
+		void setOnscreenKeyboard(bool enabled){onscreenKeyboard = enabled;}
 		void setRomPaths(std::string rp);
 		std::string getSramPath();
 		void showSystemMessage(std::string, uint32_t);
@@ -201,6 +176,12 @@ class GameMenu : public Engine{
 		void showAchievementMessage(const std::string &line1Str, const std::string &line2Str, const std::string &line3Str, SDL_Surface *badge);
 		void clearOverlay();
 		void clearOverlayRect(SDL_Rect&);
+		/* Reticula del lightgun: se llama una vez por frame durante la partida.
+		 * No hace nada si ningun puerto es de pistola. */
+		void drawLightgunCrosshair();
+		/* Superficie en cuyo espacio vienen inputs.mouse_x/mouse_y (ver el
+		 * comentario de la implementacion: SDL_GetVideoSurface NO sirve). */
+		SDL_Surface* getMouseSurface();
 		void fillOverlay(int colorIndex);
 		void fillOverlayAlpha(int colorIndex, int alpha);
 		SDL_Surface* clonarPantalla(SDL_Surface*, int);
@@ -225,6 +206,11 @@ class GameMenu : public Engine{
 		int lastStatus;
 		bool onscreenKeyboard;
 		SDL_Rect rectFps;
+		/* Ultima posicion dibujada de la reticula del lightgun, para borrarla en el
+		 * frame siguiente (mismo patron que los contadores de FPS/memoria). Una por
+		 * PUERTO: con dos ratones puede haber dos pistolas a la vez. */
+		SDL_Rect crosshairRect[MAX_PLAYERS];
+		bool     crosshairDrawn[MAX_PLAYERS];
 		Uint32 bkgTextFps;
 		SDL_Surface* fpsSurface;
 		SDL_Surface* cpuSurface;

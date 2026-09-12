@@ -1,4 +1,4 @@
-﻿#ifndef _PS4_DEFINES_H
+#ifndef _PS4_DEFINES_H
 #define _PS4_DEFINES_H
 
 #define PS4_MAX_ORBISPADS 16

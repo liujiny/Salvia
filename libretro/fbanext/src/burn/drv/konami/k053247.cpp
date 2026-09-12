@@ -1,4 +1,4 @@
-﻿#include "tiles_generic.h"
+#include "tiles_generic.h"
 #include "konamiic.h"
 
 #define K053247_CUSTOMSHADOW	0x20000000

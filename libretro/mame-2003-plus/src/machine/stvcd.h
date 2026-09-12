@@ -1,4 +1,4 @@
-﻿void cdb_build_ftree(void);
+void cdb_build_ftree(void);
 void cdb_build_toc(void);
 void iso_reset(void);
 void CD_com_update(UINT32 count);

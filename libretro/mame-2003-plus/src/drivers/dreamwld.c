@@ -1,4 +1,4 @@
-﻿/*
+/*
     SemiCom 68020 based hardware
     Driver by David Haywood
 

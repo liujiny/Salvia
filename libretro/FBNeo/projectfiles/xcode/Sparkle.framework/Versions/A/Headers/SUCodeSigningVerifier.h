@@ -1,4 +1,4 @@
-﻿//
+//
 //  SUCodeSigningVerifier.h
 //  Sparkle
 //

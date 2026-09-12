@@ -1,4 +1,4 @@
-﻿#ifndef SN76496_H
+#ifndef SN76496_H
 #define SN76496_H
 
 #define MAX_76496 5

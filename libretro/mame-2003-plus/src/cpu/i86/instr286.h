@@ -1,4 +1,4 @@
-﻿#define ILLEGAL_INSTRUCTION 6
+#define ILLEGAL_INSTRUCTION 6
 #define GENERAL_PROTECTION_FAULT 0xd
 
 #define PM (I.msw&1)

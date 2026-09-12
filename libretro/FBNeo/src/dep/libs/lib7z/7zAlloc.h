@@ -1,4 +1,4 @@
-﻿/* 7zAlloc.h -- Allocation functions
+/* 7zAlloc.h -- Allocation functions
 2023-03-04 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_7Z_ALLOC_H

@@ -1,4 +1,4 @@
-﻿/* test_cmac.c
+/* test_cmac.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

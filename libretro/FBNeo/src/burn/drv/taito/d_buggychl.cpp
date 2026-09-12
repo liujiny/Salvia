@@ -1,4 +1,4 @@
-﻿// FB Alpha Taito Buggy Challenge driver module
+// FB Alpha Taito Buggy Challenge driver module
 // Based on MAME driver by Ernesto Corvi and Nicola Salmoria
 
 #include "tiles_generic.h"

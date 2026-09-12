@@ -1,4 +1,4 @@
-﻿#ifndef VULKAN_XLIB_XRANDR_H_
+#ifndef VULKAN_XLIB_XRANDR_H_
 #define VULKAN_XLIB_XRANDR_H_ 1
 
 #ifdef __cplusplus

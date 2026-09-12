@@ -1,4 +1,4 @@
-﻿/*
+/*
 Car Jamboree
 Omori Electric CAD (OEC) 1981
 */

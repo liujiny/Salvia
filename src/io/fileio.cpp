@@ -1,4 +1,4 @@
-ï»¿#include "fileio.h"
+#include "fileio.h"
 #include <fcntl.h>
 #include <sstream>
 
@@ -40,7 +40,7 @@ std::string Fileio::cargarFichero(const std::string& ruta) {
     // Abrimos el flujo de entrada (ifstream)
     std::ifstream archivo(ruta.c_str()); 
     
-    // Verificaciï¿½n de apertura (estï¿½ndar en VS2010)
+    // Verificación de apertura (estándar en VS2010)
     if (!archivo.is_open()) {
         return ""; 
     }

@@ -1,4 +1,4 @@
-﻿/* One Shot One Kill & Maddonna
+/* One Shot One Kill & Maddonna
    Driver by David Haywood and Paul Priest
    Dip Switches and Inputs by Stephane Humbert
 

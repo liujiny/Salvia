@@ -1,4 +1,4 @@
-﻿#include "SPC_DSP.h"
+#include "SPC_DSP.h"
 #include <stdio.h>
 
 class DSP : public Processor {

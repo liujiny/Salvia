@@ -1,4 +1,4 @@
-﻿#ifndef MISC_H
+#ifndef MISC_H
 #define MISC_H
 
 #define FMGEN_MAX(x, y) (((x) > (y)) ? (x) : (y))

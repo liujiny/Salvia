@@ -1,4 +1,4 @@
-﻿#include "gamemenu.h"
+#include "gamemenu.h"
 
 #include <gfx/SDL_gfxPrimitives.h>
 #include <gfx/SDL_rotozoom.h>
@@ -13,6 +13,7 @@
 #include <io/keyboard.h>
 #include "unzip/unziptool.h"
 #include "rhash/md5.h" // To generate a filename hash
+#include <video/shaderpreset.h>
 
 /* Definida en salvia.cpp devuelve los descriptores de memoria que el core
  * envio via RETRO_ENVIRONMENT_SET_MEMORY_MAPS (ej. HRAM en Game Boy). */
@@ -23,6 +24,12 @@ GameMenu::GameMenu(CfgLoader *cfgLoader) : m_csInited(false)
     status = EMU_MENU;
 	lastStatus = EMU_MENU;
 	onscreenKeyboard = false;
+	/* Reticula del lightgun: sin dibujar todavia, asi que no hay rect que borrar. */
+	for (int i = 0; i < MAX_PLAYERS; i++){
+		crosshairDrawn[i] = false;
+		crosshairRect[i].x = crosshairRect[i].y = 0;
+		crosshairRect[i].w = crosshairRect[i].h = 0;
+	}
 	romLoaded = false;
 	gameTicks.ticks = 0;
 
@@ -84,6 +91,12 @@ GameMenu::GameMenu(CfgLoader *cfgLoader) : m_csInited(false)
 	this->mustUpdateFps = &getCfgLoader()->configMain[cfg::showFps].getBoolRef();
 	this->current_fast_forward = false;
 	processConfigChanges();
+
+	if (cfgLoader->appliedFileParmsCore.empty()){
+		//Solo indicamos el mensaje de que tenemos las opciones por defecto cargadas si efectivamente, 
+		//no hay ningun fichero de configuracion aplicado
+		cfgLoader->appliedFileParmsCore = LanguageManager::instance()->get("menu.core.options.msg.default");
+	}
 
 	fpsSurface = NULL; 
 	cpuSurface = NULL;
@@ -1243,13 +1256,22 @@ vector<string> GameMenu::launchProgram(const std::string& fullPathRom){
 
 /**
 * Comprueba si el emulador para ejecutar el juego es el que hay cargado actualmente.
-* Devuelve true si es el actual
-* Devuelve false si hay que cargar el emulador correspondiente
+* Hay algunos cores que no se desinicializan correctamente e implica mucha investigacion
+* portearlos. Para esos casos (ej: PRBOOM), se define el preprocesador RELOAD_CORE, para que
+* haga un reinicio de todo el frontend. Esto tiene sus desventajas, pero es la forma mas limpia
+* de mantenerse actualizado upstream con el git de algunos cores
+*
+* Devuelve true si se puede abrir el juego con el core actual
+* Devuelve false si hay que cargar otro core
 */
 bool GameMenu::emuCanLaunchGame(){
+#ifndef RELOAD_CORE
 	ConfigEmu* emu = cfgLoader->getCfgEmu();
 	const std::string execActual = Constant::getAppExecutable();
 	return emu->executable.find(execActual) != string::npos;
+#else
+	return false;
+#endif
 }
 
 /**
@@ -1480,33 +1502,6 @@ int GameMenu::saveGameMenuPos(ListMenu &menuData){
     return ret;
 }
 
-/**
- * 
- */
-int GameMenu::recoverGameMenuPos(ListMenu &menuData, struct ListStatus &read_struct){
-    FILE* infile;
-    string filepath = Constant::getAppDir() + Constant::getFileSep() + MENUTMP;
-    int ret = 0;
-
-    // Open person.dat for reading
-    infile = fopen(filepath.c_str(), "rb");
-    if (infile == NULL) {
-        cerr << "Error openning file: " << filepath << endl;
-        return 1;
-    }
-
-    if (fread(&read_struct, sizeof(read_struct), 1, infile) > 0){
-        LOG_DEBUG("emupos: %d; inipos: %d; endpos: %d; curpos: %d; maxlines: %d; layout: %d; animateBkg: %d", read_struct.emuLoaded,  
-			read_struct.iniPos, read_struct.endPos, read_struct.curPos, read_struct.maxLines, read_struct.layout, read_struct.animateBkg);
-        //Setting the emulator selected        
-        cfgLoader->emuCfgPos = read_struct.emuLoaded;
-    } else {
-        ret = 1;
-    }
-
-    fclose(infile);
-    return ret;
-}
 
 bool GameMenu::updateFps(){
 	bool shouldUpdateFps = false;
@@ -1649,7 +1644,6 @@ void GameMenu::processHotkeys(HOTKEYS_LIST hotkey){
 	#endif
 
 	std::string msgShader;
-	std::string choosenFilter;
 	ConfigEmu *emu = getCfgLoader()->getCfgEmu();
 	static int lastSync = *current_sync;
 
@@ -1662,12 +1656,44 @@ void GameMenu::processHotkeys(HOTKEYS_LIST hotkey){
 
 		case HK_SHADER:
 			#ifdef SALVIA_GPU_VIDEO
-				*this->current_shader = (*this->current_shader + 1) % TOTAL_SHADERS;
-				XBOX_SelectEffect(*this->current_shader);
-				choosenFilter = "menu.video.shader" + Constant::TipoToStr(*this->current_shader);
-				msgShader = LanguageManager::instance()->get("msg.filter") + " " 
-					+ LanguageManager::instance()->get(choosenFilter);
-				showSystemMessage(msgShader, 3000);
+			{
+				/* La lista de shaders es dinamica (assets\shaders): el tope del
+				 * ciclado sale del registro, no de una constante.
+				 *
+				 * La hotkey cicla el ajuste EFECTIVO, con la MISMA precedencia
+				 * que checkDisplayOptions: si el core tiene un override, mueve
+				 * el override; si esta en Auto, mueve el shader global. Antes
+				 * escribia siempre en el global y aplicaba sin mirar el
+				 * override, asi que en un core con override los dos caminos se
+				 * contradecian: la hotkey cambiaba la pantalla pero el menu
+				 * general no, porque checkDisplayOptions seguia resolviendo al
+				 * override. */
+				ShaderRegistry* shaders = ShaderRegistry::instance();
+				int totalShaders = shaders->count();
+				if (totalShaders > 0){
+					ConfigEmu* cfgEmu = getCfgLoader()->getCfgEmu();
+					int next;
+
+					if (cfgEmu != NULL && cfgEmu->shaderMode > 0){
+						/* Override activo: el 0 del menu de overrides es "Auto",
+						 * de ahi el +1 al guardarlo. */
+						next = (cfgEmu->shaderMode - 1 + 1) % totalShaders;
+						cfgEmu->shaderMode = next + 1;
+					} else {
+						*this->current_shader = (*this->current_shader + 1) % totalShaders;
+						next = *this->current_shader;
+					}
+
+					XBOX_SelectEffect(next);
+					/* Mantener sincronizado el ultimo valor aplicado: si no,
+					 * checkDisplayOptions creeria que sigue el anterior. */
+					current_video_settings.filter = next;
+
+					msgShader = LanguageManager::instance()->get("msg.filter") + " "
+						+ shaders->displayName(next);
+					showSystemMessage(msgShader, 3000);
+				}
+			}
 			#else
 				do {
 					*this->current_scaler_mode = ((*this->current_scaler_mode + 1) % TOTAL_VIDEO_SCALE);
@@ -1785,6 +1811,32 @@ void GameMenu::processHotkeys(HOTKEYS_LIST hotkey){
 				showLangSystemMessage("msg.fastfoward.hardcore", 3000);
 			}
 			break;
+	}
+}
+
+void GameMenu::setEmuStatus(int tmpStat){
+	if (status == EMU_MENU_IMAGE_VIEWER){
+		//No queremos volver al visor de imagenes
+		lastStatus = EMU_MENU;
+	} else {
+		lastStatus = status;
+	}
+	status = tmpStat;
+	//Fondo HLSL del menu: estado retenido decidido en cada transicion
+	applyMenuBackground();
+	//Siempre que cambiemos de estado de emulacion,
+	//reseteamos los botones del joystick
+	joystick->inputs.clearAll();
+
+	//Deshabilitamos el teclado si lo estabamos mostrando en el core
+	if (lastStatus == EMU_STARTED && status != EMU_STARTED && isOnscreenKeybEnabled()){
+		setOnscreenKeyboard(false);
+	}
+
+	if (status == EMU_STARTED && lastStatus != EMU_STARTED){
+		BadgeDownloader::instance().stop();
+		//Restauramos el shader porque parece haber algun problema con HLSLBackground::draw
+		checkDisplayOptions();
 	}
 }
 
@@ -2325,8 +2377,206 @@ void GameMenu::startScrapping(){
 	}
 }
 
+
+/* ---------------------------------------------------------------------------
+ *  Reticula del lightgun
+ * ---------------------------------------------------------------------------
+ *
+ *  Con un GunCon de verdad no hace falta: apuntas el arma fisica a la tele y el
+ *  juego no dibuja nada. Con raton no hay a donde apuntar, asi que sin reticula
+ *  el juego es injugable -- no por un fallo, sino por como es el dispositivo.
+ *
+ *  Va en el OVERLAY, no en gameScreen ni en el rasterizador del core:
+ *
+ *   - El overlay esta en pixeles de PANTALLA, el mismo espacio del que sale
+ *     inputs.mouse_x/mouse_y y por tanto el mismo del que el core saca las
+ *     coordenadas que manda al GunCon. Los dos usan la MISMA fraccion
+ *     mouse/(ancho-1), asi que reticula y punto de disparo coinciden por
+ *     construccion. Dibujando en gameScreen habria que hacer el mapeo inverso
+ *     pantalla->core atravesando escalador, aspect y overscan, y cualquier
+ *     desajuste apareceria como "el tiro no cae donde apunta la reticula", que
+ *     es el sintoma mas dificil de atribuir.
+ *   - El overlay se compone DESPUES del shader, asi que HQ2X/xBR no la
+ *     desenfocan.
+ *   - Y no obliga a tocar los tres renderers ni a pelearse con el hilo GPU.
+ *
+ *  El borrado por rect es el mismo patron que ya usan los contadores de FPS y
+ *  memoria, que tambien se actualizan durante la partida.
+ * ------------------------------------------------------------------------- */
+
+/* Superficie contra la que SDL ACOTA las coordenadas del raton, o sea el
+ * espacio en el que vienen inputs.mouse_x/mouse_y.  Cualquier normalizacion
+ * del raton (reticula del lightgun, SCREEN_X/Y del GunCon) tiene que dividir
+ * por ESTAS dimensiones y no por otras.
+ *
+ * NO usar SDL_GetVideoSurface() directamente: en libSDLx360 miente.
+ * XBOX_ResizeGameTexture() reemplaza this->screen -- que es el
+ * #define SDL_VideoSurface (current_video->screen) -- por una superficie del
+ * tamano del core, y deja ->visible (#define SDL_PublicSurface, lo que
+ * devuelve SDL_GetVideoSurface()) apuntando a la del arranque.  El acotado del
+ * raton usa SDL_VideoSurface (SDL_mouse.c), asi que en Xbox las coordenadas
+ * llegan en PIXELES DEL CORE.  Con SDL_GetVideoSurface() la reticula solo
+ * alcanzaba 1/5 del ancho y 1/3 del alto: 255/1280 y 239/720, medido con Time
+ * Crisis a 256x240 y backbuffer 720p. */
+SDL_Surface* GameMenu::getMouseSurface(){
+#ifdef _XBOX
+	/* hw_refresh guarda el resultado de XBOX_ResizeGameTexture en gameScreen,
+	 * asi que gameScreen ES SDL_VideoSurface: el mismo objeto. */
+	return gameScreen;
+#else
+	/* SDL de escritorio: SDL_VideoSurface y SDL_PublicSurface tienen las mismas
+	 * dimensiones, y aqui gameScreen NO sirve -- es la superficie del juego, a
+	 * tamano del core, mientras el raton se acota a la ventana. */
+	return SDL_GetVideoSurface();
+#endif
+}
+
+void GameMenu::drawLightgunCrosshair(){
+	const bool enabled = this->cfgLoader->configMain[cfg::lightgunCrossEnabled].valueBool;
+	if (!this->overlay || !enabled) return;
+
+	/* Sin overlay propio (Windows sin SALVIA_GPU_VIDEO, ver engine.cpp) el
+	 * overlay ES gameScreen: la misma superficie y sin canal alfa.  Ahi
+	 * clearOverlayRect rellena con 0, asi que la reticula iria dejando
+	 * rectangulos NEGROS sobre la imagen del juego en vez de borrarse.  Mejor sin
+	 * reticula que con rastro.  En Xbox y en Windows con GPU son superficies
+	 * distintas y esto no hace nada. */
+	if (this->overlay == this->gameScreen) return;
+
+	SDL_Surface* vs = getMouseSurface();
+	const bool haveSurface = (vs && vs->w >= 2 && vs->h >= 2);
+
+	/* Una reticula POR PUERTO de pistola: con dos ratones se pueden tener dos
+	 * pistolas independientes (ver Joystick::updateMice) y cada jugador necesita
+	 * ver la suya. Que raton lleva cada puerto lo dice mouseOfPort; -1 = ese
+	 * puerto se quedo sin raton (dos pistolas y uno solo) y no se dibuja nada.
+	 *
+	 * Se compara el tipo BASE del device id, no el id completo: asi vale para
+	 * cualquier subclase (GunCon, Justifier) y para cualquier core, sin que el
+	 * frontend tenga que conocer sus constantes. */
+	int miOf[MAX_PLAYERS];
+	bool someMiceFound = false;
+	for (int p = 0; p < MAX_PLAYERS; p++){
+		int mi = -1;
+		if (haveSurface && this->joystick){
+			const int dev = this->joystick->g_ports[p].current_device_id;
+			if (dev > 0 && (dev & 0xFF) == RETRO_DEVICE_LIGHTGUN){
+				mi = this->joystick->inputs.mouseOfPort[p];
+				if (mi >= t_joy_state::MAX_MICE) mi = -1;
+				else someMiceFound = true;
+			}
+		}
+		miOf[p] = mi;
+	}
+
+	//Si no hay ratones, salimos
+	if (!someMiceFound) return;
+
+	/* Borrar TODAS las posiciones anteriores ANTES de dibujar ninguna: puerto a
+	 * puerto, el borrado de la segunda mira se comeria un trozo de la primera
+	 * cuando se cruzan. Y al dejar de haber pistola, esto la borra una vez y no
+	 * se vuelve a tocar el overlay (si no, se quedaria pegada). */
+	for (int p = 0; p < MAX_PLAYERS; p++){
+		if (this->crosshairDrawn[p]){
+			clearOverlayRect(this->crosshairRect[p]);
+			this->crosshairDrawn[p] = false;
+		}
+	}
+
+	if (!haveSurface || !this->joystick) return;
+
+	/* La fraccion del raton es la MISMA que manda el core al GunCon (ver la
+	 * rama RETRO_DEVICE_LIGHTGUN de salvia.cpp), pero hay que repartirla sobre
+	 * el rectangulo donde se dibuja la IMAGEN del juego, no sobre la pantalla
+	 * entera.
+	 *
+	 * Con un core 4:3 en un backbuffer 16:9 la imagen ocupa los 960 pixeles
+	 * centrales de 1280 y sobran 160 por lado; el hack de widescreen cambia ese
+	 * reparto. Repartiendo sobre la pantalla completa, reticula y disparo
+	 * coinciden en el centro y se separan hacia los bordes, cada uno hacia su
+	 * lado -- 160 px en el borde, medido con Time Crisis. */
+	int gx, gy, gw, gh;
+	SDL_XBOX_GetGameRectOnOverlay(&gx, &gy, &gw, &gh);
+	if (gw < 2 || gh < 2) { gx = 0; gy = 0; gw = this->overlay->w; gh = this->overlay->h; }
+
+	const int posCrossSize = this->cfgLoader->configMain[cfg::lightgunCrossSize].valueInt;
+	int sizeDivisor = LIGHTGUN_SIZES[0];
+	if (posCrossSize >= 0 && posCrossSize < LIGHTGUN_SIZES_COUNT){
+		sizeDivisor = LIGHTGUN_SIZES[posCrossSize];
+	}
+
+	const int posCrossThickness = this->cfgLoader->configMain[cfg::lightgunThickness].valueInt;
+	int lineThickness = LIGHTGUN_THICKNESS[1];
+	if (posCrossThickness >= 0 && posCrossThickness < LIGHTGUN_THICKNESS_COUNT){
+		lineThickness = LIGHTGUN_THICKNESS[posCrossThickness];
+	}
+
+	/* Tamano proporcional al alto para que se vea igual en 480p y en 720p. */
+	int rad = this->overlay->h / sizeDivisor;
+	if (rad < 4) rad = 4;
+	const int gap = rad / 3 + 1;
+	const int arm = rad * 2;
+	const int ext = rad + gap + arm + 1;
+
+	/* 0xRRGGBBAA: SDL_gfx toma el alfa en el byte BAJO (mira el
+	 * `(color & 255) == 255` de hlineColor), no un pixel del formato de la
+	 * superficie. Un color por jugador para poder distinguir las miras cuando hay
+	 * dos; el jugador 1 se queda con el rojo de siempre. */
+	static const Uint32 crossColors[MAX_PLAYERS] = {
+		0xFF0000FFu,   /* rojo  */
+		0x30A0FFFFu,   /* azul  */
+		0x40D040FFu,   /* verde */
+		0xFFC000FFu    /* ambar */
+	};
+
+	const t_joy_state& in = this->joystick->inputs;
+	const uint8_t diffThickness = lineThickness / 2;
+
+	for (int p = 0; p < MAX_PLAYERS; p++){
+		const int mi = miOf[p];
+		if (mi < 0) continue;
+
+		const int cx = gx + (int)(((long)in.mice_x[mi] * (gw - 1)) / (vs->w - 1));
+		const int cy = gy + (int)(((long)in.mice_y[mi] * (gh - 1)) / (vs->h - 1));
+		const Uint32 col = crossColors[p];
+
+		/* circleColor y NO aacircleColor: la version antialiased blendea por
+		 * software contra el overlay, que esta TRANSPARENTE (negro con alfa 0).  En
+		 * _putPixelAlpha un borde con cobertura 128 sale (127,0,0) con alfa 127, y
+		 * la GPU compone con alfa RECTO -> el borde queda al doble de oscuro del que
+		 * toca: halo sucio.  Y aaellipseColor replota los pixeles de los ejes, que al
+		 * blendear se oscurecen dos veces: motas.  circleColor con alfa 255 escribe
+		 * directo (pixelColorNolock) y el replotado pasa a ser inocuo. */
+		//circleColor(this->overlay, cx, cy, rad, col);
+		
+		//hlineColor(this->overlay, cx - rad - gap - arm, cx - rad - gap, cy, col);
+		//hlineColor(this->overlay, cx + rad + gap, cx + rad + gap + arm, cy, col);
+		//vlineColor(this->overlay, cx, cy - rad - gap - arm, cy - rad - gap, col);
+		//vlineColor(this->overlay, cx, cy + rad + gap, cy + rad + gap + arm, col);
+
+		boxColor(this->overlay, cx - rad - gap - arm, cy - diffThickness, cx - rad - gap, cy + diffThickness, col); //Left
+		boxColor(this->overlay, cx + rad + gap, cy - diffThickness, cx + rad + gap + arm, cy + diffThickness, col); //Right
+		boxColor(this->overlay, cx - diffThickness, cy - rad - gap - arm, cx + diffThickness, cy - rad - gap, col); //Top
+		boxColor(this->overlay, cx - diffThickness, cy + rad + gap, cx + diffThickness, cy + rad + gap + arm, col); //Bottom
+
+		//pixelColor(this->overlay, cx, cy, col);
+
+		/* Rect sucio para el frame siguiente. No se acota a la superficie: tanto
+		 * SDL_FillRect como las primitivas de SDL_gfx recortan solas. */
+		this->crosshairRect[p].x = (Sint16)(cx - ext);
+		this->crosshairRect[p].y = (Sint16)(cy - ext);
+		this->crosshairRect[p].w = (Uint16)(ext * 2 + 1);
+		this->crosshairRect[p].h = (Uint16)(ext * 2 + 1);
+		this->crosshairDrawn[p]  = true;
+	}
+}
+
 void GameMenu::clearOverlay(){
 	memset(overlay->pixels, 0, overlay->pitch * overlay->h); 
+	/* Un borrado de TODA la superficie invalida el rect de la reticula: si no,
+	 * al volver al juego se borraria un rect sobre lo que acabo de pintar el
+	 * menu, dejando un agujero transparente (ver drawLightgunCrosshair). */
+	memset(crosshairDrawn, 0, sizeof(crosshairDrawn));
 }
 
 void GameMenu::clearOverlayRect(SDL_Rect& rect){
@@ -2337,6 +2587,10 @@ void GameMenu::fillOverlay(int colorIndex){
 	if (colorIndex < clTotalColors){
 		SDL_FillRect(this->overlay, NULL, Constant::colors[colorIndex].color);
 	}
+	/* Un borrado de TODA la superficie invalida el rect de la reticula: si no,
+	 * al volver al juego se borraria un rect sobre lo que acabo de pintar el
+	 * menu, dejando un agujero transparente (ver drawLightgunCrosshair). */
+	memset(crosshairDrawn, 0, sizeof(crosshairDrawn));
 }
 
 void GameMenu::fillOverlayAlpha(int colorIndex, int alpha){
@@ -2345,6 +2599,7 @@ void GameMenu::fillOverlayAlpha(int colorIndex, int alpha){
 		const Uint32 colorA = SDL_MapRGBA(this->overlay->format, col.r, col.g, col.b, alpha);
 		SDL_FillRect(this->overlay, NULL, colorA);
 	}
+	memset(crosshairDrawn, 0, sizeof(crosshairDrawn));   /* igual que fillOverlay */
 }
 
 void GameMenu::drawSelectedKey(TTF_Font* font, t_keyboard& keyb, int row, int col){
@@ -2360,14 +2615,14 @@ void GameMenu::drawSelectedKey(TTF_Font* font, t_keyboard& keyb, int row, int co
             
             // Si la celda es un salto por culpa del ENTER vertical, sumamos el ancho que le corresponderia
             if (keyb.caps[row][c].h == 0) {
-                int actualW = (keyb.layoutWidth[row][c] * 70) + ((keyb.layoutWidth[row][c] - 1) * keyb.spaceX);
+                int actualW = (keyb.layoutWidth[row][c] * keyb.keyW) + ((keyb.layoutWidth[row][c] - 1) * keyb.spaceX);
                 targetX += actualW + keyb.spaceX;
             } else {
                 targetX += keyb.caps[row][c].w + keyb.spaceX;
             }
         }
 
-        int targetY = keyb.iniY + row * (40 + keyb.spaceY);
+        int targetY = keyb.iniY + row * (keyb.keyH + keyb.spaceY);
         int targetW = keyb.caps[row][col].w;
         int targetH = keyb.caps[row][col].h;
 
@@ -2418,9 +2673,11 @@ void GameMenu::drawSelectedKey(TTF_Font* font, t_keyboard& keyb, int row, int co
 
 void GameMenu::drawKeyboard(TTF_Font* font, t_keyboard& keyb){
     // 1. GENERACION DE LA CACHE (Solo se ejecuta la primera vez)
+	const int kw = keyb.keyW;
+	const int kh = keyb.keyH;
 
-	int totalKeyboardW = (keyb.cols * (70 + keyb.spaceX));
-    int totalKeyboardH = (keyb.rows * (40 + keyb.spaceY));
+	int totalKeyboardW = (keyb.cols * (kw + keyb.spaceX));
+    int totalKeyboardH = (keyb.rows * (kh + keyb.spaceY));
     if (keyb.keyboardSurface == nullptr) {
         SDL_Surface* rawSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, totalKeyboardW, totalKeyboardH, 
                                                        this->overlay->format->BitsPerPixel,
@@ -2449,7 +2706,7 @@ void GameMenu::drawKeyboard(TTF_Font* font, t_keyboard& keyb){
             for (int col = 0; col < keyb.cols; col++){
                 if (keyb.layoutWidth[row][col] == 0) continue;
                 if (keyb.caps[row][col].h == 0) {
-                    int defaultW = 70;
+                    int defaultW = kw;
                     int actualW = (keyb.layoutWidth[row][col] * defaultW) + ((keyb.layoutWidth[row][col] - 1) * keyb.spaceX);
                     currentX += actualW + keyb.spaceX;
                     continue;
@@ -2460,8 +2717,7 @@ void GameMenu::drawKeyboard(TTF_Font* font, t_keyboard& keyb){
                 }    
 
                 int keybPosX = currentX;
-                //int keybPosY = keyb.iniY + row * (40 + keyb.spaceY);
-				int keybPosY = row * (40 + keyb.spaceY);
+				int keybPosY = row * (kh + keyb.spaceY);
 
                 // Dibujamos el fondo base de la tecla con alpha = KEY_ALPHA.
                 // CLAVE: SDL_MapRGBA (no SDL_MapRGB) para que el byte alpha del
@@ -2584,5 +2840,12 @@ void GameMenu::checkDisplayOptions(){
 		SDL_XBOX_SetDisplaySize(currentRatio);
 		#endif
 		current_video_settings.ratio = currentRatio;
+	}
+
+	// Overriding the video synchronization mode if the core has specified something greater than 0. 
+	// 0 is actually -1 in the cfg file which represents "Auto"
+	const int currentSyncType = cfgEmu->syncMode > 0 ? cfgEmu->syncMode - 1 : *this->current_sync;
+	if (*this->current_sync != currentSyncType){
+		*this->current_sync = currentSyncType;
 	}
 }

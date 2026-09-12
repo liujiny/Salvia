@@ -1,4 +1,4 @@
-﻿/*
+/*
     HuC6280 sound chip emulator
     by Charles MacDonald
     E-mail: cgfm2@hotmail.com

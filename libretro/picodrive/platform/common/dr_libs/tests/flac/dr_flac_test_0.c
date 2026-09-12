@@ -1,4 +1,4 @@
-﻿#define DR_FLAC_IMPLEMENTATION
+#define DR_FLAC_IMPLEMENTATION
 #include "../../dr_flac.h"
 
 #include "../common/dr_common.c"

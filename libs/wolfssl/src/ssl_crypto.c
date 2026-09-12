@@ -1,4 +1,4 @@
-﻿/* ssl_crypto.c
+/* ssl_crypto.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

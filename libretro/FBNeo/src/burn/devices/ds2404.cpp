@@ -1,4 +1,4 @@
-﻿/* Dallas DS2404 RTC/NVRAM */
+/* Dallas DS2404 RTC/NVRAM */
 
 #include "burnint.h"
 #include "ds2404.h"

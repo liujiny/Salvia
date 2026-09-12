@@ -1,4 +1,4 @@
-﻿#include <QtWidgets>
+#include <QtWidgets>
 #include "burner.h"
 #include "mainwindow.h"
 

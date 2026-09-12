@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Exidy M6502-based hardware driver module
+// FinalBurn Neo Exidy M6502-based hardware driver module
 // Based on MAME driver by Aaron Giles
 
 // weird / btanb(?)'s

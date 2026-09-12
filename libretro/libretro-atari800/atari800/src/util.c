@@ -1,4 +1,4 @@
-﻿/*
+/*
  * util.c - utility functions
  *
  * Copyright (c) 2005 Piotr Fusik

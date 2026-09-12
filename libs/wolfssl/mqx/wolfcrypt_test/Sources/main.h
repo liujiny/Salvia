@@ -1,4 +1,4 @@
-﻿/* main.h */
+/* main.h */
 
 #ifndef __main_h_
 #define __main_h_

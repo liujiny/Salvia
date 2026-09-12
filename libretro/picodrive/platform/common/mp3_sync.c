@@ -1,4 +1,4 @@
-﻿
+
 int mp3_find_sync_word(const unsigned char *buf, int size)
 {
 	const unsigned char *p, *pe;

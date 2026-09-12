@@ -1,4 +1,4 @@
-﻿/* XPM */
+/* XPM */
 static char *misc_image[] = {
 /* columns rows colors chars-per-pixel */
 "80 60 240 2 ",

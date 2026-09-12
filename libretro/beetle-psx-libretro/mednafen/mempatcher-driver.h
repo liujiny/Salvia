@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_MEMPATCHER_DRIVER_H
+#ifndef __MDFN_MEMPATCHER_DRIVER_H
 #define __MDFN_MEMPATCHER_DRIVER_H
 
 struct MemoryPatch

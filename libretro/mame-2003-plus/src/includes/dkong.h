@@ -1,4 +1,4 @@
-﻿
+
 #define MASTER_CLOCK            61440000
 #define CLOCK_1H                (MASTER_CLOCK / 5 / 4)
 #define CLOCK_16H               (CLOCK_1H / 16)

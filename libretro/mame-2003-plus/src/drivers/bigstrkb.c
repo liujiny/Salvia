@@ -1,4 +1,4 @@
-﻿/* Jaleco's Big Striker (bootleg version)
+/* Jaleco's Big Striker (bootleg version)
 
  Driver by David Haywood
  Inputs by Stephh

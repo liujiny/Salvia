@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
 
 Crazy Climber memory map (preliminary)
 as described by Lionel Theunissen (lionelth@ozemail.com.au)

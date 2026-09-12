@@ -1,4 +1,4 @@
-﻿#ifndef BIT3_H_
+#ifndef BIT3_H_
 #define BIT3_H_
 
 #include "atari.h"

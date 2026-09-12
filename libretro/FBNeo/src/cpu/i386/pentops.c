@@ -1,4 +1,4 @@
-﻿// Pentium+ specific opcodes
+// Pentium+ specific opcodes
 
 static void PENTIUMOP(rdmsr)(void)			// Opcode 0x0f 32
 {

@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 
 extern UINT8* pTileData;
 extern INT32 nScreenWidth, nScreenHeight;

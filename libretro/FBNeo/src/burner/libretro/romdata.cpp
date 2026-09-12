@@ -1,4 +1,4 @@
-﻿#include "retro_common.h"
+#include "retro_common.h"
 #include "retro_dirent.h"
 #include "burner.h"
 

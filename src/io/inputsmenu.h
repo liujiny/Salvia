@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <SDL.h>
 #include <SDL_joystick.h>
@@ -173,7 +173,7 @@ inline int procesarGeneralConfig(){
 		gameMenu->configMenus->volver();
 	}
 
-	int& retro_key = gameMenu->joystick->inputs.last_key_processed->key;
+	int& retro_key = gameMenu->joystick->inputs.last_key_processed.key;
 	if (retro_key != -1){
 		t_key_input *keyInput = &gameMenu->joystick->inputs.keyboard_state[retro_key];
 		LOG_DEBUG("keyInput->keyjoydown: %d, %d, %d->%c", keyInput->key, keyInput->keyMod, keyInput->unicode, keyInput->unicode);
@@ -247,18 +247,31 @@ void restoreHistory(ListMenu &listMenu){
 }
 
 int procesarAccionesMenu(ListMenu &listMenu){
+	//Avanzamos uno a uno por el menu
 	if (gameMenu->joystick->inputs.getAnyTap(0, JOY_BUTTON_UP)){
 		listMenu.prevPos();
 	} else if (gameMenu->joystick->inputs.getAnyTap(0, JOY_BUTTON_DOWN)){
 		listMenu.nextPos();
 	} 
 			
+	//Avanzamos pagina a pagina por el menu
 	if (gameMenu->joystick->inputs.getAnyTap(0, JOY_BUTTON_LEFT)){
 		listMenu.prevPage();
 	} else if (gameMenu->joystick->inputs.getAnyTap(0, JOY_BUTTON_RIGHT)){
 		listMenu.nextPage();
 	} 
+	
+	//Navegamos a la siguiente letra
+	if (gameMenu->joystick->inputs.getAnyTap(0, JOY_AXIS_R2)){
+		listMenu.navigateLetter(1);
+	}
 
+	//Navegamos a la anterior letra
+	if (gameMenu->joystick->inputs.getAnyTap(0, JOY_AXIS_L2)){
+		listMenu.navigateLetter(-1);
+	}
+
+	//Boton volver
 	if (gameMenu->joystick->inputs.getBtnTap(0, JOY_BUTTON_B)){
 		if (listMenu.listZipped.cdBack()){
 			gameMenu->listableZip(listMenu, FS_ZIP_CD_BACK);
@@ -275,6 +288,7 @@ int procesarAccionesMenu(ListMenu &listMenu){
 		restoreHistory(listMenu);
 	}
 
+	//Boton aceptar
 	if (gameMenu->joystick->inputs.getBtnTap(0, JOY_BUTTON_A)){
 		if ((std::size_t)listMenu.curPos >= listMenu.filteredGames.size()){
 			LOG_ERROR("List is empty or position is wrong");
@@ -397,6 +411,13 @@ int processInputs(GameMenu*& gameMenu, ListMenu &listMenu, bool generalConfig){
 		
 	} else {
 		gameMenu->joystick->pollKeys(gameMenu->getEmuStatus());
+		/* Drenar tambien aqui los ratones extra: sus acumuladores viven en el
+		 * plugin y siguen creciendo mientras no se lean, asi que sin esto la mira
+		 * pegaria un salto al volver del menu. */
+		{
+			SDL_Surface* ms = gameMenu->getMouseSurface();
+			gameMenu->joystick->updateMice(ms ? ms->w : 0, ms ? ms->h : 0);
+		}
 
 		if (gameMenu->isOnscreenKeybEnabled()){
 			//Se procesan las acciones del teclado que se muestra en un overlay. Solo MSX y SPECTRUM
@@ -518,22 +539,20 @@ int processInputs(GameMenu*& gameMenu, ListMenu &listMenu, bool generalConfig){
 				gameMenu->joystick->inputs.getAnyReleased(0, JOY_BUTTON_R)    ||
 				gameMenu->gameTicks.ticks == 0;
 
+		//Comprobamos si estando actualmente mostrando los menus, si hemos pulsado otra vez Select + Y
+		//que es el hotkey por defecto para mostrar el overlay. Pero en este caso lo usamos para volver
+		//al juego
 		if (HK_VIEW_MENU == gameMenu->joystick->hotkeys->procesarHotkeys(&gameMenu->joystick->inputs)){
 			if (gameMenu->getLastStatus() == EMU_STARTED){
+				//Si ya habiamos iniciado el juego, limpiamos el overlay
 				gameMenu->clearOverlay();
+				//Volvemos al juego
+				gameMenu->setEmuStatus(gameMenu->getLastStatus());
 			}
-			gameMenu->setEmuStatus(gameMenu->getLastStatus());
-			if (gameMenu->bg_screenshot){
-				SDL_FreeSurface(gameMenu->bg_screenshot);
-				gameMenu->bg_screenshot = NULL;
-			}
-			gameMenu->bg_screenshot = gameMenu->clonarPantalla(gameMenu->gameScreen, 180);
 			return 0;
 		}
-
 		gameMenu->running = !gameMenu->joystick->evento.quit && gameMenu->running;
 	}
-
 	return res;
 }
 

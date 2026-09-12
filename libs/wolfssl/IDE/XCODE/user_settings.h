@@ -1,4 +1,4 @@
-﻿/* Configuration */
+/* Configuration */
 #define IPHONE  /* Needed for Xcode */
 #define HAVE_HASHDRBG
 #define HAVE_AESGCM

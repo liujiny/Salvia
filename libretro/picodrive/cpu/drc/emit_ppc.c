@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Basic macros to emit PowerISA 2.03 64 bit instructions and some utils
  * Copyright (C) 2020-2024 irixxxx
  *

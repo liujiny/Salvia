@@ -1,4 +1,4 @@
-﻿// OKI MSM6295 module
+// OKI MSM6295 module
 // Emulation by Jan Klaassen
 
 // Aug 24, 2020: Cubic interpolation disabled.

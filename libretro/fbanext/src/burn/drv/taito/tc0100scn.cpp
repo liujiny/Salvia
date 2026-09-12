@@ -1,4 +1,4 @@
-﻿// TC0100SCN
+// TC0100SCN
 
 #include "tiles_generic.h"
 #include "taito_ic.h"

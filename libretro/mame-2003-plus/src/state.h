@@ -1,4 +1,4 @@
-﻿#ifndef _STATE_H
+#ifndef _STATE_H
 #define _STATE_H
 
 #include "osd_cpu.h"

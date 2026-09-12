@@ -1,4 +1,4 @@
-﻿// Portions from FinalBurn X: Port of FinalBurn to OS X
+// Portions from FinalBurn X: Port of FinalBurn to OS X
 //   https://github.com/0xe1f/FinalBurn-X
 //
 // Copyright (C) Akop Karapetyan

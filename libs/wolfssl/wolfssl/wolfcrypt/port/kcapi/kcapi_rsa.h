@@ -1,4 +1,4 @@
-﻿/* kcapi_rsa.h
+/* kcapi_rsa.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

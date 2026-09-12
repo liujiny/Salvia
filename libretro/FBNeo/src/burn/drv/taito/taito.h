@@ -1,4 +1,4 @@
-﻿extern UINT8 TaitoInputPort0[8];
+extern UINT8 TaitoInputPort0[8];
 extern UINT8 TaitoInputPort1[8];
 extern UINT8 TaitoInputPort2[8];
 extern UINT8 TaitoInputPort3[8];

@@ -1,4 +1,4 @@
-﻿/* x509v3.h
+/* x509v3.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿#include "vidhrdw/generic.h"
+#include "vidhrdw/generic.h"
 #include "res_net.h"
 
 /* globals */

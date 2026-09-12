@@ -1,4 +1,4 @@
-﻿#include <stdlib.h>
+#include <stdlib.h>
 #include <SDL_keysym.h>
 
 #include "../libpicofe/input.h"

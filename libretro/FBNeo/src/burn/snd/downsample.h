@@ -1,4 +1,4 @@
-﻿#define DOWNSAMPLE_DEBUG 0
+#define DOWNSAMPLE_DEBUG 0
 // re-down-sampler, dink 2020
 struct Downsampler {
 	UINT32 nSampleSize;

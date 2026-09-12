@@ -1,4 +1,4 @@
-﻿#include "shaders_common.h"
+#include "shaders_common.h"
 
 static const char *output_fragment = GLSL_FRAGMENT(
    // We're sampling from the internal framebuffer texture

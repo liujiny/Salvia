@@ -1,4 +1,4 @@
-﻿#include "gal.h"
+#include "gal.h"
 
 // Harem (Galaxian bootleg) protection: an opcode/data ROM bankswitch driven by
 // a 4-bit shift register clocked through 0x5801-0x5803 (dispatched in the write

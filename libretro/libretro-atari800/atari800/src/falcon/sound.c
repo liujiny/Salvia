@@ -1,4 +1,4 @@
-﻿/*
+/*
  * sound.c - high-level sound routines for the Atari Falcon port
  *
  * Copyright (C) 1995-1998 David Firth

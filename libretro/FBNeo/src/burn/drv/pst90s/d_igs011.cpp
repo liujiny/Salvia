@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo IGS011 hardware driver module
+// FinalBurn Neo IGS011 hardware driver module
 // Based on MAME driver by Luca Elia, Olivier Galibert
 
 // known issues:

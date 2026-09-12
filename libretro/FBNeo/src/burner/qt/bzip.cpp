@@ -1,4 +1,4 @@
-﻿// Burner Zip module
+// Burner Zip module
 #include "burner.h"
 
 #include <QDebug>

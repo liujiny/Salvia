@@ -1,4 +1,4 @@
-﻿/*
+/*
 **
 ** File: fmopl.c - software implementation of FM sound generator
 **                                            types OPL and OPL2

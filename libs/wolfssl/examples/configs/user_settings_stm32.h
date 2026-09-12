@@ -1,4 +1,4 @@
-﻿/* wolfSSL_conf.h (example of generated wolfSSL.I-CUBE-wolfSSL_conf.h using
+/* wolfSSL_conf.h (example of generated wolfSSL.I-CUBE-wolfSSL_conf.h using
  * default_conf.ftl and STM32CubeIDE or STM32CubeMX tool)
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.

@@ -1,4 +1,4 @@
-﻿/* Angel Kids / Space Position hardware driver
+/* Angel Kids / Space Position hardware driver
 
  driver by David Haywood
  with some help from Steph (DSWs, Inputs, other

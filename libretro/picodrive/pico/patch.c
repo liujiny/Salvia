@@ -1,4 +1,4 @@
-﻿/* Decode a Game Genie code into an M68000 address/data pair.
+/* Decode a Game Genie code into an M68000 address/data pair.
  * The Game Genie code is made of the characters
  * ABCDEFGHJKLMNPRSTVWXYZ0123456789 (notice the missing I, O, Q and U).
  * Where A = 00000, B = 00001, C = 00010, ... , on to 9 = 11111.

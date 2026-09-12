@@ -1,4 +1,4 @@
-﻿// note - requires watchdog to be initialized!
+// note - requires watchdog to be initialized!
 
 void kaneko_hit_calc_reset();
 void kaneko_hit_calc_init(INT32 nMapNumber, UINT32 address);

@@ -1,4 +1,4 @@
-﻿#ifndef ROMS_ALTIRRAOS_800_H_
+#ifndef ROMS_ALTIRRAOS_800_H_
 #define ROMS_ALTIRRAOS_800_H_
 
 #include "atari.h"

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * August 24, 1998
  * Copyright (C) 1998 Juergen Mueller And Sundry Contributors
  * This source code is freely redistributable and may be used for

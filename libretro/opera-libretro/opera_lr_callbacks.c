@@ -1,4 +1,4 @@
-﻿#include <libretro.h>
+#include <libretro.h>
 
 retro_audio_sample_t       retro_audio_sample_cb       = NULL;
 retro_audio_sample_batch_t retro_audio_sample_batch_cb = NULL;

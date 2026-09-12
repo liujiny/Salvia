@@ -1,4 +1,4 @@
-﻿#define MA_NO_DECODING
+#define MA_NO_DECODING
 #define MA_NO_ENCODING
 #define MA_IMPLEMENTATION
 #include "../../../miniaudio/miniaudio.h"

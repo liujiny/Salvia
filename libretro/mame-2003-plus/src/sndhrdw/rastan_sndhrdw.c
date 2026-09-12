@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 
 /* Game writes here to set ADPCM ROM address */
 WRITE_HANDLER( rastan_adpcm_trigger_w )

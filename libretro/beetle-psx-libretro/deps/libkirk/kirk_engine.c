@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Draan proudly presents:
 
 	With huge help from community:

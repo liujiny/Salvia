@@ -1,4 +1,4 @@
-﻿// FB Alpha XX Mission driver module
+// FB Alpha XX Mission driver module
 // Based on MAME driver by Uki
 
 #include "tiles_generic.h"

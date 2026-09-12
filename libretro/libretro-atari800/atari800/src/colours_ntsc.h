@@ -1,4 +1,4 @@
-﻿#ifndef COLOURS_NTSC_H_
+#ifndef COLOURS_NTSC_H_
 #define COLOURS_NTSC_H_
 
 #include "config.h"

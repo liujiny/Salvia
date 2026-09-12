@@ -1,4 +1,4 @@
-﻿#ifndef _WavClass_H_
+#ifndef _WavClass_H_
 #define _WavClass_H_
 
 //#include <dsound.h>

@@ -1,4 +1,4 @@
-﻿// FB Neo Sigma Ent. Inc. R2D Tank driver module
+// FB Neo Sigma Ent. Inc. R2D Tank driver module
 // Based on driver by David Haywood & Pierpaolo Prazzoli
 
 #include "tiles_generic.h"

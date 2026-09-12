@@ -1,4 +1,4 @@
-﻿#include "sys16.h"
+#include "sys16.h"
 #include "dac.h"
 #include "i8039.h"
 #include "mc8123.h"

@@ -1,4 +1,4 @@
-ï»¿/*
+/*
 ** This is a bunch of remains of original fm.c from MAME project. All stuff
 ** unrelated to ym2612 was removed, multiple chip support was removed,
 ** some parts of code were slightly rewritten and tied to the emulator.
@@ -124,7 +124,7 @@
 #if defined(_MSC_VER) && _MSC_VER < 1800
 #include <math.h>
 
-/* Implementaciï¿½n manual de round para MSVC 2010 */
+/* Implementación manual de round para MSVC 2010 */
 static __inline double round(double x) {
     return (x >= 0.0) ? floor(x + 0.5) : ceil(x - 0.5);
 }

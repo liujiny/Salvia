@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Midway X Unit driver module
+// FinalBurn Neo Midway X Unit driver module
 // Based on MAME driver by Aaron Giles
 
 #include "tiles_generic.h"

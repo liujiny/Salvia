@@ -1,4 +1,4 @@
-﻿/* ossl_typ.h
+/* ossl_typ.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

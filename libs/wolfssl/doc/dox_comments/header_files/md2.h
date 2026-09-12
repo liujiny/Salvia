@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup MD2
 
     \brief This function initializes md2. This is automatically

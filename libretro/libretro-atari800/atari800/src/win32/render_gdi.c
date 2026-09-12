@@ -1,4 +1,4 @@
-﻿#include "render_gdi.h"
+#include "render_gdi.h"
 #include "screen_win32.h"
 #include "colours.h"
 #include "screen.h"

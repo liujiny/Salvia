@@ -1,4 +1,4 @@
-﻿// mazinger
+// mazinger
 #include "cave.h"
 #include "msm6295.h"
 #include "burn_ym2203.h"

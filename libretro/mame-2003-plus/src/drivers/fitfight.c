@@ -1,4 +1,4 @@
-﻿/* Fit of Fighting / The History of Martial Arts / 'BB' */
+/* Fit of Fighting / The History of Martial Arts / 'BB' */
 
 /* NIX or Novatecnia (both spanish) may have produced these
    its probably NIX due to somes similarities with Pirates

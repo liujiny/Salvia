@@ -1,4 +1,4 @@
-﻿/* defined in drivers/psikyosh.c */
+/* defined in drivers/psikyosh.c */
 #define MASTER_CLOCK 57272700	/* main oscillator frequency*/
 
 extern data32_t *psikyosh_bgram, *psikyosh_zoomram, *psikyosh_vidregs, *psh_ram;

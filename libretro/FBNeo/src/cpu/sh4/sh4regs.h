@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifndef __SH4REGS_H__
 #define __SH4REGS_H__

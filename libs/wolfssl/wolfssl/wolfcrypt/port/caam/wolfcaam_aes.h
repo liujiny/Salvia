@@ -1,4 +1,4 @@
-﻿/* wolfcaam_aes.h
+/* wolfcaam_aes.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

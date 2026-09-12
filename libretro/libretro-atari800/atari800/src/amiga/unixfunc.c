@@ -1,4 +1,4 @@
-﻿/*
+/*
  * unixfunc.c - only required for the Maxon compiler
  *
  * Copyright (c) 2000 Sebastian Bauer

@@ -1,4 +1,4 @@
-﻿#ifndef CODECS_CONTAINER_MP3_H_
+#ifndef CODECS_CONTAINER_MP3_H_
 #define CODECS_CONTAINER_MP3_H_
 
 #include "atari.h"

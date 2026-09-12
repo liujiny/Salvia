@@ -1,4 +1,4 @@
-﻿#ifndef _MAIN_MENU_H_
+#ifndef _MAIN_MENU_H_
 #define _MAIN_MENU_H_
 
 #define ID_FILE						101

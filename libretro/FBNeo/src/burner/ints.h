@@ -1,4 +1,4 @@
-﻿/* ints.h -- create integer types for 8, 16, 32, and 64 bits
+/* ints.h -- create integer types for 8, 16, 32, and 64 bits
  * Copyright (C) 2024 Mark Adler
  * For conditions of distribution and use, see the copyright notice in zlib.h
  *

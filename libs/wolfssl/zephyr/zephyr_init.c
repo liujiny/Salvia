@@ -1,4 +1,4 @@
-﻿/* zephyr_init.c
+/* zephyr_init.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

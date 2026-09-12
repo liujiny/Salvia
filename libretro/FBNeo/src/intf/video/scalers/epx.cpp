@@ -1,4 +1,4 @@
-﻿// epxb, epxc filter, added by regret
+// epxb, epxc filter, added by regret
 // source from Snes9X rerecording (http://code.google.com/p/snes9x151-rerecording/)
 
 typedef unsigned char uint8;

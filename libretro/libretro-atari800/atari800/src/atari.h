@@ -1,4 +1,4 @@
-﻿#ifndef ATARI_H_
+#ifndef ATARI_H_
 #define ATARI_H_
 
 #include "config.h"

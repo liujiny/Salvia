@@ -1,4 +1,4 @@
-﻿/* LzmaLib.c -- LZMA library wrapper
+/* LzmaLib.c -- LZMA library wrapper
 2008-08-05
 Igor Pavlov
 Public domain */

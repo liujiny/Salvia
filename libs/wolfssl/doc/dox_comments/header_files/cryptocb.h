@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup CryptoCb
 
     \brief This function registers a unique device identifier (devID) and

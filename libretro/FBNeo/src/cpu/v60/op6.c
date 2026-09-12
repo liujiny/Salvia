@@ -1,4 +1,4 @@
-﻿
+
 /*
     FULLY TRUSTED
 */

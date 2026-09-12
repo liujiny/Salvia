@@ -1,4 +1,4 @@
-﻿// Fast Freddy / Jump Coaster HW emu-layer for FB Alpha, Based on the MAME driver by Zsolt Vasvari
+// Fast Freddy / Jump Coaster HW emu-layer for FB Alpha, Based on the MAME driver by Zsolt Vasvari
 
 // TODO: imago missing stars
 

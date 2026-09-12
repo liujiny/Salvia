@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_UINT_TABLE_H
+#ifndef HEADER_CURL_UINT_TABLE_H
 #define HEADER_CURL_UINT_TABLE_H
 /***************************************************************************
  *                                  _   _ ____  _

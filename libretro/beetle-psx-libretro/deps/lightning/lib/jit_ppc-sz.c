@@ -1,4 +1,4 @@
-﻿#if __WORDSIZE == 32
+#if __WORDSIZE == 32
 #if defined(__powerpc__)
 #if __BYTE_ORDER == __BIG_ENDIAN
 #if _CALL_SYSV

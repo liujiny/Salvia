@@ -1,4 +1,4 @@
-﻿#include "sys16.h"
+#include "sys16.h"
 
 INT32 System16SpriteBanks[16];
 INT32 System16TileBanks[8];

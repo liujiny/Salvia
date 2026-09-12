@@ -1,4 +1,4 @@
-﻿/* x509.c
+/* x509.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

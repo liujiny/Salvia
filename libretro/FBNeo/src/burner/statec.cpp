@@ -1,4 +1,4 @@
-﻿// FB Neo Driver State load/save from buffer module        - dink 2024
+// FB Neo Driver State load/save from buffer module        - dink 2024
 #include "burnint.h"
 
 // BurnStateCompress: Save a state, "Compress" == organized into a buffer

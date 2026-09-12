@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2015, Marcos Medeiros
  * Licensed under BSD 3-clause.
  */

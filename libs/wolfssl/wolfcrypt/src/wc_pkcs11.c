@@ -1,4 +1,4 @@
-﻿/* wc_pkcs11.c
+/* wc_pkcs11.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

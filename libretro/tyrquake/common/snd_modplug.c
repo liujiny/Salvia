@@ -1,4 +1,4 @@
-﻿/*
+/*
  * tracker music (module file) decoding support using libmodplug
  *
  * Copyright (C) 2013 O.Sezer <sezero@users.sourceforge.net>

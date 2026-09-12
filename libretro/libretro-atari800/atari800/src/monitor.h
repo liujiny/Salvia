@@ -1,4 +1,4 @@
-﻿#ifndef MONITOR_H_
+#ifndef MONITOR_H_
 #define MONITOR_H_
 
 #include "config.h"

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * image_pcx.c - support for PCX images
  *
  * Copyright (C) 1995-1998 David Firth

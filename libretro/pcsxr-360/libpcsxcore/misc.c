@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
 *   Copyright (C) 2007 Ryan Schultz, PCSX-df Team, PCSX team              *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
@@ -610,6 +610,9 @@ int SaveStateMem(void *data, size_t size, size_t *outUsed) {
 	/* gpu */
 	gpufP = (GPUFreeze_t *)malloc(sizeof(GPUFreeze_t));
 	gpufP->ulFreezeVersion = 1;
+	/* Drenar el ring: el hilo consumidor debe haber terminado de escribir
+	 * psxVuw antes de que GPU_freeze lea la VRAM para el savestate. */
+	{ extern void gpuSync(void); gpuSync(); }
 	GPU_freeze(1, gpufP);
 	psxSS_write(&ss, gpufP, sizeof(GPUFreeze_t));
 	free(gpufP);
@@ -668,6 +671,9 @@ int LoadStateMem(const void *data, size_t size) {
 	}
 
 	psxCpu->Reset();
+	/* La I-cache no viaja en el savestate: limpiarla al cargar, igual que hace
+	 * upstream en R3000ACPU_NOTIFY_AFTER_LOAD_STATE. */
+	psxIcacheClear();
 	psxSS_seek(&ss, 128 * 96 * 3, SEEK_CUR);
 
 	psxSS_read(&ss, psxM_2, 0x00200000);
@@ -683,6 +689,9 @@ int LoadStateMem(const void *data, size_t size) {
 	/* gpu */
 	gpufP = (GPUFreeze_t *)malloc(sizeof(GPUFreeze_t));
 	psxSS_read(&ss, gpufP, sizeof(GPUFreeze_t));
+	/* Drenar el ring antes de restaurar la VRAM, para que no queden
+	 * escrituras encoladas del consumidor que pisen el estado cargado. */
+	{ extern void gpuSync(void); gpuSync(); }
 	GPU_freeze(0, gpufP);
 	free(gpufP);
 

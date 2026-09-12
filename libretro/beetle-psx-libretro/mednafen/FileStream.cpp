@@ -1,4 +1,4 @@
-﻿// TODO/WIP
+// TODO/WIP
 
 /* Mednafen - Multi-system Emulator
  *

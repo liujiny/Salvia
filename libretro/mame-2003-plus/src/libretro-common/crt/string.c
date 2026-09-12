@@ -1,4 +1,4 @@
-﻿#ifdef _MSC_VER
+#ifdef _MSC_VER
 #include <cruntime.h>
 #endif
 #include <stdio.h>

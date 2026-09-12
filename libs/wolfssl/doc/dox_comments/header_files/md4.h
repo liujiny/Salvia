@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup MD4
 
     \brief This function initializes md4. This is automatically

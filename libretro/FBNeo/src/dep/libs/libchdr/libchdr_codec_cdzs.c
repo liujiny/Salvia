@@ -1,4 +1,4 @@
-﻿#include "codec_cdzs.h"
+#include "codec_cdzs.h"
 
 #include <stddef.h>
 #include <stdlib.h>

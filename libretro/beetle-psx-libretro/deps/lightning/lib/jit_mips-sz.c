@@ -1,4 +1,4 @@
-﻿
+
 #if __WORDSIZE == 32
 #if NEW_ABI
 #define JIT_INSTR_MAX 44

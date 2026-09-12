@@ -1,4 +1,4 @@
-﻿/*
+/*
  * RFC 1321 compliant MD5 implementation,
  * by Christophe Devine <devine@cr0.net>;
  * this program is licensed under the GPL.

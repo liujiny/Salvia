@@ -1,4 +1,4 @@
-﻿// copyright-holders:Aaron Giles
+// copyright-holders:Aaron Giles
 /*********************************************************
 
     Konami 054539 (TOP) PCM Sound Chip

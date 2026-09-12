@@ -1,4 +1,4 @@
-﻿/********************************************************************************
+/********************************************************************************
  Shadow Force (c)1993 Technos
  Preliminary Driver by David Haywood
  Based on the Various Other Technos Games

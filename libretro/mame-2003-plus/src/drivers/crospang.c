@@ -1,4 +1,4 @@
-﻿/*
+/*
 
   Cross Pang (c)1998 F2 System
 

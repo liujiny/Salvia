@@ -1,4 +1,4 @@
-﻿/*
+/*
 
 Calorie-Kun
 Sega, 1986

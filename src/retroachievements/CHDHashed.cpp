@@ -1,4 +1,4 @@
-﻿#include "CHDHashed.h"
+#include "CHDHashed.h"
 #include <rc_hash.h>
 
 // Forzamos la inclusión de los métodos que ya tienes definidos

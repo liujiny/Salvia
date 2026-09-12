@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
 
 Juno First :  memory map same as tutankham with some address changes
 Chris Hardy (chrish@kcbbs.gen.nz)

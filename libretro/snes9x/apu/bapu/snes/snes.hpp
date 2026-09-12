@@ -1,4 +1,4 @@
-﻿#ifndef __SNES_HPP
+#ifndef __SNES_HPP
 #define __SNES_HPP
 
 #include "../../../snes9x.h"

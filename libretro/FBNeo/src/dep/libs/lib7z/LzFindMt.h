@@ -1,4 +1,4 @@
-﻿/* LzFindMt.h -- multithreaded Match finder for LZ algorithms
+/* LzFindMt.h -- multithreaded Match finder for LZ algorithms
 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_LZ_FIND_MT_H

@@ -1,4 +1,4 @@
-﻿#include "gal.h"
+#include "gal.h"
 
 INT16* pFMBuffer;
 INT16* pAY8910Buffer[9];

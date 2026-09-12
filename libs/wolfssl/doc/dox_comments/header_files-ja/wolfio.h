@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \brief
     \return Success  この関数は、読み取られたバイト数を返します。
     \return WOLFSSL_CBIO_ERR_WANT_READ  最後のエラーがsocket_ewouldbolcokまたはsocket_eagainであれば、メッセージを返されます。

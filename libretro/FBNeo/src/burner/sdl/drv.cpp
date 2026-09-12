@@ -1,4 +1,4 @@
-﻿// Driver Init module
+// Driver Init module
 #include "burner.h"
 #include "neocdlist.h"
 int bDrvOkay = 0;                       // 1 if the Driver has been initted okay, and it's okay to use the BurnDrv functions

@@ -1,4 +1,4 @@
-﻿// Alpha Denshi 59MC07 sound board device
+// Alpha Denshi 59MC07 sound board device
 // Based on MAME device by Acho A. Tang, Nicola Salmoria
 
 #include "burnint.h"

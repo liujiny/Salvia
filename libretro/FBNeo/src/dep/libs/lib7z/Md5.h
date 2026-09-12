@@ -1,4 +1,4 @@
-﻿/* Md5.h -- MD5 Hash
+/* Md5.h -- MD5 Hash
 : Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_MD5_H

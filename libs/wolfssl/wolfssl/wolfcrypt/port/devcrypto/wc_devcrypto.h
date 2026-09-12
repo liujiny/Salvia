@@ -1,4 +1,4 @@
-﻿/* wc_devcrypto.h
+/* wc_devcrypto.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿#define LIBCO_C
+#define LIBCO_C
 #include "libco.h"
 
 #include <stdlib.h>

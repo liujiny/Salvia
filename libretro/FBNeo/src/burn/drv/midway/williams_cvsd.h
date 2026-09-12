@@ -1,4 +1,4 @@
-﻿void williams_cvsd_write(UINT16 data);
+void williams_cvsd_write(UINT16 data);
 void williams_cvsd_reset_write(UINT16 state);
 void williams_cvsd_reset();
 void williams_cvsd_init(UINT8 *prgrom, INT32 prot_start, INT32 prot_end, INT32 small);

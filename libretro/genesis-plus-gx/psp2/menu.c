@@ -1,4 +1,4 @@
-﻿#include "menu.h"
+#include "menu.h"
 
 #include <time.h>
 #include <psp2/types.h>

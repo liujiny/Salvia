@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup openSSL
 
     \brief This function performs the following math “r = (a^p) % m”.

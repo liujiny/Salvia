@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_SASI_H
+#ifndef _WINX68K_SASI_H
 #define _WINX68K_SASI_H
 
 #include <stdint.h>

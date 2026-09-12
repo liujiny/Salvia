@@ -1,4 +1,4 @@
-﻿/* thumb2-mlkem-asm
+/* thumb2-mlkem-asm
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

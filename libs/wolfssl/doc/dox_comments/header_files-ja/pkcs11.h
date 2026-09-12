@@ -1,4 +1,4 @@
-﻿/*!
+/*!
 */
 int wc_Pkcs11_Initialize(Pkcs11Dev* dev, const char* library,
                                      void* heap);

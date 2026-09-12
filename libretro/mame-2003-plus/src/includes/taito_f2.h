@@ -1,4 +1,4 @@
-﻿
+
 extern data16_t *f2_sprite_extension;
 extern size_t f2_spriteext_size;
 

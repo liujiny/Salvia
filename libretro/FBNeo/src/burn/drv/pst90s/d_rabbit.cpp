@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Electronic Arts Rabbit driver module
+// FinalBurn Neo Electronic Arts Rabbit driver module
 // Based on MAME driver by David Haywood
 
 // to do:

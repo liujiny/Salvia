@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup ASN
 
     \brief This function initializes a default cert, with the default options:

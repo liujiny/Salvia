@@ -1,4 +1,4 @@
-﻿/* JOYSTICK.C - joystick support for WinX68k */
+/* JOYSTICK.C - joystick support for WinX68k */
 
 #include "common.h"
 #include "prop.h"
@@ -174,6 +174,8 @@ uint8_t FASTCALL Joystick_Read(uint8_t num)
       return JoyState[num][0];
 
    case PAD_2BUTTON:
+      /* La linea de seleccion (pin 8, gobernada por PC4/PC5 del PPI) en alto
+       * deja el mando de 2 botones sin masa comun: no se lee nada. */
       if (JoyPortData[num] == 0xff)
          return 0xff;
       return JoyState[num][0];

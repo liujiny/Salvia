@@ -1,4 +1,4 @@
-﻿#ifndef COLOURS_H_
+#ifndef COLOURS_H_
 #define COLOURS_H_
 
 #include "colours_external.h"

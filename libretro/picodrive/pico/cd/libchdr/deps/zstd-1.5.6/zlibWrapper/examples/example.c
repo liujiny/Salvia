@@ -1,4 +1,4 @@
-﻿/* example.c contains minimal changes required to be compiled with zlibWrapper:
+/* example.c contains minimal changes required to be compiled with zlibWrapper:
  * - #include "zlib.h" was changed to #include "zstd_zlibwrapper.h"
  * - test_flush() and test_sync() use functions not supported by zlibWrapper
      therefore they are disabled while zstd compression is turned on     */

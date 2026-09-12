@@ -1,4 +1,4 @@
-﻿// FB Alpha Alpha68k II & V driver module
+// FB Alpha Alpha68k II & V driver module
 // Based on MAME driver by Pierpaolo Prazzoli, Bryan McPhail, Stephane Humbert
 
 #include "tiles_generic.h"

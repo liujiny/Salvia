@@ -1,4 +1,4 @@
-﻿/* blip_buf $vers. http://www.slack.net/~ant/                       */
+/* blip_buf $vers. http://www.slack.net/~ant/                       */
 
 /* Modified for Genesis Plus GX by EkeEke                           */
 /*  - disabled assertions checks (define #BLIP_ASSERT to re-enable) */

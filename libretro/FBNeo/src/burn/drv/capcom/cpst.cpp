@@ -1,4 +1,4 @@
-﻿#include "cps.h"
+#include "cps.h"
 
 // CPS Tiles
 UINT32 *CpstPal=NULL;

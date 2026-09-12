@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_EASYIF_H
+#ifndef HEADER_CURL_EASYIF_H
 #define HEADER_CURL_EASYIF_H
 /***************************************************************************
  *                                  _   _ ____  _

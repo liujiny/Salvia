@@ -1,4 +1,4 @@
-﻿// Williams CVSD sound emulation
+// Williams CVSD sound emulation
 // Based on MAME sources by Aaron Giles
 
 #include "burnint.h"

@@ -1,4 +1,4 @@
-﻿// win32 string conversion, added by regret
+// win32 string conversion, added by regret
 #include "burner.h"
 #include "strconv.h"
 

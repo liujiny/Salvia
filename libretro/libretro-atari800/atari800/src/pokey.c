@@ -1,4 +1,4 @@
-﻿/*
+/*
  * pokey.c - POKEY sound chip emulation
  *
  * Copyright (C) 1995-1998 David Firth

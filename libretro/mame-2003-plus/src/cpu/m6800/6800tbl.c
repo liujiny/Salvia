@@ -1,4 +1,4 @@
-﻿static INLINE void aba(void);
+static INLINE void aba(void);
 static INLINE void abx(void);
 static INLINE void adca_di(void);
 static INLINE void adca_ex(void);

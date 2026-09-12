@@ -1,4 +1,4 @@
-﻿// FB Alpha Rabio Lepus / Super Volleyball driver module
+// FB Alpha Rabio Lepus / Super Volleyball driver module
 // Based on MAME driver by Aaron Giles
 
 // *FIXED* bad palette of tmap layer 0 @ game start (not present on pcb)

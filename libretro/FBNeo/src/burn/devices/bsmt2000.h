@@ -1,4 +1,4 @@
-﻿
+
 #include "tms32010.h"
 
 void bsmt2k_write_reg(UINT16 reg);

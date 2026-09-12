@@ -1,4 +1,4 @@
-﻿/*
+/*
  * img_tape.c - support for CAS and raw tape images
  *
  * Copyright (C) 2001 Piotr Fusik

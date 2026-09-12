@@ -1,4 +1,4 @@
-﻿/* Example custom user settings for wolfSSL */
+/* Example custom user settings for wolfSSL */
 
 #ifndef WOLFSSL_USER_SETTINGS_H
 #define WOLFSSL_USER_SETTINGS_H

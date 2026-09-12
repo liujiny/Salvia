@@ -1,4 +1,4 @@
-﻿typedef UINT8 (*PPIPortRead)();
+typedef UINT8 (*PPIPortRead)();
 typedef void (*PPIPortWrite)(UINT8 data);
 extern PPIPortRead PPI0PortReadA;
 extern PPIPortRead PPI0PortReadB;

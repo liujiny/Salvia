@@ -1,4 +1,4 @@
-﻿
+
 void c6280_init(INT32 clk, INT32 bAdd, INT32 lostsunh_hf_hack = 0);
 void c6280_set_renderer(INT32 new_version);
 void c6280_set_route(INT32 nIndex, double nVolume, INT32 nRouteDir);

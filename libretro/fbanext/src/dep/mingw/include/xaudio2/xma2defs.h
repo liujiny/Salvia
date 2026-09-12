@@ -1,4 +1,4 @@
-﻿/*-------------------------------------------------------------------------
+/*-------------------------------------------------------------------------
   Moddified by CaptainCPS for use with MinGW / GCC 4.6.1
   
   Thanks to PortAudio for their 'sal.h' compatible with MinGW !

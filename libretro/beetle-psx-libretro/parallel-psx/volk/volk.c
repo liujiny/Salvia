@@ -1,4 +1,4 @@
-﻿/* This file is part of volk library; see volk.h for version/license details */
+/* This file is part of volk library; see volk.h for version/license details */
 #include "volk.h"
 
 #ifdef _WIN32

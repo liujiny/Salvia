@@ -1,4 +1,4 @@
-﻿// FM timers
+// FM timers
 
 #define TIMER_TICKS_PER_SECOND (2048000000)
 #define MAKE_TIMER_TICKS(n, m) ((INT64)(n) * TIMER_TICKS_PER_SECOND / (m))

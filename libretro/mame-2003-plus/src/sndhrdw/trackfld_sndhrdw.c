@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 
 
 #define TIMER_RATE (4096/4)

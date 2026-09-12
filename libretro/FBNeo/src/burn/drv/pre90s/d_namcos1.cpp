@@ -1,4 +1,4 @@
-﻿// FB Alpha Namco System 1 driver module
+// FB Alpha Namco System 1 driver module
 // Based on MAME driver by Ernesto Corvi
 
 // Note:

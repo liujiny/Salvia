@@ -1,4 +1,4 @@
-﻿#ifndef ARIMO_REGULAR_TTF_H
+#ifndef ARIMO_REGULAR_TTF_H
 #define ARIMO_REGULAR_TTF_H
 static const long Arimo_Regular_ttf_size = 436876; //Tamanyo en bytes
 static const unsigned char Arimo_Regular_ttf[] = {

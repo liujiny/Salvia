@@ -1,4 +1,4 @@
-﻿/* wolfcrypt/benchmark/benchmark.h
+/* wolfcrypt/benchmark/benchmark.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

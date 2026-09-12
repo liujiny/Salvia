@@ -1,4 +1,4 @@
-﻿
+
 #ifndef _SMSSYSTEM_H_
 #define _SMSSYSTEM_H_
 

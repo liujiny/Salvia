@@ -1,4 +1,4 @@
-﻿#ifndef __UGUI_COLORS_H
+#ifndef __UGUI_COLORS_H
 #define __UGUI_COLORS_H
 
 /* -------------------------------------------------------------------------------- */

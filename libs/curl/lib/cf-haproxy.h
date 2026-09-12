@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_CF_HAPROXY_H
+#ifndef HEADER_CURL_CF_HAPROXY_H
 #define HEADER_CURL_CF_HAPROXY_H
 /***************************************************************************
  *                                  _   _ ____  _

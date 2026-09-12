@@ -1,4 +1,4 @@
-﻿#include "psxcommon.h"
+#include "psxcommon.h"
 
 /* [XBOX360] Lectura de CD asincrona: el hilo lector (worker) es el UNICO dueno
  * de la imagen (chd_img); el hilo de emulacion NUNCA lee/descomprime. En un

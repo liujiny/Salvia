@@ -1,4 +1,4 @@
-﻿// Emacs style mode select   -*- C++ -*-
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright(C) 2009 Simon Howard
@@ -180,6 +180,11 @@ int MIDI_GetNextEvent(midi_track_iter_t *iter, midi_event_t **event);
 // Reset an iterator to the beginning of a track.
 
 void MIDI_RestartIterator(midi_track_iter_t *iter);
+
+// Read the iterator's current event index.  Useful for save-state
+// snapshots: pair with MIDI_RestartIterator + MIDI_GetNextEvent to
+// re-walk an iterator up to a saved position.
+unsigned int MIDI_IteratorPosition(const midi_track_iter_t *iter);
 
 // NSM: an alternate iterator tool.
 midi_event_t **MIDI_GenerateFlatList (midi_file_t *file);

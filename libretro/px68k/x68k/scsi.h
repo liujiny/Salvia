@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_SCSI_H
+#ifndef _WINX68K_SCSI_H
 #define _WINX68K_SCSI_H
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-﻿#ifndef _KEYBOARD_H_
+#ifndef _KEYBOARD_H_
 #define _KEYBOARD_H_
 
 int prockb(void);

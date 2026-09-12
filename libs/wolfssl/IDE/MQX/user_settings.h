@@ -1,4 +1,4 @@
-﻿
+
 /* wolfSSH */
 #define WOLFSSL_PUBLIC_MP
 

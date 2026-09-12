@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -104,6 +104,7 @@ const char *retro_content_directory;
 char retro_system_conf[512]; /* system directory path */
 char retro_browse_conf[512]; /* file browser default path */
 char base_dir[MAX_PATH];
+char save_base_dir[MAX_PATH];     /* base dir for writable state (sram.dat, config): save dir, not keropi */
 
 static uint8_t Core_Key_State[512];
 static uint8_t Core_old_Key_State[512];
@@ -111,6 +112,10 @@ static uint8_t Core_old_Key_State[512];
 static bool joypad1, joypad2;
 
 static bool opt_analog;
+
+/* Velocidad del puntero movido con el mando, en pixeles por frame a fondo de
+ * recorrido (px68k_joy_mouse_speed). */
+static int opt_joy_mouse_speed = 8;
 
 static char CMDFILE[512];
 
@@ -1013,7 +1018,11 @@ extern char filepath[MAX_PATH];
 static int pmain(int argc, char *argv[])
 {
 	strcpy(winx68k_dir, retro_system_conf);
-	sprintf(winx68k_ini, "%s%cconfig", retro_system_conf, SLASH);
+	/* config (StartDir + optional saved FDD/HDD paths) is writable user state,
+	 * so it goes in the save dir alongside sram.dat -- not keropi.  Uses a
+	 * px68k-specific name to avoid colliding with other cores in a shared
+	 * save directory. */
+	sprintf(winx68k_ini, "%s%cpx68k.cfg", save_base_dir, SLASH);
 
    file_setcd(winx68k_dir);
 
@@ -1483,6 +1492,17 @@ static void update_variables(int running)
          Config.save_hdd_path = 1;
    }
 
+   var.key    = "px68k_save_sram";
+   var.value  = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "disabled"))
+         Config.save_sram = 0;
+      if (!strcmp(var.value, "enabled"))
+         Config.save_sram = 1;
+   }
+
    var.key    = "px68k_rumble_on_disk_read";
    var.value  = NULL;
 
@@ -1508,7 +1528,21 @@ static void update_variables(int running)
          value = 1;
 
       Config.JoyOrMouse = value;
-      Mouse_StartCapture(value == 1);
+      /* La captura queda SIEMPRE activa: la ruta hacia el X68000 es la misma en
+       * los dos modos (Mouse_Event -> SCC) y Mouse_Event descarta todo lo que le
+       * llega si MouseSW es 0.  Lo que decide la opcion es solo si el mando
+       * mueve ademas el puntero (ver joy_mouse_update). */
+      Mouse_StartCapture(1);
+   }
+
+   var.key    = "px68k_joy_mouse_speed";
+   var.value  = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      int value = atoi(var.value);
+      if (value > 0)
+         opt_joy_mouse_speed = value;
    }
 
    var.key    = "px68k_vbtn_swap";
@@ -1940,6 +1974,21 @@ void retro_init(void)
 
    sprintf(retro_system_conf, "%s%ckeropi", RETRO_DIR, SLASH);
 
+   /* sram.dat is the machine NVRAM: it belongs in the writable save
+    * directory, not in the read-only-by-convention BIOS/system dir.  Use the
+    * save dir (which already falls back to the system dir) with any trailing
+    * slash stripped, so file_setcd() builds "<save_base_dir>/sram.dat" correctly. */
+   {
+      const char *sd = (retro_save_directory && retro_save_directory[0])
+                       ? retro_save_directory : RETRO_DIR;
+      size_t n;
+      strncpy(save_base_dir, sd, sizeof(save_base_dir) - 1);
+      save_base_dir[sizeof(save_base_dir) - 1] = '\0';
+      n = strlen(save_base_dir);
+      while (n > 0 && (save_base_dir[n-1] == '\\' || save_base_dir[n-1] == '/'))
+         save_base_dir[--n] = '\0';
+   }
+
    if (retro_browse_directory)
       strcpy(retro_browse_conf, retro_browse_directory);
 
@@ -1963,6 +2012,7 @@ void retro_init(void)
 
    /* set sane defaults */
    Config.save_fdd_path = 1;
+   Config.save_sram     = 1;
    Config.clockmhz      = 10;
    Config.ram_size      = 2 * 1024 *1024;
    Config.JOY_TYPE[0]   = 0;
@@ -2264,6 +2314,7 @@ static void WinX68k_Exec(void)
    int KeyIntCnt = 0, MouseIntCnt = 0;
    uint32_t t_start = timeGetTime(), t_end;
 
+
    if(!(cpu_readmem24_dword(0xed0008) == Config.ram_size))
    {
       cpu_writemem24(0xe8e00d, 0x31); /* SRAM write permission */
@@ -2472,6 +2523,83 @@ static void WinX68k_Exec(void)
       if (FrameSkipQueue > 100)
          FrameSkipQueue = 100;
    }
+
+}
+
+/* Puntero del raton movido con el mando (px68k_joy_mouse = "Joystick").
+ *
+ * Upstream declara ese valor de la opcion pero lo deja sin implementar, asi que
+ * hasta ahora elegirlo dejaba al usuario sin raton Y sin nada que lo sustituya.
+ * Aqui se sintetizan los deltas que el X68000 espera del raton: stick izquierdo
+ * proporcional, cruceta a fondo para los mandos sin stick, y L/R como botones
+ * izquierdo y derecho.
+ *
+ * Suma sobre lo que ya haya entregado el raton fisico en vez de sustituirlo: si
+ * hay raton conectado sigue funcionando igual, y si no lo hay (una consola) el
+ * mando es la unica fuente. */
+static void joy_mouse_update(int *dx, int *dy, int *btn_l, int *btn_r)
+{
+   /* El acumulador es fraccionario a proposito: Mouse_SetData trunca a entero y
+    * pone su acumulador a cero en cada sondeo, asi que sin guardar aqui el resto
+    * un movimiento lento del stick no llegaria nunca a mover el puntero. */
+   static float accum_x = 0.0f;
+   static float accum_y = 0.0f;
+
+   const int dead = 4096;   /* zona muerta del stick */
+   float step;
+   int   pad_x = 0, pad_y = 0;
+   int   mx, my;
+
+   int ax = input_state_cb(0, RETRO_DEVICE_ANALOG,
+                           RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X);
+   int ay = input_state_cb(0, RETRO_DEVICE_ANALOG,
+                           RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y);
+
+   if (ax > dead || ax < -dead)
+      pad_x = ax;
+   if (ay > dead || ay < -dead)
+      pad_y = ay;
+
+   if (!pad_x)
+   {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT))
+         pad_x = -32767;
+      else if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT))
+         pad_x =  32767;
+   }
+   if (!pad_y)
+   {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP))
+         pad_y = -32767;
+      else if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN))
+         pad_y =  32767;
+   }
+
+   step     = (float)opt_joy_mouse_speed / 32767.0f;
+   accum_x += (float)pad_x * step;
+   accum_y += (float)pad_y * step;
+
+   mx       = (int)accum_x;
+   my       = (int)accum_y;
+   accum_x -= (float)mx;
+   accum_y -= (float)my;
+
+   *dx     += mx;
+   *dy     += my;
+
+   /* Boton izquierdo: A o L.  Boton derecho: B o R.
+    *
+    * A y B siguen yendo ademas al puerto de joystick como TRIG1/TRIG2, porque
+    * Joystick_Update se ejecuta igual en este modo.  No es un conflicto real:
+    * el modo existe para los juegos que se manejan con el raton, y esos no leen
+    * el puerto.  L/R se mantienen como alternativa por si algun juego usa las
+    * dos cosas y conviene tener los clics fuera de los gatillos. */
+   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A) ||
+       input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L))
+      *btn_l = 1;
+   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B) ||
+       input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R))
+      *btn_r = 1;
 }
 
 void retro_run(void)
@@ -2538,10 +2666,14 @@ void retro_run(void)
    mouse_x       = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_X);
    mouse_y       = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_Y);
 
-   Mouse_Event(0, mouse_x, mouse_y);
-
    mouse_l       = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT);
    mouse_r       = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT);
+
+   /* Config.JoyOrMouse: 1 = raton, 0 = mando. */
+   if (!Config.JoyOrMouse)
+      joy_mouse_update(&mouse_x, &mouse_y, &mouse_l, &mouse_r);
+
+   Mouse_Event(0, mouse_x, mouse_y);
 
    if(!mbL && mouse_l)
    {

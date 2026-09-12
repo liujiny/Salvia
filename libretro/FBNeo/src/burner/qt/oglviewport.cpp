@@ -1,4 +1,4 @@
-﻿#include <GL/glew.h>
+#include <GL/glew.h>
 #include <QDebug>
 #include <QOpenGLContext>
 #include "oglviewport.h"

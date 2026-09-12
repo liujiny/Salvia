@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Interface routine for 68kem <-> Mame
 */
 

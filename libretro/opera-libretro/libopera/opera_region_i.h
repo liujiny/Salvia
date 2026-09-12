@@ -1,4 +1,4 @@
-﻿#ifndef LIBOPERA_REGION_I_H_INCLUDED
+#ifndef LIBOPERA_REGION_I_H_INCLUDED
 #define LIBOPERA_REGION_I_H_INCLUDED
 
 #include <stdint.h>

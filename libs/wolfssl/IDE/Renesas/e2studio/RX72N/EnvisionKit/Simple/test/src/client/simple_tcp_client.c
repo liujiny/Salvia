@@ -1,4 +1,4 @@
-﻿/* simple_tcp_client.c
+/* simple_tcp_client.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

@@ -1,4 +1,4 @@
-﻿// Emacs style mode select   -*- C++ -*-
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright(C) 2009 Simon Howard
@@ -113,6 +113,14 @@ void OPL_SetPaused(int paused);
 extern unsigned int opl_sample_rate;
 
 void OPL_Render_Samples (void *dest, unsigned nsamp);
+
+// Float twin: normalized [-1,1] stereo, no int16 round-trip.  Same nsamp
+// contract; used only when the frontend negotiated float audio output.
+void OPL_Render_Samples_Float (void *dest, unsigned nsamp);
+
+/* Drop native samples buffered ahead of the output cursor (call on
+ * playback (re)start so a song change cannot leak stale audio). */
+void OPL_FlushResampler (void);
 
 
 void OPL_SetCallback(unsigned int ms, opl_callback_t callback, void *data);

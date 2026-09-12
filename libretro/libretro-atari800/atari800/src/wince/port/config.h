@@ -1,4 +1,4 @@
-﻿/* config.h for Windows CE version of Atari800. */
+/* config.h for Windows CE version of Atari800. */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Include Windows CE workarounds for each file of the emulator core */

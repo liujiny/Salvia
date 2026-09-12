@@ -1,4 +1,4 @@
-ï»¿#include <uiobjects/textarea.h>
+#include <uiobjects/textarea.h>
 #include <io/dirutil.h>
 
 // El BOM UTF-8 (EF BB BF) no tiene glifo y hace que SDL_ttf falle con
@@ -78,7 +78,7 @@ bool TextArea::loadTextFileFromGame(std::string baseDir, GameFile& game, std::st
 * 
 */
 bool TextArea::loadTextFile(std::string filepathToOpen) {
-    // 1. Comprobaciï¿½n rï¿½pida para evitar recargar el mismo archivo
+    // 1. Comprobación rápida para evitar recargar el mismo archivo
     if (!this->filepath.empty() && this->filepath == filepathToOpen) {
         return true;
     }
@@ -124,7 +124,7 @@ bool TextArea::loadTextFile(std::string filepathToOpen) {
                 lines.back().text.append(" ").append(word);
                 currentLineW += spaceW + wordW;
             } 
-            // Si no cabe, hacemos un salto de linea automï¿½tico (ajuste de texto)
+            // Si no cabe, hacemos un salto de linea automático (ajuste de texto)
             else {
 				line.text = std::move(word);
                 lines.push_back(std::move(line));
@@ -167,7 +167,7 @@ std::vector<t_line> TextArea::wrapStringWithFont(const std::string& fulltxt, TTF
     if (hasUtf8Bom(fulltxt))
         start = 3;
 
-    // Reutilizamos un ï¿½nico buffer dinï¿½mico para extraer palabras sin reservar memoria continuamente
+    // Reutilizamos un único buffer dinámico para extraer palabras sin reservar memoria continuamente
     std::string word;
     word.reserve(32); 
 
@@ -184,7 +184,7 @@ std::vector<t_line> TextArea::wrapStringWithFont(const std::string& fulltxt, TTF
             if (fulltxt[end] == '\n' || fulltxt[end] == '\r') {
                 hasBreak = true;
                 breakPos = end;
-                break; // Paramos en el salto de lï¿½nea para procesarlo
+                break; // Paramos en el salto de línea para procesarlo
             }
             ++end;
         }
@@ -196,7 +196,7 @@ std::vector<t_line> TextArea::wrapStringWithFont(const std::string& fulltxt, TTF
         bool hasSpace = !out.back().text.empty();
         int addedW = wordW + (hasSpace ? spaceW : 0);
 
-        // 4. Evaluar si cabe en la lï¿½nea actual
+        // 4. Evaluar si cabe en la línea actual
         if (currentLineW + addedW >= maxW) {
             out.push_back(t_line());
             out.back().text = word;
@@ -209,20 +209,20 @@ std::vector<t_line> TextArea::wrapStringWithFont(const std::string& fulltxt, TTF
             }
         }
 
-        // 5. Avanzar los ï¿½ndices segï¿½n lo que hemos encontrado
+        // 5. Avanzar los índices según lo que hemos encontrado
         if (hasBreak) {
             // Saltamos el '\n' o '\r'
             start = breakPos + 1;
-            // Si el siguiente carï¿½cter es el compaï¿½ero (\r\n), lo saltamos tambiï¿½n
+            // Si el siguiente carácter es el compañero (\r\n), lo saltamos también
             if (start < length && ((fulltxt[breakPos] == '\r' && fulltxt[start] == '\n') || 
                                    (fulltxt[breakPos] == '\n' && fulltxt[start] == '\r'))) {
                 ++start;
             }
-            // Forzamos la creaciï¿½n de una nueva lï¿½nea debido al salto explï¿½cito
+            // Forzamos la creación de una nueva línea debido al salto explícito
             out.push_back(t_line());
             currentLineW = 0;
         } else {
-            // Avanzamos al siguiente carï¿½cter despuï¿½s del espacio
+            // Avanzamos al siguiente carácter después del espacio
             start = end + 1; 
         }
     }
@@ -252,14 +252,14 @@ std::vector<t_line> TextArea::wrapTextFileWithFont(const std::string& filepathTo
         }
     }
 
-    // Preasignamos un tamaï¿½o estimado inicial para evitar realojamientos del vector
+    // Preasignamos un tamaño estimado inicial para evitar realojamientos del vector
     out.reserve(50); 
     out.push_back(t_line());
 
     int currentLineW = 0;
     const int spaceW = Fonts::getSize(font, " ");
 
-    // Buffer en el Stack (memoria ultrarrï¿½pida) para leer bloques del disco
+    // Buffer en el Stack (memoria ultrarrápida) para leer bloques del disco
     const std::size_t BUFFER_SIZE = 4096;
     char buffer[BUFFER_SIZE];
 
@@ -272,10 +272,10 @@ std::vector<t_line> TextArea::wrapTextFileWithFont(const std::string& filepathTo
         for (std::streamsize i = 0; i < bytesRead; ++i) {
             char c = buffer[i];
 
-            // 1. Detectar delimitadores (Espacio o Saltos de lï¿½nea)
+            // 1. Detectar delimitadores (Espacio o Saltos de línea)
             if (c == ' ' || c == '\n' || c == '\r') {
                 
-                // Si tenï¿½amos una palabra acumulada, la procesamos
+                // Si teníamos una palabra acumulada, la procesamos
                 if (!word.empty()) {
                     int wordW = Fonts::getSize(font, word.c_str());
                     bool hasSpace = !out.back().text.empty();
@@ -290,31 +290,31 @@ std::vector<t_line> TextArea::wrapTextFileWithFont(const std::string& filepathTo
                         out.back().text += word;
                         currentLineW += addedW;
                     }
-                    word.clear(); // Vacï¿½a el string sin liberar su memoria interna
+                    word.clear(); // Vacía el string sin liberar su memoria interna
                 }
 
-                // 2. Gestiï¿½n estricta de saltos de lï¿½nea nativos (\n, \r, \r\n)
+                // 2. Gestión estricta de saltos de línea nativos (\n, \r, \r\n)
                 if (c == '\n' || c == '\r') {
                     // Si es un \r y el siguiente es \n, nos lo saltamos para no duplicar
                     if (c == '\r' && (i + 1 < bytesRead) && buffer[i + 1] == '\n') {
                         ++i; 
                     } else if (c == '\r' && (i + 1 == bytesRead) && file.peek() == '\n') {
-                        file.get(); // Saltamos el \n si quedï¿½ justo en el lï¿½mite del buffer
+                        file.get(); // Saltamos el \n si quedó justo en el límite del buffer
                     }
 
-                    // Forzar nueva lï¿½nea en el ajuste de texto
+                    // Forzar nueva línea en el ajuste de texto
                     out.push_back(t_line());
                     currentLineW = 0;
                 }
             } 
             else {
-                // Acumular carï¿½cter en la palabra actual
+                // Acumular carácter en la palabra actual
                 word.push_back(c);
             }
         }
     }
 
-    // Procesar la ï¿½ltima palabra si el fichero no terminaba en espacio/salto de lï¿½nea
+    // Procesar la última palabra si el fichero no terminaba en espacio/salto de línea
     if (!word.empty()) {
         int wordW = Fonts::getSize(font, word.c_str());
         bool hasSpace = !out.back().text.empty();
@@ -412,7 +412,7 @@ void TextArea::calcTicks(GameTicks gameTicks, int& scrollDesp, float& pixelDesp)
 
     // --- 2. Espera final ---
     if (hasScroll && scrollDesp == lastLine) {
-        if (pixelDesp < PIXEL_MAX) {           // completar desplazamiento de ï¿½ltima lï¿½nea
+        if (pixelDesp < PIXEL_MAX) {           // completar desplazamiento de última línea
             advancePixels();
             return;
         }
@@ -432,14 +432,14 @@ void TextArea::calcTicks(GameTicks gameTicks, int& scrollDesp, float& pixelDesp)
         return;
     }
 
-    // --- 3. Avance de lï¿½nea completa ---
+    // --- 3. Avance de línea completa ---
     if (elapsed(lastTick) >= TICKS_PER_LINE) {
         lastTick   = gameTicks.ticks;
         pixelDesp  = 0;
         scrollDesp = hasScroll ? scrollDesp + 1 : 0;
     }
 
-    // --- 4. Desplazamiento suavizado por pï¿½xeles ---
+    // --- 4. Desplazamiento suavizado por píxeles ---
     advancePixels();
 }
 

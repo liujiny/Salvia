@@ -1,4 +1,4 @@
-﻿// Display a dialog containing error messages
+// Display a dialog containing error messages
 #include "burner.h"
 #include <richedit.h>
 

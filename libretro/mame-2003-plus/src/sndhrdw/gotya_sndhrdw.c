@@ -1,4 +1,4 @@
-﻿#include "driver.h"
+#include "driver.h"
 
 struct gotya_sample
 {

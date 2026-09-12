@@ -1,4 +1,4 @@
-﻿/* ******************************************************************
+/* ******************************************************************
  * huff0 huffman decoder,
  * part of Finite State Entropy library
  * Copyright (c) Meta Platforms, Inc. and affiliates.

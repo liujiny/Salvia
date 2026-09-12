@@ -1,4 +1,4 @@
-﻿// TC0140SYT
+// TC0140SYT
 
 #include "burnint.h"
 #include "z80_intf.h"

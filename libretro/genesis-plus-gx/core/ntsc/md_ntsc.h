@@ -1,4 +1,4 @@
-﻿/* Sega Genesis/Mega Drive NTSC video filter */
+/* Sega Genesis/Mega Drive NTSC video filter */
 
 /* md_ntsc 0.1.2 */
 #ifndef MD_NTSC_H

@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  CPU_emulcycle.h - SC 6510/6502 emulation core (body of
  *                    EmulateCycle() function, the same for
  *                    both 6510 and 6502)

@@ -1,4 +1,4 @@
-﻿void nb_1414m4_init();
+void nb_1414m4_init();
 void nb_1414m4_scan();
 void nb_1414m4_exec(UINT16 mcu_cmd,UINT16 *vram,UINT16 *scrollx,UINT16 *scrolly);
 

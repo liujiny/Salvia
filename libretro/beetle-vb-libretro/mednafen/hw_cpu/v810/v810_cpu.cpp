@@ -1,4 +1,4 @@
-﻿/* V810 Emulator
+/* V810 Emulator
  *
  * Copyright (C) 2006 David Tucker
  *

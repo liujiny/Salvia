@@ -1,4 +1,4 @@
-﻿#ifndef __INPUT_H__
+#ifndef __INPUT_H__
 #define __INPUT_H__
 
 #include <boolean.h>

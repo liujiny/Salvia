@@ -1,4 +1,4 @@
-﻿/*
+/*
  *	Beatmania DJ Main Board (GX753)
  *
  *	Product numbers:

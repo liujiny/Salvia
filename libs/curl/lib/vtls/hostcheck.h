@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_HOSTCHECK_H
+#ifndef HEADER_CURL_HOSTCHECK_H
 #define HEADER_CURL_HOSTCHECK_H
 /***************************************************************************
  *                                  _   _ ____  _

@@ -1,4 +1,4 @@
-﻿/*
+/*
 *	Video Driver for Metal Soldier Isaac II (1985)
 */
 

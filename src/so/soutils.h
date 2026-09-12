@@ -1,4 +1,4 @@
-﻿#include <string>
+#include <string>
 #include <SDL.h>
 
 #ifdef _XBOX

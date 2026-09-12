@@ -1,4 +1,4 @@
-﻿/* user_settings.h - Xbox 360 (PowerPC Big-Endian)
+/* user_settings.h - Xbox 360 (PowerPC Big-Endian)
  * wolfSSL 5.8.4 configuration for curl with TLS 1.3 support
  * Based on IDE/WIN/user_settings.h and mbedTLS Xbox 360 build
  */

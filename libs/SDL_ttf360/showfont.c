@@ -1,4 +1,4 @@
-﻿/*
+/*
     showfont:  An example of using the SDL_ttf library with 2D graphics.
     Copyright (C) 1997-2004 Sam Lantinga
 

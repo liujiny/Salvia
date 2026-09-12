@@ -1,4 +1,4 @@
-﻿/* fLaC streaming music support. */
+/* fLaC streaming music support. */
 
 #if !defined(_SND_FLAC_H_)
 #define _SND_FLAC_H_ 1

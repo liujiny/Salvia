@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo D-Con / SD Gundam Psycho Salamander no Kyoui driver module
+// FinalBurn Neo D-Con / SD Gundam Psycho Salamander no Kyoui driver module
 // Based on MAME driver by Bryan McPhail
 
 #include "tiles_generic.h"

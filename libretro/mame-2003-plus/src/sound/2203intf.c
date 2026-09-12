@@ -1,4 +1,4 @@
-﻿#include <math.h>
+#include <math.h>
 #include "driver.h"
 #include "ay8910.h"
 #include "fm.h"

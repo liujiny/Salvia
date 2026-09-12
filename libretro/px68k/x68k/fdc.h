@@ -1,4 +1,4 @@
-﻿#ifndef _WINX68K_FDC_H
+#ifndef _WINX68K_FDC_H
 #define _WINX68K_FDC_H
 
 #include <stdint.h>

@@ -1,4 +1,4 @@
-﻿/* test_ossl_rsa.h
+/* test_ossl_rsa.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

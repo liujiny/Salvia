@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup Signature
     \brief  この関数は、結果のシグネチャの最大サイズを返します。
     \return Returns  sig_type_e sig_typeがサポートされていない場合sig_typeが無効な場合はbad_func_argを返します。正の戻り値は、署名の最大サイズを示します。

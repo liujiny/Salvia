@@ -1,4 +1,4 @@
-﻿/*  Pokopom - Input Plugin for PSX/PS2 Emulators
+/*  Pokopom - Input Plugin for PSX/PS2 Emulators
  *  Copyright (C) 2012  KrossX
  *
  *  This program is free software: you can redistribute it and/or modify

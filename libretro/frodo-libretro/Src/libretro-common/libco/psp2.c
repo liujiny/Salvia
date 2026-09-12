@@ -1,4 +1,4 @@
-﻿/*
+/*
 libco.arm (2015-06-18)
 license: public domain
 */

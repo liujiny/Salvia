@@ -1,4 +1,4 @@
-﻿/*
+/*
  * xxHash - Extremely Fast Hash algorithm
  * Copyright (c) Yann Collet - Meta Platforms, Inc
  *

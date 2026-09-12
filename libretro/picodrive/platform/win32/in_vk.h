@@ -1,4 +1,4 @@
-﻿#ifdef IN_VK
+#ifdef IN_VK
 
 void in_vk_init(void *vdrv);
 int  in_vk_update(void *drv_data, const int *binds, int *result);

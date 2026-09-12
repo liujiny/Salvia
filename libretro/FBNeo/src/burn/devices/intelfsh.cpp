@@ -1,4 +1,4 @@
-﻿/*
+/*
     Flash ROM emulation
 
     Explicitly supports:

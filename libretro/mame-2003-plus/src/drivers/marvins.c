@@ -1,4 +1,4 @@
-﻿/*
+/*
 various early SNK games (1983-1985)
 - Marvin's Maze
 - Vanguard II

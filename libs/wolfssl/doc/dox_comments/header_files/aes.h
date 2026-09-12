@@ -1,4 +1,4 @@
-﻿/*!
+/*!
     \ingroup AES
     \brief This function initializes an AES structure by setting the key and
     then setting the initialization vector.

@@ -1,4 +1,4 @@
-﻿/* riscv-64-asm.h
+/* riscv-64-asm.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

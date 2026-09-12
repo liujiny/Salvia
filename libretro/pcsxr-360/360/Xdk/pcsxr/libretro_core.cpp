@@ -1,4 +1,4 @@
-﻿/*
+/*
  * libretro_core.cpp - Libretro core implementation for PCSXR-360
  *
  * Execution model (libretro-native):
@@ -34,6 +34,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>   /* atoi (cycle_multiplier, analog_saturation), atof (guncon) */
 
 #include "libretro.h"
 
@@ -65,6 +66,8 @@ extern int      darkforcesfix;       /* xbox_soft/cfg.c */
 extern uint32_t dwActFixes;          /* xbox_soft GPU fixes bitmask */
 extern int      iUseFixes;           /* xbox_soft gate for dwActFixes */
 extern int      iUseDither;          /* xbox_soft dither mode (0/1/2) */
+/* unsigned short y NO BOOL: externals.h define BOOL como unsigned short (2
+ * bytes) y aqui BOOL seria el de Windows (4) -> escritura fuera de rango. */
 extern BOOL     frontmission3fix;    /* libpcsxcore/psxinterpreter.c */
 
 /* Note: tombraider2fix, crashteamracingfix, spuirq, iSPUIRQWait are
@@ -203,6 +206,7 @@ static retro_input_state_t        input_state_cb;
 #define RETRO_DEVICE_PSE_ANALOG    RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_ANALOG,  0)
 #define RETRO_DEVICE_PSE_DUALSHOCK RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_ANALOG,  1)
 #define RETRO_DEVICE_PSE_MULTITAP  RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 2)
+#define RETRO_DEVICE_PSE_GUNCON    RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_LIGHTGUN, 0)
 
 /* Per-port PSX controller type (PSE_PAD_TYPE_* values from psemu_plugin_defs.h).
  * Array size matches DS_NUM_PORTS in dualshock_pad.c (6: 2 physical + 4 MTAP slaves).
@@ -248,7 +252,50 @@ static unsigned current_pixel_format = RETRO_PIXEL_FORMAT_XRGB8888;
 
 /* ===== Input state ===== */
 static uint16_t libretro_pad_state[6];
+
+/* Deltas del raton de PSX por puerto, ya acotados al byte con signo que manda el
+ * protocolo.  Se rellenan en retro_input_poll solo para los puertos configurados
+ * como raton y los consume PSxInputReadPort via libretro_get_mouse_state. */
+static int8_t libretro_mouse_dx[4];
+static int8_t libretro_mouse_dy[4];
+
+/* Posicion absoluta del lightgun por puerto, ya normalizada a 0..1023 en los
+ * dos ejes, o PSXGUN_OFFSCREEN si el canon no apunta a la tele.  Se rellenan en
+ * retro_input_poll solo para los puertos de tipo GunCon y las consume
+ * PSxInputReadPort via libretro_get_gun_state.
+ *
+ * Arrancan en PSXGUN_OFFSCREEN a proposito: hasta que el frontend entregue una
+ * posicion, lo correcto es decirle al juego que no se apunta a nada.  Con 0,0
+ * el juego creeria que se apunta a la esquina superior izquierda. */
+static int libretro_gun_absx[4] = { PSXGUN_OFFSCREEN, PSXGUN_OFFSCREEN,
+                                    PSXGUN_OFFSCREEN, PSXGUN_OFFSCREEN };
+static int libretro_gun_absy[4] = { PSXGUN_OFFSCREEN, PSXGUN_OFFSCREEN,
+                                    PSXGUN_OFFSCREEN, PSXGUN_OFFSCREEN };
+
+#if PCSXR_DIAG_INSTRUMENTATION
+/* Ultimo SCREEN_X/Y crudo que entrego el frontend para el puerto 0, antes de
+ * normalizar.  Lo saca el volcado [DISP] junto al resultado, que es la unica
+ * forma de distinguir tres fallos que se ven igual ("el raton no mueve nada"):
+ *   raw fijo en 0        -> el frontend no da posicion
+ *   raw se mueve, pos no -> la normalizacion esta mal
+ *   los dos se mueven    -> la posicion llega y el fallo esta mas adelante */
+static int g_diag_gun_raw_x = 0;
+static int g_diag_gun_raw_y = 0;
+#endif
+
+/* Calibracion del GunCon (opciones pcsxr360_gunconadjust*).  Los ratios se
+ * guardan multiplicados por 100 (75..125) para que la normalizacion del poll
+ * sea entera: el float solo aparece al leer la opcion, no por frame. */
+static int g_guncon_adj_x    = 0;
+static int g_guncon_adj_y    = 0;
+static int g_guncon_ratio_x100 = 100;
+static int g_guncon_ratio_y100 = 100;
 static uint8_t  libretro_analog[6][4];   /* [port][lx, ly, rx, ry] */
+
+/* Umbral de saturacion del stick en unidades de eje (|v| >= umbral -> rail).
+ * Precalculado desde pcsxr360_analog_saturation para no dividir por frame.
+ * 32767 = opcion a 0 = comportamiento historico exacto (solo el propio rail). */
+static int      g_analog_sat_thr = 32767;
 
 /* ===== Game path storage ===== */
 static char game_path_store[1024];
@@ -284,6 +331,7 @@ void retro_set_environment(retro_environment_t cb) {
         { "performance", "Performance",        NULL },
         { "system",      "System",             NULL },
         { "gamefixes",   "Game Fixes (PEOPS)", NULL },
+        { "input",       "Input",              NULL },
         { NULL, NULL, NULL }
     };
 
@@ -342,11 +390,99 @@ void retro_set_environment(retro_environment_t cb) {
 
         /* ---------- Performance ---------- */
         {
+            "pcsxr360_cpu_core",
+            "CPU core (restart to apply)", "CPU Core (restart to apply)",
+            "Dynarec = recompilador PPC (rapido). Interpreter = interprete MIPS "
+            "(muy lento, solo diagnostico: aisla si un fallo viene del dynarec).",
+            NULL, "performance",
+            { { "dynarec", "Dynarec (PPC)" }, { "interpreter", "Interpreter (slow)" }, { NULL, NULL } },
+            "dynarec"
+        },
+		{
+            "pcsxr360_icache_dynarec",
+            "I-cache in Dynarec (restart to apply)",
+            "I-Cache in Dynarec (restart to apply)",
+            "Hace que el COMPILADOR del dynarec lea las instrucciones por la "
+            "I-cache. Es lo que permite que Formula One 99 vaya a velocidad "
+            "completa en vez de con el interprete. RIESGO: un juego que escriba "
+            "codigo y salte SIN hacer flush de la cache recompilaria el codigo "
+            "VIEJO; el log saca [ICDIV] n=... con las veces que cache y RAM "
+            "difieren de verdad, y n=0 significa que el cambio es inerte para "
+            "ese juego. Requiere CPU core = Dynarec.",
+            NULL, "performance",
+            { { "disabled", NULL }, { "enabled", NULL }, { NULL, NULL } },
+            "disabled"
+        },
+        {
+            "pcsxr360_icache",
+            "I-Cache in Interpreter (restart to apply)", "I-Cache in Interpreter (restart to apply)",
+            "Emula la I-cache del R3000A (4 KB, 256 lineas de 16 bytes). "
+            "Imprescindible en Formula One 99 / 2001 / Arcade: copian un stub de "
+            "16 bytes a una linea de cache libre, lo llaman para cachearlo, "
+            "descomprimen 1,63 MB encima de su copia en RAM y lo vuelven a "
+            "llamar. Solo tiene efecto con el CPU core = Interpreter.",
+            NULL, "performance",
+            { { "enabled", NULL }, { "disabled", NULL }, { NULL, NULL } },
+            "disabled"
+        },
+        {
             "pcsxr360_threading",
             "GPU Thread (restart core to apply)", "GPU Thread (restart to apply)",
             NULL, NULL, "performance",
             { { "enabled", NULL }, { "disabled", NULL }, { NULL, NULL } },
             "enabled"
+        },
+        {
+            "pcsxr360_gpu_busy",
+            "GPU busy flag model", "GPU Busy Flag Model",
+            "De donde sale el bit \"GPU ocupada\" de GPUSTAT, que es lo que "
+            "sondea el DrawSync() de los juegos en un bucle cerrado. "
+            "Ring = ocupada mientras el hilo GPU tenga trabajo: exacto, pero "
+            "hace que la CPU emulada gaste su presupuesto de ciclos del frame "
+            "esperando al HOST, y entonces el juego se mueve a medio gas "
+            "aunque el contador siga marcando 60 fps. "
+            "Bounded = acotada a 512 ciclos emulados (lo que hace upstream "
+            "pcsx_rearmed con gpuIdleAfter). "
+            "Never = nunca ocupada (como el gpulib pelado). Mira la linea "
+            "[GPU-BUSY] del log: es el % del frame perdido esperando. Medido "
+            "en Guilty Gear: ring = 16-63 %, bounded = 0 %, never = 0 %.",
+            NULL, "performance",
+            {
+                { "bounded", "Bounded (Recommended)" },
+                { "ring",    "Accurate (Host Sync - Slow)" },
+                { "never",   "Never busy (Max Speed)" },
+                { NULL, NULL }
+            },
+            "bounded"
+        },
+        {
+            "pcsxr360_cycle_multiplier",
+            "PSX CPU cycles per instruction (restart to apply)",
+            "CPU Cycles/Instruction (restart to apply)",
+            "Reloj de la CPU PSX como porcentaje.  Es la MISMA palanca que el "
+            "pcsx_rearmed_psxclock (alli el valor es el % directo; aqui se "
+            "guarda su inverso, 10000/%, por compatibilidad con .opt viejos, "
+            "pero la etiqueta muestra el %).  BAJARLO ralentiza la logica del "
+            "juego: util para los que van demasiado rapidos (Broken Sword se "
+            "arregla a ~30%).  SUBIRLO al 100% da mas instrucciones por frame "
+            "(overclock; arriesga timing/audio).  57% es el auto de upstream "
+            "y el default aqui.  El VBlank llega cada 565045 ciclos SIEMPRE, "
+            "asi que el % fija cuantas instrucciones caben por frame: 57% -> "
+            "323K, 30% -> ~170K, 100% -> 565K.",
+            NULL, "performance",
+            {
+                { "400", "25% clock (muy lento)" },
+                { "333", "30% clock (lento -- juegos demasiado rapidos)" },
+                { "300", "33% clock" },
+                { "250", "40% clock" },
+                { "200", "50% clock (underclock)" },
+                { "175", "57% clock (normal / auto)" },
+                { "150", "67% clock" },
+                { "125", "80% clock" },
+                { "100", "100% clock (overclock, mas rapido)" },
+                { NULL, NULL }
+            },
+            "175"
         },
         {
             "pcsxr360_auto_frameskip",
@@ -378,6 +514,38 @@ void retro_set_environment(retro_environment_t cb) {
             NULL, NULL, "system",
             { { "disabled", NULL }, { "enabled", NULL }, { NULL, NULL } },
             "disabled"
+        },
+        {
+            "pcsxr360_region",
+            "Region / video timing (restart to apply)", "Region (restart to apply)",
+            "Auto = por el serial del disco (PAL a 50 Hz, NTSC a 60 Hz). Force "
+            "NTSC hace que un juego PAL corra a temporizado 60 Hz: la mayoria de "
+            "juegos PAL eran ports NTSC ralentizados, asi que esto es su "
+            "velocidad original, pero acelera el juego (y el tono del audio) un "
+            "20%. Force PAL hace lo inverso. El audio queda sincronizado; los "
+            "bordes de imagen de un PAL nativo pueden permanecer. Fijable por "
+            "juego en el .opt.",
+            NULL, "system",
+            { { "auto", NULL }, { "ntsc", "Force NTSC (60Hz)" }, { "pal", "Force PAL (50Hz)" }, { NULL, NULL } },
+            "auto"
+        },
+
+        {
+            "pcsxr360_game_db",
+            "Per-game fixes database", "Per-Game Fixes Database",
+            "Tabla interna de serial de disco -> ajustes, para que un juego que "
+            "necesita una opcion concreta arranque bien sin tener que saberlo. "
+            "El caso claro es Formula One 99: sin la I-cache del R3000A no "
+            "arranca, asi que sin esta tabla una instalacion limpia es un "
+            "crash. TU ELECCION MANDA: la tabla solo actua sobre opciones que "
+            "sigan en su valor por defecto, o sea que lo que pongas en el .opt "
+            "por juego nunca se pisa. Apagarla la desactiva entera; util para "
+            "comprobar si un arreglo de la tabla es el que te esta molestando. "
+            "El log saca [GAME-DB] con el serial detectado y con lo que aplica "
+            "o respeta.",
+            NULL, "system",
+            { { "enabled", NULL }, { "disabled", NULL }, { NULL, NULL } },
+            "enabled"
         },
 
         /* ---------- Game Fixes (PEOPS) ---------- */
@@ -424,6 +592,136 @@ void retro_set_environment(retro_environment_t cb) {
             "disabled"
         },
 
+        /* ---------- Input ---------- */
+        {
+            "pcsxr360_analog_saturation",
+            "Analog stick saturation (%)",
+            "Analog stick saturation (%)",
+            "Zona plana en el tope del stick: cualquier deflexion por encima de "
+            "(100 - pct)% se manda como el valor maximo del PSX (0x00/0xFF) en "
+            "vez de escalarla. Hace falta porque el mapeo lineal solo da 0xFF a "
+            "partir del 99,2% del recorrido, asi que un stick que no clava el "
+            "rail -- o que oscila justo en el -- entra y sale del tope y un "
+            "juego que mire 'stick a fondo' alterna entre andar y correr. "
+            "MEDIDO: Ape Escape necesita 20% en el pad de Xbox 360, tambien en "
+            "diagonal, lo que situa el alcance diagonal del stick entre el 80 y "
+            "el 95% por eje (la compuerta del pad NO es circular; si lo fuera "
+            "serian 71% y ningun umbral sensato llegaria). Precio de subirlo: se "
+            "pierde resolucion en el ultimo tramo, y eso se nota al volante en "
+            "los juegos de coches -- de ahi que el default sea conservador y "
+            "Ape Escape lleve su 20% en su .opt. Con 0, comportamiento exacto "
+            "de antes.",
+            NULL, "input",
+            {
+                { "0",  "0% (off)" }, { "2",  "2%" },  { "5",  "5%" },
+                { "8",  "8%" },       { "10", "10%" }, { "15", "15%" },
+                { "20", "20%" },      { NULL, NULL }
+            },
+            "5"
+        },
+
+
+        /* ---------- Input: calibracion del GunCon ----------
+         *
+         * Las cuatro NO son adorno: la conversion de posicion normalizada a
+         * posicion de BARRIDO (plugins.c, case PSE_PAD_TYPE_GUNCON) depende del
+         * temporizado real de video, y sin estas no hay forma de corregir un
+         * desvio.  Rangos y pasos IDENTICOS a upstream a proposito, para que un
+         * valor de calibracion encontrado para pcsx_rearmed valga aqui tal cual.
+         *
+         * Como distinguirlas al calibrar: dispara al centro y a las cuatro
+         * esquinas.  Desvio CONSTANTE en todas -> adjustx/adjusty.  Desvio que
+         * CRECE hacia los bordes -> ratiox/ratioy. */
+        {
+            "pcsxr360_gunconadjustx",
+            "Guncon: X axis offset", "Guncon: X offset",
+            "Desplaza el apuntado horizontal del GunCon. Cada unidad es "
+            "aproximadamente un 1% del ancho de pantalla. Para un desvio "
+            "constante hacia un lado.",
+            NULL, "input",
+            {
+                { "-40", NULL }, { "-39", NULL }, { "-38", NULL }, { "-37", NULL }, { "-36", NULL }, { "-35", NULL },
+                { "-34", NULL }, { "-33", NULL }, { "-32", NULL }, { "-31", NULL }, { "-30", NULL }, { "-29", NULL },
+                { "-28", NULL }, { "-27", NULL }, { "-26", NULL }, { "-25", NULL }, { "-24", NULL }, { "-23", NULL },
+                { "-22", NULL }, { "-21", NULL }, { "-20", NULL }, { "-19", NULL }, { "-18", NULL }, { "-17", NULL },
+                { "-16", NULL }, { "-15", NULL }, { "-14", NULL }, { "-13", NULL }, { "-12", NULL }, { "-11", NULL },
+                { "-10", NULL }, { "-9", NULL }, { "-8", NULL }, { "-7", NULL }, { "-6", NULL }, { "-5", NULL },
+                { "-4", NULL }, { "-3", NULL }, { "-2", NULL }, { "-1", NULL }, { "0", NULL }, { "1", NULL },
+                { "2", NULL }, { "3", NULL }, { "4", NULL }, { "5", NULL }, { "6", NULL }, { "7", NULL },
+                { "8", NULL }, { "9", NULL }, { "10", NULL }, { "11", NULL }, { "12", NULL }, { "13", NULL },
+                { "14", NULL }, { "15", NULL }, { "16", NULL }, { "17", NULL }, { "18", NULL }, { "19", NULL },
+                { "20", NULL }, { "21", NULL }, { "22", NULL }, { "23", NULL }, { "24", NULL }, { "25", NULL },
+                { "26", NULL }, { "27", NULL }, { "28", NULL }, { "29", NULL }, { "30", NULL }, { "31", NULL },
+                { "32", NULL }, { "33", NULL }, { "34", NULL }, { "35", NULL }, { "36", NULL }, { "37", NULL },
+                { "38", NULL }, { "39", NULL }, { "40", NULL }, { NULL, NULL }
+            },
+            "0"
+        },
+        {
+            "pcsxr360_gunconadjusty",
+            "Guncon: Y axis offset", "Guncon: Y offset",
+            "Desplaza el apuntado vertical del GunCon. Cada unidad es "
+            "aproximadamente un 1% del alto de pantalla. Para un desvio "
+            "constante hacia arriba o abajo.",
+            NULL, "input",
+            {
+                { "-40", NULL }, { "-39", NULL }, { "-38", NULL }, { "-37", NULL }, { "-36", NULL }, { "-35", NULL },
+                { "-34", NULL }, { "-33", NULL }, { "-32", NULL }, { "-31", NULL }, { "-30", NULL }, { "-29", NULL },
+                { "-28", NULL }, { "-27", NULL }, { "-26", NULL }, { "-25", NULL }, { "-24", NULL }, { "-23", NULL },
+                { "-22", NULL }, { "-21", NULL }, { "-20", NULL }, { "-19", NULL }, { "-18", NULL }, { "-17", NULL },
+                { "-16", NULL }, { "-15", NULL }, { "-14", NULL }, { "-13", NULL }, { "-12", NULL }, { "-11", NULL },
+                { "-10", NULL }, { "-9", NULL }, { "-8", NULL }, { "-7", NULL }, { "-6", NULL }, { "-5", NULL },
+                { "-4", NULL }, { "-3", NULL }, { "-2", NULL }, { "-1", NULL }, { "0", NULL }, { "1", NULL },
+                { "2", NULL }, { "3", NULL }, { "4", NULL }, { "5", NULL }, { "6", NULL }, { "7", NULL },
+                { "8", NULL }, { "9", NULL }, { "10", NULL }, { "11", NULL }, { "12", NULL }, { "13", NULL },
+                { "14", NULL }, { "15", NULL }, { "16", NULL }, { "17", NULL }, { "18", NULL }, { "19", NULL },
+                { "20", NULL }, { "21", NULL }, { "22", NULL }, { "23", NULL }, { "24", NULL }, { "25", NULL },
+                { "26", NULL }, { "27", NULL }, { "28", NULL }, { "29", NULL }, { "30", NULL }, { "31", NULL },
+                { "32", NULL }, { "33", NULL }, { "34", NULL }, { "35", NULL }, { "36", NULL }, { "37", NULL },
+                { "38", NULL }, { "39", NULL }, { "40", NULL }, { NULL, NULL }
+            },
+            "0"
+        },
+        {
+            "pcsxr360_gunconadjustratiox",
+            "Guncon: X axis response", "Guncon: X response",
+            "Escala el recorrido horizontal del GunCon. Subirlo hace que el "
+            "punto de disparo se aleje mas del centro. Para cuando el desvio "
+            "crece hacia los bordes izquierdo y derecho.",
+            NULL, "input",
+            {
+                { "0.75", NULL }, { "0.76", NULL }, { "0.77", NULL }, { "0.78", NULL }, { "0.79", NULL }, { "0.80", NULL },
+                { "0.81", NULL }, { "0.82", NULL }, { "0.83", NULL }, { "0.84", NULL }, { "0.85", NULL }, { "0.86", NULL },
+                { "0.87", NULL }, { "0.88", NULL }, { "0.89", NULL }, { "0.90", NULL }, { "0.91", NULL }, { "0.92", NULL },
+                { "0.93", NULL }, { "0.94", NULL }, { "0.95", NULL }, { "0.96", NULL }, { "0.97", NULL }, { "0.98", NULL },
+                { "0.99", NULL }, { "1.00", NULL }, { "1.01", NULL }, { "1.02", NULL }, { "1.03", NULL }, { "1.04", NULL },
+                { "1.05", NULL }, { "1.06", NULL }, { "1.07", NULL }, { "1.08", NULL }, { "1.09", NULL }, { "1.10", NULL },
+                { "1.11", NULL }, { "1.12", NULL }, { "1.13", NULL }, { "1.14", NULL }, { "1.15", NULL }, { "1.16", NULL },
+                { "1.17", NULL }, { "1.18", NULL }, { "1.19", NULL }, { "1.20", NULL }, { "1.21", NULL }, { "1.22", NULL },
+                { "1.23", NULL }, { "1.24", NULL }, { "1.25", NULL }, { NULL, NULL }
+            },
+            "1.00"
+        },
+        {
+            "pcsxr360_gunconadjustratioy",
+            "Guncon: Y axis response", "Guncon: Y response",
+            "Escala el recorrido vertical del GunCon. Subirlo hace que el punto "
+            "de disparo se aleje mas del centro. Para cuando el desvio crece "
+            "hacia los bordes superior e inferior.",
+            NULL, "input",
+            {
+                { "0.75", NULL }, { "0.76", NULL }, { "0.77", NULL }, { "0.78", NULL }, { "0.79", NULL }, { "0.80", NULL },
+                { "0.81", NULL }, { "0.82", NULL }, { "0.83", NULL }, { "0.84", NULL }, { "0.85", NULL }, { "0.86", NULL },
+                { "0.87", NULL }, { "0.88", NULL }, { "0.89", NULL }, { "0.90", NULL }, { "0.91", NULL }, { "0.92", NULL },
+                { "0.93", NULL }, { "0.94", NULL }, { "0.95", NULL }, { "0.96", NULL }, { "0.97", NULL }, { "0.98", NULL },
+                { "0.99", NULL }, { "1.00", NULL }, { "1.01", NULL }, { "1.02", NULL }, { "1.03", NULL }, { "1.04", NULL },
+                { "1.05", NULL }, { "1.06", NULL }, { "1.07", NULL }, { "1.08", NULL }, { "1.09", NULL }, { "1.10", NULL },
+                { "1.11", NULL }, { "1.12", NULL }, { "1.13", NULL }, { "1.14", NULL }, { "1.15", NULL }, { "1.16", NULL },
+                { "1.17", NULL }, { "1.18", NULL }, { "1.19", NULL }, { "1.20", NULL }, { "1.21", NULL }, { "1.22", NULL },
+                { "1.23", NULL }, { "1.24", NULL }, { "1.25", NULL }, { NULL, NULL }
+            },
+            "1.00"
+        },
         { NULL, NULL, NULL, NULL, NULL, NULL, {{ NULL, NULL }}, NULL }
     };
 
@@ -442,6 +740,8 @@ void retro_set_environment(retro_environment_t cb) {
             { "standard",  RETRO_DEVICE_JOYPAD          },
             { "dualshock", RETRO_DEVICE_PSE_DUALSHOCK   },
             { "analog",    RETRO_DEVICE_PSE_ANALOG       },
+            { "mouse",     RETRO_DEVICE_MOUSE           },
+            { "guncon",    RETRO_DEVICE_PSE_GUNCON      },
             { "multitap",  RETRO_DEVICE_PSE_MULTITAP    },
             { NULL, 0 }
         };
@@ -455,9 +755,12 @@ void retro_set_environment(retro_environment_t cb) {
         /* Salvia expone solo 4 slots (LR ports 0-3).  Los primeros 2 son
          * puertos fisicos (con opcion multitap); los ultimos 2 son slaves
          * (solo cuando el multitap esta activo, mapeados a LR 0-3). */
+        /* OJO con los contadores: van a mano y tienen que cuadrar con el numero
+         * de entradas del array, terminador aparte.  pads_physical son 6 desde
+         * que se anadieron "mouse" y "guncon"; pads_slave siguen siendo 4. */
         static const struct retro_controller_info ports[] = {
-            { pads_physical, 4 },
-            { pads_physical, 4 },
+            { pads_physical, 6 },
+            { pads_physical, 6 },
             { pads_slave, 4 },
             { pads_slave, 4 },
             { NULL, 0 }
@@ -521,6 +824,125 @@ static bool read_bool_var(const char *key, bool defval) {
         return defval;
     return strcmp(var.value, "enabled") == 0;
 }
+
+/* Porcentaje de saturacion del stick que la base de datos por juego ha
+ * impuesto, o -1 si ninguno.  Hace falta guardarlo porque
+ * check_analog_saturation() se vuelve a llamar en cada aviso de
+ * variables-update del frontend, y si no, el primer cambio de CUALQUIER
+ * opcion en el menu borraria el override. */
+static signed char g_db_analog_pct = -1;
+
+/* Ratio X del GunCon que la tabla por juego ha impuesto, o -1 si ninguno.
+ * Mismo motivo que el de arriba: check_guncon_calibration() se relee en cada
+ * variables-update y sin esto el override duraria hasta el primer cambio de
+ * opcion en el menu. */
+static signed char g_db_guncon_ratiox100 = -1;
+
+/* 1 si la opcion `key` sigue valiendo su default declarado `dflt` (o si no se
+ * puede leer).  Es la unica forma que tenemos de distinguir "el usuario no ha
+ * tocado esto" de "el usuario ha elegido esto a proposito": libretro no ofrece
+ * SET_VARIABLE ni una consulta de "modificado".  Consecuencia asumida: si
+ * eliges A MANO justo el valor por defecto, la base de datos te lo pisa
+ * igual; para eso esta el interruptor pcsxr360_game_db. */
+static int option_is_default(const char *key, const char *dflt) {
+    struct retro_variable var = { NULL, NULL };
+    var.key = key;
+    if (!environ_cb || !environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) || !var.value)
+        return 1;
+    return strcmp(var.value, dflt) == 0;
+}
+
+/* Modelo del bit "GPU ocupada" de GPUSTAT (ver gpu.c).  Hot-reload: se
+ * relee en retro_run cuando el frontend avisa de cambio de variables, asi
+ * que se puede alternar EN EL MENU con el juego corriendo y ver el efecto
+ * en la velocidad al instante — que es justo lo que hace falta para saber
+ * si la lentitud de un juego viene de esperar al hilo GPU del host. */
+/* Saturacion del stick analogico.  Barata de releer, asi que se consulta en
+ * cada variables_update igual que el modelo de GPU ocupada.  Por eso mismo
+ * tiene que mirar aqui el override de la base de datos por juego: si no, el
+ * primer cambio de cualquier otra opcion en el menu se lo llevaria por
+ * delante. */
+static void check_analog_saturation(void) {
+    struct retro_variable var = { "pcsxr360_analog_saturation", NULL };
+    int pct = 5;
+    if (environ_cb && environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+        pct = atoi(var.value);
+    /* La tabla por juego solo manda mientras la opcion siga en su default. */
+    if (g_db_analog_pct >= 0 && pct == 5)
+        pct = (int)g_db_analog_pct;
+    if (pct < 0)  pct = 0;
+    if (pct > 40) pct = 40;      /* mas alla de esto el stick es un digital */
+    g_analog_sat_thr = 32767 - (32767 * pct) / 100;
+    if (g_analog_sat_thr < 1) g_analog_sat_thr = 1;
+}
+
+
+/* Calibracion del GunCon.  Los ratios llegan como "0.75".."1.25" y se guardan
+ * x100: el atof se paga una vez al leer la opcion, no una vez por frame.
+ *
+ * El ratio X SI admite override por juego (guncon_db[]).  Se penso que no:
+ * que la calibracion dependia solo del display y del gusto del usuario.  Lo
+ * desmiente la medida -- Time Crisis (SLUS00405) necesita 0,96 mientras que
+ * los demas juegos de GunCon van finos a 1,00, con el MISMO display.  El
+ * origen es el ancho fijo w=378 de upstream en el case PSE_PAD_TYPE_GUNCON,
+ * que para este juego se queda ~4% largo; su GP1 0x06 declara el rango
+ * estandar (x0=0x260, span=2560, ver hx= en el volcado [DISP]), asi que no
+ * hay nada que derivar de la geometria: es del juego. */
+static void check_guncon_calibration(void) {
+    struct retro_variable var = { NULL, NULL };
+
+    if (!environ_cb) return;
+
+    var.key = "pcsxr360_gunconadjustx"; var.value = NULL;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+        g_guncon_adj_x = atoi(var.value);
+
+    var.key = "pcsxr360_gunconadjusty"; var.value = NULL;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+        g_guncon_adj_y = atoi(var.value);
+
+    var.key = "pcsxr360_gunconadjustratiox"; var.value = NULL;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+        g_guncon_ratio_x100 = (int)(atof(var.value) * 100.0 + 0.5);
+
+    var.key = "pcsxr360_gunconadjustratioy"; var.value = NULL;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+        g_guncon_ratio_y100 = (int)(atof(var.value) * 100.0 + 0.5);
+
+    /* La tabla por juego solo manda mientras la opcion siga en su default; se
+     * aplica ANTES de los clamps para que pase por ellos igual que el valor
+     * del usuario. */
+    if (g_db_guncon_ratiox100 > 0 && g_guncon_ratio_x100 == 100)
+        g_guncon_ratio_x100 = (int)g_db_guncon_ratiox100;
+
+    /* Acotado a los rangos declarados: una opcion editada a mano en el .opt no
+     * puede meter un ratio de 0 (todo al centro) ni negativo (eje invertido). */
+    if (g_guncon_adj_x < -40) g_guncon_adj_x = -40;
+    if (g_guncon_adj_x >  40) g_guncon_adj_x =  40;
+    if (g_guncon_adj_y < -40) g_guncon_adj_y = -40;
+    if (g_guncon_adj_y >  40) g_guncon_adj_y =  40;
+    if (g_guncon_ratio_x100 < 75)  g_guncon_ratio_x100 = 75;
+    if (g_guncon_ratio_x100 > 125) g_guncon_ratio_x100 = 125;
+    if (g_guncon_ratio_y100 < 75)  g_guncon_ratio_y100 = 75;
+    if (g_guncon_ratio_y100 > 125) g_guncon_ratio_y100 = 125;
+}
+
+static void check_gpu_busy_model(void) {
+    struct retro_variable var = { "pcsxr360_gpu_busy", NULL };
+    int model = 1;   /* bounded: el default (ver gpu.c) */
+    if (environ_cb && environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+        if      (strcmp(var.value, "ring")  == 0) model = 0;
+        else if (strcmp(var.value, "never") == 0) model = 2;
+    }
+    if (model != g_gpu_busy_model) {
+        pcsxr_log(RETRO_LOG_INFO,
+            "[PCSXR-LR] GPU busy model: %s\n",
+            model == 0 ? "ring (host thread)" :
+            model == 1 ? "bounded (512 emulated cycles)" : "never (always idle)");
+        g_gpu_busy_model = model;
+    }
+}
+
 
 static void check_game_fixes(void) {
     /* Parasite Eve 2 — root-counter timing fix (psxcounters.c). */
@@ -804,6 +1226,15 @@ void retro_set_controller_port_device(unsigned port, unsigned device) {
             in_type[port] = PSE_PAD_TYPE_ANALOGPAD;  break;
         case RETRO_DEVICE_PSE_ANALOG:
             in_type[port] = PSE_PAD_TYPE_ANALOGJOY;  break;
+        /* Raton de PSX (SCPH-1030).  El case de _PADpoll ya existia en
+         * libpcsxcore/plugins.c; lo unico que faltaba era que alguien
+         * seleccionase el tipo y que se rellenasen moveX/moveY. */
+        case RETRO_DEVICE_MOUSE:
+            in_type[port] = PSE_PAD_TYPE_MOUSE;      break;
+        /* GunCon SLPH-00034 de Namco.  Como subclase de LIGHTGUN, no de MOUSE:
+         * el juego espera posicion ABSOLUTA de barrido, no deltas. */
+        case RETRO_DEVICE_PSE_GUNCON:
+            in_type[port] = PSE_PAD_TYPE_GUNCON;     break;
         case RETRO_DEVICE_PSE_MULTITAP:
             in_type[port] = PSE_PAD_TYPE_STANDARD; /* physical port type */
             if (port < 2) {
@@ -827,6 +1258,29 @@ void retro_set_controller_port_device(unsigned port, unsigned device) {
  * controller type selected by the frontend via retro_set_controller_port_device. */
 extern "C" int libretro_get_pad_type(int port) {
     return (port >= 0 && port < 4) ? in_type[port] : PSE_PAD_TYPE_STANDARD;
+}
+
+/* Deltas del raton para el puerto dado, en el byte con signo que espera el
+ * protocolo.  Devuelve 0,0 para puertos que no sean raton. */
+extern "C" void libretro_get_mouse_state(int port, signed char *dx, signed char *dy) {
+    if (port < 0 || port >= 4) {
+        *dx = 0; *dy = 0;
+        return;
+    }
+    *dx = (signed char)libretro_mouse_dx[port];
+    *dy = (signed char)libretro_mouse_dy[port];
+}
+
+/* Posicion del lightgun para el case PSE_PAD_TYPE_GUNCON de _PADpoll.  Fuera de
+ * rango devuelve el centinela de "no apunta a la tele", no 0,0: un puerto
+ * invalido no es apuntar a la esquina. */
+extern "C" void libretro_get_gun_state(int port, int *absx, int *absy) {
+    if (port < 0 || port >= 4) {
+        *absx = PSXGUN_OFFSCREEN; *absy = PSXGUN_OFFSCREEN;
+        return;
+    }
+    *absx = libretro_gun_absx[port];
+    *absy = libretro_gun_absy[port];
 }
 
 /* ======================================================================
@@ -875,6 +1329,40 @@ static const struct { int retro_id; int psx_bit; } button_map[] = {
 };
 #define BUTTON_MAP_SIZE (sizeof(button_map) / sizeof(button_map[0]))
 
+/* Un eje de libretro [-32768..32767] al rango del PSX [0..255], centro 0x80.
+ *
+ * OJO con el mapeo lineal: NO usar (v/256)+128. La division entera trunca
+ * hacia cero, asi que la mitad negativa (adelante / izquierda) queda sesgada
+ * ~1 unidad hacia el centro y tope en 0x01 en vez del 0x00 real, mientras la
+ * positiva si llega a 0xFF -> asimetria adelante/atras que Ape Escape (100%
+ * analogico) delata. El desplazamiento +32768 y >>8 es lineal y simetrico:
+ * -32768->0x00, 0->0x80, +32767->0xFF.
+ *
+ * Encima de eso, la ZONA DE SATURACION (g_analog_sat_thr): el mapeo lineal
+ * solo entrega 0xFF a partir de +32512, o sea el 99,2% del recorrido. Un stick
+ * que no llega al rail, o que oscila justo en el, entra y sale del tope y un
+ * juego que mire "stick a fondo" alterna entre andar y correr. Con la opcion a
+ * 5% cualquier |v| >= 95% se manda como rail.
+ *
+ * Sobre las DIAGONALES, porque razone mal la primera vez: supuse compuerta
+ * circular (0,707 por eje a 45 grados = 71%, por debajo de cualquier umbral
+ * sensato) y conclui que esto no las arreglaria y que haria falta un remapeo
+ * circulo->cuadrado.  FALSO en este hardware: medido con Ape Escape, al 20% las
+ * diagonales SI topan, o sea que el pad de Xbox 360 alcanza entre el 80 y el
+ * 95% por eje en diagonal -- su compuerta es un cuadrado redondeado, no un
+ * circulo.  No hace falta remapeo ninguno. */
+static uint8_t analog_to_psx(int16_t v)
+{
+    /* |v| en int: -(int)(-32768) = +32768 sin desbordar, asi que el umbral es
+     * simetrico de verdad y no hay caso especial para INT16_MIN. */
+    const int a = (v < 0) ? -(int)v : (int)v;
+
+    if (a >= g_analog_sat_thr)
+        return (v < 0) ? 0x00u : 0xFFu;
+
+    return (uint8_t)(((int)v + 32768) >> 8);
+}
+
 static void poll_libretro_input(void) {
     if (!input_poll_cb || !input_state_cb)
         return;
@@ -887,6 +1375,102 @@ static void poll_libretro_input(void) {
         for (unsigned i = 0; i < BUTTON_MAP_SIZE; i++) {
             if (input_state_cb(port, RETRO_DEVICE_JOYPAD, 0, button_map[i].retro_id))
                 buttons &= ~(1 << button_map[i].psx_bit);
+        }
+
+        /* Raton de PSX.  Se lee SOLO si el puerto esta configurado como raton:
+         * asi no se paga una consulta de mas por puerto y por frame en el caso
+         * normal, y ademas los botones no se mezclan con los del joypad.
+         *
+         * El PSX espera DELTAS con signo, no coordenadas, asi que lo que da
+         * RETRO_DEVICE_MOUSE sirve tal cual: aqui no hay conversion.
+         *
+         * Los botones van en los bits 11 (izquierdo) y 10 (derecho), o sea en el
+         * byte ALTO de buttonStatus -- que es el que _PADpoll copia a
+         * mousepar[4].  Puestos en los bits 2 y 3 caen en el byte bajo
+         * (mousepar[3]) y el juego no los ve: el cursor se mueve pero no hay
+         * clics, que es exactamente el sintoma que dio Broken Sword.
+         *
+         * Logica invertida (0 = pulsado), igual que el pad; upstream hace lo
+         * mismo por la via de `buttonStatus = ~in_keystate` (plugin.c:31). */
+        if (in_type[port] == PSE_PAD_TYPE_MOUSE) {
+            const int16_t mx = input_state_cb(port, RETRO_DEVICE_MOUSE, 0,
+                                              RETRO_DEVICE_ID_MOUSE_X);
+            const int16_t my = input_state_cb(port, RETRO_DEVICE_MOUSE, 0,
+                                              RETRO_DEVICE_ID_MOUSE_Y);
+
+            /* Acotado a -128..127: el protocolo manda un byte con signo por eje
+             * y un movimiento rapido de raton entrega mucho mas que eso. */
+            libretro_mouse_dx[port] = (int8_t)(mx < -128 ? -128 : (mx > 127 ? 127 : mx));
+            libretro_mouse_dy[port] = (int8_t)(my < -128 ? -128 : (my > 127 ? 127 : my));
+
+            buttons = 0xFFFF;
+            if (input_state_cb(port, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT))
+                buttons &= ~(1 << 11);
+            if (input_state_cb(port, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT))
+                buttons &= ~(1 << 10);
+        } else {
+            libretro_mouse_dx[port] = 0;
+            libretro_mouse_dy[port] = 0;
+        }
+
+
+        /* GunCon SLPH-00034.  Se lee SOLO si el puerto es GunCon, igual que el
+         * raton: asi no se pagan 7 consultas por puerto y por frame en el caso
+         * normal ni se mezclan botones.
+         *
+         * Normalizacion identica a upstream (frontend/libretro.c:3157): los
+         * +-32767 de libretro pasan a los 0..1023 que espera la conversion a
+         * posicion de barrido.  Con ratio 1.00 y offset 0 la cuenta se reduce a
+         * gun/64 + 512, que es exactamente el centro en 512 y los extremos en
+         * 0 y 1024.
+         *
+         * El ratio va x100 para no meter float en el poll; el error de
+         * truncacion es de una unidad sobre ~40000 antes del /64, o sea que
+         * desaparece en el resultado final de 10 bits.
+         *
+         * Los 3 botones del GunCon son Trigger, A y B, y el arma los presenta
+         * al juego como Circulo, Start y Cruz -- no es una eleccion nuestra,
+         * es lo que hace el hardware. */
+        if (in_type[port] == PSE_PAD_TYPE_GUNCON) {
+            const int gunx = input_state_cb(port, RETRO_DEVICE_LIGHTGUN, 0,
+                                            RETRO_DEVICE_ID_LIGHTGUN_SCREEN_X);
+            const int guny = input_state_cb(port, RETRO_DEVICE_LIGHTGUN, 0,
+                                            RETRO_DEVICE_ID_LIGHTGUN_SCREEN_Y);
+            const int trigger = input_state_cb(port, RETRO_DEVICE_LIGHTGUN, 0,
+                                            RETRO_DEVICE_ID_LIGHTGUN_TRIGGER);
+            const int reload  = input_state_cb(port, RETRO_DEVICE_LIGHTGUN, 0,
+                                            RETRO_DEVICE_ID_LIGHTGUN_RELOAD);
+
+#if PCSXR_DIAG_INSTRUMENTATION
+            if (port == 0) { g_diag_gun_raw_x = gunx; g_diag_gun_raw_y = guny; }
+#endif
+
+            /* Recargar es apuntar fuera de la pantalla y disparar: por eso el
+             * reload cuenta a la vez como "fuera" y como gatillo. */
+            if (reload ||
+                input_state_cb(port, RETRO_DEVICE_LIGHTGUN, 0,
+                               RETRO_DEVICE_ID_LIGHTGUN_IS_OFFSCREEN)) {
+                libretro_gun_absx[port] = PSXGUN_OFFSCREEN;
+                libretro_gun_absy[port] = PSXGUN_OFFSCREEN;
+            } else {
+                libretro_gun_absx[port] =
+                    ((gunx * g_guncon_ratio_x100) / 100 + g_guncon_adj_x * 655) / 64 + 512;
+                libretro_gun_absy[port] =
+                    ((guny * g_guncon_ratio_y100) / 100 + g_guncon_adj_y * 655) / 64 + 512;
+            }
+
+            buttons = 0xFFFF;
+            if (trigger || reload)
+                buttons &= ~(1 << 13);   /* Circulo */
+            if (input_state_cb(port, RETRO_DEVICE_LIGHTGUN, 0,
+                               RETRO_DEVICE_ID_LIGHTGUN_AUX_A))
+                buttons &= ~(1 << 3);    /* Start */
+            if (input_state_cb(port, RETRO_DEVICE_LIGHTGUN, 0,
+                               RETRO_DEVICE_ID_LIGHTGUN_AUX_B))
+                buttons &= ~(1 << 14);   /* Cruz */
+        } else {
+            libretro_gun_absx[port] = PSXGUN_OFFSCREEN;
+            libretro_gun_absy[port] = PSXGUN_OFFSCREEN;
         }
 
         libretro_pad_state[port] = buttons;
@@ -904,17 +1488,10 @@ static void poll_libretro_input(void) {
                                      RETRO_DEVICE_INDEX_ANALOG_RIGHT,
                                      RETRO_DEVICE_ID_ANALOG_Y);
 
-        /* Mapeo simetrico [-32768..32767] -> [0..255], centro 0x80.
-         * OJO: NO usar (v/256)+128: la division entera trunca hacia cero, asi
-         * que la mitad negativa (adelante / izquierda) queda sesgada ~1 unidad
-         * hacia el centro y tope en 0x01 en vez del 0x00 real, mientras la
-         * positiva si llega a 0xFF -> asimetria adelante/atras que Ape Escape
-         * (100% analogico) delata. El desplazamiento +32768 y >>8 es lineal y
-         * simetrico: -32768->0x00, 0->0x80, +32767->0xFF. */
-        libretro_analog[port][0] = (uint8_t)(((int)lx + 32768) >> 8);
-        libretro_analog[port][1] = (uint8_t)(((int)ly + 32768) >> 8);
-        libretro_analog[port][2] = (uint8_t)(((int)rx + 32768) >> 8);
-        libretro_analog[port][3] = (uint8_t)(((int)ry + 32768) >> 8);
+        libretro_analog[port][0] = analog_to_psx(lx);
+        libretro_analog[port][1] = analog_to_psx(ly);
+        libretro_analog[port][2] = analog_to_psx(rx);
+        libretro_analog[port][3] = analog_to_psx(ry);
     }
 }
 
@@ -1004,6 +1581,318 @@ extern "C" void pcsxr_raise_fatal(void)
  * do in the standalone fiber model — no fibers, no thread spawning here.
  * ====================================================================== */
 
+/* ======================================================================
+ * BASE DE DATOS DE ARREGLOS POR JUEGO
+ * ======================================================================
+ *
+ * Equivalente de src/libretro/libretro_game_settings.cpp de swanstation:
+ * una tabla serial -> ajustes, para que un juego que necesita una opcion
+ * concreta arranque bien SIN que el usuario tenga que saberlo.  El caso que
+ * lo justifica es Formula One 99: sin la I-cache del R3000A no arranca --
+ * revienta en el jump desalineado de 0x801F5ADC --, asi que una instalacion
+ * limpia sin .opt es un crash.
+ *
+ * CLAVE = CdromId (libpcsxcore/misc.c).  Sale del nombre del EXE del disco
+ * quedandose solo con los alfanumericos, o sea SIN GUION: "SLUS00870", no
+ * "SLUS-00870" como en swanstation.  Y no siempre viene en mayusculas (el
+ * propio autodetect PAL de misc.c compara 'e' y 'E'), de ahi que la
+ * comparacion sea insensible a mayusculas.
+ *
+ * PRECEDENCIA: tu eleccion gana.  El override solo se aplica si la opcion
+ * sigue en su valor por defecto; si la has cambiado -- normalmente en el .opt
+ * por juego del frontend -- la tabla se aparta y lo dice en el log.
+ *
+ * PROCEDENCIA DE LOS DATOS.  El campo `verified` distingue las dos fuentes,
+ * porque no valen lo mismo:
+ *
+ *   1 = comprobado en pcsxr-360.  Ahora mismo Formula One 99 (NTSC-U), cuyo
+ *       serial salio de nuestro propio log, y el 20% de saturacion de stick
+ *       de Ape Escape, que es una medida del usuario en el pad de Xbox 360.
+ *
+ *   0 = importado de la lista de swanstation, sin verificar aqui.  Es un buen
+ *       indicio, no un hecho: su lista esta hecha para SU recompilador.  Cada
+ *       una de estas entradas es una hipotesis que se confirma mirando
+ *       [ICDIV] n=... en el log -- n=0 significa que la I-cache es inerte en
+ *       ese juego y la entrada no hacia falta.
+ *
+ * Los seriales del grupo F1 y de Ape Escape vienen de la lista de swanstation
+ * aunque el arreglo sea nuestro; si alguno esta mal, la entrada no hace nada
+ * en silencio, asi que game_db_apply() loguea SIEMPRE el CdromId real,
+ * tambien cuando no encuentra nada.  Con ese log se corrige la tabla.
+ *
+ * OJO con una diferencia de fondo: swanstation arregla la familia F1 con
+ * ForceInterpreter, no con su I-cache.  Nosotros la arreglamos con la I-cache
+ * en el dynarec, que da velocidad completa en vez de velocidad de interprete.
+ * Por eso esos seriales estan aqui mapeados a la I-cache y no al interprete.
+ *
+ * NO importados a proposito, aunque swanstation los tenga junto a la familia
+ * F1 en su lista de ForceInterpreter: "Formula One [Demo] (PAL)" SLED-00491
+ * (es el F1 de Psygnosis del 96, otro motor) y "Jackie Chan's Stuntmaster"
+ * SLUS-00684 / SCES-01444.  Necesitar el interprete no implica necesitar la
+ * I-cache, y de esos dos no sabemos la causa.  Candidatos a probar.
+ */
+
+struct game_db_entry {
+    const char   *serial;    /* 9 alfanumericos, SIN guion (formato CdromId) */
+    signed char   icache;    /* -1 = no tocar; 1 = necesita la I-cache del R3000A */
+    signed char   analog;    /* -1 = no tocar; 0..40 = % de saturacion del stick */
+    unsigned char verified;  /* 1 = comprobado aqui; 0 = importado sin verificar */
+    const char   *game;
+};
+
+static const struct game_db_entry game_db[] = {
+    /* --- Necesitan la I-cache del R3000A para arrancar (nuestro arreglo) --- */
+    { "SCED01979", 1, -1, 0, "Formula One '99 (PAL)" },
+    { "SCES02222", 1, -1, 0, "Formula One '99 (PAL)" },
+    { "SCES01979", 1, -1, 0, "Formula One '99 (PAL)" },
+    { "SCPS10101", 1, -1, 0, "Formula One '99 (NTSC-J)" },
+    { "SLUS00870", 1, -1, 1, "Formula One 99 (NTSC-U) -- serial de nuestro log" },
+    { "SCES02777", 1, -1, 0, "Formula One 2000 (PAL)" },
+    { "SCES02779", 1, -1, 0, "Formula One 2000 (I-S)" },
+    { "SCES02778", 1, -1, 0, "Formula One 2000 (PAL)" },
+    { "SLUS01134", 1, -1, 0, "Formula One 2000 (NTSC-U)" },
+    { "SCES03404", 1, -1, 0, "Formula One 2001 (PAL)" },
+    { "SCES03423", 1, -1, 0, "Formula One 2001 (PAL)" },
+    { "SCES03424", 1, -1, 0, "Formula One 2001 (PAL)" },
+    { "SCES03524", 1, -1, 0, "Formula One 2001 (PAL)" },
+    { "SCES03886", 1, -1, 0, "Formula One Arcade (PAL)" },
+
+    /* --- Lista ForceRecompilerICache de swanstation, importada tal cual --- */
+	/*
+    { "SLPM87395", 1, -1, 0, "Chrono Cross [Ultimate Hits] (NTSC-J)" },
+    { "SLPM87396", 1, -1, 0, "Chrono Cross (Disc 2/2) [Ultimate Hits] (NTSC-J)" },
+    { "SLPS02364", 1, -1, 0, "Chrono Cross (NTSC-J)" },
+    { "SLPS02365", 1, -1, 0, "Chrono Cross (Disc 2/2) (NTSC-J)" },
+    { "SLPS02777", 1, -1, 0, "Chrono Cross (Square Millennium Collection) (NTSC-J)" },
+    { "SLPS02778", 1, -1, 0, "Chrono Cross (Disc 2/2) (Square Millennium Collection) (NTSC-J)" },
+    { "SLPS91464", 1, -1, 0, "Chrono Cross [PSOne Books] (NTSC-J)" },
+    { "SLPS91465", 1, -1, 0, "Chrono Cross (Disc 2/2) [PSOne Books] (NTSC-J)" },
+    { "SLUS01041", 1, -1, 0, "Chrono Cross (NTSC-U)" },
+    { "SLUS01080", 1, -1, 0, "Chrono Cross (Disc 2/2) (NTSC-U)" },
+    { "SLED01401", 1, -1, 0, "International Superstar Soccer '98 Pro Demo (PAL-DE)" },
+    { "SLED01513", 1, -1, 0, "International Superstar Soccer '98 Pro Demo (PAL)" },
+    { "SLES01218", 1, -1, 0, "International Superstar Soccer '98 Pro (PAL)" },
+    { "SLES01264", 1, -1, 0, "International Superstar Soccer '98 Pro (PAL)" },
+    { "SCPS45294", 1, -1, 0, "International Superstar Soccer '98 Pro (NTSC-J)" },
+    { "SLUS00674", 1, -1, 0, "International Superstar Soccer '98 Pro (NTSC-U)" },
+    { "SLPM86086", 1, -1, 0, "World Soccer Jikkyou Winning Eleven 3 - World Cup France '98 (NTSC-J)" },
+    { "SLPS00435", 1, -1, 0, "PS1 Megatudo 2096 (NTSC-J)" },
+    { "SLUS00388", 1, -1, 0, "NBA Jam Extreme (NTSC-U)" },
+    { "SLES00529", 1, -1, 0, "NBA Jam Extreme (PAL)" },
+    { "SLPS00699", 1, -1, 0, "NBA Jam Extreme (NTSC-J)" },
+    { "SCES02834", 1, -1, 0, "Crash Bash (PAL)" },
+    { "SCUS94200", 1, -1, 0, "Battle Arena Toshinden (NTSC-U)" },
+    { "SCES00002", 1, -1, 0, "Battle Arena Toshinden (PAL)" },
+    { "SCUS94003", 1, -1, 0, "Battle Arena Toshinden (NTSC-U)" },
+    { "SLPS00025", 1, -1, 0, "Battle Arena Toshinden (NTSC-J)" },
+    { "SLES01987", 1, -1, 0, "The Next Tetris (PAL)" },
+    { "SLPS01774", 1, -1, 0, "The Next Tetris (NTSC-J)" },
+    { "SLPS02701", 1, -1, 0, "The Next Tetris [BPS The Choice] (NTSC-J)" },
+    { "SLUS00862", 1, -1, 0, "The Next Tetris (NTSC-U)" },
+    { "SLES03552", 1, -1, 0, "Breath of Fire IV (PAL)" },
+    { "SLUS01324", 1, -1, 0, "Breath of Fire IV (NTSC-U)" },
+    { "SLPS02728", 1, -1, 0, "Breath of Fire IV (NTSC-J)" },
+    { "SLPM87159", 1, -1, 0, "Breath of Fire IV [PlayStation The Best] (NTSC-J)" },
+    { "SCPS10059", 1, -1, 0, "Legaia Densetsu (NTSC-J)" },
+    { "SCUS94254", 1, -1, 0, "Legend of Legaia (NTSC-U)" },
+    { "SCES01752", 1, -1, 0, "Legend of Legaia (PAL)" },
+    { "SCES01944", 1, -1, 0, "Legend of Legaia (PAL)" },
+    { "SCES01947", 1, -1, 0, "Legend of Legaia (PAL)" },
+    { "SCES01946", 1, -1, 0, "Legend of Legaia (PAL)" },
+    { "SCES01945", 1, -1, 0, "Legend of Legaia (PAL)" },
+    { "SLES01265", 1, -1, 0, "World Cup '98 (PAL)" },
+    { "SLUS00644", 1, -1, 0, "World Cup '98 (NTSC-U)" },
+    { "SLPS00267", 1, -1, 0, "Deadheat Road (NTSC-J)" },
+    { "SLUS00292", 1, -1, 0, "Suikoden (NTSC-U)" },
+    { "SCUS94577", 1, -1, 0, "NHL Faceoff 2001 (NTSC-U)" },
+    { "SCUS94578", 1, -1, 0, "NHL Faceoff 2001 Demo (NTSC-U)" },
+    { "SLPS00712", 1, -1, 0, "Tenga Seiha (NTSC-J)" },
+    { "SLES03449", 1, -1, 0, "Roland Garros 2001 (PAL)" },
+    { "SLUS00707", 1, -1, 0, "Silent Hill (NTSC-U)" },
+    { "SLPM86192", 1, -1, 0, "Silent Hill (NTSC-J)" },
+    { "SLES01514", 1, -1, 0, "Silent Hill (PAL)" },
+    { "SLUS00875", 1, -1, 0, "Spiderman (NTSC-U)" },
+    { "SLPM86739", 1, -1, 0, "Spiderman (NTSC-J)" },
+    { "SLES02886", 1, -1, 0, "Spiderman (PAL)" },
+    { "SLES02887", 1, -1, 0, "Spiderman (PAL)" },
+    { "SLES02888", 1, -1, 0, "Spiderman (PAL)" },
+    { "SLES02889", 1, -1, 0, "Spiderman (PAL)" },
+    { "SLES02890", 1, -1, 0, "Spiderman (PAL)" },
+    { "SLUS00183", 1, -1, 0, "Zero Divide (NTSC-U)" },
+    { "SLES03224", 1, -1, 0, "Dino Crisis 2 (Italy)" },
+    { "SLES03225", 1, -1, 0, "Dino Crisis 2 (Spain)" },
+    { "SLPS02507", 1, -1, 0, "Next Tetris DLX, The (Japan)" },
+	*/
+
+    /* --- Saturacion del stick analogico (ver pcsxr360_analog_saturation) ---
+     * El 8% esta medido por el usuario en el pad de Xbox 360, de ahi el
+     * verified=1; los seriales, en cambio, salen de la lista de swanstation y
+     * no de un log nuestro.  Si Ape Escape no coge el 8%, mirar que CdromId
+     * saca [GAME-DB] al cargarlo. */
+    { "SCPS10091", -1, 8, 1, "Saru! Get You! (NTSC-J)" },
+    { "SCPS91196", -1, 8, 1, "Saru! Get You! (NTSC-J)" },
+    { "SCPS91331", -1, 8, 1, "Saru! Get You! (NTSC-J)" },
+    { "SCPS45411", -1, 8, 1, "Saru! Get You! (NTSC-J)" },
+    { "SCUS94423", -1, 8, 1, "Ape Escape (NTSC-U)" },
+    { "SCES01564", -1, 8, 1, "Ape Escape (PAL)" },
+    { "SCES02028", -1, 8, 1, "Ape Escape (PAL-FR)" },
+    { "SCES02029", -1, 8, 1, "Ape Escape (PAL-DE)" },
+    { "SCES02030", -1, 8, 1, "Ape Escape (PAL-IT)" },
+    { "SCES02031", -1, 8, 1, "Ape Escape (PAL-ES)" },
+
+    { NULL, -1, -1, 0, NULL }
+};
+
+/* --- Calibracion del GunCon por juego -------------------------------------
+ * Tabla aparte de game_db[] a proposito: esto no es una bandera de "este juego
+ * necesita X" sino un numero MEDIDO, y separarla evita anadirle un quinto
+ * campo a las 87 filas de la otra.
+ *
+ * Solo Time Crisis NTSC-U, y solo porque esta medido AQUI.  El case
+ * PSE_PAD_TYPE_GUNCON usa un ancho distinto para PAL (385 en vez de 378) y con
+ * otro temporizado de display, asi que un 0,96 medido en NTSC-U no tiene
+ * ningun motivo para valer en la version europea: cada disco se mide.
+ *
+ * Como anadir un juego: dejar ratiox en 1.00, disparar al borde IZQUIERDO y al
+ * DERECHO, y mover de 0,01 en 0,01 hasta que el disparo caiga en la reticula.
+ * Si los dos lados se anulan con el MISMO valor es escala y va aqui; si cada
+ * lado pide un valor distinto es desvio de offset y va en gunconadjustx. */
+struct guncon_db_entry {
+    const char *serial;      /* 9 alfanumericos, SIN guion (formato CdromId) */
+    signed char ratiox100;   /* 75..125, el mismo x100 que la opcion */
+    const char *game;
+};
+
+static const struct guncon_db_entry guncon_db[] = {
+    { "SLUS00405", 96, "Time Crisis (NTSC-U)" },
+    { NULL, 0, NULL }
+};
+
+/* Comparacion de seriales insensible a mayusculas y acotada a 9 caracteres,
+ * que es lo que cabe en CdromId (char[10] con el terminador). */
+static int game_db_serial_equal(const char *a, const char *b) {
+    int i, ca, cb;
+    for (i = 0; i < 9; i++) {
+        ca = (unsigned char)a[i];
+        cb = (unsigned char)b[i];
+        if (ca >= 'a' && ca <= 'z') ca -= 32;
+        if (cb >= 'a' && cb <= 'z') cb -= 32;
+        if (ca != cb) return 0;
+        if (ca == 0)  return 1;
+    }
+    return 1;
+}
+
+/* Aplica la calibracion de pistola de guncon_db[], si el disco tiene entrada.
+ * Se llama desde game_db_apply(), asi que al entrar ya esta comprobado que hay
+ * serial y que pcsxr360_game_db sigue activada. */
+static void guncon_db_apply(void) {
+    int i;
+    for (i = 0; guncon_db[i].serial != NULL; i++) {
+        if (!game_db_serial_equal(guncon_db[i].serial, CdromId))
+            continue;
+        if (option_is_default("pcsxr360_gunconadjustratiox", "1.00")) {
+            g_db_guncon_ratiox100 = guncon_db[i].ratiox100;
+            check_guncon_calibration();
+            pcsxr_log(RETRO_LOG_INFO,
+                "[GAME-DB] %.9s: GunCon ratio X = %d.%02d por la tabla (%s)\n",
+                CdromId, (int)guncon_db[i].ratiox100 / 100,
+                (int)guncon_db[i].ratiox100 % 100, guncon_db[i].game);
+        } else {
+            pcsxr_log(RETRO_LOG_INFO,
+                "[GAME-DB] %.9s: GunCon ratio X: respeto tu ajuste\n", CdromId);
+        }
+        return;
+    }
+}
+
+static void game_db_apply(void) {
+    const struct game_db_entry *e = NULL;
+    int i;
+
+    /* Sin override mientras no se demuestre lo contrario, incluso si salimos
+     * por cualquiera de los returns de abajo.  El recalculo es obligatorio:
+     * si no, el umbral del juego ANTERIOR se quedaria puesto hasta el
+     * siguiente aviso de variables-update. */
+    g_db_analog_pct = -1;
+    check_analog_saturation();
+    g_db_guncon_ratiox100 = -1;
+    check_guncon_calibration();
+
+    if (CdromId[0] == '\0') {
+        pcsxr_log(RETRO_LOG_INFO, "[GAME-DB] sin serial de disco, nada que aplicar\n");
+        return;
+    }
+
+    if (!read_bool_var("pcsxr360_game_db", true)) {
+        pcsxr_log(RETRO_LOG_INFO,
+            "[GAME-DB] desactivada por opcion; %.9s se queda con tus ajustes\n",
+            CdromId);
+        return;
+    }
+
+    /* La calibracion de pistola va en su propia tabla, asi que se busca aqui
+     * y no en el bucle de abajo: un juego puede tener entrada de GunCon sin
+     * tener ninguna de arreglos, que es justo el caso de Time Crisis. */
+    guncon_db_apply();
+
+    for (i = 0; game_db[i].serial != NULL; i++) {
+        if (game_db_serial_equal(game_db[i].serial, CdromId)) {
+            e = &game_db[i];
+            break;
+        }
+    }
+
+    if (e == NULL) {
+        pcsxr_log(RETRO_LOG_INFO, "[GAME-DB] %.9s: sin entrada en la tabla de arreglos\n", CdromId);
+        return;
+    }
+
+    pcsxr_log(RETRO_LOG_INFO, "[GAME-DB] %.9s = %s%s\n", CdromId, e->game,
+        e->verified ? "" : "  [importado de swanstation, SIN verificar aqui]");
+
+    /* I-cache.  psxIcacheConfigure() elige sola cual de las dos banderas
+     * mira segun Config.Cpu, asi que hay que tocar la del core activo. */
+    if (e->icache > 0) {
+        if (Config.Cpu == CPU_INTERPRETER) {
+            if (option_is_default("pcsxr360_icache", "disabled")) {
+                Config.IcacheEmulation = 1;
+                pcsxr_log(RETRO_LOG_INFO,
+                    "[GAME-DB]   I-cache (interprete): ACTIVADA por la tabla\n");
+            } else {
+                pcsxr_log(RETRO_LOG_INFO,
+                    "[GAME-DB]   I-cache (interprete): respeto tu ajuste (%s)\n",
+                    Config.IcacheEmulation ? "activada" : "desactivada");
+            }
+        } else {
+            if (option_is_default("pcsxr360_icache_dynarec", "disabled")) {
+                Config.IcacheDynarec = 1;
+                pcsxr_log(RETRO_LOG_INFO,
+                    "[GAME-DB]   I-cache (dynarec): ACTIVADA por la tabla%s\n",
+                    e->verified ? "" : "; mirar [ICDIV] n= para saber si sirve de algo");
+            } else {
+                pcsxr_log(RETRO_LOG_INFO,
+                    "[GAME-DB]   I-cache (dynarec): respeto tu ajuste (%s)\n",
+                    Config.IcacheDynarec ? "activada" : "desactivada");
+            }
+        }
+    }
+
+    /* Saturacion del stick.  Se guarda en g_db_analog_pct porque
+     * check_analog_saturation() se vuelve a llamar en cada variables-update. */
+    if (e->analog >= 0) {
+        if (option_is_default("pcsxr360_analog_saturation", "5")) {
+            g_db_analog_pct = e->analog;
+            check_analog_saturation();
+            pcsxr_log(RETRO_LOG_INFO,
+                "[GAME-DB]   saturacion del stick: %d%% por la tabla\n", (int)e->analog);
+        } else {
+            pcsxr_log(RETRO_LOG_INFO,
+                "[GAME-DB]   saturacion del stick: respeto tu ajuste\n");
+        }
+    }
+}
+
 static int emu_setup(void) {
     int ret;
 
@@ -1017,7 +1906,106 @@ static int emu_setup(void) {
     Config.Cdda    = 0;
     Config.PsxAuto = 1;
     Config.CpuBias = 2;
+
+    /* Region / temporizado de video.  Forzar NTSC hace que un juego PAL corra
+     * a 60 Hz (frame de 564.398 ciclos en vez de 677.332): +20% de velocidad,
+     * que para los ports NTSC ralentizados que eran la mayoria de PAL es su
+     * ritmo original.  CheckCdrom() (mas abajo, misma funcion) solo escribe
+     * Config.PsxType cuando PsxAuto sigue activo, asi que ponerlo a 0 protege
+     * el valor forzado.  Init-only: el temporizado se hornea en psxRcntInit
+     * (via EmuReset) y timing.fps solo se lee al cargar -> "restart to apply". */
+    {
+        struct retro_variable var_rg = { "pcsxr360_region", NULL };
+        if (environ_cb && environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var_rg)
+            && var_rg.value) {
+            if (strcmp(var_rg.value, "ntsc") == 0) {
+                Config.PsxAuto = 0; Config.PsxType = PSX_TYPE_NTSC;
+                pcsxr_log(RETRO_LOG_INFO, "[PCSXR-LR] region: forzada NTSC (60Hz)\n");
+            } else if (strcmp(var_rg.value, "pal") == 0) {
+                Config.PsxAuto = 0; Config.PsxType = PSX_TYPE_PAL;
+                pcsxr_log(RETRO_LOG_INFO, "[PCSXR-LR] region: forzada PAL (50Hz)\n");
+            } else {
+                pcsxr_log(RETRO_LOG_INFO, "[PCSXR-LR] region: auto (por serial del disco)\n");
+            }
+        }
+    }
+
+    /* Ciclos por instruccion del R3000A, en centesimas.  200 = el CpuBias=2
+     * historico; 175 es el default de upstream pcsx_rearmed
+     * (CYCLE_MULT_DEFAULT).  Init-only: los bloques ya recompilados llevan
+     * su coste horneado en el inmediato del ADDI, asi que cambiarlo en
+     * caliente daria una mezcla de dos relojes -> "restart to apply".
+     * Config.CpuBias se mantiene sincronizado (redondeado) porque lo usa el
+     * interprete, que solo se activa para biseccion. */
+    Config.CpuCycleMult = 200;
+    {
+        struct retro_variable var_cm;
+        var_cm.key = "pcsxr360_cycle_multiplier";
+        var_cm.value = NULL;
+        if (environ_cb && environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var_cm)
+            && var_cm.value) {
+            int cm = atoi(var_cm.value);
+            if (cm >= 50 && cm <= 400)
+                Config.CpuCycleMult = (u32)cm;
+        }
+        Config.CpuBias = (u8)((Config.CpuCycleMult + 50) / 100);
+        if (Config.CpuBias < 1) Config.CpuBias = 1;
+        pcsxr_log(RETRO_LOG_INFO,
+            "[PCSXR-LR] CPU cycles/instr = %u.%02u (%u instr/frame NTSC)\n",
+            (unsigned)(Config.CpuCycleMult / 100),
+            (unsigned)(Config.CpuCycleMult % 100),
+            (unsigned)(565045u * 100u / Config.CpuCycleMult));
+    }
+
+    /* CPU core: dynarec (por defecto) o interprete.  El interprete es MUY
+     * lento pero sirve de BISECCION: si un juego falla con dynarec y va con
+     * interprete, el bug esta en el recompilador (ppc/pR3000A.c) y no en la
+     * logica del core.  Init-only: psxInit() lee Config.Cpu una sola vez. */
     Config.Cpu     = CPU_DYNAREC;
+    {
+        struct retro_variable var_cpu;
+        var_cpu.key = "pcsxr360_cpu_core";
+        var_cpu.value = NULL;
+        if (environ_cb && environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var_cpu)
+            && var_cpu.value && strcmp(var_cpu.value, "interpreter") == 0) {
+            Config.Cpu = CPU_INTERPRETER;
+            pcsxr_log(RETRO_LOG_INFO, "[PCSXR-LR] CPU core: INTERPRETER (diagnostico)\n");
+        }
+    }
+
+    /* I-cache del R3000A.  Por defecto ON (como upstream pcsx_rearmed): sin
+     * ella Formula One 99 revienta en jump@801F5ADC, porque su cargador
+     * descomprime 1,63 MB encima del stub de 16 bytes que acaba de dejar
+     * cacheado en 0x80023000 y despues lo llama.  intReset() la desactiva
+     * sola si el CPU core es el dynarec, que no pasa por el fetch. */
+    Config.IcacheEmulation = 1;
+    {
+        struct retro_variable var_ic;
+        var_ic.key = "pcsxr360_icache";
+        var_ic.value = NULL;
+        if (environ_cb && environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var_ic)
+            && var_ic.value && strcmp(var_ic.value, "disabled") == 0) {
+            Config.IcacheEmulation = 0;
+            pcsxr_log(RETRO_LOG_INFO, "[PCSXR-LR] I-cache: DESACTIVADA por opcion\n");
+        }
+    }
+
+    /* I-cache en el DYNAREC: apagada por defecto a proposito.  Es la semantica
+     * del hardware (la cache solo se invalida con el flush explicito), pero un
+     * juego con SMC sin flush recompilaria codigo viejo, asi que se activa a
+     * mano y se mide con [ICDIV]. */
+    Config.IcacheDynarec = 0;
+    {
+        struct retro_variable var_icd;
+        var_icd.key = "pcsxr360_icache_dynarec";
+        var_icd.value = NULL;
+        if (environ_cb && environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var_icd)
+            && var_icd.value && strcmp(var_icd.value, "enabled") == 0) {
+            Config.IcacheDynarec = 1;
+            pcsxr_log(RETRO_LOG_INFO,
+                "[PCSXR-LR] I-cache en DYNAREC: ACTIVADA (experimental)\n");
+        }
+    }
 
     const char *system_dir = NULL;
     if (!environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &system_dir) || !system_dir) {
@@ -1158,6 +2146,7 @@ static int emu_setup(void) {
         ret = cdra_open();
         if (ret < 0) { pcsxr_log(RETRO_LOG_DEBUG,"[PCSXR-LR] cdra_open FAILED\n"); return -1; }
     }
+    gpuDiscardDeferred();   /* juego nuevo: nada pendiente de la partida anterior */
 	pcsxr_log(RETRO_LOG_DEBUG,"[PCSXR-LR] Calling GPU_open...\n");
     ret = GPU_open(NULL);
     if (ret < 0) { pcsxr_log(RETRO_LOG_DEBUG,"[PCSXR-LR] GPU_open FAILED\n"); return -1; }
@@ -1222,6 +2211,11 @@ static int emu_setup(void) {
     } else {
         pcsxr_log(RETRO_LOG_DEBUG,"[PCSXR-LR] Calling CheckCdrom...\n");
         CheckCdrom();
+        /* Arreglos por juego.  Va DESPUES de CheckCdrom (que es quien rellena
+         * CdromId) y ANTES de EmuReset: EmuReset llama a psxReset y ese a
+         * psxIcacheConfigure, asi que desde aqui todavia se puede cambiar la
+         * I-cache. */
+        game_db_apply();
         pcsxr_log(RETRO_LOG_DEBUG,"[PCSXR-LR] Calling EmuReset...\n");
         EmuReset();
         pcsxr_log(RETRO_LOG_DEBUG,"[PCSXR-LR] Calling LoadCdrom...\n");
@@ -1751,12 +2745,21 @@ void retro_init(void) {
     check_pixel_format();
 	pcsxr_log(RETRO_LOG_DEBUG,"[PCSXR-LR] check_game_fixes\n");
     check_game_fixes();
+    check_gpu_busy_model();
+    check_analog_saturation();
+    check_guncon_calibration();
 	pcsxr_log(RETRO_LOG_DEBUG,"[PCSXR-LR] retro_init finished\n");
 }
 
 void retro_deinit(void) {
-    /* Nothing persistent across runs — emu_teardown is called from
-     * retro_unload_game, which the frontend invokes before retro_deinit. */
+    /* emu_teardown ya corrio (retro_unload_game).  Lo unico que persiste
+     * entre cargas es el HILO GPU: se crea una sola vez y se reutiliza,
+     * porque crearlo/destruirlo en cada carga colgaba la consola de forma
+     * intermitente dentro de CreateThread (ver el bloque "MODELO DE CICLO
+     * DE VIDA" en libpcsxcore/gpu.c).  Aqui, al cerrar el core de verdad,
+     * es donde se destruye. */
+    pcsxr_log(RETRO_LOG_DEBUG,"[PCSXR-LR] retro_deinit: gpuDmaThreadDestroy\n");
+    gpuDmaThreadDestroy();
 }
 
 bool retro_load_game(const struct retro_game_info *game) {
@@ -1873,6 +2876,13 @@ void retro_unload_game(void) {
         return;
 
     emu_running = false;
+    /* La base de datos por juego vuelve a "sin override": el siguiente juego
+     * tiene que partir de las opciones tal cual, y el modo BIOS-only no pasa
+     * por game_db_apply() porque se salta CheckCdrom. */
+    g_db_analog_pct = -1;
+    check_analog_saturation();
+    g_db_guncon_ratiox100 = -1;
+    check_guncon_calibration();
     emu_teardown();
 }
 
@@ -2003,6 +3013,9 @@ void retro_run(void) {
         if (environ_cb && environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated) {
             check_pixel_format();
             check_game_fixes();
+            check_gpu_busy_model();
+            check_analog_saturation();
+            check_guncon_calibration();
         }
     }
 
@@ -2052,6 +3065,9 @@ void retro_run(void) {
     gpu_wait_ticks = 0;
     frame_done = 0;
     RR_SET_SEC(RR_SEC_CPU_EXEC);
+#if PCSXR_DIAG_INSTRUMENTATION
+    diag_trace_mark(DIAG_TR_RUN_IN);
+#endif
     psxCpu->Execute();
 #if PCSXR_PERF_ENABLED
     QueryPerformanceCounter(&t_after_exec);
@@ -2108,8 +3124,9 @@ void retro_run(void) {
     if (was_skipping_this_frame) {
         if (video_cb)
             video_cb(NULL, display_width, display_height, 0);
-    } else if (video_cb && pPsxScreen) {
-        video_cb(pPsxScreen, display_width, display_height, g_pPitch);
+    } else if (video_cb) {
+        if (pPsxScreen)
+            video_cb(pPsxScreen, display_width, display_height, g_pPitch);
     }
 #if PCSXR_PERF_ENABLED
     QueryPerformanceCounter(&t_after_vid);
@@ -2176,9 +3193,197 @@ void retro_run(void) {
                     frame_us ? (unsigned)((sec_us * 100ULL) / frame_us) : 0u);
             }
         }
+
+        /* === [RR-PERF] media por frame de la ventana (1 linea/segundo) ===
+         * [RR-SLOW] solo dispara por encima de 100 ms, asi que no ve el caso
+         * "el core se pasa un poco del budget todos los frames" -- que es
+         * exactamente lo que hace que el frontend caiga de 60 a 55 fps.
+         *
+         * Lectura, con budget NTSC = 16,6 ms:
+         *   exec ~= budget y gpu_wait ~= exec  -> el cuello es el HILO GPU
+         *       (rasterizado Unai).  El frameskip automatico ataca esto.
+         *   exec ~= budget y gpu_wait ~= 0     -> el cuello es el DYNAREC/GTE.
+         *       El frameskip NO ayuda; la unica palanca es que el juego haga
+         *       menos trabajo (pcsxr360_gpu_busy=ring lo consigue frenandolo).
+         *   over = frames de la ventana que se pasaron del budget. */
+        {
+            static uint64_t s_acc_exec_us = 0;
+            static uint64_t s_acc_wait_us = 0;
+            static uint64_t s_acc_vid_us  = 0;
+            static uint32_t s_acc_frames  = 0;
+            static uint32_t s_acc_over    = 0;
+            static uint64_t s_last_thr_ticks = 0;
+            static uint32_t s_last_drains    = 0;
+            static uint64_t s_last_exec_ticks = 0;
+            static uint64_t s_last_push_ticks = 0;
+            uint64_t thr_us = 0;
+            uint32_t drains = 0;
+            uint64_t wait_us = 0;
+            uint64_t budget_us = (Config.PsxType == PSX_TYPE_PAL) ? 20000 : 16667;
+            /* OJO: frame_us incluye OUT_OF_RUN, que es el gap del FRONTEND
+             * (present, shaders, audio, menu).  Con el frontend paceando a
+             * 60 Hz, frame_us ~= 16,6 ms SIEMPRE y no dice nada.  Lo que
+             * queremos es solo el trabajo del CORE. */
+            uint64_t core_us = (frame_us > g_rr_sec_us[RR_SEC_OUT_OF_RUN])
+                             ? frame_us - g_rr_sec_us[RR_SEC_OUT_OF_RUN] : 0;
+
+            if (g_rr_perf_freq.QuadPart > 0)
+                wait_us = (uint64_t)gpu_wait_ticks * 1000000ULL
+                        / (uint64_t)g_rr_perf_freq.QuadPart;
+
+            s_acc_exec_us += g_rr_sec_us[RR_SEC_CPU_EXEC];
+            s_acc_vid_us  += g_rr_sec_us[RR_SEC_VIDEO_CB];
+            s_acc_wait_us += wait_us;
+            if (core_us > budget_us) s_acc_over++;
+            if (++s_acc_frames >= 60) {
+                /* Delta de la ventana para el hilo GPU: es un contador
+                 * acumulado que escribe OTRO hilo, asi que se lee una vez
+                 * y se resta el valor de la ventana anterior. */
+                uint64_t thr_now  = diag_gpu_thread_busy_ticks;
+                uint64_t exec_now = diag_gpu_busy_exec_ticks;
+                uint64_t push_now = diag_push_spin_ticks;
+                uint32_t drn_now  = diag_gpu_drain_waits;
+                uint64_t thrx_us = 0, push_us = 0;
+                if (g_rr_perf_freq.QuadPart > 0) {
+                    thr_us  = (thr_now  - s_last_thr_ticks)  * 1000000ULL
+                            / (uint64_t)g_rr_perf_freq.QuadPart;
+                    thrx_us = (exec_now - s_last_exec_ticks) * 1000000ULL
+                            / (uint64_t)g_rr_perf_freq.QuadPart;
+                    push_us = (push_now - s_last_push_ticks) * 1000000ULL
+                            / (uint64_t)g_rr_perf_freq.QuadPart;
+                }
+                drains = drn_now - s_last_drains;
+                s_last_thr_ticks  = thr_now;
+                s_last_exec_ticks = exec_now;
+                s_last_push_ticks = push_now;
+                s_last_drains     = drn_now;
+
+                /* DOS llamadas separadas: un solo pcsxr_log con '\n' embebido
+                 * sale entrelazado y corrupto en el log del frontend. */
+                pcsxr_log(RETRO_LOG_DEBUG,
+                    "[RR-PERF] avg/frame exec=%u.%02u ms (gpu_wait=%u.%02u) "
+                    "vid=%u.%02u | gpu_thr=%u.%02u (dexec=%u.%02u)\n",
+                    (unsigned)(s_acc_exec_us / 60 / 1000),
+                    (unsigned)((s_acc_exec_us / 60 / 10) % 100),
+                    (unsigned)(s_acc_wait_us / 60 / 1000),
+                    (unsigned)((s_acc_wait_us / 60 / 10) % 100),
+                    (unsigned)(s_acc_vid_us / 60 / 1000),
+                    (unsigned)((s_acc_vid_us / 60 / 10) % 100),
+                    (unsigned)(thr_us / 60 / 1000),
+                    (unsigned)((thr_us / 60 / 10) % 100),
+                    (unsigned)(thrx_us / 60 / 1000),
+                    (unsigned)((thrx_us / 60 / 10) % 100));
+                pcsxr_log(RETRO_LOG_DEBUG,
+                    "[RR-PERF2] push=%u.%02u pend=%u drains=%u "
+                    "| over_budget=%u/60\n",
+                    (unsigned)(push_us / 60 / 1000),
+                    (unsigned)((push_us / 60 / 10) % 100),
+                    (unsigned)diag_lace_pend_words,
+                    (unsigned)(drains / 60),
+                    (unsigned)s_acc_over);
+
+                /* Que comando GP1 se come el drain bloqueante.  El plugin no
+                 * tiene case 0x01 ni 0x02, asi que si sale 01 es un no-op
+                 * puro pagando un drain completo. */
+                {
+                    char gp1[128];
+                    int  n = 0, i;
+                    gp1[0] = '\0';
+                    for (i = 0; i < 32; i++) {
+                        if (diag_gp1_drain_cmd[i] && n < 100) {
+                            n += sprintf(gp1 + n, " %02x=%u",
+                                         i, (unsigned)(diag_gp1_drain_cmd[i] / 60));
+                            diag_gp1_drain_cmd[i] = 0;
+                        }
+                    }
+                    pcsxr_log(RETRO_LOG_DEBUG,
+                        "[GP1-DRAIN] bloqueantes/frame por cmd:%s"
+                        " | GP1 diferidos/frame=%u\n", gp1,
+                        (unsigned)(diag_gp1_04_defer / 60));
+                    diag_gp1_04_defer = 0;
+                }
+
+                /* free     = vblanks con el ring ya vacio (nada que esperar).
+                 * disp_alt = cambios de origen de display; 30 de 60 = el juego
+                 *            hace flip cada dos vblanks (doble bufer, 30 Hz).
+                 *            0 = NO hace flip: o es de un solo bufer, o su
+                 *            maquina de estados esta parada.
+                 * El `partial`/`full` que habia aqui era invalido y se ha
+                 * quitado: ver el comentario de gpuUpdateLace en gpu.c.
+                 *
+                 * [DISP] responde a las tres preguntas que disp_alt=0 deja
+                 * abiertas cuando la pantalla sale negra con el juego vivo:
+                 * esta el display APAGADO (GP1 0x03), es el modo 0x0
+                 * (resolucion sin fijar), o dibuja con un offset que lo saca
+                 * del rectangulo visible.  Solo es de fiar con free=60: esos
+                 * campos los escribe el consumidor (ver PEOPS_GPUdiagDisplayRect). */
+                pcsxr_log(RETRO_LOG_DEBUG,
+                    "[SCANOUT] free=%u disp_alt=%u (de 60)\n",
+                    (unsigned)diag_scanout_free,
+                    (unsigned)diag_disp_alt);
+                {
+                    unsigned long dmode = 0, ddraw = 0, dpos;
+                    int           doff  = 0;
+                    unsigned int  vnz = 0, vtot = 0;
+                    int           gun_y = 0, gun_vres = 0;
+                    int           gun_x0 = 0, gun_hspan = 0;
+                    dpos = PEOPS_GPUdiagDisplayRect(&dmode, &ddraw, &doff);
+                    PEOPS_GPUdiagVramStats(&vnz, &vtot);
+                    PEOPS_GPUgetScreenInfo(&gun_y, &gun_vres);
+                    PEOPS_GPUgetHRange(&gun_x0, &gun_hspan);
+                    /* OJO con drawoff: sale de PSXDisplay.DrawOffset, que
+                     * escribe cmdDrawOffset() en prim.c, o sea el rasterizador
+                     * de PEOPS.  Con el renderer Unai ese handler no corre y el
+                     * campo se queda en 0,0 SIEMPRE.  No sirve para comparar
+                     * renderers; solo vale dentro de una misma eleccion.
+                     * vram = pixeles no negros / muestreados del rectangulo
+                     * visible (ver PEOPS_GPUdiagVramStats): 0 = el rasterizador
+                     * no esta dejando nada donde se mira. */
+                    pcsxr_log(RETRO_LOG_DEBUG,
+                        "[DISP] pos=%u,%u mode=%ux%u drawoff=%d,%d disabled=%d"
+                        " vram=%u/%u gun=y%+d,vres%d raw=%d,%d pos=%d,%d hx=%d+%d\n",
+                        (unsigned)(dpos >> 16), (unsigned)(dpos & 0xffff),
+                        (unsigned)(dmode >> 16), (unsigned)(dmode & 0xffff),
+                        (int)(short)(ddraw >> 16), (int)(short)(ddraw & 0xffff),
+                        doff, vnz, vtot, gun_y, gun_vres,
+                        g_diag_gun_raw_x, g_diag_gun_raw_y,
+                        libretro_gun_absx[0], libretro_gun_absy[0],
+                        gun_x0, gun_hspan);
+                }
+                diag_scanout_free = 0;
+                diag_disp_alt     = 0;
+
+                /* Quien se come el rasterizado.  Cuando el techo es el
+                 * rasterizador (F1'99: gpu_thr ~5 ms de media, 10 en el frame
+                 * pesado) esto dice si hay un comando GP0 dominante al que
+                 * atacar o si el coste esta repartido. */
+                gpuDumpCmdHist();
+
+                /* --- Armado de la traza temporal ---------------------------
+                 * NO armar en el primer frame fuera de presupuesto: los
+                 * primeros frames tras la carga ya se pasan, y la traza
+                 * (one-shot) se gastaba en la pantalla de arranque.
+                 *
+                 * El disparo es el TRABAJO DEL RASTERIZADOR, no el
+                 * presupuesto: en el menu de NFS3 gpu_thr son 8,3 ms/frame y
+                 * en la carga 0,00, asi que separa limpio.  over_budget no
+                 * sirve de gatillo porque exec promedia 16,4 ms, justo en el
+                 * filo de los 16,667. */
+                {
+                    static uint32_t s_perf_windows = 0;
+                    s_perf_windows++;
+                    if (s_perf_windows >= 10 && (thr_us / 60) >= 6000)
+                        diag_trace_arm();
+                }
+                s_acc_exec_us = s_acc_wait_us = s_acc_vid_us = 0;
+                s_acc_frames = s_acc_over = 0;
+                diag_lace_pend_words = 0;   /* es un MAXIMO: reset por ventana */
+            }
+        }
         {
             LARGE_INTEGER rr_t_exit;
             QueryPerformanceCounter(&rr_t_exit);
+            diag_trace_mark(DIAG_TR_RUN_OUT);
             g_rr_last_exit = rr_t_exit;
         }
     }
@@ -2192,6 +3397,9 @@ LARGE_INTEGER g_rr_last_exit = {0};
 #endif
 
 void retro_reset(void) {
+    /* Tras el reset el ring y su contenido ya no significan nada: aplicar un
+     * GP1 encolado pondria un modo de stream arbitrario. */
+    gpuDiscardDeferred();
     EmuReset();
 }
 
@@ -2285,6 +3493,8 @@ bool retro_serialize(void *data, size_t size) {
 
 bool retro_unserialize(const void *data, size_t size) {
     if (!data || size == 0) return false;
+    /* Igual que en retro_reset: el estado cargado trae su propia VRAM. */
+    gpuDiscardDeferred();
     return (LoadStateMem(data, size) == 0);
 }
 

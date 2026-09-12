@@ -1,4 +1,4 @@
-﻿typedef INT32 (*sprite_draw_function)(UINT16 *dest, UINT8 *adata, INT32 pal);
+typedef INT32 (*sprite_draw_function)(UINT16 *dest, UINT8 *adata, INT32 pal);
 typedef INT32 (*sprite_draw_nozoom_function)(UINT16 *dest, UINT8 *pdest, UINT8 *adata, INT32 pal, INT32 pri);
 
 static INT32 zoom_draw_00(UINT16 *dest, UINT8 *adata, INT32 pal)

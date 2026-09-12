@@ -1,4 +1,4 @@
-﻿
+
 #ifndef _SMSRENDER_H_
 #define _SMSRENDER_H_
 

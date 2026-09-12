@@ -1,4 +1,4 @@
-﻿/*
+/*
  * some code for sample mixing
  * (C) notaz, 2006,2007
  * (C) irixxxx, 2019,2020		added filtering

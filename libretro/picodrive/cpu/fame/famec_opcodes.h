@@ -1,4 +1,4 @@
-﻿
+
 #ifdef PICODRIVE_HACK
 #define NOT_POLLING ctx->not_polling = 1;
 #else

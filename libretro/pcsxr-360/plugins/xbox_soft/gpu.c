@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
                           gpu.c  -  description
                              -------------------
     begin                : Sun Oct 28 2001
@@ -145,6 +145,22 @@
  * en release.  Para enable: /D PCSXR_DIAG_INSTRUMENTATION=1. */
 #ifndef PCSXR_DIAG_INSTRUMENTATION
 #define PCSXR_DIAG_INSTRUMENTATION 0
+#endif
+
+/* Sub-interruptor: cronometrar CADA primitiva GP0 con QueryPerformanceCounter.
+ * Son DOS llamadas a QPC por primitiva, y corren en el HILO CONSUMIDOR, que es
+ * justo el cuello de botella en los juegos limitados por el rasterizador
+ * (F1'99: 13.000-18.000 palabras por frame).  O sea: la sonda esta dentro de lo
+ * que mide.  Se separa de PCSXR_DIAG_INSTRUMENTATION para poder medir con los
+ * logs [RR-PERF]/[SCANOUT] puestos y esta sonda quitada -- si no, un build
+ * "limpio" no imprime nada y no hay con que comparar.
+ *
+ * A 1 (default) el comportamiento es el de siempre y [CMD-HIST] funciona.
+ * A 0 se pierde el desglose de ms por comando GP0; los CONTADORES de llamadas
+ * siguen (los usa el watchdog de libpcsxcore/gpu.c para ver si el consumidor
+ * avanza), solo desaparecen los ticks. */
+#ifndef PCSXR_DIAG_PRIMFUNC_TIMING
+#define PCSXR_DIAG_PRIMFUNC_TIMING 1
 #endif
 
 #if defined(_XBOX) && PCSXR_DIAG_INSTRUMENTATION
@@ -1106,67 +1122,190 @@ unsigned long PEOPS_GPUreadStatus(void)
  return lGPUstatusRet | (vBlank ? 0x80000000 : 0 );
 }
 
-////////////////////////////////////////////////////////////////////////
-// processes data send to GPU status register
-// these are always single packet commands.
-////////////////////////////////////////////////////////////////////////
-
-#ifndef _XBOX
-void CALLBACK GPUwriteStatus(unsigned long gdata)      // WRITE STATUS
-#else 
-void PEOPS_GPUwriteStatus(unsigned long gdata)
-#endif 
+/* ---------------------------------------------------------------------------
+ * GP1 0x04 (direccion de DMA) partido en sus DOS mitades, porque cada una
+ * pertenece a un HILO distinto.  El modelo de propiedad es el que ya
+ * documenta el comentario de PEOPS_GPUwriteDataMem:
+ *
+ *   - DataWriteMode/DataReadMode gobiernan la INTERPRETACION DEL STREAM (si
+ *     las palabras son datos de VRAM o comandos).  Los lee -- y los modifica,
+ *     via GP0 0xA0 / FinishedVRAMWrite -- el hilo CONSUMIDOR.  Cambiarlos
+ *     desde el hilo principal a mitad de la cola descarta comandos en
+ *     silencio: el dispatch entero vive dentro de `if(DataWriteMode==
+ *     DR_NORMAL)`.  Por eso se aplican EN ORDEN DE STREAM, desde el
+ *     consumidor, en el punto exacto del ring donde el juego lo pidio (cola
+ *     diferida en libpcsxcore/gpu.c).
+ *
+ *   - lGPUstatusRet es propiedad EXCLUSIVA del hilo principal.  Escribirlo
+ *     desde el consumidor fue el cuelgue del FMV de Silent Hill.
+ *
+ * Antes esto era un unico case que hacia las dos cosas, y el hilo principal
+ * tenia que DRENAR el ring entero antes de aplicarlo para no pisar al
+ * consumidor: 7,7 ms de cada frame de 18 en el menu de NFS3.  Separadas, no
+ * hace falta barrera. */
+void PEOPS_GPUsetStreamMode(unsigned long gdata)
 {
- unsigned long lCommand=(gdata>>24)&0xff;
+ gdata &= 0x03;                                     // Only want the lower two bits
 
- ulStatusControl[lCommand]=gdata;                      // store command for freezing
+ DataWriteMode=DataReadMode=DR_NORMAL;
+ if(gdata==0x02) DataWriteMode=DR_VRAMTRANSFER;
+ if(gdata==0x03) DataReadMode =DR_VRAMTRANSFER;
+}
 
- switch(lCommand)
+void PEOPS_GPUsetDMABits(unsigned long gdata)
+{
+ /* Bookkeeping de freeze: en el camino DIFERIDO no se pasa por
+  * GPUwriteStatus, asi que hay que registrarlo aqui o el savestate pierde la
+  * direccion de DMA. */
+ ulStatusControl[0x04]=gdata;
+ gdata &= 0x03;
+ lGPUstatusRet&=~GPUSTATUS_DMABITS;                 // Clear the current settings of the DMA bits
+ lGPUstatusRet|=(gdata << 29);                      // Set the DMA bits according to the received data
+}
+
+/* ---------------------------------------------------------------------------
+ * GP1 de DISPLAY (0x05 posicion, 0x06 anchura, 0x07 altura, 0x08 modo)
+ * partidos en dos mitades, por el mismo motivo que el 0x04 de arriba:
+ *
+ *   - La GEOMETRIA (PSXDisplay / PreviousPSXDisplay) la lee el CONSUMIDOR
+ *     mientras rasteriza: prim.c usa DrawOffset en cada primitiva y
+ *     DisplayPosition/DisplayEnd en el chequeo de "dibujo a pantalla".
+ *     Escribirla desde el hilo principal a mitad de cola corrompe el frame
+ *     que se esta rasterizando (era la corrupcion de NFS3 y Colin McRae).
+ *     Por eso se aplica EN ORDEN DE STREAM, desde el consumidor, en el punto
+ *     exacto del ring donde el juego lo pidio (cola diferida gp1q en
+ *     libpcsxcore/gpu.c).
+ *
+ *   - lGPUstatusRet es propiedad EXCLUSIVA del hilo principal (escribirlo
+ *     desde el consumidor fue el cuelgue del FMV de Silent Hill), asi que la
+ *     mitad de bits de status se queda aqui.  Se calcula toda desde gdata,
+ *     para no depender de la mitad diferida.
+ *
+ * Esto es lo que hace upstream: gpulib no drena en el 0x05/0x08, encola un
+ * FAKECMD_SCREEN_CHANGE en el mismo ring (gpu_async_notify_screen_change) y
+ * el renderer lo aplica cuando llega.  Drenar costaba 10,4 ms de un frame de
+ * 24 en carrera de F1'99 (medido con [TRACE]).
+ * ------------------------------------------------------------------------- */
+
+/* Se puede diferir?  updateDisplayIfChanged() y el case 0x05 llaman a
+ * updateDisplay() -- que PRESENTA -- si UseFrameSkip.  Presentar desde el
+ * consumidor seria un desastre, asi que con frameskip o fast-forward activos
+ * no se difiere y se drena como siempre.  En libretro ambos estan apagados
+ * (la opcion de frameskip no toca el plugin y el fast-forward no se usa), o
+ * sea que esas ramas estan muertas y este guard es solo un seguro. */
+int PEOPS_GPUdisplayDeferrable(void)
+{
+ return (!UseFrameSkip && !iFastFwd);
+}
+
+/* ---------------------------------------------------------------------------
+ * DIAGNOSTICO: posicion de display aplicada.
+ *
+ * Aqui hubo un PEOPS_GPUdiagDrawHitsRect() que comparaba el area de dibujo con
+ * el rectangulo visible, para decidir si compensaba portar la espera parcial
+ * del vblank de upstream.  RETIRADO: leia drawX/Y/W/H, que los pone el hilo
+ * CONSUMIDOR, y el core lo llamaba en el vblank -- momento en el que el
+ * consumidor lleva ~14.000 palabras de retraso, asi que el area salia
+ * (0,0)-(0,0) y el veredicto era ruido.  El dato solo se puede obtener
+ * anotando las areas en el PRODUCTOR al empujarlas.
+ */
+
+/* Posicion de display APLICADA (la que ve el blit ahora mismo).  Sirve para
+ * detectar si el juego ALTERNA buffers (dos valores distintos frame a frame =
+ * doble bufer en VRAM).  Empaquetado x:y en 16+16. */
+unsigned long PEOPS_GPUdiagDisplayOrigin(void)
+{
+ return ((unsigned long)(PSXDisplay.DisplayPosition.x & 0xffff) << 16) |
+         (unsigned long)(PSXDisplay.DisplayPosition.y & 0xffff);
+}
+
+/* Foto de la geometria de display + area de dibujo, para separar "el juego no
+ * dibuja" de "dibuja donde no se ve" de "el display esta apagado".
+ *
+ * La LEE EL HILO PRINCIPAL, y esos campos los escribe el CONSUMIDOR.  Eso es
+ * exactamente lo que invalidaba la sonda de solape que hubo aqui, asi que la
+ * condicion de validez es explicita: solo tiene sentido llamarla con el ring
+ * DRENADO (o vacio), que es cuando el consumidor esta quiescente.  El volcado
+ * [SCANOUT] la acompana de `free`, que dice cuantos de los 60 vblanks tenian
+ * el ring vacio: si free==60 la foto es buena, si no, no te la creas. */
+unsigned long PEOPS_GPUdiagDisplayRect(unsigned long *mode,
+                                       unsigned long *draw,
+                                       int *disabled)
+{
+ if(mode)
+  *mode = ((unsigned long)(PSXDisplay.DisplayMode.x & 0xffff) << 16) |
+           (unsigned long)(PSXDisplay.DisplayMode.y & 0xffff);
+ if(draw)
+  *draw = ((unsigned long)(PSXDisplay.DrawOffset.x & 0xffff) << 16) |
+           (unsigned long)(PSXDisplay.DrawOffset.y & 0xffff);
+ if(disabled)
+  *disabled = PSXDisplay.Disabled ? 1 : 0;
+ return ((unsigned long)(PSXDisplay.DisplayPosition.x & 0xffff) << 16) |
+         (unsigned long)(PSXDisplay.DisplayPosition.y & 0xffff);
+}
+
+/* Cuenta pixeles NO NEGROS dentro del rectangulo que se esta mostrando, y su
+ * suma, para separar de una vez "el rasterizador no escribe donde toca" de
+ * "escribe bien y el fallo esta despues".
+ *
+ * Es LA medida que decide entre rasterizador y presentacion cuando dos
+ * renderers reciben los mismos comandos GP0 y solo uno saca imagen: si aqui
+ * sale 0 con Unai y no-0 con Peops, los pixeles no estan llegando a la VRAM
+ * visible y el fallo es de coordenadas/recorte en el rasterizador.  Si los dos
+ * dan cuentas parecidas, la VRAM esta bien y hay que mirar mas adelante.
+ *
+ * Submuestrea 2x2 (~61k lecturas en 512x480) y corre UNA vez por segundo desde
+ * el volcado [SCANOUT], asi que el coste es irrelevante; ademas todo esto vive
+ * bajo PCSXR_DIAG_INSTRUMENTATION en el call-site.
+ *
+ * Ignora el bit 15 (mascara/STP): no se ve, y contarlo daria "no negro" a
+ * pixeles negros con la mascara puesta.
+ *
+ * Misma condicion de validez que PEOPS_GPUdiagDisplayRect: solo con el ring
+ * drenado.  Lee psxVuw, que escribe el consumidor. */
+void PEOPS_GPUdiagVramStats(unsigned int *nonzero, unsigned int *total)
+{
+ int x, y, w, h, x0, y0;
+ unsigned int nz = 0, n = 0;
+
+ if(nonzero) *nonzero = 0;
+ if(total)   *total   = 0;
+ if(!psxVuw) return;
+
+ x0 = PSXDisplay.DisplayPosition.x;
+ y0 = PSXDisplay.DisplayPosition.y;
+ w  = PSXDisplay.DisplayMode.x;
+ h  = PSXDisplay.DisplayMode.y;
+ if(w <= 0 || h <= 0) return;
+ if(x0 < 0) x0 = 0;
+ if(y0 < 0) y0 = 0;
+ if(x0 + w > 1024) w = 1024 - x0;
+ if(y0 + h > 512)  h = 512  - y0;      /* 512x480 entrelazado cabe justo */
+ if(w <= 0 || h <= 0) return;
+
+ for(y = 0; y < h; y += 2)
+  {
+   const unsigned short *row = psxVuw + (unsigned)(y0 + y) * 1024 + x0;
+   for(x = 0; x < w; x += 2)
+    {
+     n++;
+     if(row[x] & 0x7fff) nz++;
+    }
+  }
+
+ if(nonzero) *nonzero = nz;
+ if(total)   *total   = n;
+}
+
+/* Mitad de GEOMETRIA.  La ejecuta el CONSUMIDOR cuando el ring llega a la
+ * posicion en la que el juego escribio el registro. */
+void PEOPS_GPUsetDisplayState(unsigned long gdata)
+{
+ switch((gdata>>24)&0xff)
   {
    //--------------------------------------------------//
-   // reset gpu
-   case 0x00:
-    memset(lGPUInfoVals,0x00,16*sizeof(unsigned long));
-    lGPUstatusRet=0x14802000;
-    PSXDisplay.Disabled=1;
-    DataWriteMode=DataReadMode=DR_NORMAL;
-    PSXDisplay.DrawOffset.x=PSXDisplay.DrawOffset.y=0;
-    drawX=drawY=0;drawW=drawH=0;
-    sSetMask=0;lSetMask=0;bCheckMask=FALSE;
-    usMirror=0;
-    GlobalTextAddrX=0;GlobalTextAddrY=0;
-    GlobalTextTP=0;GlobalTextABR=0;
-    PSXDisplay.RGB24=FALSE;
-    PSXDisplay.Interlaced=FALSE;
-    bUsingTWin = FALSE;
-    return;
-   //--------------------------------------------------//
-   // dis/enable display 
-   case 0x03:  
-
-    PreviousPSXDisplay.Disabled = PSXDisplay.Disabled;
-    PSXDisplay.Disabled = (gdata & 1);
-
-    if(PSXDisplay.Disabled) 
-         lGPUstatusRet|=GPUSTATUS_DISPLAYDISABLED;
-    else lGPUstatusRet&=~GPUSTATUS_DISPLAYDISABLED;
-    return;
-
-   //--------------------------------------------------//
-   // setting transfer mode
-   case 0x04:
-    gdata &= 0x03;                                     // Only want the lower two bits
-
-    DataWriteMode=DataReadMode=DR_NORMAL;
-    if(gdata==0x02) DataWriteMode=DR_VRAMTRANSFER;
-    if(gdata==0x03) DataReadMode =DR_VRAMTRANSFER;
-    lGPUstatusRet&=~GPUSTATUS_DMABITS;                 // Clear the current settings of the DMA bits
-    lGPUstatusRet|=(gdata << 29);                      // Set the DMA bits according to the received data
-
-    return;
-   //--------------------------------------------------//
    // setting display position
-   case 0x05: 
+   case 0x05:
     {
      PreviousPSXDisplay.DisplayPosition.x = PSXDisplay.DisplayPosition.x;
      PreviousPSXDisplay.DisplayPosition.y = PSXDisplay.DisplayPosition.y;
@@ -1269,7 +1408,8 @@ void PEOPS_GPUwriteStatus(unsigned long gdata)
      return;
     }
    //--------------------------------------------------//
-   // setting display infos
+   // setting display infos (solo la geometria; los bits de status van en
+   // PEOPS_GPUsetDisplayStatusBits)
    case 0x08:
 
     PSXDisplay.DisplayModeNew.x =
@@ -1286,36 +1426,238 @@ void PEOPS_GPUwriteStatus(unsigned long gdata)
     PSXDisplay.RGB24New      = (gdata & 0x10)?TRUE:FALSE; // if 1 - TrueColor
     PSXDisplay.InterlacedNew = (gdata & 0x20)?TRUE:FALSE; // if 1 - Interlace
 
-    lGPUstatusRet&=~GPUSTATUS_WIDTHBITS;                   // Clear the width bits
-    lGPUstatusRet|=
-               (((gdata & 0x03) << 17) | 
-               ((gdata & 0x40) << 10));                // Set the width bits
-
-    if(PSXDisplay.InterlacedNew)
+    /* Estaba anidado dentro del bloque que pone GPUSTATUS_INTERLACED; la
+     * escritura es geometria y el bit es status, asi que se separan. */
+    if(PSXDisplay.InterlacedNew && !PSXDisplay.Interlaced)
      {
-      if(!PSXDisplay.Interlaced)
-       {
-        PreviousPSXDisplay.DisplayPosition.x = PSXDisplay.DisplayPosition.x;
-        PreviousPSXDisplay.DisplayPosition.y = PSXDisplay.DisplayPosition.y;
-       }
-      lGPUstatusRet|=GPUSTATUS_INTERLACED;
+      PreviousPSXDisplay.DisplayPosition.x = PSXDisplay.DisplayPosition.x;
+      PreviousPSXDisplay.DisplayPosition.y = PSXDisplay.DisplayPosition.y;
      }
-    else lGPUstatusRet&=~GPUSTATUS_INTERLACED;
 
-    if (PSXDisplay.PAL)
-         lGPUstatusRet|=GPUSTATUS_PAL;
-    else lGPUstatusRet&=~GPUSTATUS_PAL;
-
-    if (PSXDisplay.Double==2)
-         lGPUstatusRet|=GPUSTATUS_DOUBLEHEIGHT;
-    else lGPUstatusRet&=~GPUSTATUS_DOUBLEHEIGHT;
-
-    if (PSXDisplay.RGB24New)
-         lGPUstatusRet|=GPUSTATUS_RGB24;
-    else lGPUstatusRet&=~GPUSTATUS_RGB24;
-
+    /* Antes corria despues de los bits de status; no los lee, asi que el
+     * cambio de orden es inocuo. */
     updateDisplayIfChanged();
 
+    return;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Geometria de display para el GunCon, PROPIEDAD DEL HILO PRINCIPAL
+ *
+ * El GunCon no devuelve pixeles: devuelve la posicion del BARRIDO donde el
+ * canon vio el haz.  Para convertir la posicion normalizada del raton en un
+ * scanline hace falta saber donde empieza la ventana de display y cuantas
+ * lineas ocupa -- lo que upstream saca de GPUgetScreenInfo()
+ * (plugins/gpulib/gpu.c:1210).
+ *
+ * Aqui no hay gpulib, y la informacion equivalente (PSXDisplay.Range.y0/y1,
+ * PSXDisplay.Double, PSXDisplay.PAL) vive en PSXDisplay, que es propiedad del
+ * hilo CONSUMIDOR: la mitad de geometria de los GP1 0x05..0x08 se difiere por
+ * la cola gp1q.  El poll del pad corre en el hilo EMULADOR, asi que leer
+ * PSXDisplay desde ahi es la misma trampa que invalido la sonda de solape.
+ *
+ * Solucion: mantener una copia propia calculada SOLO desde el gdata crudo,
+ * dentro de PEOPS_GPUsetDisplayStatusBits -- que ya corre en el hilo principal
+ * en los DOS caminos (el diferido la llama directamente y el directo pasa por
+ * PEOPS_GPUwriteStatus).  Son cuatro enteros por GP1, y da un valor coherente
+ * sin barreras ni drenar el ring.
+ *
+ * Los numeros raros (39/16, y el /2 de vres pero no de y) son de upstream tal
+ * cual: el ajuste fino del canon depende del temporizado real y para eso estan
+ * las opciones de calibracion, no para compensar aqui.
+ * ------------------------------------------------------------------------- */
+static short s_gunY0      = 0x010;        /* GP1 0x07 bits 0..9  (inicio) */
+static short s_gunY1      = 0x010 + 240;  /* GP1 0x07 bits 10..19 (fin)   */
+static int   s_gunPAL     = 0;            /* GP1 0x08 bit 3               */
+static int   s_gunDHeight = 0;            /* GP1 0x08 bit 2               */
+static int   s_gunVRes    = 240;          /* ya DOBLADO si DHeight        */
+static int   s_gunYOfs    = 0;
+
+/* Rango HORIZONTAL declarado por el juego en el GP1 0x06, en relojes de punto:
+ * el MISMO dominio en el que reporta el canon.  Por ahora solo se usa para
+ * medir: la conversion a barrido usa el w=378 fijo de upstream, ajustado al
+ * rango estandar de 2560 relojes (256x10 = 320x8, igual en los dos modos).  Si
+ * un juego declara otro rango, aparece como error de ESCALA que hay que anular
+ * a mano con gunconadjustratiox -- y este dato dice cuanto. */
+static short s_gunX0      = 0;
+static short s_gunXSpan   = 2560;
+
+/* Port de update_height() de gpulib (plugins/gpulib/gpu.c:151). */
+static void gunUpdateGeometry(void)
+{
+ int y    = s_gunY0 - (s_gunPAL ? 39 : 16);   /* 39 por Spyro, dice upstream */
+ int sh   = s_gunY1 - s_gunY0;
+ int tol  = 16;
+ int vres = 240;
+
+ /* La hysteresis mira el vres ANTERIOR, igual que upstream (compara contra
+  * gpu->screen.vres, que tambien guarda el valor ya doblado). */
+ if(s_gunPAL && (sh > 240 || s_gunVRes == 256)) vres = 256;
+
+ if(s_gunDHeight) { y *= 2; sh *= 2; vres *= 2; tol *= 2; }
+
+ if(sh > 0)                                   /* sh<=0 = nada en pantalla */
+  {
+   /* Centrado "auto", que es el default de upstream: si esta desviado por
+    * poco, se da por centrado. */
+   if((unsigned int)(vres - sh) <= 1 && (y < 0 ? -y : y) <= tol) y = 0;
+   if(y + sh > vres) sh = vres - y;
+  }
+
+ s_gunVRes = vres;
+ s_gunYOfs = y;
+}
+
+/* Equivalente de GPUgetScreenInfo() de upstream.
+ *
+ * Sin sincronizacion NI valor rancio: el "hilo principal" de estos comentarios
+ * es el hilo EMULADOR (gpuWriteStatus corre ahi), que es el mismo que hace el
+ * poll del pad via sio.c.  Escritor y lector son el mismo hilo, asi que lo que
+ * lee el GunCon es exactamente el ultimo GP1 que ejecuto el juego.  Esa es toda
+ * la razon de calcularlo aqui en vez de leer PSXDisplay, que es del consumidor.
+ *
+ * OJO: a vres se le deshace el doblado y al offset NO, tal cual upstream. */
+void PEOPS_GPUgetScreenInfo(int *y, int *base_vres)
+{
+ *y         = s_gunYOfs;
+ *base_vres = s_gunDHeight ? (s_gunVRes >> 1) : s_gunVRes;
+}
+
+/* Rango horizontal declarado por el juego (GP1 0x06), en relojes de punto.  De
+ * momento SOLO para diagnostico: la conversion a barrido sigue usando el w=378
+ * de upstream.  Comparar span con 2560 da el factor de escala que hay que meter
+ * en gunconadjustratiox: 2464/2560 = 0,9625, o sea ratio 0.96. */
+void PEOPS_GPUgetHRange(int *x0, int *span)
+{
+ *x0   = s_gunX0;
+ *span = s_gunXSpan;
+}
+
+/* Vuelta a los defaults de gpulib (plugins/gpulib/gpu.c:88).  Lo llama el
+ * GP1 0x00 de PEOPS_GPUwriteStatus, que tambien es del hilo principal. */
+void PEOPS_GPUresetScreenInfo(void)
+{
+ s_gunY0      = 0x010;
+ s_gunY1      = 0x010 + 240;
+ s_gunPAL     = 0;
+ s_gunDHeight = 0;
+ s_gunVRes    = 240;
+ s_gunYOfs    = 0;
+}
+
+/* Mitad de STATUS + bookkeeping de freeze.  Siempre en el hilo principal.  En
+ * el camino diferido no se pasa por GPUwriteStatus, asi que el savestate
+ * perderia el registro si no se anotase aqui. */
+void PEOPS_GPUsetDisplayStatusBits(unsigned long gdata)
+{
+ ulStatusControl[(gdata>>24)&0xff]=gdata;
+
+ /* Copia de geometria para el GunCon (ver gunUpdateGeometry arriba).  Se hace
+  * ANTES del return del 0x08 porque el rango vertical llega en el 0x07. */
+ switch((gdata>>24)&0xff)
+  {
+   case 0x06:
+    s_gunX0    = (short)(gdata & 0x7ff);
+    s_gunXSpan = (short)(((gdata>>12) & 0xfff) - s_gunX0);
+    break;
+   case 0x07:
+    s_gunY0 = (short)(gdata & 0x3ff);
+    s_gunY1 = (short)((gdata>>10) & 0x3ff);
+    gunUpdateGeometry();
+    break;
+   case 0x08:
+    s_gunDHeight = (gdata & 0x04) ? 1 : 0;
+    s_gunPAL     = (gdata & 0x08) ? 1 : 0;
+    gunUpdateGeometry();
+    break;
+  }
+
+ if(((gdata>>24)&0xff)!=0x08) return;                   // solo el 0x08 lleva bits
+
+ lGPUstatusRet&=~GPUSTATUS_WIDTHBITS;                   // Clear the width bits
+ lGPUstatusRet|=
+            (((gdata & 0x03) << 17) | 
+            ((gdata & 0x40) << 10));                    // Set the width bits
+
+ if(gdata & 0x20) lGPUstatusRet|=GPUSTATUS_INTERLACED;  // InterlacedNew
+ else             lGPUstatusRet&=~GPUSTATUS_INTERLACED;
+
+ if(gdata & 0x08) lGPUstatusRet|=GPUSTATUS_PAL;         // PAL
+ else             lGPUstatusRet&=~GPUSTATUS_PAL;
+
+ if(gdata & 0x04) lGPUstatusRet|=GPUSTATUS_DOUBLEHEIGHT;// Double==2
+ else             lGPUstatusRet&=~GPUSTATUS_DOUBLEHEIGHT;
+
+ if(gdata & 0x10) lGPUstatusRet|=GPUSTATUS_RGB24;       // RGB24New
+ else             lGPUstatusRet&=~GPUSTATUS_RGB24;
+}
+
+////////////////////////////////////////////////////////////////////////
+// processes data send to GPU status register
+// these are always single packet commands.
+////////////////////////////////////////////////////////////////////////
+
+#ifndef _XBOX
+void CALLBACK GPUwriteStatus(unsigned long gdata)      // WRITE STATUS
+#else 
+void PEOPS_GPUwriteStatus(unsigned long gdata)
+#endif 
+{
+ unsigned long lCommand=(gdata>>24)&0xff;
+
+ ulStatusControl[lCommand]=gdata;                      // store command for freezing
+
+ switch(lCommand)
+  {
+   //--------------------------------------------------//
+   // reset gpu
+   case 0x00:
+    memset(lGPUInfoVals,0x00,16*sizeof(unsigned long));
+    lGPUstatusRet=0x14802000;
+    PSXDisplay.Disabled=1;
+    DataWriteMode=DataReadMode=DR_NORMAL;
+    PSXDisplay.DrawOffset.x=PSXDisplay.DrawOffset.y=0;
+    drawX=drawY=0;drawW=drawH=0;
+    sSetMask=0;lSetMask=0;bCheckMask=FALSE;
+    usMirror=0;
+    GlobalTextAddrX=0;GlobalTextAddrY=0;
+    GlobalTextTP=0;GlobalTextABR=0;
+    PSXDisplay.RGB24=FALSE;
+    PSXDisplay.Interlaced=FALSE;
+    bUsingTWin = FALSE;
+    PEOPS_GPUresetScreenInfo();   /* geometria del GunCon a defaults */
+    return;
+   //--------------------------------------------------//
+   // dis/enable display 
+   case 0x03:  
+
+    PreviousPSXDisplay.Disabled = PSXDisplay.Disabled;
+    PSXDisplay.Disabled = (gdata & 1);
+
+    if(PSXDisplay.Disabled) 
+         lGPUstatusRet|=GPUSTATUS_DISPLAYDISABLED;
+    else lGPUstatusRet&=~GPUSTATUS_DISPLAYDISABLED;
+    return;
+
+   //--------------------------------------------------//
+   // setting transfer mode
+   case 0x04:
+    /* Las dos mitades (ver PEOPS_GPUsetStreamMode arriba).  Este camino es el
+     * de siempre: se usa cuando NO se difiere, y en single-thread. */
+    PEOPS_GPUsetStreamMode(gdata);
+    PEOPS_GPUsetDMABits(gdata);
+    return;
+   //--------------------------------------------------//
+   // display: posicion (0x05), anchura (0x06), altura (0x07), modo (0x08).
+   // Las dos mitades (ver PEOPS_GPUsetDisplayState arriba).  Este camino es el
+   // de siempre: se usa cuando NO se difiere, y en single-thread.
+   case 0x05:
+   case 0x06:
+   case 0x07:
+   case 0x08:
+    PEOPS_GPUsetDisplayState(gdata);
+    PEOPS_GPUsetDisplayStatusBits(gdata);
     return;
    //--------------------------------------------------//
    // ask about GPU version and other stuff
@@ -1567,7 +1909,7 @@ void PEOPS_GPUwriteDataMem(unsigned long * pMem, int iSize)
  unsigned char command;
  unsigned long gdata=0;
  int i=0;
-#if defined(_XBOX) && PCSXR_DIAG_INSTRUMENTATION
+#if defined(_XBOX) && PCSXR_DIAG_INSTRUMENTATION && PCSXR_DIAG_PRIMFUNC_TIMING
  /* Per-comando timing: QPC bracket alrededor de primFunc[cmd].
   * Declarado aqui (top del bloque) para C89 strict de VS2010. */
  LARGE_INTEGER prof_t0, prof_t1;
@@ -1581,8 +1923,19 @@ void PEOPS_GPUwriteDataMem(unsigned long * pMem, int iSize)
 	DEBUG_print("close",DBG_SDGECKOCLOSE);
 #endif //PEOPS_SDLOG
 
- GPUIsBusy;
- GPUIsNotReadyForCommands;
+ /* [THREADING] NO tocamos aqui los bits de status (GPUIsBusy /
+  * GPUIsNotReadyForCommands).  Esta funcion la ejecuta el HILO CONSUMIDOR
+  * del ring, asi que escribir lGPUstatusRet desde aqui convierte el
+  * registro de status en estado compartido con carrera: el hilo principal
+  * lo lee sin barrera y veia finalizaciones que no habian ocurrido (cuelgue
+  * del FMV de Silent Hill con SwanStation).
+  *
+  * Modelo adoptado (el mismo que pcsx_rearmed/gpulib, cuyo hilo de render
+  * -- gpu_async.c -- no contiene ni una referencia a `status`): el registro
+  * de status es propiedad EXCLUSIVA del hilo principal.  Este deriva
+  * "GPU ocupada" de la ocupacion del ring en gpuReadStatus()
+  * (libpcsxcore/gpu.c), que es informacion que ya posee y puede leer sin
+  * carrera ni bloqueo. */
 
 STARTVRAM:
 
@@ -1736,7 +2089,7 @@ ENDVRAM:
      if(gpuDataC == 0)
       {
        command = (unsigned char)((gdata>>24) & 0xff);
- 
+
 //if(command>=0xb0 && command<0xc0) auxprintf("b0 %x!!!!!!!!!\n",command);
 
        if(primTableCX[command])
@@ -1780,10 +2133,13 @@ ENDVRAM:
 	DEBUG_print("close",DBG_SDGECKOCLOSE);
 #endif //PEOPS_SDLOG
        gpuDataC=gpuDataP=0;
-#if defined(_XBOX) && PCSXR_DIAG_INSTRUMENTATION
+#if defined(_XBOX) && PCSXR_DIAG_INSTRUMENTATION && PCSXR_DIAG_PRIMFUNC_TIMING
        /* Per-comando profiling de Unai + PEOPS + cualquier primTable.
         * QPC wraps primFunc independientemente de PCSXR_PERF_ENABLED
-        * (que solo cubre PEOPS).  Lazy init de la frecuencia QPC. */
+        * (que solo cubre PEOPS).  Lazy init de la frecuencia QPC.
+        * Dos QPC POR PRIMITIVA en el hilo consumidor: ver el comentario de
+        * PCSXR_DIAG_PRIMFUNC_TIMING arriba antes de fiarse de una medida
+        * tomada con esto puesto. */
        if (g_xbox_soft_qpc_freq == 0) {
            LARGE_INTEGER f;
            QueryPerformanceFrequency(&f);
@@ -1807,12 +2163,51 @@ ENDVRAM:
 #else
        primFunc[gpuCommand]((unsigned char *)gpuDataM);
 #endif
+
+       /* "Se ha dibujado algo" para los renderers ALTERNATIVOS.
+        *
+        * updateLace() solo PRESENTA si bDoVSyncUpdate esta a TRUE (ver el
+        * `if(bDoVSyncUpdate ...) updateDisplay();` mas arriba, con su
+        * comentario original "some primitives drawn?").  En PEOPS lo pone
+        * prim.c en 24 sitios, uno por familia de primitiva.  Pero gpu_unai y
+        * gpu_duck traen su PROPIA tabla de primitivas y NO conocen esa
+        * variable -- cero referencias en los dos drivers --, asi que con
+        * cualquiera de ellos la pantalla solo se refrescaba de rebote: al
+        * cambiar de buffer (GP1 0x05) o al terminar una subida CPU->VRAM
+        * (FinishedVRAMWrite).
+        *
+        * Sintoma medido en Dead or Alive con Unai: emulador al 98% de
+        * velocidad, 60 vblanks/s y 60 listas de display/s, pero `disp_alt=0`
+        * -- el juego NO voltea buffer nunca -- asi que solo se presentaba en
+        * las contadas subidas 0xA0: imagen a trompicones que se percibe como
+        * "va lentisimo".  Y el replay del final de round si iba a 60 porque
+        * ahi si hay trafico que lo dispara de rebote.
+        *
+        * Regla: los comandos que ESCRIBEN en VRAM.  0x02 (fill), 0x20-0x7F
+        * (poligonos, lineas, sprites) y 0x80-0x9F (copia VRAM->VRAM).  El
+        * 0xA0 ya lo cubre FinishedVRAMWrite, el 0xC0 solo lee, y 0xE1-0xE6
+        * son estado.
+        *
+        * Solo para los alternativos: con PEOPS lo pone prim.c con criterios
+        * mas finos (mira recorte), y no queremos pisarselo.
+        *
+        * Hilos: lo escribe el CONSUMIDOR y lo lee el hilo emulador en
+        * updateLace, que es EXACTAMENTE la relacion que ya existia con
+        * prim.c; la barrera del drain la cubre.  No hay peligro nuevo. */
+       if((duck_gpu_enabled || unai_gpu_enabled) &&
+          (gpuCommand == 0x02 ||
+           (gpuCommand >= 0x20 && gpuCommand <= 0x9F)))
+        bDoVSyncUpdate = TRUE;
 #if defined(_XBOX) && PCSXR_DIAG_INSTRUMENTATION
-       /* Cerrar timing y attribute al bucket [gpuCommand]. */
-       QueryPerformanceCounter(&prof_t1);
+       /* Los CONTADORES se quedan siempre: el watchdog de libpcsxcore/gpu.c
+        * mira g_xbox_soft_primfunc_calls para saber si el consumidor avanza. */
        g_xbox_soft_primfunc_calls++;
        g_xbox_soft_primfunc_cmd_calls[gpuCommand]++;
+#if PCSXR_DIAG_PRIMFUNC_TIMING
+       /* Cerrar timing y attribute al bucket [gpuCommand]. */
+       QueryPerformanceCounter(&prof_t1);
        g_xbox_soft_primfunc_cmd_ticks[gpuCommand] += (uint64_t)(prof_t1.QuadPart - prof_t0.QuadPart);
+#endif
 #endif
 
 //       if(dwEmuFixes&0x0001 || dwActFixes&0x0400)      // hack for emulating "gpu busy" in some games
@@ -1823,8 +2218,10 @@ ENDVRAM:
 
  lGPUdataRet=gdata;
 
- GPUIsReadyForCommands;
- GPUIsIdle;
+ /* [THREADING] Sin GPUIsReadyForCommands / GPUIsIdle: ver la nota de la
+  * entrada de esta funcion.  Marcar "idle" aqui era precisamente lo que
+  * hacia que el hilo principal viese la GPU libre al final de CADA chunk,
+  * en vez de cuando el trabajo encolado estaba realmente terminado. */
 }
 
 ////////////////////////////////////////////////////////////////////////

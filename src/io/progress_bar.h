@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 // ============================================================
 //  progress_bar.h — SDL 1.2 · Game-style loading bar
 //

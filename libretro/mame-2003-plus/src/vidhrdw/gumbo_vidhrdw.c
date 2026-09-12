@@ -1,4 +1,4 @@
-﻿/* Gumbo Vidhrdw */
+/* Gumbo Vidhrdw */
 
 #include "driver.h"
 

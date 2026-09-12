@@ -1,4 +1,4 @@
-﻿// FB Alpha Xexex driver module
+// FB Alpha Xexex driver module
 // Based on MAME driver by Olivier Galibert
 
 #include "tiles_generic.h"

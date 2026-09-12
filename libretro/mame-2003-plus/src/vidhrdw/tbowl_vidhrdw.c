@@ -1,4 +1,4 @@
-﻿/* vidhrdw/tbowl.c */
+/* vidhrdw/tbowl.c */
 
 /* see drivers/tbowl.c for more info */
 

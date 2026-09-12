@@ -1,4 +1,4 @@
-﻿/*****************************************************************************/
+/*****************************************************************************/
 /*                                                                           */
 /* Module:  POKEY Chip Simulator Includes, V2.3                              */
 /* Purpose: To emulate the sound generation hardware of the Atari POKEY chip. */

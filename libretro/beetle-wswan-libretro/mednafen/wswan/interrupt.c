@@ -1,4 +1,4 @@
-﻿#include "wswan.h"
+#include "wswan.h"
 #include "interrupt.h"
 #include "v30mz.h"
 #include "../state.h"

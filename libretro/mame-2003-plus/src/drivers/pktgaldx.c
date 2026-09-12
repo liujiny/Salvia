@@ -1,4 +1,4 @@
-﻿/*
+/*
 
 Pocket Gal Deluxe
 Nihon System Inc., 1993

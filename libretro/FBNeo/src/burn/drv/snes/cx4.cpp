@@ -1,4 +1,4 @@
-﻿// cx4 simulator for LakeSnes, (c) 2023 dink
+// cx4 simulator for LakeSnes, (c) 2023 dink
 // License: MIT
 
 // Big Thanks:

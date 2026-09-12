@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) Yann Collet, Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *

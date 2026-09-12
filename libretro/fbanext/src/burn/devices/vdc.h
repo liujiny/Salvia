@@ -1,4 +1,4 @@
-﻿
+
 // video
 void vdc_reset();
 void vdc_write(int which, UINT8 offset, UINT8 data);

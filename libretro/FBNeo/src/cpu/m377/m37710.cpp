@@ -1,4 +1,4 @@
-﻿/*
+/*
     Mitsubishi M37702/37710 CPU Emulator
 
     The 7700 series is based on the WDC 65C816 core, with the following

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 // ZipBrowser.h
 // Requiere: unzip/minizip-1.2.5/unzip.h y unzip/zlib.h
 // Compilado con Visual Studio 2010

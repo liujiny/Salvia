@@ -1,4 +1,4 @@
-﻿/*
+/*
  * videomode.c - common code for changing of the display resolution
  *
  * Copyright (C) 2010 Tomasz Krasuski

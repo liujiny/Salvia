@@ -1,4 +1,4 @@
-﻿// Public Domain. See "unlicense" statement at the end of this file.
+// Public Domain. See "unlicense" statement at the end of this file.
 //
 // Includes code from miniz.c which can be found here: https://github.com/richgel999/miniz
 

@@ -1,4 +1,4 @@
-﻿/* time_helper.h
+/* time_helper.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

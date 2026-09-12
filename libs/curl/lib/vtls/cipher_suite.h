@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_CIPHER_SUITE_H
+#ifndef HEADER_CURL_CIPHER_SUITE_H
 #define HEADER_CURL_CIPHER_SUITE_H
 /***************************************************************************
  *                                  _   _ ____  _

@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 
 inline void convertARGB8888ToRGB565_Fast(const uint32_t* __restrict src, int sw, int sh, std::size_t spitch,
                                          uint16_t* __restrict dst, std::size_t dpitch) {
@@ -8,7 +8,7 @@ inline void convertARGB8888ToRGB565_Fast(const uint32_t* __restrict src, int sw,
         uint16_t* __restrict d = (uint16_t*)((uint8_t*)dst + y * dpitch);
 
         #ifdef _XBOX
-        __dcbt(0, s); // Prefetch de la linea de origen (32 bits por pï¿½xel consume mucho bus)
+        __dcbt(0, s); // Prefetch de la linea de origen (32 bits por píxel consume mucho bus)
         #endif
 
         int x = 0;
@@ -88,7 +88,7 @@ inline void convert0RGB1555ToRGB565_Fast2(const uint16_t* __restrict src, unsign
             d[x + 1] = ((p2 & 0x7FE0) << 1) | (p2 & 0x001F);
         }
 
-        // Pï¿½xel sobrante si el ancho es impar
+        // Píxel sobrante si el ancho es impar
         if (x < width) {
             uint32_t p = s[x];
             d[x] = ((p & 0x7FE0) << 1) | (p & 0x001F);
@@ -96,7 +96,7 @@ inline void convert0RGB1555ToRGB565_Fast2(const uint16_t* __restrict src, unsign
     }
 }
 
-// Conversiï¿½n de un pï¿½xel 0RGB1555 a RGB565
+// Conversión de un píxel 0RGB1555 a RGB565
 static inline uint16_t convert_pixel_0RGB1555_to_RGB565(uint16_t c)
 {
     //  0RGB1555:  0 RRRRR GGGGG BBBBB
@@ -106,13 +106,13 @@ static inline uint16_t convert_pixel_0RGB1555_to_RGB565(uint16_t c)
     //  G: bits  9- 5  bits 10- 5  (shift left 1, expandir de 5 a 6 bits)
     //  B: bits  4- 0  bits  4- 0  (sin cambio)
 
-    return ((c & 0x7C00) << 1)   // R: desplaza a posiciï¿½n 15-11
-         | ((c & 0x03E0) << 1)   // G alta: desplaza a posiciï¿½n 10-6
-         | ((c & 0x0200) >> 4)   // G baja: duplica MSB del verde en bit 5 (expansiï¿½n 5 a 6 bits)
+    return ((c & 0x7C00) << 1)   // R: desplaza a posición 15-11
+         | ((c & 0x03E0) << 1)   // G alta: desplaza a posición 10-6
+         | ((c & 0x0200) >> 4)   // G baja: duplica MSB del verde en bit 5 (expansión 5 a 6 bits)
          | ((c & 0x001F));       // B: sin cambio
 }
 
-// Conversiï¿½n de un frame completo al buffer de destino
+// Conversión de un frame completo al buffer de destino
 static void convert_0RGB1555_to_RGB565(
     const uint16_t* src,
     uint16_t*       dst,
@@ -120,7 +120,7 @@ static void convert_0RGB1555_to_RGB565(
     unsigned        height,
     std::size_t     src_pitch)   // pitch en BYTES
 {
-    const unsigned src_stride = src_pitch / sizeof(uint16_t); // pitch en pï¿½xeles
+    const unsigned src_stride = src_pitch / sizeof(uint16_t); // pitch en píxeles
 
     for (unsigned y = 0; y < height; ++y)
     {

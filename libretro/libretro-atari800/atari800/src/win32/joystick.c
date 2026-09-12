@@ -1,4 +1,4 @@
-﻿/*
+/*
  * joystick.c - Win32 port specific code
  *
  * Copyright (C) 2005 James Wilkinson

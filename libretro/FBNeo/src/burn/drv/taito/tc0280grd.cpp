@@ -1,4 +1,4 @@
-﻿// TC0280GRD
+// TC0280GRD
 // Based on MAME sources by Nicola Salmoria
 
 #include "tiles_generic.h"

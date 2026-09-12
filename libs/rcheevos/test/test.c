@@ -1,4 +1,4 @@
-﻿#include "rc_internal.h"
+#include "rc_internal.h"
 
 #ifdef RC_CLIENT_SUPPORTS_RAINTEGRATION
 #include "rc_client_raintegration.h"

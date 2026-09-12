@@ -1,4 +1,4 @@
-﻿/*
+/*
  * filter_ntsc.c - Atari800-specific interface for atari_ntsc module
  *
  * Copyright (C) 2009 Atari800 development team (see DOC/CREDITS)

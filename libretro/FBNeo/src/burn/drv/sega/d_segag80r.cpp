@@ -1,4 +1,4 @@
-﻿// FB Neo Sega G80 Raster driver module
+// FB Neo Sega G80 Raster driver module
 // Based on MAME driver by Aaron Giles
 
 // not bugs:

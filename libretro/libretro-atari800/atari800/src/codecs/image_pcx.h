@@ -1,4 +1,4 @@
-﻿#ifndef CODECS_IMAGE_PCX_H_
+#ifndef CODECS_IMAGE_PCX_H_
 #define CODECS_IMAGE_PCX_H_
 
 #include "atari.h"

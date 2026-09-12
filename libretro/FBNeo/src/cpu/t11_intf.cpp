@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "t11_intf.h"
 
 #define MAX_MEMORY		0x10000

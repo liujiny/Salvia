@@ -1,4 +1,4 @@
-﻿/* test_ossl_dh.h
+/* test_ossl_dh.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

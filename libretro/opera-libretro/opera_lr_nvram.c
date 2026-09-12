@@ -1,4 +1,4 @@
-﻿#include <string.h>
+#include <string.h>
 
 #include <compat/strl.h>
 #include <file/file_path.h>

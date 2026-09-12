@@ -1,4 +1,4 @@
-﻿// FinalBurn Neo Konami Hot Chase and WEC Le Mans 24 driver module
+// FinalBurn Neo Konami Hot Chase and WEC Le Mans 24 driver module
 // Based on MAME driver by Luca Elia
 
 // TOFIX -TODINK-

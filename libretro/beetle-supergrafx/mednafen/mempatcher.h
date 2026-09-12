@@ -1,4 +1,4 @@
-﻿#ifndef __MDFN_MEMPATCHER_H
+#ifndef __MDFN_MEMPATCHER_H
 #define __MDFN_MEMPATCHER_H
 
 #include "mempatcher-driver.h"

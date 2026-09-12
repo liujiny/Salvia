@@ -1,4 +1,4 @@
-﻿#ifndef __GPU_H__
+#ifndef __GPU_H__
 #define __GPU_H__
 
 #include "../plugins/xbox_soft/peops_prof.h"
@@ -130,13 +130,8 @@ extern volatile int      s_gpu_plugin_call;
 	 * repetidos.  Implementacion en gpu.c, sub-seccion "GPU THREADING
 	 * SUBSYSTEM". */
 	void gpuDmaThreadInit(void);
-	void gpuDmaThreadShutdown(void);
-
-	/* Deprecated: el lifecycle del thread esta gestionado SOLO por
-	 * Init/Shutdown.  Esta funcion era fuente del bug que reseteaba
-	 * el flag de salida tras Init.  Se mantiene como no-op para no
-	 * romper compatibilidad de fuente (libretro_core.cpp aun la llama). */
-	void gpuThreadEnable(int enable);
+	void gpuDmaThreadShutdown(void);   /* aparca el hilo (entre juegos) */
+	void gpuDmaThreadDestroy(void);    /* teardown REAL: solo en retro_deinit */
 
 	/* Per-frame counter de QueryPerformanceCounter ticks que la CPU
 	 * emulada paso bloqueada en ring_drain esperando al GPU helper
@@ -145,6 +140,80 @@ extern volatile int      s_gpu_plugin_call;
 	 *   (a) Auto-frameskip: skipear solo si gpu_wait domina el exceso.
 	 *   (b) Dump [PERF]: desglose CPU vs GPU del exec time. */
 	extern volatile uint64_t gpu_wait_ticks;
+
+	/* Modelo de "GPU ocupada" para los bits IDLE/READYFORCOMMANDS de
+	 * GPUSTAT.  0 = RING (historico), 1 = BOUNDED (acotado en ciclos
+	 * emulados, como el gpuIdleAfter de upstream), 2 = NEVER (siempre
+	 * idle, como el GPUreadStatus de gpulib).  Lo fija
+	 * check_gpu_busy_model() en libretro_core.cpp; la razon de que sea
+	 * configurable esta en el bloque de comentario de gpu.c. */
+	extern int g_gpu_busy_model;
+
+	/* Descarta el estado diferido (GP1 0x04 en cola).  Se llama en reset /
+	 * carga de juego / load state: las posiciones encoladas apuntan a un ring
+	 * que ya no significa nada. */
+	void gpuDiscardDeferred(void);
+
+#if PCSXR_DIAG_INSTRUMENTATION
+	/* Traza temporal one-shot (ver el bloque en gpu.c).  retro_run la arma en
+	 * el primer frame fuera de presupuesto y marca su entrada/salida. */
+	void diag_trace_arm(void);
+	void diag_trace_mark(int kind);
+#define DIAG_TR_RUN_IN  1
+#define DIAG_TR_RUN_OUT 2
+#endif
+
+	/* Coste medido de la espera del juego a la GPU, en CICLOS EMULADOS
+	 * (no en tiempo de host).  Lo vuelca [GPU-BUSY] en r3000a.c y los
+	 * resetea alli en cada ventana. */
+#if PCSXR_DIAG_INSTRUMENTATION
+	extern volatile u32 diag_gpu_busy_cycles;
+	extern volatile u32 diag_gpu_busy_episodes;
+	extern volatile u32 diag_gpu_status_reads;
+	extern volatile u32 diag_gpu_status_busy;
+	/* Tiempo real de rasterizado del hilo consumidor y nº de bloqueos del
+	 * productor.  Los lee [RR-PERF] en libretro_core.cpp. */
+	extern volatile uint64_t diag_gpu_thread_busy_ticks;
+	extern volatile u32      diag_gpu_drain_waits;
+	/* Sondas del diagnostico de solapamiento (ver el bloque de comentario en
+	 * gpu.c): busy del consumidor SOLO mientras el emu esta en CPU_EXEC,
+	 * tiempo que el emu pasa bloqueado en ring_push (que no entraba en
+	 * gpu_wait), y palabras pendientes en el ring al llegar al vblank. */
+	extern volatile uint64_t diag_gpu_busy_exec_ticks;
+	extern volatile uint64_t diag_push_spin_ticks;
+	extern volatile u32      diag_lace_pend_words;
+	/* Histograma de drains BLOQUEANTES por comando GP1 (ver gpu.c). */
+	extern volatile u32      diag_gp1_drain_cmd[32];
+	extern volatile u32      diag_gp1_04_defer;
+	/* Fase 1: clasificacion del vblank (ver gpu.c).  Deciden si compensa
+	 * portar la espera parcial `calc_scanout_wait` de upstream. */
+	extern volatile u32      diag_scanout_free;
+	extern volatile u32      diag_disp_alt;
+	/* Top-8 comandos GP0 por tiempo de rasterizado (ver gpu.c).  Volcarlo por
+	 * ventana: su disparador original (chunk > 50 ms) no salta en F1'99. */
+	void gpuDumpCmdHist(void);
+	/* Geometria de display + area de dibujo, para el volcado [DISP].  Vive en
+	 * el plugin (plugins/xbox_soft/gpu.c) y se compila SIEMPRE, igual que
+	 * PEOPS_GPUdiagDisplayOrigin: asi el core y el plugin no tienen que
+	 * coincidir en el valor del flag para que enlace.  Se declara aqui, y no
+	 * solo en externals.h, porque quien la llama es libretro_core.cpp, que no
+	 * incluye las cabeceras del plugin.  Solo es de fiar con el ring drenado
+	 * (ver el comentario de la funcion). */
+	/* Cuenta de pixeles no negros en el rectangulo visible: decide entre
+	 * "el rasterizador no escribe donde toca" y "escribe bien". */
+	void PEOPS_GPUdiagVramStats(unsigned int *nonzero, unsigned int *total);
+	unsigned long PEOPS_GPUdiagDisplayRect(unsigned long *mode,
+	                                       unsigned long *draw,
+	                                       int *disabled);
+#endif
+
+	/* Geometria de display para el GunCon, calculada y propiedad del HILO
+	 * PRINCIPAL (plugins/xbox_soft/gpu.c).  Equivalente de GPUgetScreenInfo()
+	 * de upstream.  Se declara aqui porque la llaman libpcsxcore/plugins.c (C)
+	 * y libretro_core.cpp (C++), que no incluyen las cabeceras del plugin. */
+	void PEOPS_GPUgetScreenInfo(int *y, int *base_vres);
+	void PEOPS_GPUgetHRange(int *x0, int *span);
+	void PEOPS_GPUresetScreenInfo(void);
 
     void gpuWriteData(u32 data);
 	u32  gpuReadData(void);	
@@ -155,8 +224,13 @@ extern volatile int      s_gpu_plugin_call;
 
 ////////////////////////////////////////////try again
 void gpuWriteStatus(u32 data);
-//u32 gpuReadStatus(void);
+u32  gpuReadStatus(void);   /* NO bloqueante; usar SIEMPRE en vez del plugin
+                             * GPU_readStatus crudo: deriva "GPU ocupada" del
+                             * ring y aplica la barrera acquire. */
 /////////////////////////////////////////
+
+/* Sincroniza (drena el ring) para accesos directos a GPU_* desde otras TUs. */
+void gpuSync(void);
 	void gpuWriteDataMem(uint32_t *, int);
 	void gpuReadDataMem(uint32_t *, int);
 

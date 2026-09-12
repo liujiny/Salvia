@@ -1,4 +1,4 @@
-﻿#define WORDS_BIGENDIAN 1
+#define WORDS_BIGENDIAN 1
 #define __BIG_ENDIAN__
 #define __ppc__
 #define inline __forceinline

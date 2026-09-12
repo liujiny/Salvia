@@ -1,4 +1,4 @@
-﻿/* test_ocsp.h
+/* test_ocsp.h
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

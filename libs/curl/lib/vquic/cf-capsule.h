@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_CF_CAPSULE_H
+#ifndef HEADER_CURL_CF_CAPSULE_H
 #define HEADER_CURL_CF_CAPSULE_H
 /***************************************************************************
  *                                  _   _ ____  _

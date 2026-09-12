@@ -1,4 +1,4 @@
-﻿/*
+/*
  * platform.c - platform interface implementation for libretro
  *
  * Copyright (C) 2010 Atari800 development team (see DOC/CREDITS)

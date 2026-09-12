@@ -1,4 +1,4 @@
-﻿#ifndef __ICON_H__
+#ifndef __ICON_H__
 #define __ICON_H__
 
 static unsigned short palette[] = {

@@ -1,4 +1,4 @@
-﻿#ifndef _EDC_CRC32_H
+#ifndef _EDC_CRC32_H
 #define _EDC_CRC32_H
 
 #include <stdint.h>

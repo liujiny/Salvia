@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  BG.C - BG and sprites
  *  TODO: Check transparent color processing (especially with Text)
  */

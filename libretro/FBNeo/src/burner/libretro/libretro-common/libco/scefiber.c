@@ -1,4 +1,4 @@
-﻿/*
+/*
   libco.win (2016-09-06)
   authors: frangarcj
   license: public domain

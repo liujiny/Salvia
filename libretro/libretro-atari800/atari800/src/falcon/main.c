@@ -1,4 +1,4 @@
-﻿/*
+/*
  * main.c - Atari Falcon specific port code
  *
  * Copyright (c) 1997-1998 Petr Stehlik and Karel Rous

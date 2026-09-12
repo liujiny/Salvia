@@ -1,4 +1,4 @@
-﻿/*** DRIVER INFORMATION & NOTES ***********************************************
+/*** DRIVER INFORMATION & NOTES ***********************************************
 
 Super Slams - Driver by David Haywood
    Sound Information from R.Belmont

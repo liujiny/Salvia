@@ -1,4 +1,4 @@
-﻿// Based on MAME sources by Olivier Galibert,Aaron Giles
+// Based on MAME sources by Olivier Galibert,Aaron Giles
 /*********************************************************/
 /*    ricoh RF5C68(or clone) PCM controller              */
 /*********************************************************/

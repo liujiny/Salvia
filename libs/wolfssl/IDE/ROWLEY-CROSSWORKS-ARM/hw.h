@@ -1,4 +1,4 @@
-﻿
+
 #ifndef WOLFSSL_ROWLEY_HW_H
 #define WOLFSSL_ROWLEY_HW_H
 

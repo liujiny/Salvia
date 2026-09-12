@@ -1,4 +1,4 @@
-﻿#ifndef M68KCONF__HEADER
+#ifndef M68KCONF__HEADER
 #define M68KCONF__HEADER
 
 /* ======================================================================== */

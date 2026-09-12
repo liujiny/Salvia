@@ -1,4 +1,4 @@
-﻿/*
+/*
    Timer and PCM YMF278B.  The FM will be shared with the ymf262, eventually.
 
    This chip roughly splits the difference between the Sega 315-5560 MultiPCM

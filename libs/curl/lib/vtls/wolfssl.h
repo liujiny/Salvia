@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_CURL_WOLFSSL_H
+#ifndef HEADER_CURL_WOLFSSL_H
 #define HEADER_CURL_WOLFSSL_H
 /***************************************************************************
  *                                  _   _ ____  _

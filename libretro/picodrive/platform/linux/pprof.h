@@ -1,4 +1,4 @@
-﻿#ifndef __PPROF_H__
+#ifndef __PPROF_H__
 #define __PPROF_H__
 
 enum pprof_points {

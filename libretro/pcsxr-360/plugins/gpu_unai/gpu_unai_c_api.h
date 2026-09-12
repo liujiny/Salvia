@@ -1,4 +1,4 @@
-﻿/*
+/*
  * gpu_unai_c_api.h
  *
  * Pure-C surface that xbox_soft/gpu.c includes when the gpu_unai

@@ -1,4 +1,4 @@
-﻿#include "driver.h" /* for mame_bitmap */
+#include "driver.h" /* for mame_bitmap */
 
 #define NAMCOS22_SCREEN_WIDTH  640
 #define NAMCOS22_SCREEN_HEIGHT 480

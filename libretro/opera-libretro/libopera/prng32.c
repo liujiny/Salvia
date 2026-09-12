@@ -1,4 +1,4 @@
-﻿#include "inline.h"
+#include "inline.h"
 
 #include <stdint.h>
 

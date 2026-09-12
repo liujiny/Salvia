@@ -1,4 +1,4 @@
-﻿#ifndef LOGDIALOG_H
+#ifndef LOGDIALOG_H
 #define LOGDIALOG_H
 
 #include <QDialog>

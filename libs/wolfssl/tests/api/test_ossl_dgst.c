@@ -1,4 +1,4 @@
-﻿/* test_ossl_dgst.c
+/* test_ossl_dgst.c
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

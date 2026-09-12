@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  CIA_SC.cpp - Single-cycle 6526 emulation
  *
  *  Frodo Copyright (C) Christian Bauer

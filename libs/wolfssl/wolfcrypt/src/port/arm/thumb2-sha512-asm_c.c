@@ -1,4 +1,4 @@
-﻿/* thumb2-sha512-asm
+/* thumb2-sha512-asm
  *
  * Copyright (C) 2006-2025 wolfSSL Inc.
  *

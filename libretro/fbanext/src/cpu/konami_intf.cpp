@@ -1,4 +1,4 @@
-﻿#include "burnint.h"
+#include "burnint.h"
 #include "konami_intf.h"
 
 #define MEMORY_SPACE	0x10000

@@ -1,4 +1,4 @@
-﻿static INLINE void illegal( void );
+static INLINE void illegal( void );
 static INLINE void neg_di( void );
 static INLINE void oim_di( void );
 static INLINE void aim_di( void );

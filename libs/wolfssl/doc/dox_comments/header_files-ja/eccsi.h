@@ -1,4 +1,4 @@
-﻿
+
 /*!
 */
 int wc_InitEccsiKey(EccsiKey* key, void* heap, int devId);

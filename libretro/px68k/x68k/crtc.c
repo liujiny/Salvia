@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  CRTC.C - CRT Controller / Video Controller
  *  TurtleBazooka - Code correction suggestions
  */

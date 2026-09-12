@@ -1,4 +1,4 @@
-﻿/* NetSIO to FujiNet-PC */
+/* NetSIO to FujiNet-PC */
 #ifndef NETSIO_H
 #define NETSIO_H
 
