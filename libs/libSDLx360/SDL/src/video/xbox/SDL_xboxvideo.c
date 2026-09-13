@@ -106,7 +106,7 @@ static int g_vsync_enabled = 1;
 /* Compile-time-only CRT/video diagnostics. Release builds pay zero timer,
  * counter, formatting or logging cost. Enable temporarily in this file. */
 #ifndef XBOX_CRT_PERF_DIAG
-#define XBOX_CRT_PERF_DIAG 1
+#define XBOX_CRT_PERF_DIAG 0
 #endif
 
 /* Independent A/B switches. Defaults reproduce the original backend and

@@ -56,6 +56,9 @@ int            usestereo = 1;
 
 #if X360_MAME_PROFILE
 round4p_profile_data round4p_profile;
+/* Only the main thread accesses interval snapshots. Worker counters are
+   sampled after both workers have completed the current frame. */
+static round4p_profile_data r2_perf_previous;
 #endif
 
 #define SALVIA_ENVIRONMENT_X360_GET_INDEXED_TELEMETRY 0x53580003u
@@ -69,6 +72,7 @@ struct round4p_indexed_telemetry
   const char *reason;
 };
 extern unsigned video_conversion_type;
+extern bool video_flip_x, video_flip_y, video_swap_xy;
 
 #if X360_MAME_PROFILE
 static double round4p_ms(UINT64 ticks)
@@ -90,6 +94,7 @@ void round4p_profile_reset(void)
   char path[1024];
   FILE *file;
   memset(&round4p_profile, 0, sizeof(round4p_profile));
+  memset(&r2_perf_previous, 0, sizeof(r2_perf_previous));
 #if defined(_XBOX360)
   mips3_x360_profile_reset();
 #endif
@@ -97,7 +102,7 @@ void round4p_profile_reset(void)
     round4p_profile.frequency = (UINT64)frequency.QuadPart;
   if (options.libretro_save_path && options.libretro_save_path[0])
   {
-    snprintf(path, sizeof(path), "%s%cround4p_profile.log",
+    snprintf(path, sizeof(path), "%s%craiden2_perf.log",
              options.libretro_save_path, PATH_DEFAULT_SLASH_C());
     file = fopen(path, "w");
     if (file)
@@ -124,9 +129,41 @@ void round4p_profile_dump(int final_dump)
 
   if (!round4p_profile.frequency || !round4p_profile.frames || !save_path || !save_path[0])
     return;
-  snprintf(path, sizeof(path), "%s%cround4p_profile.log", save_path, PATH_DEFAULT_SLASH_C());
+  snprintf(path, sizeof(path), "%s%craiden2_perf.log", save_path, PATH_DEFAULT_SLASH_C());
   file = fopen(path, "a");
   if (!file) return;
+
+  {
+    UINT64 frames = round4p_profile.frames - r2_perf_previous.frames;
+    int cpu_index;
+    double divisor = frames ? (double)frames : 1.0;
+    double inside = round4p_ms(round4p_profile.retro_run_ticks - r2_perf_previous.retro_run_ticks) / divisor;
+    double outside = round4p_ms(round4p_profile.outside_ticks - r2_perf_previous.outside_ticks) / divisor;
+    fprintf(file, "\nRAIDEN2 STAGE3I RESTORED_OVERLAY INTERVAL frames=%I64u ending=%I64u staged=%I64u\n", frames, round4p_profile.frames, round4p_profile.staged_frames-r2_perf_previous.staged_frames);
+    fprintf(file, "Internal orientation flip_x=%d flip_y=%d swap_xy=%d conversion=%u\n",
+      video_flip_x, video_flip_y, video_swap_xy, video_conversion_type);
+    fprintf(file, "ms/frame: retro_run=%.3f outside_core=%.3f combined=%.3f effective_fps=%.2f\n",
+      inside, outside, inside+outside, inside+outside>0 ? 1000.0/(inside+outside) : 0.0);
+    for(cpu_index=0;cpu_index<8;cpu_index++)
+      if(round4p_profile.cpu_calls[cpu_index])
+        fprintf(file,"CPU%d execute_ms/frame=%.3f calls=%I64u (Raiden2 CPU0=V30 CPU1=Z80)\n",cpu_index,
+          round4p_ms(round4p_profile.cpu_ticks[cpu_index]-r2_perf_previous.cpu_ticks[cpu_index])/divisor,
+          round4p_profile.cpu_calls[cpu_index]-r2_perf_previous.cpu_calls[cpu_index]);
+#define R2_PERF_ROW(label,field) fprintf(file, label "=%.3f ms/frame\n", round4p_ms(round4p_profile.field-r2_perf_previous.field)/divisor)
+    R2_PERF_ROW("driver_draw",video_update_ticks);
+    R2_PERF_ROW("palette_conversion",palette_ticks);
+    R2_PERF_ROW("video_worker",video_worker_ticks);
+    R2_PERF_ROW("staged_texture_copy",staged_copy_ticks);
+    R2_PERF_ROW("video_wait",video_wait_ticks);
+    R2_PERF_ROW("video_callback",video_callback_ticks);
+    R2_PERF_ROW("direct_framebuffer",direct_ticks);
+    R2_PERF_ROW("audio_worker",audio_worker_ticks);
+    R2_PERF_ROW("audio_callback",audio_callback_ticks);
+    R2_PERF_ROW("audio_wait",audio_wait_ticks);
+#undef R2_PERF_ROW
+    fprintf(file,"Inclusive wall timings overlap: do not add CPU/worker/wait rows. Outside includes menus/throttle/Present after retro_run, excludes profiler file writes.\n");
+    r2_perf_previous = round4p_profile;
+  }
 
   total = round4p_profile.retro_run_ticks;
   read_total = round4p_profile.fast_read_hit + round4p_profile.fast_read_miss;
@@ -715,6 +752,10 @@ void retro_run (void)
   UINT64 r4p_frame_start;
 #endif
   bool updated = false;
+#if X360_MAME_PROFILE
+  if (round4p_profile.previous_exit)
+    round4p_profile.outside_ticks += r4p_retro_start - round4p_profile.previous_exit;
+#endif
   poll_cb(); /* execute input callback */
 
   if (retro_running == 0) /* first time through the loop */
@@ -763,6 +804,7 @@ void retro_run (void)
   round4p_profile.retro_run_ticks += round4p_ticks() - r4p_retro_start;
   if ((round4p_profile.frames % 600) == 0)
     round4p_profile_dump(0);
+  round4p_profile.previous_exit = round4p_ticks();
 #endif
   
  /*log_cb(RETRO_LOG_DEBUG, LOGPRE "frameskip_counter %d\n",frameskip_counter);*/

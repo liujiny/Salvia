@@ -14,6 +14,7 @@
 #include "cpuexec.h"
 #include "log.h"
 #include "ost_samples.h"
+#include "round4p_profile.h"
 
 
 #if (HAS_M68000 || HAS_M68010 || HAS_M68020 || HAS_M68EC020)
@@ -629,9 +630,18 @@ static void cpu_timeslice(void)
 			/* run for the requested number of cycles */
 			if (cycles_running > 0)
 			{
+#if X360_MAME_PROFILE
+				UINT64 cpu_start = round4p_ticks();
+#endif
 				profiler_mark(PROFILER_CPU1 + cpunum);
 				cycles_stolen = 0;
 				ran = cpunum_execute(cpunum, cycles_running);
+#if X360_MAME_PROFILE
+				if (cpunum < 8) {
+					round4p_profile.cpu_ticks[cpunum] += round4p_ticks() - cpu_start;
+					round4p_profile.cpu_calls[cpunum]++;
+				}
+#endif
 				ran -= cycles_stolen;
 				profiler_mark(PROFILER_END);
 

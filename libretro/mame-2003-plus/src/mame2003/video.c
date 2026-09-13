@@ -9,6 +9,10 @@
 #include "usrintrf.h"
 #include "driver.h"
 #include "../round4p_profile.h"
+#include "../drivers/raiden2_diag_api.h"
+#if defined(_XBOX360)
+#include "video_rotate565.h"
+#endif
 
 /* Compatibility for older libretro.h snapshots used by some mame2003+ trees.
  * The command value and structure match the upstream libretro API. */
@@ -142,6 +146,9 @@ static HANDLE x360_video_done_event;
 static volatile LONG x360_video_stop;
 static int x360_video_pending;
 static x360_video_job_t x360_video_job;
+/* Owned by the emulation thread; copied only after the worker completion event. */
+static void *x360_staged_texture;
+static unsigned x360_staged_pitch;
 
 static int x360_video_worker_start(void);
 static void x360_video_worker_stop(void);
@@ -499,6 +506,15 @@ static void frame_convert_raw(
          CONVERT(pix_convert_passpal, uint16_t, uint32_t);
          break;
       case VCT_PALTO565:
+#if defined(_XBOX360)
+         if (swap_xy)
+         {
+            x360_rotate565((const UINT16 *)input, (UINT16 *)output,
+               pitch, output_pitch_bytes / sizeof(UINT16), x0, y0, w, h,
+               palette, flip_x, flip_y);
+            break;
+         }
+#endif
          CONVERT(pix_convert_palto565, uint16_t, uint16_t);
          break;
    }
@@ -658,6 +674,7 @@ static int x360_gpu_indexed_present(struct mame_display *display)
       x360_gpu_palette_logged = 1;
    }
 
+   raiden2_debug_output(fb.data,vis_width,vis_height,(unsigned)fb.pitch,2,1,video_palette);
 #if X360_MAME_PROFILE
    round4p_profile.gpu_indexed_frames++;
    round4p_profile.gpu_prepare_ticks += round4p_ticks() - r4p_prepare_start;
@@ -865,13 +882,27 @@ static int x360_video_submit_current(struct mame_display *display)
    x360_video_job.out_height = vis_height;
    x360_video_job.out_pitch = vis_width * video_stride_out;
    x360_video_job.output = video_buffer;
+   x360_staged_texture = NULL;
+   x360_staged_pitch = 0;
 #if X360_DIRECT_FB
    {
       struct retro_framebuffer fb;
       if (x360_get_direct_framebuffer(&fb))
       {
-         x360_video_job.output = fb.data;
-         x360_video_job.out_pitch = (unsigned)fb.pitch;
+         if (video_conversion_type == VCT_PALTO565 &&
+             video_buffer && Machine && Machine->gamedrv &&
+             !strcmp(Machine->gamedrv->name, "raiden2"))
+         {
+            /* Convert in cached RAM, then stream full rows to the texture.
+               Frontend hardware rotation does not require video_swap_xy. */
+            x360_staged_texture = fb.data;
+            x360_staged_pitch = (unsigned)fb.pitch;
+         }
+         else
+         {
+            x360_video_job.output = fb.data;
+            x360_video_job.out_pitch = (unsigned)fb.pitch;
+         }
       }
    }
 #endif
@@ -893,6 +924,19 @@ static int x360_video_present_current(struct mame_display *display)
       return 0;
 
    x360_video_wait();
+   if (x360_staged_texture)
+   {
+      R4P_BEGIN(copy_start);
+      x360_copy565_rows(x360_staged_texture, x360_staged_pitch,
+         x360_video_job.output, x360_video_job.out_pitch,
+         x360_video_job.out_width * 2, x360_video_job.out_height);
+      R4P_ADD(staged_copy_ticks, copy_start);
+      R4P_INC(staged_frames);
+      x360_video_job.output = x360_staged_texture;
+      x360_video_job.out_pitch = x360_staged_pitch;
+   }
+   raiden2_debug_output(x360_video_job.output,x360_video_job.out_width,
+      x360_video_job.out_height,x360_video_job.out_pitch,video_stride_out,0,NULL);
 #if X360_MAME_PROFILE
    if (video_cb)
    {
@@ -1013,6 +1057,7 @@ void osd_update_video_and_audio(struct mame_display *display)
                unsigned min_x = display->game_visible_area.min_x;
                unsigned pitch = display->game_bitmap->rowpixels * video_stride_out;
                char *base = &((char*)display->game_bitmap->base)[min_y*pitch + min_x*video_stride_out];
+               raiden2_debug_output(base,vis_width,vis_height,pitch,video_stride_out,0,NULL);
                video_cb(base, vis_width, vis_height, pitch);
             }
             else
@@ -1027,6 +1072,7 @@ void osd_update_video_and_audio(struct mame_display *display)
                   if (!x360_video_present_current(display))
                   {
                      frame_convert(display);
+                     raiden2_debug_output(video_buffer,vis_width,vis_height,vis_width*video_stride_out,video_stride_out,0,NULL);
                      video_cb(video_buffer, vis_width, vis_height, vis_width * video_stride_out);
                   }
                }
@@ -1034,6 +1080,7 @@ void osd_update_video_and_audio(struct mame_display *display)
 #endif
                {
                   frame_convert(display);
+                  raiden2_debug_output(video_buffer,vis_width,vis_height,vis_width*video_stride_out,video_stride_out,0,NULL);
                   video_cb(video_buffer, vis_width, vis_height, vis_width * video_stride_out);
                }
             }
@@ -1047,6 +1094,7 @@ void osd_update_video_and_audio(struct mame_display *display)
                x360_video_wait();
 #endif
             video_cb(NULL, vis_width, vis_height, vis_width * video_stride_out);
+            raiden2_debug_output(NULL,0,0,0,0,0,NULL);
          }
       }
    }

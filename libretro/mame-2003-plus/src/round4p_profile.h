@@ -16,6 +16,8 @@
 typedef struct round4p_profile_data
 {
    UINT64 frequency;
+   UINT64 cpu_ticks[8], cpu_calls[8];
+   UINT64 outside_ticks, previous_exit;
    UINT64 runtime_ticks, retro_run_ticks, mame_frame_ticks;
    UINT64 mips_ticks, mips_calls, mips_cycles;
    UINT64 adsp_ticks, adsp_calls, adsp_cycles;
@@ -27,6 +29,7 @@ typedef struct round4p_profile_data
    UINT64 indexed_copy_ticks;
    UINT64 video_callback_ticks, video_callback_calls;
    UINT64 video_worker_ticks, video_wait_ticks;
+   UINT64 staged_copy_ticks, staged_frames;
    UINT64 audio_worker_ticks, audio_wait_ticks, audio_callback_ticks;
    UINT64 fast_read_hit, fast_read_miss;
    UINT64 fast_write_hit, fast_write_miss;
