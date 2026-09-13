@@ -245,6 +245,7 @@ void pgm_espgal_decrypt(void);
 void pgm_py2k2_decrypt(void);
 void pgm_puzzli2_decrypt(void);
 void pgm_ddp2_decrypt(void);
+void pgm_asic28_state_init(void);
 
 READ16_HANDLER( pgm_calendar_r );
 READ16_HANDLER( pgm_asic3_r );
@@ -1614,6 +1615,7 @@ out there).
 static DRIVER_INIT( kov )
 {
 	pgm_basic_init();
+	pgm_asic28_state_init();
 
 	install_mem_read16_handler(0, 0x500000, 0x500003, ASIC28_r16);
 	install_mem_write16_handler(0, 0x500000, 0x500003, ASIC28_w16);
@@ -1628,6 +1630,7 @@ static DRIVER_INIT( kov )
 static DRIVER_INIT( kovsh )
 {
 	pgm_basic_init();
+	pgm_asic28_state_init();
 
 	install_mem_read16_handler(0, 0x500000, 0x500003, ASIC28_r16);
 	install_mem_write16_handler(0, 0x500000, 0x500003, ASIC28_w16);
@@ -1642,6 +1645,7 @@ static DRIVER_INIT( kovsh )
 static DRIVER_INIT( djlzz )
 {
 	pgm_basic_init();
+	pgm_asic28_state_init();
 
 	install_mem_read16_handler(0, 0x500000, 0x500003, ASIC28_r16);
 	install_mem_write16_handler(0, 0x500000, 0x500003, ASIC28_w16);

@@ -8,6 +8,12 @@ static struct tilemap *pgm_tx_tilemap, *pgm_bg_tilemap;
 static UINT16 *sprite_bitmap;
 static data16_t *pgm_spritebufferram; /* buffered spriteram*/
 
+static void pgm_video_postload(void)
+{
+	tilemap_mark_all_tiles_dirty(pgm_tx_tilemap);
+	tilemap_mark_all_tiles_dirty(pgm_bg_tilemap);
+}
+
 extern data8_t *pgm_sprite_a_region;   /* = memory_region       ( REGION_GFX4 ); */
 extern size_t	pgm_sprite_a_region_allocate;
 
@@ -288,6 +294,9 @@ VIDEO_START( pgm )
 	tilemap_set_scroll_rows(pgm_bg_tilemap,16*32);
 
 	pgm_spritebufferram = auto_malloc (0xa00);
+	memset(pgm_spritebufferram, 0, 0xa00);
+	state_save_register_UINT16("pgm_video", 0, "sprite_buffer", pgm_spritebufferram, 0xa00 / 2);
+	state_save_register_func_postload(pgm_video_postload);
 
 	sprite_bitmap		= auto_malloc((448+32+32) * 224 * sizeof(UINT16));
 	if (!sprite_bitmap) return 1;

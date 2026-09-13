@@ -425,10 +425,10 @@ WRITE16_HANDLER( pgm_asic3_reg_w )
 
 /*** Knights of Valour / Sango / PhotoY2k Protection (from ElSemi) (ASIC28) ***/
 
-static unsigned short ASIC28KEY;
-static unsigned short ASIC28REGS[10];
-static unsigned short ASICPARAMS[256];
-static unsigned short ASIC28RCNT=0;
+static UINT16 ASIC28KEY;
+static UINT16 ASIC28REGS[10];
+static UINT16 ASICPARAMS[256];
+static UINT16 ASIC28RCNT=0;
 static unsigned int B0TABLE[16]={2,0,1,4,3}; /*maps char portraits to tables*/
 
 /* photo2yk bonus stage*/
@@ -445,7 +445,7 @@ static unsigned int BATABLE[0x40]=
      0x95,0x96,0x97,0x98,0x99,0x9a,0x9b,0x9c,
      0x9e,0xa3,0xd4,0xa9,0xaf,0xb5,0xbb,0xc1};
 
-static unsigned int E0REGS[16];
+static UINT32 E0REGS[16];
 
 
 READ16_HANDLER (sango_protram_r)
@@ -470,8 +470,36 @@ READ16_HANDLER (sango_protram_r)
 	return 0x0000;
 }
 
-static unsigned int photoy2k_seqpos;
-static unsigned int photoy2k_trf[3], photoy2k_soff;
+static UINT32 photoy2k_seqpos;
+static UINT32 photoy2k_trf[3], photoy2k_soff;
+
+/*
+ * The ASIC28 stream cipher advances while the 68000 reads a command result.
+ * Saving only the CPU/RAM leaves the protection device at its pre-load key and
+ * read count, so the next response is decoded as an invalid resource command
+ * by KOV. Keep every mutable ASIC28 value in the save-state image. The
+ * UINT16/UINT32 registrations also let the state core handle host endianness.
+ */
+void pgm_asic28_state_init(void)
+{
+	ASIC28KEY = 0;
+	memset(ASIC28REGS, 0, sizeof(ASIC28REGS));
+	memset(ASICPARAMS, 0, sizeof(ASICPARAMS));
+	ASIC28RCNT = 0;
+	memset(E0REGS, 0, sizeof(E0REGS));
+	photoy2k_seqpos = 0;
+	memset(photoy2k_trf, 0, sizeof(photoy2k_trf));
+	photoy2k_soff = 0;
+
+	state_save_register_UINT16("pgm_asic28", 0, "key", &ASIC28KEY, 1);
+	state_save_register_UINT16("pgm_asic28", 0, "regs", ASIC28REGS, 10);
+	state_save_register_UINT16("pgm_asic28", 0, "params", ASICPARAMS, 256);
+	state_save_register_UINT16("pgm_asic28", 0, "read_count", &ASIC28RCNT, 1);
+	state_save_register_UINT32("pgm_asic28", 0, "e0_regs", E0REGS, 16);
+	state_save_register_UINT32("pgm_asic28", 0, "photo_seqpos", &photoy2k_seqpos, 1);
+	state_save_register_UINT32("pgm_asic28", 0, "photo_transform", photoy2k_trf, 3);
+	state_save_register_UINT32("pgm_asic28", 0, "photo_sprite_offset", &photoy2k_soff, 1);
+}
 
 #define BITSWAP10(val,B9,B8,B7,B6,B5,B4,B3,B2,B1,B0) \
                 ((BIT(val, B9) <<  9) | \
