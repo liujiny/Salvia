@@ -24,6 +24,16 @@
 
 #define PRINTF_BUFFER_SIZE 128
 
+static int retro_vsnprintf(char *buffer, size_t size, const char *format, va_list args)
+{
+#ifdef _MSC_VER
+	return _vsnprintf_s(buffer, size, _TRUNCATE, format, args);
+#else
+	int result = vsnprintf(buffer, size, format, args);
+	return (result < 0 || (size_t)result >= size) ? -1 : result;
+#endif
+}
+
 #define STAT_NOFIND  0
 #define STAT_OK      1
 #define STAT_CRC     2
@@ -258,7 +268,7 @@ int HandleMessage(enum retro_log_level level, TCHAR* szFormat, ...)
 	char buf[PRINTF_BUFFER_SIZE];
 	va_list vp;
 	va_start(vp, szFormat);
-	int rc = _vsnprintf_s(buf, PRINTF_BUFFER_SIZE, _TRUNCATE, szFormat, vp);
+	int rc = retro_vsnprintf(buf, PRINTF_BUFFER_SIZE, szFormat, vp);
 	va_end(vp);
 	if (rc >= 0)
 	{
@@ -306,7 +316,7 @@ static INT32 __cdecl libretro_bprintf(INT32 nStatus, TCHAR* szFormat, ...)
 	//if (szFormat[strlen(szFormat)-1] != '\n') strncat(szFormat, "\n", 1);
 
 	va_start(vp, szFormat);
-	int rc = _vsnprintf_s(buf, PRINTF_BUFFER_SIZE, _TRUNCATE, szFormat, vp);
+	int rc = retro_vsnprintf(buf, PRINTF_BUFFER_SIZE, szFormat, vp);
 	va_end(vp);
 
 	if (rc >= 0)

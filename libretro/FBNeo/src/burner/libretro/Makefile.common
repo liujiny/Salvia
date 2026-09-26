@@ -353,7 +353,15 @@ SOURCES_C += $(UGUI_DIR)/ugui.c \
 	$(UGUI_DIR)/SourceHanSansCN_Medium_13X17.c \
 	$(LIBRETRO_DIR)/ugui_tools.c
 
+ifneq (,$(findstring unix,$(platform)))
+INCLUDE_DIRS += $(FBNEO_LIB_DIR)/libchdr/include
+SOURCES_C += $(wildcard $(FBNEO_LIB_DIR)/libchdr/*.c) \
+	$(FBNEO_LIB_DIR)/lzma/src/real/LzmaDec.c
+FBNEO_DEFINES += -DCHDR_SYSTEM_ZLIB -DCHDR_SYSTEM_ZSTD -D_snprintf=snprintf
+LDFLAGS += -lz -lzstd
+else
 SOURCES_C += $(FBNEO_LIB_DIR)/libchdr/libchdr_flac.c
+endif
 
 # GIT HASH
 GIT_VERSION := $(shell git rev-parse --short HEAD || echo unknown)

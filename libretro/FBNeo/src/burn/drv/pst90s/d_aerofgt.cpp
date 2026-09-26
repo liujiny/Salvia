@@ -1850,7 +1850,7 @@ static void __fastcall spikes91_main_write_byte(UINT32 address, UINT8 data)
 
 static inline void palette_update(INT32 offset) // 5rgb
 {
-	UINT16 p = *((UINT16*)(DrvPalRAM + offset));
+	UINT16 p = BURN_ENDIAN_SWAP_INT16(*((UINT16*)(DrvPalRAM + offset)));
 
 	INT32 r = (p >> 10) & 0x1f;
 	INT32 g = (p >>  5) & 0x1f;
@@ -1865,7 +1865,7 @@ static inline void palette_update(INT32 offset) // 5rgb
 
 static void __fastcall palette_write_word(UINT32 address, UINT16 data)
 {
-	*((UINT16*)(DrvPalRAM + (address & 0xffe))) = data;
+	*((UINT16*)(DrvPalRAM + (address & 0xffe))) = BURN_ENDIAN_SWAP_INT16(data);
 	palette_update(address & 0xffe);
 }
 
@@ -2175,14 +2175,14 @@ static tilemap_callback( pspikes_bg )
 
 static tilemap_callback( aerofgt_bg )
 {
-	INT32 attr = *((UINT16*)(DrvWRAM[0] + offs * 2));
+	INT32 attr = BURN_ENDIAN_SWAP_INT16(*((UINT16*)(DrvWRAM[0] + offs * 2)));
 
 	TILE_SET_INFO(0, (attr & 0x7ff) + (gfxbank[((attr & 0x1800) >> 11) + 0] << 11), attr >> 13, 0);
 }
 
 static tilemap_callback( aerofgt_fg )
 {
-	INT32 attr = *((UINT16*)(DrvWRAM[1] + offs * 2));
+	INT32 attr = BURN_ENDIAN_SWAP_INT16(*((UINT16*)(DrvWRAM[1] + offs * 2)));
 
 	TILE_SET_INFO(1, (attr & 0x7ff) + (gfxbank[((attr & 0x1800) >> 11) + 4] << 11), attr >> 13, 0);
 }
@@ -3665,9 +3665,10 @@ static void DrvPaletteUpdate() // 5rgb
 
 	for (INT32 i = 0; i < BurnDrvGetPaletteEntries(); i++)
 	{
-		INT32 r = (p[i] >> 10) & 0x1f;
-		INT32 g = (p[i] >>  5) & 0x1f;
-		INT32 b = (p[i] >>  0) & 0x1f;
+		UINT16 color = BURN_ENDIAN_SWAP_INT16(p[i]);
+		INT32 r = (color >> 10) & 0x1f;
+		INT32 g = (color >>  5) & 0x1f;
+		INT32 b = (color >>  0) & 0x1f;
 
 		r = (r << 3) | (r >> 2);
 		g = (g << 3) | (g >> 2);
@@ -3792,25 +3793,30 @@ static void aerofgt_draw_sprites(INT32 prihack_mask, INT32 prihack_val)
 
 	for (INT32 offs = 0; offs < 0x2000 / 2; offs++)
 	{
-		if (spriteram[offs] & 0x4000) break;
+		UINT16 entry = BURN_ENDIAN_SWAP_INT16(spriteram[offs]);
+		if (entry & 0x4000) break;
 
-		if ((spriteram[offs] & 0x8000) == 0x0000)
+		if ((entry & 0x8000) == 0x0000)
 		{
-			INT32 attr_start = 4 * (spriteram[offs] & 0x03ff);
+			INT32 attr_start = 4 * (entry & 0x03ff);
 
 			UINT16 *ram = &spriteram[attr_start];
+			UINT16 yattr = BURN_ENDIAN_SWAP_INT16(ram[0]);
+			UINT16 xattr = BURN_ENDIAN_SWAP_INT16(ram[1]);
+			UINT16 attr = BURN_ENDIAN_SWAP_INT16(ram[2]);
+			UINT16 tile = BURN_ENDIAN_SWAP_INT16(ram[3]);
 
-			INT32 oy =    (ram[0] & 0x01ff);
-			INT32 ysize = (ram[0] & 0x0e00) >> 9;
-			INT32 zoomy = (ram[0] & 0xf000) >> 12;
-			INT32 	ox  = (ram[1] & 0x01ff);
-			INT32 xsize = (ram[1] & 0x0e00) >> 9;
-			INT32 zoomx = (ram[1] & 0xf000) >> 12;
-			INT32 flipx = (ram[2] & 0x4000);
-			INT32 flipy = (ram[2] & 0x8000);
-			INT32 color = (ram[2] & 0x3f00) >> 8;
-			INT32 pri   = (ram[2] & 0x3000) >> 12;
-			INT32 map   = (ram[3] & 0xffff) | ((ram[2] & 0x0001) << 16);
+			INT32 oy =    (yattr & 0x01ff);
+			INT32 ysize = (yattr & 0x0e00) >> 9;
+			INT32 zoomy = (yattr & 0xf000) >> 12;
+			INT32 ox =    (xattr & 0x01ff);
+			INT32 xsize = (xattr & 0x0e00) >> 9;
+			INT32 zoomx = (xattr & 0xf000) >> 12;
+			INT32 flipx = (attr & 0x4000);
+			INT32 flipy = (attr & 0x8000);
+			INT32 color = (attr & 0x3f00) >> 8;
+			INT32 pri   = (attr & 0x3000) >> 12;
+			INT32 map   = tile | ((attr & 0x0001) << 16);
 
 			if ((pri & prihack_mask) != prihack_val) continue;
 
@@ -3841,7 +3847,7 @@ static void aerofgt_draw_sprites(INT32 prihack_mask, INT32 prihack_val)
 
 				while (xcnt != xend)
 				{
-					int startno = spritelut[(map++) & 0x7fff] % gfx->code_mask;
+					int startno = BURN_ENDIAN_SWAP_INT16(spritelut[(map++) & 0x7fff]) % gfx->code_mask;
 
 					RenderZoomedTile(pTransDraw, gfx->gfxbase, startno, color, 0xf, ox + xcnt * zoomx/2,        oy + ycnt * zoomy/2,        flipx, flipy, gfx->width, gfx->height, zoomx << 11, zoomy << 11);
 					RenderZoomedTile(pTransDraw, gfx->gfxbase, startno, color, 0xf, -0x200+ox + xcnt * zoomx/2, oy + ycnt * zoomy/2,        flipx, flipy, gfx->width, gfx->height, zoomx << 11, zoomy << 11);
@@ -3985,9 +3991,9 @@ static INT32 AerofgtDraw()
 
 	UINT16 *rs = (UINT16*)DrvRasterRAM;
 
-	GenericTilemapSetScrollX(0, rs[0x000] - 18);
+	GenericTilemapSetScrollX(0, BURN_ENDIAN_SWAP_INT16(rs[0x000]) - 18);
 	GenericTilemapSetScrollY(0, scrolly[0]);
-	GenericTilemapSetScrollX(1, rs[0x200] - 20);
+	GenericTilemapSetScrollX(1, BURN_ENDIAN_SWAP_INT16(rs[0x200]) - 20);
 	GenericTilemapSetScrollY(1, scrolly[1]);
 
 	BurnTransferClear();

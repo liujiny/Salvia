@@ -634,7 +634,7 @@ static void pgm_drawsprites()
 	while (source < finish)
 	{
 		if (!OldCodeMode) {
-			if ((source[4] & 0x7fff) == 0) break;	// verified on hardware
+			if ((BURN_ENDIAN_SWAP_INT16(source[4]) & 0x7fff) == 0) break;	// verified on hardware
 		} else {
 			if (source[4] == 0) break;				// right?
 		}
@@ -653,14 +653,17 @@ static void pgm_drawsprites()
 		INT32 high =  BURN_ENDIAN_SWAP_INT16(source[4]) & 0x01ff;
 
 		if ((0 != nPGMSpriteBufferHack) || (OldCodeMode)) {
-			if (source[2] & 0x8000) boff += 0x800000; // Real hardware does not have this! Useful for some rom hacks.
+			if (BURN_ENDIAN_SWAP_INT16(source[2]) & 0x8000) boff += 0x800000; // Real hardware does not have this! Useful for some rom hacks.
 		}
 
 		if (xgrow) xzom = 0x10-xzom;
 		if (ygrow) yzom = 0x10-yzom;
 
-		UINT32 xzoom = (xzom & 0x10) ? 0 : ((zoomtable[xzom * 2] << 16) | zoomtable[xzom * 2 + 1]);
-		UINT32 yzoom = (yzom & 0x10) ? 0 : ((zoomtable[yzom * 2] << 16) | zoomtable[yzom * 2 + 1]);
+		// Old video registers are mapped 68K RAM; the new zoom RAM is written as host-endian words.
+		UINT32 xzoom = (xzom & 0x10) ? 0 : ((UINT32)(OldCodeMode ? BURN_ENDIAN_SWAP_INT16(zoomtable[xzom * 2]) : zoomtable[xzom * 2]) << 16)
+			| (OldCodeMode ? BURN_ENDIAN_SWAP_INT16(zoomtable[xzom * 2 + 1]) : zoomtable[xzom * 2 + 1]);
+		UINT32 yzoom = (yzom & 0x10) ? 0 : ((UINT32)(OldCodeMode ? BURN_ENDIAN_SWAP_INT16(zoomtable[yzom * 2]) : zoomtable[yzom * 2]) << 16)
+			| (OldCodeMode ? BURN_ENDIAN_SWAP_INT16(zoomtable[yzom * 2 + 1]) : zoomtable[yzom * 2 + 1]);
 
 		if (xpos > 0x3ff) xpos -=0x800;
 		if (ypos > 0x1ff) ypos -=0x400;
@@ -847,7 +850,7 @@ static void draw_background()
 	if (t == 0)
 	{
 		yscroll &= 0x1ff;
-		xscroll &= 0x7ff;
+		xscroll = (xscroll + BURN_ENDIAN_SWAP_INT16(rowscroll[0])) & 0x7ff;
 
 		for (INT32 offs = 0; offs < 64 * 16; offs++)
 		{
@@ -1073,12 +1076,14 @@ INT32 pgmDraw()
 	{
 		nTemp = (OldCodeMode) ? 0x0900 : 0x1000;
 
-		for (INT32 i = 0; i < nScreenWidth * nScreenHeight; i++) {
-			pTempDraw32[i]	= RamCurPal[nTemp];
-			pTransDraw[i]	= nTemp;
-			pTempScreen[i]	= 0;
-			SpritePrio[i]	= 0xff;
+		INT32 pixels = nScreenWidth * nScreenHeight;
+		if (enable_blending) {
+			for (INT32 i = 0; i < pixels; i++) pTempDraw32[i] = RamCurPal[nTemp];
+		} else {
+			for (INT32 i = 0; i < pixels; i++) pTransDraw[i] = nTemp;
 		}
+		memset(pTempScreen, 0, pixels * sizeof(UINT16));
+		memset(SpritePrio, 0xff, pixels);
 	}
 
 	pgm_drawsprites();

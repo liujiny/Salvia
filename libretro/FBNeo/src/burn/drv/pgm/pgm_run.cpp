@@ -1068,10 +1068,10 @@ static void pgm_sprite_buffer()
 		{
 			for (INT32 j = 0; j < 10 / 2; j++)
 			{
-				PGMSprBuf[(i / (10 / 2)) * (16 / 2) + j] = ram16[i + j] & mask[nPGMSpriteBufferHack][j];
+				PGMSprBuf[(i / (10 / 2)) * (16 / 2) + j] = ram16[i + j] & BURN_ENDIAN_SWAP_INT16(mask[nPGMSpriteBufferHack][j]);
 			} 
 
-			if ((ram16[i+4] & 0x7fff) == 0) break; // verified on hardware
+			if ((BURN_ENDIAN_SWAP_INT16(ram16[i+4]) & 0x7fff) == 0) break; // verified on hardware
 		}
 	}
 }

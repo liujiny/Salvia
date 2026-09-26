@@ -15,6 +15,6 @@ public:
     // Ahora recibe std::string (ej: "lang/es.ini")
     bool loadLanguage(const std::string& filename);
 
-    // Obtiene el texto en wstring para soportar tildes/ñ
+    // Return the translated text for the requested key.
     std::string get(const std::string& key);
 };
