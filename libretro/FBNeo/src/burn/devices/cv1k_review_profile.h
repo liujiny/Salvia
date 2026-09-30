@@ -2,7 +2,11 @@
 #ifndef SALVIA_CV1K_REVIEW_PROFILE_H
 #define SALVIA_CV1K_REVIEW_PROFILE_H
 #include <string.h>
-#define SALVIA_CV1K_REVIEW_BUILD "cv1k-source-compare-20260930-r1"
+#define SALVIA_CV1K_REVIEW_BUILD "cv1k-work-profile-20260930-r1"
+// Use the existing PRNG result. Workload-count frames and timing frames are disjoint.
+static inline bool salvia_review_work_sample(unsigned randomWord, bool timingSample) {
+    return !timingSample && (randomWord & 255u) == 1u;
+}
 #if defined(_MSC_VER)
 typedef unsigned __int64 SalviaReviewTick;
 #else
@@ -41,6 +45,8 @@ template<unsigned N> struct SalviaReviewProfile {
 
 #ifdef _XBOX
 #include <xtl.h>
+// Defined by the statically linked frontend; accessed only on the emulation thread.
+extern "C" { extern unsigned salvia_cv1k_work_sample_frame; }
 static inline SalviaReviewTick salvia_review_clock() {
     LARGE_INTEGER now;
     if (!QueryPerformanceCounter(&now) || now.QuadPart <= 0) return 0;

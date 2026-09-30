@@ -140,6 +140,7 @@ static unsigned mapid(UINT8* p) {
 }
 static Result run(unsigned seed,int mode,bool hot=false) {
  rng=seed?seed:1; allocations=compilations=native_calls=interpreted=outer_calls=0;
+ sh3_drc_work.clear();
  Sh3Ppc::blocks=NULL; Sh3Ppc::failed=false;
  memset(events,0,sizeof(events)); trace.clear(); Sh3Ppc::clear();
  allocation_failure=!hot && seed%29==0; recycle=!hot && seed%3==0;
@@ -164,7 +165,8 @@ static Result run(unsigned seed,int mode,bool hot=false) {
    if(++watchdog>20000) {fprintf(stderr,"No progress\n"); abort();}
    if(sh3_drc_enabled && !m_delay && !m_test_irq) {
     ++outer_calls;
-    bool ok=mode==0?reference_dispatch():(mode==1?sh3_drc_dispatch<false>():sh3_drc_dispatch<true>());
+    bool ok=mode==0?reference_dispatch():(mode==1?sh3_drc_dispatch<false>():
+      (mode==3?sh3_drc_dispatch_impl<true,true>():sh3_drc_dispatch<true>()));
     if(ok)continue;
    }
    step();
@@ -227,12 +229,34 @@ static bool cache_lifetime() {
  return true;
 }
 
+static bool workload_profile_checks() {
+ Result plain=run(1,2,true),counted=run(1,3,true);
+ if(!same(plain,counted))return false;
+ Sh3WorkCount sum=0;
+ for(unsigned i=0;i<34;++i)sum+=sh3_drc_work.snapshot_lengths[i];
+ if(sh3_drc_work.native_calls!=counted.native || sum!=counted.native ||
+    sh3_drc_work.native_cycles!=counted.state.total ||
+    sh3_drc_work.rebuilds!=counted.compiled)return false;
+ // Warm ordinary entry must not write any profiling byte.
+ Sh3DrcWorkProfile saved=sh3_drc_work;
+ m_pc=0; m_sh4_icount=2; m_delay=0; m_test_irq=0; sh3_drc_enabled=true;
+ if(!sh3_drc_dispatch<false>() || memcmp(&saved,&sh3_drc_work,sizeof(saved)))return false;
+ // The long chain exceeds this fixture's tiny cache and may have zero hits.
+ // Explicitly repeat the now-warm PC to verify the source-check counter.
+ m_pc=0; m_sh4_icount=2;
+ if(!sh3_drc_dispatch_impl<false,true>() ||
+    sh3_drc_work.validation_spans!=saved.validation_spans+1)return false;
+ puts("PASS counted/ordinary dispatcher states and cycles match; histogram totals match native calls; ordinary entry leaves profile untouched");
+ return true;
+}
+
 int main() {
+ if(!workload_profile_checks()) {fputs("FAIL workload profile\n",stderr);return 6;}
  if(!cache_lifetime()) {fputs("FAIL allocation lifecycle\n",stderr); return 4;}
  unsigned coverage[16]={0};
  for(unsigned s=1;s<=12000;++s) {
-  Result a=run(s,0),b=run(s,1),c=run(s,2);
-  if(!same(a,b)||!same(a,c)) {fprintf(stderr,"FAIL dispatch seed=%u native=%u/%u steps=%u/%u compiles=%u/%u\n",s,a.native,c.native,a.interpreted,c.interpreted,a.compiled,c.compiled);return 1;}
+  Result a=run(s,0),b=run(s,1),c=run(s,2),d=run(s,3);
+  if(!same(a,b)||!same(a,c)||!same(a,d)) {fprintf(stderr,"FAIL dispatch seed=%u native=%u/%u steps=%u/%u compiles=%u/%u\n",s,a.native,c.native,a.interpreted,c.interpreted,a.compiled,c.compiled);return 1;}
   for(unsigned i=0;i<16;++i) coverage[i]+=a.kinds[i];
  }
  for(unsigned i=0;i<16;++i) if(!coverage[i])return 2;

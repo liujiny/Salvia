@@ -14,6 +14,8 @@
 #ifdef _XBOX
 #include "../libretro/FBNeo/src/burn/devices/cv1k_review_profile.h"
 static SalviaReviewProfile<3> g_review_loop;
+extern "C" { unsigned salvia_cv1k_work_sample_frame = 0; }
+static unsigned g_review_work_skipped;
 // Called by the existing pause hook, never from a running frame or audio callback.
 static void salvia_review_frontend_report()
 {
@@ -22,8 +24,8 @@ static void salvia_review_frontend_report()
     if (!file) file = fopen("game:\\cv1000-gpu.log", "w");
     if (!file) return;
     LARGE_INTEGER frequency;
-    fprintf(file, "CV1000 review: build=%s frontend_interval_frames=%u samples=%u invalid=%u\n",
-        SALVIA_CV1K_REVIEW_BUILD, g_review_loop.frames, g_review_loop.samples, g_review_loop.invalid);
+    fprintf(file, "CV1000 review: build=%s frontend_interval_frames=%u samples=%u invalid=%u work_count_skipped=%u\n",
+        SALVIA_CV1K_REVIEW_BUILD, g_review_loop.frames, g_review_loop.samples, g_review_loop.invalid, g_review_work_skipped);
     if (g_review_loop.samples && QueryPerformanceFrequency(&frequency) && frequency.QuadPart > 0) {
         double unit = 1000.0 / (double)frequency.QuadPart;
         double avg = unit / g_review_loop.samples;
@@ -33,6 +35,7 @@ static void salvia_review_frontend_report()
     }
     fclose(file);
     g_review_loop.clear_window();
+    g_review_work_skipped = 0;
 }
 #endif
 
@@ -2347,6 +2350,7 @@ static void __declspec(noinline) runGameLoop() {
 		while (gameMenu->running) {
 			processFrontendEvents();
 #ifdef _XBOX
+			salvia_cv1k_work_sample_frame = 0;
 			const bool reviewSample = strcmp(EMU_LIB_NAME, "fbneo") == 0 &&
 				gameMenu->getEmuStatus() == EMU_STARTED && g_review_loop.begin();
 			SalviaReviewTick reviewMarks[4];
@@ -2415,7 +2419,8 @@ static void __declspec(noinline) runGameLoop() {
 #ifdef _XBOX
 			if (reviewSample) {
 				reviewMarks[3] = salvia_review_clock();
-				g_review_loop.record(reviewMarks);
+				if (!salvia_cv1k_work_sample_frame) g_review_loop.record(reviewMarks);
+				else ++g_review_work_skipped;
 			}
 #endif
 		}

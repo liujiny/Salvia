@@ -40,6 +40,13 @@ INT32 Sh3GetActive();
 
 void Sh3Reset();
 INT32 Sh3Run(INT32 cycles);
+#ifdef _XBOX
+// Explicit low-frequency diagnostic runner; ordinary Sh3Run remains uninstrumented.
+void Sh3WorkBeginFrame();
+INT32 Sh3WorkRun(INT32 cycles);
+void Sh3WorkReset();
+void Sh3WorkReport(void (*emit)(const char*));
+#endif
 
 void Sh3SetIRQLine(INT32 line, INT32 state);
 

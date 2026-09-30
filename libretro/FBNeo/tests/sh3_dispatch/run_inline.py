@@ -23,7 +23,7 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     tests = Path(__file__).resolve().parent.parent
-    cases = ('sh3_dispatch', 'sh3_lookup', 'sh3_source_check', 'sh3_block_layout')
+    cases = ('sh3_dispatch', 'sh3_lookup', 'sh3_source_check', 'sh3_block_layout', 'sh3_work_profile')
     modes = {
         'optimized': ['-O3'],
         'asan-ubsan': ['-O1', '-g', '-fsanitize=address,undefined',
@@ -53,7 +53,7 @@ def main():
                 if result.returncode:
                     raise SystemExit('FAILED: %s %s %s (exit %s)' %
                                      (case, mode, phase, result.returncode))
-    print('PASS 4 host suites in optimized and ASan/UBSan modes')
+    print('PASS %d host suites in optimized and ASan/UBSan modes' % len(cases))
     print('Scope: synthetic callbacks and data validation; not PPC execution or FPS')
 
 

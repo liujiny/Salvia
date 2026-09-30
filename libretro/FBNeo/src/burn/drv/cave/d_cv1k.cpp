@@ -72,6 +72,7 @@ void cv1k_review_report(void (*emit)(const char*))
             cv1k_review.total * avg, cv1k_review.peak * unit);
         emit(text);
     }
+    Sh3WorkReport(emit);
     cv1k_review.clear_window();
 }
 #endif
@@ -560,6 +561,8 @@ static INT32 DrvInit()
 {
 #ifdef _XBOX
 	cv1k_review.clear_window();
+	Sh3WorkReset();
+	salvia_cv1k_work_sample_frame = 0;
 #endif
 	struct BurnRomInfo ri;
 	BurnDrvGetRomInfo(&ri, 0);
@@ -640,6 +643,9 @@ static INT32 DrvFrame()
 	}
 #ifdef _XBOX
 	const bool reviewSample = cv1k_review.begin();
+	const bool workSample = salvia_review_work_sample(cv1k_review.rng, reviewSample) &&
+		(DrvDips[1] & 2) && !(DrvDips[3] & 0x10);
+	salvia_cv1k_work_sample_frame = workSample ? 1u : 0u;
 	SalviaReviewTick reviewMarks[5];
 	if (reviewSample) reviewMarks[0] = salvia_review_clock();
 #endif
@@ -708,9 +714,18 @@ static INT32 DrvFrame()
 
 	Sh3Open(0);
 
-	for (INT32 i = 0; i < nInterleave; i++)
+#ifdef _XBOX
+	if (workSample) {
+		Sh3WorkBeginFrame();
+		for (INT32 i = 0; i < nInterleave; i++) {
+			CPU_RUN(0, Sh3Work);
+		}
+	} else
+#endif
 	{
-		CPU_RUN(0, Sh3);
+		for (INT32 i = 0; i < nInterleave; i++) {
+			CPU_RUN(0, Sh3);
+		}
 	}
 
 	Sh3SetIRQLine(2, CPU_IRQSTATUS_HOLD);

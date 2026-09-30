@@ -4710,17 +4710,20 @@ static inline void execute_one(const UINT16 opcode)
 	}
 
 
+#include "sh3_drc_work_profile.h"
 #ifdef SH3_PPC_DRC
 #include "sh3_drc_ppc.h"
 #endif
 
-static int Sh3Run_timerhack(int cycles)
+template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 {
+	if (Count) ++sh3_drc_work.slices;
 	m_sh4_icount = cycles;
 	sh3_end_run = 0;
 
 	if (m_cpu_off)
 	{
+		if (Count) ++sh3_drc_work.cpu_off_slices;
 		m_sh4_icount = 0;
 		sh3_total_cycles += cycles;
 		return cycles;
@@ -4729,8 +4732,10 @@ static int Sh3Run_timerhack(int cycles)
 	do
 	{
 #ifdef SH3_PPC_DRC
-		if (sh3_drc_enabled && !m_delay && !m_test_irq && sh3_drc_dispatch<true>()) continue;
+		if (sh3_drc_enabled && !m_delay && !m_test_irq && sh3_drc_dispatch_impl<true,Count>()) continue;
 #endif
+		int interpreterBefore = 0;
+		if (Count) { interpreterBefore = m_sh4_icount; ++sh3_drc_work.interpreter_steps; }
 		if (m_delay)
 		{
 			const UINT16 opcode = sh3_cpu_readop16((UINT32)(m_delay & AM));
@@ -4738,6 +4743,7 @@ static int Sh3Run_timerhack(int cycles)
 			m_delay = 0;
 			m_ppc = m_pc;
 
+			if (Count) ++sh3_drc_work.interpreter_hi8[opcode >> 8];
 			execute_one(opcode);
 		}
 		else
@@ -4747,6 +4753,7 @@ static int Sh3Run_timerhack(int cycles)
 			m_pc += 2;
 			m_ppc = m_pc;
 
+			if (Count) ++sh3_drc_work.interpreter_hi8[opcode >> 8];
 			execute_one(opcode);
 		}
 		if (m_test_irq && !m_delay)
@@ -4755,6 +4762,7 @@ static int Sh3Run_timerhack(int cycles)
 		}
 
 		EAT(1);
+		if (Count) sh3_drc_work.interpreter_cycles += (unsigned)(interpreterBefore - m_sh4_icount);
 	} while( m_sh4_icount > 0);// && !sh3_end_run );
 
 	cycles = cycles - m_sh4_icount;
@@ -4764,6 +4772,11 @@ static int Sh3Run_timerhack(int cycles)
 	m_sh4_icount = 0;
 
 	return cycles;
+}
+
+static int Sh3Run_timerhack(int cycles)
+{
+	return Sh3Run_timerhack_impl<false>(cycles);
 }
 
 static int Sh3Run_normal(int cycles)
@@ -4819,6 +4832,50 @@ int Sh3Run(int cycles)
 {
 	return (timer_granularity == 0) ? Sh3Run_normal(cycles) : Sh3Run_timerhack(cycles);
 }
+
+#ifdef _XBOX
+void Sh3WorkBeginFrame() { ++sh3_drc_work.frames; }
+void Sh3WorkReset() { sh3_drc_work.clear(); }
+int Sh3WorkRun(int cycles)
+{
+	if (timer_granularity == 0) {
+		++sh3_drc_work.normal_mode_slices;
+		return Sh3Run_normal(cycles);
+	}
+	return Sh3Run_timerhack_impl<true>(cycles);
+}
+// Invoked from the existing CV1000 pause hook. No clocks or file operations here.
+void Sh3WorkReport(void (*emit)(const char*))
+{
+	if (!emit) return;
+	char text[768];
+	const Sh3DrcWorkProfile &p = sh3_drc_work;
+	sprintf(text,"drc_work sampling=random-1-in-256-disjoint frames=%I64u slices=%I64u cpu_off=%I64u normal_mode=%I64u counts_only=1",
+		p.frames,p.slices,p.cpu_off_slices,p.normal_mode_slices); emit(text);
+	sprintf(text,"drc_work_dispatch calls=%I64u lookups=%I64u rebuilds=%I64u validation_spans=%I64u requested_words=%I64u",
+		p.dispatch_calls,p.lookups,p.rebuilds,p.validation_spans,p.validation_words); emit(text);
+	sprintf(text,"drc_work_execution native_calls=%I64u native_guest_cycles=%I64u interpreter_steps=%I64u interpreter_guest_cycles=%I64u not_host_time=1",
+		p.native_calls,p.native_cycles,p.interpreter_steps,p.interpreter_cycles); emit(text);
+	sprintf(text,"drc_work_exits gate=%I64u fetch=%I64u no_entry=%I64u short_budget=%I64u partial=%I64u boundary=%I64u",
+		p.exit_gate,p.exit_fetch,p.exit_no_entry,p.exit_budget,p.exit_partial,p.exit_boundary); emit(text);
+	// Bounded groups remain safe even if every 64-bit counter reaches 20 digits.
+	for (unsigned start=0;start<34;start+=8) {
+		int n=sprintf(text,"drc_work_snapshot_lengths");
+		for (unsigned i=start;i<start+8 && i<34;++i) n+=sprintf(text+n," %u=%I64u",i,p.snapshot_lengths[i]);
+		emit(text);
+	}
+	bool selected[256]={false};
+	for (unsigned rank=0;rank<8;++rank) {
+		unsigned best=256;
+		for (unsigned i=0;i<256;++i)
+			if (!selected[i] && p.interpreter_hi8[i] && (best==256 || p.interpreter_hi8[i]>p.interpreter_hi8[best])) best=i;
+		if (best==256) break;
+		selected[best]=true;
+		sprintf(text,"drc_work_interpreter rank=%u opcode_hi8=%02X count=%I64u",rank+1,best,p.interpreter_hi8[best]); emit(text);
+	}
+	sh3_drc_work.clear();
+}
+#endif
 
 #if 0
 void device_start()
