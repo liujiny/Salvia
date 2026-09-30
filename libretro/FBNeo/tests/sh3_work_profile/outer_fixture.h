@@ -1,5 +1,8 @@
 // Synthetic CPU/device callbacks around extracted production outer loops.
 // This checks control-flow/cycle preservation, not generated PPC execution.
+// Instruction decoding is abstracted here; sh3_hot_fallback separately checks
+// the production selector with every opcode and the real 0x6 helper bodies.
+#define sh3_execute_hot_fallback execute_one
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>

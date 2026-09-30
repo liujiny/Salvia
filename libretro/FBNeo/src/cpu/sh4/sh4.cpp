@@ -4715,6 +4715,8 @@ static inline void execute_one(const UINT16 opcode)
 #include "sh3_drc_ppc.h"
 #endif
 
+#include "sh3_interpreter_hot.h"
+
 template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 {
 	if (Count) ++sh3_drc_work.slices;
@@ -4744,7 +4746,7 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 			m_ppc = m_pc;
 
 			if (Count) ++sh3_drc_work.interpreter_hi8[opcode >> 8];
-			execute_one(opcode);
+			sh3_execute_hot_fallback(opcode);
 		}
 		else
 		{
@@ -4754,7 +4756,7 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 			m_ppc = m_pc;
 
 			if (Count) ++sh3_drc_work.interpreter_hi8[opcode >> 8];
-			execute_one(opcode);
+			sh3_execute_hot_fallback(opcode);
 		}
 		if (m_test_irq && !m_delay)
 		{
