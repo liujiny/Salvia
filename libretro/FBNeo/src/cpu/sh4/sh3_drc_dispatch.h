@@ -5,7 +5,17 @@
 #include "sh3_drc_source_check.h"
 #include "sh3_drc_lookup.h"
 
-template<bool Chained> static bool sh3_drc_dispatch()
+// Keep the native loop in the caller: interpreter fallback should not pay a
+// second dispatcher stack frame. This does not inline/link generated PPC blocks.
+#if defined(_MSC_VER) && defined(_XBOX)
+#define SH3_DISPATCH_INLINE __forceinline
+#elif defined(__GNUC__)
+#define SH3_DISPATCH_INLINE inline __attribute__((always_inline))
+#else
+#define SH3_DISPATCH_INLINE inline
+#endif
+
+template<bool Chained> static SH3_DISPATCH_INLINE bool sh3_drc_dispatch()
 {
  using namespace Sh3Ppc;
  // Preserve allocate()'s failure precedence and cold initialization. On a
@@ -38,4 +48,5 @@ template<bool Chained> static bool sh3_drc_dispatch()
  } while(Chained && m_sh4_icount>0 && sh3_drc_enabled && !m_delay && !m_test_irq);
  return true;
 }
+#undef SH3_DISPATCH_INLINE
 #endif
