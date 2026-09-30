@@ -13,15 +13,15 @@
 static SH3_SOURCE_INLINE bool sh3_drc_source_equal(const UINT16 *expected,
  const UINT16 *actual, unsigned words)
 {
- // The XDK inlines variable-size memcmp here as a byte-at-a-time loop. SH3
- // opcodes are aligned halfwords; compare four complete opcodes per iteration.
- // OR/XOR only answers equality, exactly what the dispatcher needs.
+ // Compare complete opcodes with direct equality branches. Keeping a group
+ // of four avoids a per-opcode loop while avoiding a live XOR/OR reduction.
+ // Every opcode in an equal snapshot is checked; mismatch exits request the
+ // same recompilation as before. No wider load or new alignment is assumed.
  while(words>=4) {
-  unsigned difference = (unsigned)(expected[0]^actual[0]) |
-   (unsigned)(expected[1]^actual[1]) |
-   (unsigned)(expected[2]^actual[2]) |
-   (unsigned)(expected[3]^actual[3]);
-  if(difference)return false;
+  if(expected[0]!=actual[0])return false;
+  if(expected[1]!=actual[1])return false;
+  if(expected[2]!=actual[2])return false;
+  if(expected[3]!=actual[3])return false;
   expected+=4; actual+=4; words-=4;
  }
  switch(words) {

@@ -2,7 +2,7 @@
 #ifndef SALVIA_CV1K_REVIEW_PROFILE_H
 #define SALVIA_CV1K_REVIEW_PROFILE_H
 #include <string.h>
-#define SALVIA_CV1K_REVIEW_BUILD "cv1k-inline-dispatch-20260930-r1"
+#define SALVIA_CV1K_REVIEW_BUILD "cv1k-source-compare-20260930-r1"
 #if defined(_MSC_VER)
 typedef unsigned __int64 SalviaReviewTick;
 #else

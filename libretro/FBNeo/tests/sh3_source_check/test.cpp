@@ -55,6 +55,22 @@ static void randomized() {
   check(a+oa,b+ob,n);
  }
 }
+// Two equal bit flips must not cancel in an equality predicate. Exercise
+// every pair of positions and halfword alignment, including group boundaries.
+static void paired_mutations() {
+ UINT16 storageA[40],storageB[40];
+ for(unsigned n=1;n<=33;++n)for(unsigned oa=0;oa<4;++oa)for(unsigned ob=0;ob<4;++ob) {
+  UINT16 *a=storageA+oa,*b=storageB+ob;
+  for(unsigned k=0;k<n;++k)a[k]=b[k]=(UINT16)random32();
+  check(a,a,n);
+  for(unsigned i=0;i<n;++i)for(unsigned j=i+1;j<n;++j) {
+   UINT16 mask=(UINT16)(1u<<((i+j)&15));
+   b[i]^=mask;b[j]^=mask;check(a,b,n);b[i]^=mask;b[j]^=mask;
+  }
+  check(a,b,n);
+ }
+ puts("PASS paired equal-bit mutations, group boundaries and same-pointer equality");
+}
 static void page_boundaries() {
 #if defined(__unix__)
  long page=sysconf(_SC_PAGESIZE); if(page<=0)exit(3);
@@ -74,7 +90,7 @@ static void page_boundaries() {
 #endif
 }
 int main() {
- lengths_and_mutations();randomized();page_boundaries();
+ lengths_and_mutations();randomized();paired_mutations();page_boundaries();
  printf("PASS exact source equality: %u cases, all 0..33 lengths, every bit mutation, halfword alignments and tails\n",cases);
  puts("Scope: host helper correctness; not PPC execution or console FPS");
  return 0;
