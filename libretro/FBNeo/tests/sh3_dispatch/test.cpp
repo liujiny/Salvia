@@ -27,11 +27,9 @@ static UINT32 rnd() { rng^=rng<<13; rng^=rng>>17; rng^=rng<<5; return rng; }
 namespace Sh3Ppc {
 enum { WAYS=4, CACHE_SETS=8, TABLE_SIZE=WAYS*CACHE_SETS, MAX_INSNS=32 };
 #include "../../src/cpu/sh4/sh3_drc_block.h"
-#include "../../src/cpu/sh4/sh3_drc_lookup_table.h"
-static Block blocks[TABLE_SIZE];
-static LookupTable lookup_storage;
-static LookupTable *lookup=&lookup_storage;
-static void clear() { memset(blocks,0,sizeof(blocks)); memset(lookup,0,sizeof(*lookup)); }
+struct Lookup { UINT32 tag[WAYS]; unsigned next; };
+static Block blocks[TABLE_SIZE]; static Lookup lookup[CACHE_SETS];
+static void clear() { memset(blocks,0,sizeof(blocks)); memset(lookup,0,sizeof(lookup)); }
 static bool allocate() { ++allocations; return !allocation_failure; }
 static int native(Sh3PpcState*);
 static void compile(Block& b,UINT32 pc,const UINT16* source) {
@@ -56,13 +54,13 @@ static bool reference_dispatch() {
  if((uintptr_t)page<SH3_MAXHANDLER || (phys&1))return false;
  const UINT16 *source=(const UINT16*)(page+(phys&SH3_PAGEM));
  unsigned index=((pc>>1)^(pc>>11)^(pc>>21))&(CACHE_SETS-1);
- UINT32 (&tags)[WAYS]=lookup->tag[index]; unsigned way;
- for(way=0;way<WAYS;way++)if(tags[way]==pc)break;
- if(way==WAYS)way=lookup->next[index]++&(WAYS-1);
+ Lookup &set=lookup[index]; unsigned way;
+ for(way=0;way<WAYS;way++)if(set.tag[way]==pc)break;
+ if(way==WAYS)way=set.next++&(WAYS-1);
  Block &b=blocks[index*WAYS+way];
  if(b.source!=source || b.pc!=pc || memcmp(b.original,source,b.words*2)!=0 ||
     (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page)) {
-  compile(b,pc,source); tags[way]=pc;
+  compile(b,pc,source); set.tag[way]=pc;
  }
  if(!b.entry || m_sh4_icount<b.cycles)return false;
  return b.entry(&sh3_ppc_state)!=0;
@@ -102,7 +100,7 @@ static int action(UINT16 op,bool native) {
 static int Sh3Ppc::native(Sh3PpcState*) {
  ++native_calls;
  unsigned pc=m_pc,index=((pc>>1)^(pc>>11)^(pc>>21))&(CACHE_SETS-1);
- for(unsigned w=0;w<WAYS;++w) if(lookup->tag[index][w]==pc) {
+ for(unsigned w=0;w<WAYS;++w) if(lookup[index].tag[w]==pc) {
   Block& b=blocks[index*WAYS+w]; return action(b.original[0],true);
  }
  fprintf(stderr,"No cached native block\n"); abort();
@@ -162,8 +160,8 @@ static Result run(unsigned seed,int mode,bool hot=false) {
  }
  Result r; r.state=sh3_ppc_state; memcpy(r.memory,ram,sizeof(ram));
  for(unsigned i=0;i<Sh3Ppc::CACHE_SETS;++i) {
-  memcpy(r.cache_tags[i],Sh3Ppc::lookup->tag[i],sizeof(r.cache_tags[i]));
-  r.replacements[i]=Sh3Ppc::lookup->next[i];
+  memcpy(r.cache_tags[i],Sh3Ppc::lookup[i].tag,sizeof(r.cache_tags[i]));
+  r.replacements[i]=Sh3Ppc::lookup[i].next;
  }
  for(unsigned i=0;i<4;++i) {r.nf[i]=mapid(MemMapF[i]);r.nr[i]=mapid(MemMapR[i]);}
  r.native=native_calls;r.interpreted=interpreted;r.compiled=compilations;r.timers=timers;

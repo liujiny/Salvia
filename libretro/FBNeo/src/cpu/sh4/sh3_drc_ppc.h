@@ -21,10 +21,10 @@ enum { G_SR = 16, G_MACL, G_MACH, G_PR, G_GBR };
 #define SO(field) ((int)offsetof(Sh3PpcState, field))
 
 #include "sh3_drc_block.h"
-// Tags have a 16-byte set stride; replacement counters are cold on hits.
-// Preserve one allocation, original replacement semantics and full resets.
-#include "sh3_drc_lookup_table.h"
-static LookupTable *lookup;
+// Four tags share one cache line. Separate metadata keeps misses from
+// touching four instruction snapshots. Round-robin eviction runs on misses.
+struct Lookup { UINT32 tag[WAYS]; unsigned next; };
+static Lookup *lookup;
 static Block *blocks;
 typedef char PointerAbiMustBe32Bits[(sizeof(void*) == 4) ? 1 : -1];
 static UINT32 *code;
@@ -592,7 +592,7 @@ static bool allocate()
  if (failed) return false;
  if (blocks) return true;
  blocks=(Block*)calloc(TABLE_SIZE,sizeof(Block));
- lookup=(LookupTable*)calloc(1,sizeof(LookupTable));
+ lookup=(Lookup*)calloc(CACHE_SETS,sizeof(Lookup));
 #ifdef _XBOX
  code=xbox_code;
 #else
@@ -616,7 +616,7 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
 {
  if(used+MAX_WORDS >= CACHE_BYTES/4) {
   memset(blocks,0,TABLE_SIZE*sizeof(Block));
-  memset(lookup,0,sizeof(LookupTable)); used=0;
+  memset(lookup,0,CACHE_SETS*sizeof(Lookup)); used=0;
  }
  Compiler c(code+used,pc,source);
  int available=(int)((4096-((uintptr_t)source&4095))/2);
@@ -720,7 +720,7 @@ INT32 Sh3SetDrcRam(UINT8* ram, UINT32 start, UINT32 span, UINT32 backing_size)
 static void sh3_drc_reset()
 {
  if(Sh3Ppc::blocks)memset(Sh3Ppc::blocks,0,Sh3Ppc::TABLE_SIZE*sizeof(Sh3Ppc::Block));
- if(Sh3Ppc::lookup)memset(Sh3Ppc::lookup,0,sizeof(Sh3Ppc::LookupTable));
+ if(Sh3Ppc::lookup)memset(Sh3Ppc::lookup,0,Sh3Ppc::CACHE_SETS*sizeof(Sh3Ppc::Lookup));
  Sh3Ppc::used=0;
 }
 static void sh3_drc_exit()

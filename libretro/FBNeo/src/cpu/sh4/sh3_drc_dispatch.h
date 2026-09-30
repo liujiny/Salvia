@@ -17,15 +17,15 @@ template<bool Chained> static bool sh3_drc_dispatch()
   if((uintptr_t)page<SH3_MAXHANDLER || (phys&1))return false;
   const UINT16 *source=(const UINT16*)(page+(phys&SH3_PAGEM));
   unsigned index=((pc>>1)^(pc>>11)^(pc>>21))&(CACHE_SETS-1);
-  UINT32 (&tags)[WAYS]=lookup->tag[index];
-  const unsigned way=sh3_drc_lookup4(tags,lookup->next[index],pc);
+  Lookup &set=lookup[index];
+  const unsigned way=sh3_drc_lookup4(set.tag,set.next,pc);
   Block &b=blocks[index*WAYS+way];
   // Recheck EVERY entry, including successors, aliases, DMA/cheat writes and
   // changed fetch/read mappings. No cached host entry bypasses these guards.
   if(b.source!=source || b.pc!=pc || !sh3_drc_source_equal(b.original,source,b.words) ||
      (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page)) {
    compile(b,pc,source);
-   tags[way]=pc;
+   set.tag[way]=pc;
   }
   if(!b.entry || m_sh4_icount<b.cycles)return false;
   // A partial/guarded block requests one interpreter step at its updated PC,
