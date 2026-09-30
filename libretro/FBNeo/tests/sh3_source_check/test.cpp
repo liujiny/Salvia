@@ -71,6 +71,32 @@ static void paired_mutations() {
  }
  puts("PASS paired equal-bit mutations, group boundaries and same-pointer equality");
 }
+// All mismatch subsets in short snapshots exercise every switch entry and
+// intentional fallthrough. Longer lengths must retain the general contract.
+static void short_masks_and_long_lengths() {
+ UINT16 storageA[16],storageB[16];
+ for(unsigned n=0;n<=8;++n)for(unsigned oa=0;oa<4;++oa)for(unsigned ob=0;ob<4;++ob) {
+  UINT16 *a=storageA+oa,*b=storageB+ob;
+  for(unsigned mask=0;mask<(1u<<n);++mask) {
+   for(unsigned i=0;i<n;++i) {a[i]=(UINT16)(0xa5c3u+i*17u);b[i]=a[i]^((mask&(1u<<i))?0x8001:0);}
+   check(a,b,n);
+  }
+ }
+ const unsigned lengths[]={9,16,31,32,33,34,63,64,65,127};
+ for(unsigned k=0;k<sizeof(lengths)/sizeof(lengths[0]);++k)for(unsigned oa=0;oa<4;++oa)for(unsigned ob=0;ob<4;++ob) {
+  unsigned n=lengths[k];
+  UINT16 *ra=(UINT16*)malloc((n+oa)*sizeof(UINT16));
+  UINT16 *rb=(UINT16*)malloc((n+ob)*sizeof(UINT16));
+  if(!ra||!rb)exit(2);
+  UINT16 *a=ra+oa,*b=rb+ob;
+  for(unsigned i=0;i<n;++i)a[i]=b[i]=(UINT16)random32();
+  check(a,b,n);
+  for(unsigned i=0;i<n;++i) {b[i]^=0x8001;check(a,b,n);b[i]^=0x8001;}
+  check(a,a,n); free(ra);free(rb);
+ }
+ puts("PASS all short-length mismatch subsets and 9..127-word long-path boundaries");
+}
+
 static void page_boundaries() {
 #if defined(__unix__)
  long page=sysconf(_SC_PAGESIZE); if(page<=0)exit(3);
@@ -90,7 +116,7 @@ static void page_boundaries() {
 #endif
 }
 int main() {
- lengths_and_mutations();randomized();paired_mutations();page_boundaries();
+ lengths_and_mutations();randomized();paired_mutations();short_masks_and_long_lengths();page_boundaries();
  printf("PASS exact source equality: %u cases, all 0..33 lengths, every bit mutation, halfword alignments and tails\n",cases);
  puts("Scope: host helper correctness; not PPC execution or console FPS");
  return 0;
