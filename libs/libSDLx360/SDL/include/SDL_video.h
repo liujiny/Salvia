@@ -441,6 +441,20 @@ extern DECLSPEC void SDL_XBOX_SetRotation(int rotation);
    con D3DUSAGE_CPU_CACHED_MEMORY) sobrevive al Reset, no se recrea. */
 extern DECLSPEC void SDL_XBOX_SetVSync(int enabled);
 
+/* Optional core diagnostics, flushed after gameplay pauses on the main thread. */
+extern void SDL_XBOX_SetCoreGpuDiagnostics(void (*callback)(void));
+extern void SDL_XBOX_FlushCoreGpuDiagnostics(void);
+
+/* Optional CV1000 compositor presentation. Enable only after successful GPU
+   validation; zero requests the normal display path at the next Present.
+   Both calls accept callers already holding the recursive core GPU lock.
+   FrameInfo: 0 normal/user immediate, 1 asynchronous, 2 requested fallback. */
+extern void SDL_XBOX_SetCoreGpuAsync(int enabled);
+extern unsigned SDL_XBOX_GetCoreGpuFrameInfo(unsigned *presentSequence);
+/* Snapshot only; callers normally emit it with the pause-time core diagnostics.
+   stats = requested, active, failed, retained, sequence, activations, fallbacks, timeouts. */
+extern void SDL_XBOX_GetCoreGpuPresentStats(unsigned stats[8]);
+
 /* Specify the main xbox resolution. w<=0 || h<=0 => "Auto": usa la resolucion
    del dashboard via XGetVideoMode, capada a 1280x720. */
 extern void SDL_XBOX_SetScreenResolution(int w, int h);

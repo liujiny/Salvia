@@ -23,6 +23,15 @@ void sh4_set_cave_blitter_delay_timer(int cycles);
 INT32 sh4_get_cpu_speed();
 void Sh3SetClockCV1k(INT32 clock);
 
+// Xbox 360 SH3 -> PPC dynamic recompiler; other hosts keep the interpreter.
+void Sh3SetDrc(INT32 enabled);
+// One 64 KiB RAM page whose read handler is side-effect-free except for a
+// single watched longword. Re-register after changing the read handlers.
+void Sh3SetDrcReadMirror(UINT8* ram, UINT32 page, UINT32 watched, INT32 handler);
+// Register a fully mapped RAM window (power-of-two span and backing size).
+// Mapping/handler changes revoke the window and invalidate compiled blocks.
+INT32 Sh3SetDrcRam(UINT8* ram, UINT32 start, UINT32 span, UINT32 backing_size);
+
 void Sh3SetTimerGranularity(INT32 timergransh); // speedhack
 
 void Sh3Open(const INT32 i);

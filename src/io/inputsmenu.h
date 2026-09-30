@@ -33,7 +33,7 @@ bool processActions(GameMenu*& gameMenu, t_option_action &optionAction){
 				case ASK_CARGAR:
 					LOG_DEBUG("Peticion cargar Partida: %s", filepath);
 					g_currentSlot = iPosSlot;
-					loadState();
+					if (!loadState()) break;
 					gameMenu->setEmuStatus(EMU_STARTED);
 					gameMenu->configMenus->resetStatus();
 					gameMenu->clearOverlay();
@@ -41,9 +41,7 @@ bool processActions(GameMenu*& gameMenu, t_option_action &optionAction){
 					break;
 				case ASK_GUARDAR:
 					LOG_DEBUG("Peticion guardar Partida: %s", filepath);
-					g_currentSlot = iPosSlot;
-					action_postponed.cycles = 1;
-					action_postponed.action = SAVE_STATE;
+					if (!requestSaveState(iPosSlot)) break;
 					gameMenu->setEmuStatus(EMU_STARTED);
 					gameMenu->configMenus->resetStatus();
 					gameMenu->clearOverlay();

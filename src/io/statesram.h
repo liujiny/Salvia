@@ -2,78 +2,130 @@
 
 #include <vector>
 #include <string>
+#include <new>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_thread.h>
 #include "image/lodepng.h"
 #include <utils/langmanager.h>
-
+#include <libretro/libretro.h>
 #if defined(_XBOX) || defined(_XBOX360)
-    #include <xtl.h>
-    #include <io.h>
+#include <xtl.h>
+#include <io.h>
 #endif
+#include <io/statefile.h>
 
 const Uint32 INTERVAL_SRAM_SAVE = 60000;
-
 Uint32 lastSramSaved = 0;
 void* g_sram_data_last = NULL;
 std::size_t g_sram_size_last = 0;
 int g_currentSlot = 0;
-
 typedef enum {SAVE_STATE, SAVE_SRAM, SAVE_NONE} ThreadAction;
-
 extern GameMenu *gameMenu;
 extern t_rom_paths romPaths;
+void salvia_state_progress(bool loading);
 
-struct delayed_action{
-	int cycles;
-	ThreadAction action;
-	uint8_t* screenshot;
-	unsigned width;
-	unsigned height;
-	int bpp;
+/* Optional FBNeo extension, obtained through environment 33. Other cores keep
+ * their standard libretro serializer and never enter the streaming path. */
+typedef bool (RETRO_CALLCONV *FbneoStateIo)(void*, void*, size_t);
+typedef bool (RETRO_CALLCONV *FbneoStateStream)(unsigned, size_t, FbneoStateIo, void*);
+static retro_get_proc_address_t g_state_get_proc = NULL;
 
-	delayed_action(){
-		cycles = -1;
-		action = SAVE_NONE;
-		screenshot = NULL;
-		width = 0;
-		height = 0;
-		bpp = 16;
-	}
+static bool isFbneoStateCore() {
+    return strcmp(EMU_LIB_NAME, "fbneo") == 0;
+}
+static FbneoStateStream getFbneoStateStream() {
+    if (!isFbneoStateCore() || !g_state_get_proc) return NULL;
+    return (FbneoStateStream)g_state_get_proc("fbneo_state_stream_v1");
+}
+static void stateLog(const char* stage, size_t size, bool ok) {
+    if (!isFbneoStateCore()) return;
+#if defined(_XBOX) || defined(_XBOX360)
+    FILE* f = fopen("game:\\fbneo-state.log", "a");
+#else
+    FILE* f = fopen("fbneo-state.log", "a");
+#endif
+    if (!f) return;
+    fprintf(f, "ticks=%lu stage=%s bytes=%lu ok=%d slot=%d\n",
+            (unsigned long)SDL_GetTicks(), stage, (unsigned long)size, ok ? 1 : 0,
+            g_currentSlot);
+#if defined(_XBOX) || defined(_XBOX360)
+    MEMORYSTATUS memory; memory.dwLength = sizeof(memory);
+    GlobalMemoryStatus(&memory);
+    fprintf(f, "memory_available=%lu\n", (unsigned long)memory.dwAvailPhys);
+#endif
+    fclose(f);
+}
+static void stateError(const char* reason) {
+    LOG_ERROR("Save/load state: %s", reason);
+    gameMenu->showSystemMessage(std::string("Save/load state: ") + reason, 5000);
+}
+
+struct delayed_action {
+    int cycles;
+    ThreadAction action;
+    uint8_t* screenshot;
+    unsigned width, height;
+    int bpp;
+    delayed_action() : cycles(-1), action(SAVE_NONE), screenshot(NULL),
+        width(0), height(0), bpp(16) {}
 } action_postponed;
 
-// Estructura para compartir datos con el hilo de guardados
+/* There is one pending job and at most one worker-owned job. The producer
+ * never frees worker memory. Completion UI is consumed only on the main thread. */
 struct SaveData {
 #if defined(_XBOX) || defined(_XBOX360)
-    HANDLE thread;                 // Win32 handle (stack configurable)
+    HANDLE thread;
 #else
     SDL_Thread* thread;
 #endif
     SDL_sem* semaphore;
-	SDL_mutex* saveMutex;
-    bool running;
-	ThreadAction action;
-	std::string targetPath;
-	void *buffer;
-	void *screenshot;
-	unsigned width;
-	unsigned height;
-	int bpp;
-	int slot;
-	std::size_t bufferSize;
-
-	SaveData(){
-		action = SAVE_NONE;
-		bufferSize = 0;
-		running = false;
-		slot = 0;
-	}
-	
+    SDL_mutex* saveMutex;
+    bool running, busy;
+    ThreadAction action;
+    std::string targetPath, romPath;
+    void *buffer;
+    uint8_t *screenshot;
+    unsigned width, height;
+    int bpp, slot;
+    std::size_t bufferSize;
+    bool resultPending, resultSuccess, resultImage;
+    ThreadAction resultAction;
+    std::string resultPath, resultRom;
+    int resultSlot;
+    SaveData() : thread(NULL), semaphore(NULL), saveMutex(NULL), running(false),
+        busy(false), action(SAVE_NONE), buffer(NULL), screenshot(NULL), width(0),
+        height(0), bpp(16), slot(0), bufferSize(0), resultPending(false),
+        resultSuccess(false), resultImage(false), resultAction(SAVE_NONE),
+        resultSlot(0) {}
 } g_saveQueue;
+
+static bool saveSystemBusy() {
+    if (!g_saveQueue.saveMutex || !g_saveQueue.running) return true;
+    SDL_mutexP(g_saveQueue.saveMutex);
+    bool busy = g_saveQueue.busy || g_saveQueue.action != SAVE_NONE ||
+                g_saveQueue.resultPending;
+    SDL_mutexV(g_saveQueue.saveMutex);
+    return busy;
+}
+static bool requestSaveState(int slot) {
+    if (action_postponed.action != SAVE_NONE || saveSystemBusy()) {
+        stateError("A save is still in progress. Please wait.");
+        return false;
+    }
+    g_currentSlot = slot;
+    action_postponed.cycles = 1;
+    action_postponed.action = SAVE_STATE;
+    return true;
+}
+static void clearStateScreenshot() {
+    delete[] action_postponed.screenshot;
+    action_postponed.screenshot = NULL;
+}
 
 bool GuardarCapturaPNG(const std::string& ruta, uint8_t* buffer, int w, int h, int bpp = 16) {
     if (!buffer) return false;
+    try {
 
     const int total_pixels = w * h;
 
@@ -119,57 +171,25 @@ bool GuardarCapturaPNG(const std::string& ruta, uint8_t* buffer, int w, int h, i
     }
 
     return true;
-}
-
-bool guardar_comprimido_zlib(const char* path, void *buffer, std::size_t buffer_size) {
-    if (!path || !buffer || buffer_size == 0) return false;
-
-    // Nivel 1 ("wb1") = "fast". En Xbox 360 es claramente mejor balance:
-    //   - ventana de deflate m?s peque?a (~64 KiB contiguos vs ~256 KiB en wb6),
-    //     evita cuelgues por fragmentacion de heap en XDK;
-    //   - CPU ~3x mas rapida que wb6;
-    //   - la cola de ceros del buffer (memset en retro_serialize) se colapsa
-    //     casi igual de bien a nivel 1 que a nivel 6.
-    gzFile file = gzopen(path, "wb6");
-    if (!file) {
-        // En el XDK, errno no siempre es fiable. GetLastError() da mas info.
-        LOG_ERROR("No se pudo abrir para comprimir: %s (Causa: %s)\n", path, strerror(errno));
+    } catch (const std::bad_alloc&) {
+        // Preview failure must not turn a successfully written state into a fatal exit.
         return false;
     }
-
-    // Escritura por chunks de 64 KiB en lugar de un unico gzwrite de 8 MiB.
-    // Evita un bug observado en algunos ports XDK de zlib donde gzwrite con
-    // buffers muy grandes se queda bloqueado, y permite detectar en que chunk
-    // falla si vuelve a reproducirse.
-    const std::size_t CHUNK = 64 * 1024;
-    const unsigned char* p = (const unsigned char*)buffer;
-    std::size_t left = buffer_size;
-    while (left > 0) {
-        unsigned chunk = (left > CHUNK) ? (unsigned)CHUNK : (unsigned)left;
-        int w = gzwrite(file, p, chunk);
-        if (w <= 0) {
-            LOG_ERROR("Error en gzwrite (offset=%Iu, chunk=%u): %s\n",
-                      (buffer_size - left), chunk, path);
-            gzclose(file);
-            return false;
-        }
-        p    += w;
-        left -= (std::size_t)w;
-    }
-
-    gzflush(file, Z_FINISH);
-    gzclose(file);
-    Fileio::commit(path);
-    LOG_DEBUG("Archivo comprimido guardado: %s (%Iu bytes)\n", path, buffer_size);
-    return true;
 }
 
-std::string getSlotPath(const std::string& baseStatePath, int slot) {
-    if (slot == 0) return baseStatePath; // slot 0 -> "juego.state"
-    
-    char extension[10];
-    sprintf(extension, "%d", slot); // convierte slot a string
-    return baseStatePath + extension; // ej: "juego.state1"
+
+bool guardar_comprimido_zlib(const char* path, void *buffer, std::size_t size) {
+    if (!path || !buffer || !size) return false;
+    std::string temporary = std::string(path) + ".tmp";
+    gzFile file = gzopen(temporary.c_str(), "wb1");
+    if (!file) return false;
+    bool ok = SalviaStateFile::write(file, buffer, size);
+    ok = SalviaStateFile::finish(file, ok, temporary, path);
+    if (ok) Fileio::commit(path);
+    return ok;
+}
+std::string getSlotPath(const std::string& base, int slot) {
+    return slot == 0 ? base : base + Constant::intToString(slot);
 }
 
 void loadSram(const char* sram_path) {
@@ -186,344 +206,345 @@ void loadSram(const char* sram_path) {
     }
 }
 
-void saveSram(const char* sram_path) {
-    std::size_t size = retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
+
+void saveSram(const char* path) {
     void* data = retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
+    size_t size = retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
+    if (!data || !size || saveSystemBusy()) return;
+    if (g_sram_data_last && g_sram_size_last == size &&
+        memcmp(data, g_sram_data_last, size) == 0) return;
+    void* copy = malloc(size);
+    if (!copy) return;
+    memcpy(copy, data, size);
+    if (g_sram_size_last != size) {
+        free(g_sram_data_last);
+        g_sram_data_last = malloc(size);
+        g_sram_size_last = size;
+    }
+    if (g_sram_data_last) memcpy(g_sram_data_last, data, size);
+    SDL_mutexP(g_saveQueue.saveMutex);
+    g_saveQueue.buffer = copy;
+    g_saveQueue.bufferSize = size;
+    g_saveQueue.targetPath = path;
+    g_saveQueue.romPath = romPaths.rompath;
+    g_saveQueue.action = SAVE_SRAM;
+    SDL_mutexV(g_saveQueue.saveMutex);
+    SDL_SemPost(g_saveQueue.semaphore);
+}
 
-    if (size == 0 || !data) return;
-
-    // 1. Comparación con nuestra copia persistente
-    bool needsSave = (g_sram_data_last == NULL) || 
-                     (g_sram_size_last != size) || 
-                     (memcmp(g_sram_data_last, data, size) != 0);
-
-    if (needsSave) {
-        // 2. Actualizamos nuestra copia de comparación
-        if (g_sram_size_last != size) {
-            if (g_sram_data_last) free(g_sram_data_last);
-            g_sram_data_last = malloc(size);
-            g_sram_size_last = size;
+static void reportStateSaved(const std::string& path, int slot, bool imageOK,
+                             const std::string& savedRom) {
+    if (savedRom == romPaths.rompath)
+        gameMenu->configMenus->poblarPartidasGuardadas(gameMenu->getCfgLoader(), savedRom);
+    gameMenu->showSystemMessage(LanguageManager::instance()->get("msg.state.save") +
+                               Constant::TipoToStr(slot), 3000);
+    if (!imageOK)
+        gameMenu->showSystemMessage(LanguageManager::instance()->get("msg.error.savestate.image") +
+                                   path + STATE_IMG_EXT, 3000);
+}
+static void pollSaveResult() {
+    if (!g_saveQueue.saveMutex) return;
+    SDL_mutexP(g_saveQueue.saveMutex);
+    bool pending = g_saveQueue.resultPending;
+    bool ok = g_saveQueue.resultSuccess, imageOK = g_saveQueue.resultImage;
+    ThreadAction action = g_saveQueue.resultAction;
+    std::string path = g_saveQueue.resultPath, rom = g_saveQueue.resultRom;
+    int slot = g_saveQueue.resultSlot;
+    g_saveQueue.resultPending = false;
+    SDL_mutexV(g_saveQueue.saveMutex);
+    if (!pending) return;
+    if (action == SAVE_STATE && ok) reportStateSaved(path, slot, imageOK, rom);
+    else if (!ok) {
+        if (action == SAVE_SRAM) {
+            free(g_sram_data_last); g_sram_data_last = NULL; g_sram_size_last = 0;
         }
-        if (g_sram_data_last) memcpy(g_sram_data_last, data, size);
-
-        // 3. CREAMOS UNA COPIA NUEVA PARA EL HILO (Para que el hilo pueda hacer free con seguridad)
-        void* hiloBuffer = malloc(size);
-        if (hiloBuffer) {
-            memcpy(hiloBuffer, data, size);
-
-            SDL_mutexP(g_saveQueue.saveMutex);
-            // Si el hilo aún no ha terminado el anterior, liberamos para evitar leak
-            if (g_saveQueue.buffer) free(g_saveQueue.buffer); 
-            
-            g_saveQueue.buffer = hiloBuffer;
-            g_saveQueue.bufferSize = size;
-            g_saveQueue.targetPath = sram_path;
-            g_saveQueue.action = SAVE_SRAM;
-            SDL_mutexV(g_saveQueue.saveMutex);
-
-            SDL_SemPost(g_saveQueue.semaphore);
-        }
+        gameMenu->showSystemMessage(LanguageManager::instance()->get(
+            action == SAVE_STATE ? "msg.error.savestate" : "msg.error.sram") + path, 5000);
     }
 }
 
-void saveState() {
-    // 1. Obtener tamaños de ambos estados
-    std::size_t core_state_size = retro_serialize_size();
-    std::size_t ra_state_size = 0;
-    
-    rc_client_t* ra_client = Achievements::instance()->getClient();
-    if (ra_client) {
-        ra_state_size = rc_client_progress_size(ra_client);
-    }
-
-    // 2. Calcular tamaño total del buffer: Core + Marcador(4) + TamañoRA(4) + DatosRA
-    // Reservamos espacio extra para una cabecera de seguridad de RA
-    std::size_t total_buffer_size = core_state_size + 8 + ra_state_size;
-    void *buffer = malloc(total_buffer_size);
-    
-    if (!buffer) return;
-
-    // 3. Serializar el Core de Libretro al principio del buffer
-    if (retro_serialize(buffer, core_state_size)) {
-        
-        // 4. Serializar datos de RetroAchievements a continuación
-        uint8_t* ra_ptr = (uint8_t*)buffer + core_state_size;
-        
-        // Escribimos un marcador "RCHV" y el tamaño para poder leerlo luego de forma segura
-        std::memcpy(ra_ptr, "RCHV", 4);
-        std::memcpy(ra_ptr + 4, &ra_state_size, 4);
-        
-        if (ra_state_size > 0 && ra_client) {
-            rc_client_serialize_progress(ra_client, ra_ptr + 8);
-        }
-
-        // 5. Preparar la transferencia a la cola del hilo de guardado (I/O thread)
-        std::string targetPath = getSlotPath(romPaths.savestate, g_currentSlot);
-        void* hiloBuffer = malloc(total_buffer_size);
-        
-        if (hiloBuffer) {
-            std::memcpy(hiloBuffer, buffer, total_buffer_size);
-
-            SDL_mutexP(g_saveQueue.saveMutex);
-            
-            if (g_saveQueue.buffer) {
-                free(g_saveQueue.buffer);
-            }
-            
-            g_saveQueue.buffer = hiloBuffer;
-            g_saveQueue.bufferSize = total_buffer_size;
-            g_saveQueue.targetPath = targetPath;
-            g_saveQueue.slot = g_currentSlot;
-
-            // Gestión de la captura de pantalla para el Slot
-            g_saveQueue.width = action_postponed.width;
-            g_saveQueue.height = action_postponed.height;
-            g_saveQueue.bpp = action_postponed.bpp;
-            const std::size_t bytes_per_pixel = (action_postponed.bpp == 32) ? 4 : 2;
-            const std::size_t total_bytes = (std::size_t)g_saveQueue.width * g_saveQueue.height * bytes_per_pixel;
-
-            if (total_bytes > 0 && action_postponed.screenshot != NULL) {
-                g_saveQueue.screenshot = new uint8_t[total_bytes];
-                std::memcpy(g_saveQueue.screenshot, action_postponed.screenshot, total_bytes);
-            }
-            
-            g_saveQueue.action = SAVE_STATE;
-
-            SDL_mutexV(g_saveQueue.saveMutex);
-            SDL_SemPost(g_saveQueue.semaphore);
-        }
-    } 
-
-    // Limpieza de memoria temporal del hilo principal
-    free(buffer);
-    
-    if (action_postponed.screenshot) {
-        delete[] action_postponed.screenshot; // uint8_t*
-        action_postponed.screenshot = NULL;
+static void waitSaveSystem() {
+    if (!g_saveQueue.running) return;
+    for (;;) {
+        pollSaveResult();
+        if (!saveSystemBusy()) return;
+        SDL_Delay(1);
     }
 }
 
-void loadState(){
-	cfg::t_cfg_props* cfg = gameMenu->getCfgLoader()->configMain;
-
-	if (cfg[cfg::enableAchievements].valueBool && cfg[cfg::hardcoreRA].valueBool){
-		gameMenu->showLangSystemMessage("msg.error.hardcore.loadstate", 3000);
-		return;
-	}
-
-    const std::string state_path = Constant::checkPath(getSlotPath(romPaths.savestate, g_currentSlot));
-    // 1. Obtener el tamaño que espera el núcleo (Core)
-    std::size_t core_state_size = retro_serialize_size();
-    if (core_state_size == 0) return;
-
-    // 2. Abrir el archivo comprimido con zlib
-    gzFile file = gzopen(state_path.c_str(), "rb");
-    if (!file) {
-        LOG_ERROR("No se pudo abrir el archivo: %s", state_path.c_str());
-        gameMenu->showSystemMessage(LanguageManager::instance()->get("msg.error.fileopen") + std::string(state_path), 3000);
-        return;
+/* Suspend callbacks only during synchronous FBNeo state I/O. Never hold the
+ * SDL audio lock while compressing, accessing storage, or scanning the core. */
+class StateAudioPause {
+    bool resume;
+public:
+    StateAudioPause() : resume(SDL_GetAudioStatus() == SDL_AUDIO_PLAYING) {
+        if (resume) SDL_PauseAudio(1);
     }
-
-    // 3. Cargar el estado del Núcleo (Core)
-    void* core_buffer = malloc(core_state_size);
-    if (!core_buffer) {
-        gzclose(file);
-        return;
-    }
-
-    // Leemos exactamente el tamaño que el core espera
-    int bytesRead = gzread(file, core_buffer, (unsigned)core_state_size);
-    
-    if (bytesRead == (int)core_state_size) {
-        // Inyectamos los datos en el núcleo de emulación
-        retro_unserialize(core_buffer, core_state_size);
-        
-        // 4. Intentar cargar el bloque de RetroAchievements (Cabecera de 8 bytes)
-        char ra_marker[4];
-        uint32_t ra_data_size = 0;
-        
-		uint8_t* ra_buffer = NULL;
-        // Intentamos leer el marcador "RCHV" y el tamaño de los datos
-        if (gzread(file, ra_marker, 4) == 4 && memcmp(ra_marker, "RCHV", 4) == 0) {
-            if (gzread(file, &ra_data_size, 4) == 4 && ra_data_size > 0) {
-                ra_buffer = (uint8_t*)malloc(ra_data_size);
-                if (ra_buffer && gzread(file, ra_buffer, (unsigned)ra_data_size) != (int)ra_data_size) {
-					free(ra_buffer);
-                    ra_buffer = NULL;
-                }
-            }
-        } 
-
-		rc_client_t* ra_client = Achievements::instance()->getClient();
-        if (ra_client) {
-			//When loading a save state that does not have runtime state information, 
-			//rc_client_deserialize_progress should be called with NULL to reset the runtime state.
-            rc_client_deserialize_progress(ra_client, ra_buffer);
+    ~StateAudioPause() {
+        if (resume) {
+            SDL_LockAudio();
+            gameMenu->g_audioBuffer.Clear();
+            SDL_UnlockAudio();
+            SDL_PauseAudio(0);
         }
+    }
+};
+static bool RETRO_CALLCONV streamStateWrite(void* context, void* data, size_t size) {
+    return SalviaStateFile::write((gzFile)context, data, size);
+}
+static bool RETRO_CALLCONV streamStateRead(void* context, void* data, size_t size) {
+    return SalviaStateFile::read((gzFile)context, data, size);
+}
 
-		if (ra_buffer)
-			free(ra_buffer);
-
-        gameMenu->showSystemMessage(LanguageManager::instance()->get("msg.state.load") + Constant::TipoToStr(g_currentSlot), 3000);
-    } else {
-        LOG_ERROR("Error de lectura: El archivo es más pequeño de lo esperado.");
+bool saveState() {
+    pollSaveResult();
+    if (saveSystemBusy()) {
+        clearStateScreenshot(); stateError("A save is still in progress. Please retry.");
+        return false;
+    }
+    size_t coreSize = retro_serialize_size();
+    size_t raSize = 0;
+    rc_client_t* client = Achievements::instance()->getClient();
+    if (client) raSize = rc_client_progress_size(client);
+    stateLog("save-start", coreSize, true);
+    if (!coreSize || raSize > SalviaStateFile::MAX_RA_BYTES ||
+        coreSize > (size_t)-1 - 8 - raSize) {
+        clearStateScreenshot(); stateError("Unsupported state size.");
+        stateLog("save-size", coreSize, false); return false;
+    }
+    const uint32_t raLength = (uint32_t)raSize;
+    std::string target = getSlotPath(romPaths.savestate, g_currentSlot);
+    FbneoStateStream stream = getFbneoStateStream();
+    if (stream) {
+        StateAudioPause audioPause;
+        salvia_state_progress(false);
+        std::string path = Constant::checkPath(target), temporary = path + ".tmp";
+        // RA is small, but allocate it before starting so OOM preserves the old slot.
+        void* raBuffer = raSize ? malloc(raSize) : NULL;
+        if (raSize && !raBuffer) {
+            clearStateScreenshot(); stateError("Not enough memory for achievements.");
+            stateLog("save-ra-memory", raSize, false); return false;
+        }
+        if (raSize && rc_client_serialize_progress(client, (uint8_t*)raBuffer) != 0) {
+            free(raBuffer); clearStateScreenshot();
+            stateError("Could not serialize achievement progress.");
+            stateLog("save-ra-serialize", raSize, false); return false;
+        }
+        gzFile file = gzopen(temporary.c_str(), "wb1");
+        bool ok = file != NULL;
+        stateLog("save-open", coreSize, ok);
+        if (file) {
+            ok = stream(0, coreSize, streamStateWrite, file);
+            stateLog("save-stream", coreSize, ok);
+            if (ok) ok = SalviaStateFile::write(file, "RCHV", 4) &&
+                         SalviaStateFile::write(file, &raLength, 4) &&
+                         SalviaStateFile::write(file, raBuffer, raSize);
+            ok = SalviaStateFile::finish(file, ok, temporary, path);
+            if (ok) Fileio::commit(path.c_str());
+        }
+        free(raBuffer);
+        stateLog("save-commit", coreSize, ok);
+        if (ok) {
+            bool imageOK = action_postponed.screenshot && GuardarCapturaPNG(
+                Constant::checkPath(target + STATE_IMG_EXT), action_postponed.screenshot,
+                action_postponed.width, action_postponed.height, action_postponed.bpp);
+            reportStateSaved(target, g_currentSlot, imageOK, romPaths.rompath);
+        } else stateError("Could not save the state. Previous slot was kept.");
+        clearStateScreenshot();
+        return ok;
     }
 
-    // Limpieza final
-    free(core_buffer);
-    gzclose(file);
+    // Ordinary libretro path: transfer the SINGLE allocation to the worker.
+    size_t total = coreSize + 8 + raSize;
+    void* buffer = malloc(total);
+    if (!buffer || !retro_serialize(buffer, coreSize)) {
+        free(buffer); clearStateScreenshot();
+        stateError("Not enough memory, or the core could not serialize.");
+        stateLog("save-serialize", coreSize, false); return false;
+    }
+    uint8_t* trailer = (uint8_t*)buffer + coreSize;
+    memcpy(trailer, "RCHV", 4); memcpy(trailer + 4, &raLength, 4);
+    if (raSize && rc_client_serialize_progress(client, trailer + 8) != 0) {
+        free(buffer); clearStateScreenshot();
+        stateError("Could not serialize achievement progress."); return false;
+    }
+    SDL_mutexP(g_saveQueue.saveMutex);
+    g_saveQueue.buffer = buffer;
+    g_saveQueue.bufferSize = total;
+    g_saveQueue.targetPath = target;
+    g_saveQueue.romPath = romPaths.rompath;
+    g_saveQueue.slot = g_currentSlot;
+    g_saveQueue.width = action_postponed.width;
+    g_saveQueue.height = action_postponed.height;
+    g_saveQueue.bpp = action_postponed.bpp;
+    g_saveQueue.screenshot = action_postponed.screenshot;
+    action_postponed.screenshot = NULL;
+    g_saveQueue.action = SAVE_STATE;
+    SDL_mutexV(g_saveQueue.saveMutex);
+    SDL_SemPost(g_saveQueue.semaphore);
+    return true;
+}
+
+bool loadState() {
+    pollSaveResult();
+    cfg::t_cfg_props* cfg = gameMenu->getCfgLoader()->configMain;
+    if (cfg[cfg::enableAchievements].valueBool && cfg[cfg::hardcoreRA].valueBool) {
+        gameMenu->showLangSystemMessage("msg.error.hardcore.loadstate", 3000);
+        return false;
+    }
+    if (saveSystemBusy()) {
+        stateError("A save is still in progress. Please wait."); return false;
+    }
+    const std::string path = Constant::checkPath(getSlotPath(romPaths.savestate, g_currentSlot));
+    size_t coreSize = retro_serialize_size();
+    stateLog("load-start", coreSize, true);
+    if (!coreSize) { stateError("The core does not support states."); return false; }
+    gzFile file = gzopen(path.c_str(), "rb");
+    if (!file) { stateError("Could not open the state file."); return false; }
+    StateAudioPause audioPause;
+    salvia_state_progress(true);
+    uint32_t raSize = 0;
+    bool ok = SalviaStateFile::validate(file, coreSize, raSize);
+    stateLog("load-validate", coreSize, ok);
+    if (!ok || gzrewind(file) != 0) {
+        gzclose(file); stateError("Invalid or incomplete state. Game was not changed."); return false;
+    }
+    void* raBuffer = raSize ? malloc(raSize) : NULL;
+    if (raSize && !raBuffer) {
+        gzclose(file); stateError("Not enough memory for achievements."); return false;
+    }
+    FbneoStateStream stream = getFbneoStateStream();
+    if (stream) ok = stream(1, coreSize, streamStateRead, file);
+    else {
+        void* buffer = malloc(coreSize);
+        ok = buffer && SalviaStateFile::read(file, buffer, coreSize);
+        if (ok) ok = retro_unserialize(buffer, coreSize);
+        free(buffer);
+    }
+    stateLog("load-core", coreSize, ok);
+    if (ok && raSize) {
+        char marker[4]; uint32_t length = 0;
+        ok = SalviaStateFile::read(file, marker, 4) && memcmp(marker, "RCHV", 4) == 0 &&
+             SalviaStateFile::read(file, &length, 4) && length == raSize &&
+             SalviaStateFile::read(file, raBuffer, raSize);
+    }
+    if (gzclose(file) != Z_OK) ok = false;
+    if (ok) {
+        rc_client_t* client = Achievements::instance()->getClient();
+        if (client) rc_client_deserialize_progress(client, (const uint8_t*)raBuffer);
+        gameMenu->showSystemMessage(LanguageManager::instance()->get("msg.state.load") +
+                                   Constant::TipoToStr(g_currentSlot), 3000);
+    } else stateError("The core or storage could not restore this state.");
+    free(raBuffer);
+    stateLog("load-done", coreSize, ok);
+    return ok;
 }
 
 bool guardar_archivo_raw(const char* path, void* buffer, std::size_t size) {
-    FILE* fp = fopen(path, "wb");
-    if (fp) {
-        fwrite(buffer, 1, size, fp);
-		fflush(fp);
-        #ifdef _XBOX
-            _commit(_fileno(fp)); 
-        #endif
-        fclose(fp);
-        return true;
-    } else {
-        return false;
-    }
+    std::string temporary = std::string(path) + ".tmp";
+    FILE* file = fopen(temporary.c_str(), "wb");
+    if (!file) return false;
+    bool ok = fwrite(buffer, 1, size, file) == size;
+    if (fflush(file) != 0) ok = false;
+#if defined(_XBOX) || defined(_XBOX360)
+    if (_commit(_fileno(file)) != 0) ok = false;
+#endif
+    if (fclose(file) != 0) ok = false;
+    if (ok) ok = SalviaStateFile::replace(temporary, path);
+    if (!ok) remove(temporary.c_str());
+    return ok;
 }
 
-// Función que ejecutará el hilo
 int SaveThreadFunc(void* data) {
     SaveData* sd = (SaveData*)data;
-    while (sd->running) {
+    for (;;) {
         SDL_SemWait(sd->semaphore);
-        if (!sd->running) break;
-
-        // Copiamos TODOS los datos necesarios dentro del mutex
-		dirutil dir;
         SDL_mutexP(sd->saveMutex);
-        ThreadAction actionActual = sd->action;
-        std::string localPath = sd->targetPath; // Copia local segura
-        void* localBuffer = sd->buffer;
-        std::size_t localSize = sd->bufferSize;
-		void* localScreenshot = sd->screenshot;
-		unsigned width = sd->width;
-		unsigned height = sd->height;
-		int bpp = sd->bpp;
-		int localSlot = sd->slot;
-        SDL_mutexV(sd->saveMutex);
-
-        switch (actionActual) {
-			case SAVE_SRAM:
-				if (localBuffer) {
-					bool ret = guardar_archivo_raw(Constant::checkPath(localPath).c_str(), localBuffer, localSize);
-					if (!ret)
-						gameMenu->showSystemMessage(LanguageManager::instance()->get("msg.error.sram") + localPath, 3000);
-
-					free(localBuffer); // Ahora es seguro porque es una copia dedicada
-
-					SDL_mutexP(sd->saveMutex);
-					sd->buffer = NULL;
-					sd->bufferSize = 0;
-					sd->action = SAVE_NONE; // IMPORTANTE: Resetea la acción
-					SDL_mutexV(sd->saveMutex);
-				}
-				break;
-			case SAVE_STATE:
-				if (localBuffer) {
-					std::string statePath = Constant::checkPath(localPath);
-					if (guardar_comprimido_zlib(statePath.c_str(), localBuffer, localSize)){
-						if (localScreenshot != NULL) {
-							std::string imgPath = Constant::checkPath(localPath + STATE_IMG_EXT);
-							GuardarCapturaPNG(imgPath, (uint8_t*)localScreenshot, width, height, bpp);
-							gameMenu->configMenus->poblarPartidasGuardadas(gameMenu->getCfgLoader(), romPaths.rompath);
-							gameMenu->showSystemMessage(LanguageManager::instance()->get("msg.state.save") + Constant::TipoToStr(localSlot), 3000);
-						} else {
-							gameMenu->showSystemMessage(LanguageManager::instance()->get("msg.error.savestate.image") + localPath + STATE_IMG_EXT, 3000);
-						}
-					} else {
-						gameMenu->showSystemMessage(LanguageManager::instance()->get("msg.error.savestate") + std::string(strerror(errno)) + "; " + localPath, 3000);
-					}
-
-					free(localBuffer); // Ahora es seguro porque es una copia dedicada
-					delete[] (uint8_t*)localScreenshot; // Liberar memoria de imagen
-
-					SDL_mutexP(sd->saveMutex);
-					sd->buffer = NULL;
-					sd->bufferSize = 0;
-					sd->action = SAVE_NONE; // IMPORTANTE: Resetea la acción
-					SDL_mutexV(sd->saveMutex);
-				}
-				break;
+        ThreadAction action = sd->action;
+        if (action == SAVE_NONE) {
+            bool stop = !sd->running;
+            SDL_mutexV(sd->saveMutex);
+            if (stop) break;
+            continue;
         }
+        std::string path = sd->targetPath, rom = sd->romPath;
+        void* buffer = sd->buffer;
+        size_t size = sd->bufferSize;
+        uint8_t* screenshot = sd->screenshot;
+        unsigned width = sd->width, height = sd->height;
+        int bpp = sd->bpp, slot = sd->slot;
+        // Detach BEFORE unlocking: only this worker owns these pointers now.
+        sd->buffer = NULL; sd->screenshot = NULL; sd->bufferSize = 0;
+        sd->action = SAVE_NONE; sd->busy = true;
+        SDL_mutexV(sd->saveMutex);
+        bool ok = false, imageOK = false;
+        if (action == SAVE_SRAM)
+            ok = guardar_archivo_raw(Constant::checkPath(path).c_str(), buffer, size);
+        else if (action == SAVE_STATE) {
+            ok = guardar_comprimido_zlib(Constant::checkPath(path).c_str(), buffer, size);
+            if (ok && screenshot)
+                imageOK = GuardarCapturaPNG(Constant::checkPath(path + STATE_IMG_EXT),
+                                            screenshot, width, height, bpp);
+        }
+        free(buffer); delete[] screenshot;
+        SDL_mutexP(sd->saveMutex);
+        sd->busy = false;
+        sd->resultPending = true; sd->resultAction = action;
+        sd->resultSuccess = ok; sd->resultImage = imageOK;
+        sd->resultPath = path; sd->resultRom = rom; sd->resultSlot = slot;
+        bool stop = !sd->running;
+        SDL_mutexV(sd->saveMutex);
+        if (stop) break;
     }
     return 0;
 }
-
 #if defined(_XBOX) || defined(_XBOX360)
-// Wrapper Win32 que delega en SaveThreadFunc. Se usa con CreateThread para
-// poder elegir expl?citamente el tama?o de stack (1 MiB) y evitar los cuelgues
-// de gzwrite/fwrite por stack insuficiente del XDK.
-static DWORD WINAPI SaveThreadFuncWin32(LPVOID data) {
-    return (DWORD)SaveThreadFunc(data);
-}
+static DWORD WINAPI SaveThreadFuncWin32(LPVOID data) { return (DWORD)SaveThreadFunc(data); }
 #endif
 
-// Inicializacion
 void initSaveSystem() {
-    g_saveQueue.running = true;
+    // All synchronization objects must exist before the worker can start.
+    g_saveQueue.saveMutex = SDL_CreateMutex();
     g_saveQueue.semaphore = SDL_CreateSemaphore(0);
-
+    if (!g_saveQueue.saveMutex || !g_saveQueue.semaphore) {
+        stateError("Could not initialize the save worker."); return;
+    }
+    g_saveQueue.running = true;
 #if defined(_XBOX) || defined(_XBOX360)
-    // 1 MiB de stack: sobra para deflate (ventana nivel 1 ~64 KiB)
-    // + CRT fwrite + commit + SDL msg callbacks.
-    g_saveQueue.thread = CreateThread(
-        NULL,                       // security
-        0,				            // stack size (1 MiB)
-        SaveThreadFuncWin32,        // thread proc
-        &g_saveQueue,               // parameter
-        CREATE_SUSPENDED,			// creation flags (create suspended)
-        NULL                        // thread id (not needed)
-    );
-
-	if (g_saveQueue.thread) {
-		Constant::setup_and_run_thread(g_saveQueue.thread, IO_THREAD, false);
-	}
+    g_saveQueue.thread = CreateThread(NULL, 1024 * 1024, SaveThreadFuncWin32,
+        &g_saveQueue, CREATE_SUSPENDED, NULL);
+    if (g_saveQueue.thread)
+        Constant::setup_and_run_thread(g_saveQueue.thread, IO_THREAD, false);
 #else
     g_saveQueue.thread = SDL_CreateThread(SaveThreadFunc, &g_saveQueue);
 #endif
-
-	// Crear el mutex
-    g_saveQueue.saveMutex = SDL_CreateMutex();
-
-    if (g_saveQueue.saveMutex == NULL) {
-        // Manejar error: No se pudo crear el mutex
-        return;
+    if (!g_saveQueue.thread) {
+        g_saveQueue.running = false;
+        stateError("Could not start the save worker.");
     }
 }
-
 void deinitSaveSystem() {
-    g_saveQueue.running = false;
-    SDL_SemPost(g_saveQueue.semaphore); // Despertar hilo
-
+    if (g_saveQueue.saveMutex) {
+        SDL_mutexP(g_saveQueue.saveMutex);
+        g_saveQueue.running = false;
+        SDL_mutexV(g_saveQueue.saveMutex);
+    }
+    if (g_saveQueue.semaphore) SDL_SemPost(g_saveQueue.semaphore);
     if (g_saveQueue.thread) {
 #if defined(_XBOX) || defined(_XBOX360)
         WaitForSingleObject(g_saveQueue.thread, INFINITE);
         CloseHandle(g_saveQueue.thread);
 #else
-        SDL_WaitThread(g_saveQueue.thread, NULL); // Esperar a que termine de escribir
+        SDL_WaitThread(g_saveQueue.thread, NULL);
 #endif
         g_saveQueue.thread = NULL;
     }
-    
-    if (g_saveQueue.saveMutex) {
-        SDL_DestroyMutex(g_saveQueue.saveMutex);
-        g_saveQueue.saveMutex = NULL;
-    }
-
-	// 3. Liberamos los recursos de SDL
+    pollSaveResult();
+    if (g_saveQueue.saveMutex) SDL_DestroyMutex(g_saveQueue.saveMutex);
     if (g_saveQueue.semaphore) SDL_DestroySemaphore(g_saveQueue.semaphore);
-    
-    // 4. Liberamos la memoria del buffer de SRAM
-    if (g_sram_data_last) {
-        free(g_sram_data_last);
-        g_sram_data_last = NULL;
-    }
+    g_saveQueue.saveMutex = NULL; g_saveQueue.semaphore = NULL;
+    free(g_saveQueue.buffer); g_saveQueue.buffer = NULL;
+    delete[] g_saveQueue.screenshot; g_saveQueue.screenshot = NULL;
+    clearStateScreenshot();
+    free(g_sram_data_last); g_sram_data_last = NULL; g_sram_size_last = 0;
 }

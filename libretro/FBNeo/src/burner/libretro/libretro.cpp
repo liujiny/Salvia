@@ -7,6 +7,9 @@
 #include "burner.h"
 #include "burnint.h"
 #include "aud_dsp.h"
+#ifdef _XBOX
+#include "epic12.h"
+#endif
 
 #include "retro_common.h"
 #include "retro_cdemu.h"
@@ -463,6 +466,8 @@ static bool apply_dipswitches_from_variables()
 void retro_set_environment(retro_environment_t cb)
 {
 	environ_cb = cb;
+	static const struct retro_get_proc_address_interface state_stream_interface = { fbneo_get_proc_address };
+	environ_cb(RETRO_ENVIRONMENT_SET_PROC_ADDRESS_CALLBACK, (void*)&state_stream_interface);
 
 	struct retro_core_options_update_display_callback update_display_cb;
 	update_display_cb.callback = apply_dipswitches_from_variables;
@@ -1622,6 +1627,13 @@ void retro_run()
 	pBurnSoundOut = bEmulateAudio ? pAudBuffer : NULL; // Set to NULL to skip sound rendering
 
 	ForceFrameStep();
+#ifdef _XBOX
+	const char *gpu_message = epic12_gpu_take_message();
+	if (gpu_message) {
+		struct retro_message msg = {gpu_message, 360};
+		environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE, &msg);
+	}
+#endif
 
 	if (bPresentAudio)
 	{

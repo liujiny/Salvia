@@ -58,6 +58,7 @@ const struct retro_memory_descriptor* get_core_memory_descriptors(unsigned* out_
 enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
 void closeGame();
 void init_sdl_audio(double sample_rate);
+extern "C" void salvia_fbneo_audio_log(void);
 
 //Maximo de 30 MB. Los CHD que son grandes no debemos cargarlos en memoria. Ya se encarga
 //la implementacion de vfs
@@ -671,6 +672,12 @@ void initGameAudio(double sampleRate){
 		SDL_PauseAudio(0);
 	}
 
+#ifdef _XBOX
+    SDL_LockAudio();
+    gameMenu->g_audioBuffer.ConfigureTempo(strcmp(EMU_LIB_NAME, "fbneo") == 0 &&
+                                          g_audio_device_rate == AudioTempo::RATE);
+    SDL_UnlockAudio();
+#endif
 	gameMenu->g_audioRate.init(BUFF_SIZE);
 	gameMenu->g_audioRate.setRates(sampleRate, (double)g_audio_device_rate);
 	/* El sintetizador MIDI se mezcla ANTES del resampler, o sea a la tasa del

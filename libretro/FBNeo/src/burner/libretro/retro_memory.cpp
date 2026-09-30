@@ -409,3 +409,69 @@ bool retro_unserialize(const void *data, size_t size)
 
 	return true;
 }
+
+// Stream the same raw area sequence as retro_serialize. CV1000 alone scans
+// 128 MiB of VRAM, so even one full-state staging allocation may exhaust a
+// console's remaining memory. The callback can compress directly to disk.
+struct FbneoStateStream {
+	fbneo_state_stream_io_t io;
+	void *context;
+	size_t size, offset;
+	bool ok, active;
+};
+static FbneoStateStream stateStream;
+
+static int StateStreamAcb(BurnArea *pba)
+{
+	if (!stateStream.ok) return 1;
+	size_t remaining = pba->nLen;
+	if (remaining > stateStream.size - stateStream.offset || (remaining && !pba->Data)) {
+		stateStream.ok = false;
+		return 1;
+	}
+	UINT8 *data = (UINT8*)pba->Data;
+	while (remaining) {
+		size_t bytes = remaining > 65536 ? 65536 : remaining;
+		if (!stateStream.io(stateStream.context, data, bytes)) {
+			stateStream.ok = false;
+			return 1;
+		}
+		data += bytes;
+		remaining -= bytes;
+		stateStream.offset += bytes;
+	}
+	return 0;
+}
+
+bool RETRO_CALLCONV fbneo_state_stream_v1(unsigned mode, size_t size,
+	fbneo_state_stream_io_t io, void *context)
+{
+	if (mode > 1 || !io || !size || nBurnDrvActive == ~0U || stateStream.active) return false;
+	INT32 nAction = ACB_FULLSCAN | (mode ? ACB_WRITE : ACB_READ);
+	TweakScanFlags(nAction);
+	INT32 (__cdecl *previousAcb)(BurnArea*) = BurnAcb;
+	stateStream.io = io;
+	stateStream.context = context;
+	stateStream.size = size;
+	stateStream.offset = 0;
+	stateStream.ok = stateStream.active = true;
+	BurnAcb = StateStreamAcb;
+
+	// Preserve all existing driver scan hooks, including EPIC12 worker join,
+	// restore-time GPU cache invalidation and SH3 translated-code reset.
+	LibretroAreaScan(nAction);
+	bool ok = stateStream.ok && stateStream.offset == stateStream.size;
+	BurnAcb = previousAcb;
+	stateStream.io = NULL;
+	stateStream.context = NULL;
+	stateStream.active = false;
+	if (ok && mode) BurnRecalcPal();
+	return ok;
+}
+
+retro_proc_address_t RETRO_CALLCONV fbneo_get_proc_address(const char *symbol)
+{
+	if (symbol && strcmp(symbol, "fbneo_state_stream_v1") == 0)
+		return (retro_proc_address_t)fbneo_state_stream_v1;
+	return NULL;
+}

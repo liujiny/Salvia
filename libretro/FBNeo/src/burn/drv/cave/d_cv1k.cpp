@@ -8,6 +8,11 @@
 #include "serflash.h"
 #include "rtc9701.h"
 #include "ymz770.h"
+#ifdef _XBOX
+#include "cv1k_review_profile.h"
+extern INT32 nBurnRenderCores;
+static SalviaReviewProfile<4> cv1k_review;
+#endif
 
 #define SH3_CLOCK (12800000 * 8)
 
@@ -43,6 +48,33 @@ static INT32 DriverClock; // selected cpu clockrate
 static INT32 nPrevBurnCPUSpeedAdjust;
 static UINT8 nPrevCPUTenth;
 static INT32 speedhack_burn; // 10ms @ cpu clock, calculated in DrvFrame
+
+#ifdef _XBOX
+// CPU/I/O includes device handlers, command-list copies and buffered sound.
+// These are sampled core intervals, not whole-emulator frame-rate measurements.
+void cv1k_review_report(void (*emit)(const char*))
+{
+    if (!emit || !cv1k_review.frames) return;
+    char text[768];
+    const char *game = BurnDrvGetTextA(DRV_NAME);
+    sprintf(text, "review build=%s game=%s interval_frames=%u samples=%u invalid=%u clock_hz=%d render_cores=%d dips=%02x,%02x,%02x,%02x bpp=%d",
+        SALVIA_CV1K_REVIEW_BUILD, game ? game : "unknown", cv1k_review.frames,
+        cv1k_review.samples, cv1k_review.invalid, DriverClock, nBurnRenderCores,
+        (unsigned)DrvDips[0], (unsigned)DrvDips[1], (unsigned)DrvDips[2], (unsigned)DrvDips[3], nBurnBpp);
+    emit(text);
+    LARGE_INTEGER frequency;
+    if (cv1k_review.samples && QueryPerformanceFrequency(&frequency) && frequency.QuadPart > 0) {
+        double unit = 1000.0 / (double)frequency.QuadPart;
+        double avg = unit / cv1k_review.samples;
+        sprintf(text, "core_frame_ms sampling=random-1-in-64 prep=%.3f cpu_io=%.3f audio_tail_misc=%.3f draw_sync=%.3f total=%.3f sampled_peak=%.3f excludes=frontend_present_limiter",
+            cv1k_review.ticks[0] * avg, cv1k_review.ticks[1] * avg,
+            cv1k_review.ticks[2] * avg, cv1k_review.ticks[3] * avg,
+            cv1k_review.total * avg, cv1k_review.peak * unit);
+        emit(text);
+    }
+    cv1k_review.clear_window();
+}
+#endif
 
 static struct BurnInputInfo Cv1kInputList[] = {
 	{"P1 Coin",			BIT_DIGITAL,	DrvJoy1 + 2,	"p1 coin"	},
@@ -81,6 +113,18 @@ STDINPUTINFO(Cv1k)
 
 static struct BurnDIPInfo DefaultDIPList[]=
 {
+#if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
+	{0   , 0xfe, 0   ,    2, "SH3 CPU Engine" },
+	{0x03, 0x01, 0x10, 0x00, "Dynamic Recompiler" },
+	{0x03, 0x01, 0x10, 0x10, "Interpreter" },
+#endif
+
+#if defined(_XBOX) || defined(EPIC12_GPU_TEST)
+	{0   , 0xfe, 0   ,    2, "GPU Blitter (Xbox 360)" },
+	{0x03, 0x01, 0x20, 0x00, "On" },
+	{0x03, 0x01, 0x20, 0x20, "Off" },
+#endif
+
 	{0   , 0xfe, 0   ,    2, "Thread Blitter"	},
 	{0x01, 0x01, 0x01, 0x00, "Off"				},
 	{0x01, 0x01, 0x01, 0x01, "On"				},
@@ -196,6 +240,25 @@ static struct BurnDIPInfo Cv1ksDIPList[]=
 
 STDDIPINFOEXT(Cv1k, Cv1k, Default)
 STDDIPINFOEXT(Cv1ks, Cv1ks, Default)
+
+static INT32 Cv1kBootDIPInfo(struct BurnDIPInfo* pdi, UINT32 i)
+{
+#if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
+	const unsigned base = sizeof(Cv1kDIPList) / sizeof(Cv1kDIPList[0]) + sizeof(DefaultDIPList) / sizeof(DefaultDIPList[0]);
+	static const BurnDIPInfo boot[] = {
+		{0, 0xfe, 0, 2, "Skip Startup RAM Test (restart)"},
+		{0x03, 0x01, 0x40, 0x00, "On"},
+		{0x03, 0x01, 0x40, 0x40, "Off"}
+	};
+	if (i >= base) {
+		if (i - base >= sizeof(boot) / sizeof(boot[0])) return 1;
+		if (pdi) *pdi = boot[i - base];
+		return 0;
+	}
+#endif
+	return Cv1kDIPInfo(pdi, i);
+}
+
 
 static void __fastcall main_write_long(UINT32 offset, UINT32 data)
 {
@@ -318,7 +381,9 @@ static UINT32 __fastcall speedhack_read_long(UINT32 offset)
 		Sh3BurnCycles(speedhack_burn);
 	}
 	UINT32 V = *((UINT32 *)(DrvMainRAM + (offset & 0xfffffc)));
+#ifdef LSB_FIRST
 	V = (V << 16) | (V >> 16);
+#endif
 	return V;
 }
 
@@ -345,7 +410,11 @@ static UINT8 __fastcall speedhack_read_byte(UINT32 offset)
 		Sh3BurnCycles(speedhack_burn);
 	}
 #endif
-	return DrvMainRAM[(offset & 0xffffff) ^ 1];
+	offset &= 0xffffff;
+#ifdef LSB_FIRST
+	offset ^= 1;
+#endif
+	return DrvMainRAM[offset];
 }
 
 static void speedhack_set(UINT32 ram, UINT32 pc)
@@ -357,7 +426,12 @@ static void speedhack_set(UINT32 ram, UINT32 pc)
 	Sh3SetReadByteHandler (1, speedhack_read_byte);
 	Sh3SetReadWordHandler (1, speedhack_read_word);
 	Sh3SetReadLongHandler (1, speedhack_read_long);
+	Sh3SetDrcReadMirror(DrvMainRAM, 0x0c000000, hacky_idle_ram, 1);
 }
+
+#if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
+#include "cv1k_fastboot.h"
+#endif
 
 static INT32 DrvDoReset()
 {
@@ -366,6 +440,9 @@ static INT32 DrvDoReset()
 	Sh3Open(0);
 	Sh3Reset();
 	Sh3Close();
+#if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
+	cv1k_boot_prepare();
+#endif
 
 	epic12_reset();
 	serflash_reset();
@@ -416,6 +493,11 @@ static INT32 DrvLoadRoms()
 	if (BurnLoadRom(DrvMainROM,  0, 1)) return 1;
 	if (ri.nLen == 0x200000) memcpy (DrvMainROM + 0x200000, DrvMainROM, 0x200000);
 	//if (ri.nLen >= 0x400000) type_d = 1;
+#ifndef LSB_FIRST
+	// Program dumps store each instruction low byte first; SH3 fetches native
+	// 16-bit words. Convert once for PowerPC instead of executing swapped opcodes.
+	BurnByteswap(DrvMainROM, 0x400000);
+#endif
 
 	if (BurnLoadRom(DrvFlashROM, 1, 1)) return 1;
 
@@ -476,6 +558,9 @@ static void init_speedhack()
 
 static INT32 DrvInit()
 {
+#ifdef _XBOX
+	cv1k_review.clear_window();
+#endif
 	struct BurnRomInfo ri;
 	BurnDrvGetRomInfo(&ri, 0);
 	if (ri.nLen >= 0x400000) is_type_d = 1;
@@ -508,6 +593,7 @@ static INT32 DrvInit()
 	Sh3SetWritePortHandler(main_write_port);
 
 	init_speedhack(); // install the hacky speedhack handler
+	Sh3SetDrcRam(DrvMainRAM, 0x0c000000, 0x1000000, is_type_d ? 0x1000000 : 0x800000);
 
 	Sh3Close();
 
@@ -552,12 +638,17 @@ static INT32 DrvFrame()
 	if (DrvReset) {
 		DrvDoReset();
 	}
+#ifdef _XBOX
+	const bool reviewSample = cv1k_review.begin();
+	SalviaReviewTick reviewMarks[5];
+	if (reviewSample) reviewMarks[0] = salvia_review_clock();
+#endif
 
 	// check if cpu rate changes here..
-	if (nPrevBurnCPUSpeedAdjust != nBurnCPUSpeedAdjust || DrvDips[3] != nPrevCPUTenth) {
+	if (nPrevBurnCPUSpeedAdjust != nBurnCPUSpeedAdjust || (DrvDips[3] & 0x0f) != nPrevCPUTenth) {
 		bprintf(0, _T("Setting CPU Clock selection.\n"));
 		nPrevBurnCPUSpeedAdjust = nBurnCPUSpeedAdjust;
-		nPrevCPUTenth = DrvDips[3];
+		nPrevCPUTenth = DrvDips[3] & 0x0f;
 
 		INT32 i_percent = ((double)100 * nBurnCPUSpeedAdjust / 256) + 0.5; // whole percent comes from UI
 		double dPercent = i_percent + (0.1 * (DrvDips[3] & 0xf)); // .x tenth percent comes from DIPS
@@ -578,6 +669,7 @@ static INT32 DrvFrame()
 		epic12_set_blitterdelay((delay) ? ((delay - 1) + 50) : 0, speedhack_burn);
 		epic12_set_blitterthreading(DrvDips[1] & 1);
 		Sh3SetTimerGranularity(DrvDips[1] & 2);
+		Sh3SetDrc(!(DrvDips[3] & 0x10));
 
 		// test stuff for el_rika
 		epic12_set_blitter_clipping_margin(!(DrvDips[2] & 0x40));
@@ -601,6 +693,13 @@ static INT32 DrvFrame()
 		hold_coin.checklow(1, DrvInputs[0], 1<<3, 2);
 	}
 
+#if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
+	cv1k_boot_step();
+#endif
+
+#ifdef _XBOX
+	if (reviewSample) reviewMarks[1] = salvia_review_clock();
+#endif
 	Sh3NewFrame();
 
 	INT32 nInterleave = 240;
@@ -615,6 +714,9 @@ static INT32 DrvFrame()
 	}
 
 	Sh3SetIRQLine(2, CPU_IRQSTATUS_HOLD);
+#ifdef _XBOX
+	if (reviewSample) reviewMarks[2] = salvia_review_clock();
+#endif
 
 	if (pBurnSoundOut) {
 		ymz770_update(pBurnSoundOut, nBurnSoundLen);
@@ -625,6 +727,9 @@ static INT32 DrvFrame()
 	Sh3Close();
 
 	rtc9701_once_per_frame();
+#ifdef _XBOX
+	if (reviewSample) reviewMarks[3] = salvia_review_clock();
+#endif
 
 	if (DrvDips[1] & 4) { // Thread Sync: Before Draw
 		epic12_wait_blitterthread();
@@ -633,6 +738,12 @@ static INT32 DrvFrame()
 	if (pBurnDraw) {
 		BurnDrvRedraw();
 	}
+#ifdef _XBOX
+	if (reviewSample) {
+		reviewMarks[4] = salvia_review_clock();
+		cv1k_review.record(reviewMarks);
+	}
+#endif
 
 	return 0;
 }
@@ -658,6 +769,13 @@ static INT32 DrvScan(INT32 nAction, INT32 *pnMin)
 
 		hold_coin.scan();
 	}
+
+#if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
+	// A loaded state already contains its own program bytes. Never patch an
+	// older running-game state or carry a pending cold-boot patch into it.
+	// Loading persistent EEPROM/high scores during cold boot must keep it armed.
+	if ((nAction & ACB_WRITE) && (nAction & ACB_VOLATILE)) cv1k_boot_pending = NULL;
+#endif
 
 	serflash_scan(nAction, pnMin); // writes back to flash (hiscores ddpdfk, etc) here
 	rtc9701_scan(nAction, pnMin); // eeprom (nvram) lives here
@@ -1333,7 +1451,7 @@ struct BurnDriver BurnDrvDdpdfk = {
 	"DoDonPachi Dai-Fukkatsu Ver 1.5 (2008/06/23 MASTER VER 1.5)\0", NULL, "Cave (AMI license)", "CA019",
 	L"DoDonPachi Dai-Fukkatsu Ver 1.5\0\u6012\u9996\u9818\u8702 \u5927\u5fa9\u6d3b Ver 1.5 (2008/06/23 MASTER VER 1.5)\0", NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_ORIENTATION_VERTICAL | BDF_HISCORE_SUPPORTED, 2, HARDWARE_CAVE_CV1000, GBF_VERSHOOT, FBF_DONPACHI,
-	NULL, ddpdfkRomInfo, ddpdfkRomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kDIPInfo,
+	NULL, ddpdfkRomInfo, ddpdfkRomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kBootDIPInfo,
 	DrvInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x10000,
 	240, 320, 3, 4
 };
@@ -1408,7 +1526,7 @@ struct BurnDriver BurnDrvDfkbl = {
 	"DoDonPachi Dai-Fukkatsu Black Label (2010/1/18 BLACK LABEL)\0", NULL, "Cave", "CA019B",
 	L"DoDonPachi Dai-Fukkatsu Black Label\0\u6012\u9996\u9818\u8702 \u5927\u5fa9\u6d3b (2010/1/18 BLACK LABEL)\0", NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_ORIENTATION_VERTICAL | BDF_HISCORE_SUPPORTED, 2, HARDWARE_CAVE_CV1000, GBF_VERSHOOT, FBF_DONPACHI,
-	NULL, dfkblRomInfo, dfkblRomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kDIPInfo,
+	NULL, dfkblRomInfo, dfkblRomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kBootDIPInfo,
 	DrvInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x10000,
 	240, 320, 3, 4
 };
@@ -1433,7 +1551,7 @@ struct BurnDriver BurnDrvDdpsdoj = {
 	"DoDonPachi SaiDaiOuJou (2012/ 4/20)\0", NULL, "Cave", "CA???",
 	L"DoDonPachi SaiDaiOuJou\0\u6012\u9996\u9818\u8702 \u6700\u5927\u5f80\u751f (2012/4/20)\0", NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_ORIENTATION_VERTICAL | BDF_HISCORE_SUPPORTED, 2, HARDWARE_CAVE_CV1000, GBF_VERSHOOT, FBF_DONPACHI,
-	NULL, ddpsdojRomInfo, ddpsdojRomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kDIPInfo,
+	NULL, ddpsdojRomInfo, ddpsdojRomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kBootDIPInfo,
 	DrvInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x10000,
 	240, 320, 3, 4
 };

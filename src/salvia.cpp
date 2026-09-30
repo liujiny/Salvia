@@ -11,6 +11,30 @@
 #include <http/picojson.h>
 #include <io/filelist.h>
 #include <cheats/cheatlocator.h>
+#ifdef _XBOX
+#include "../libretro/FBNeo/src/burn/devices/cv1k_review_profile.h"
+static SalviaReviewProfile<3> g_review_loop;
+// Called by the existing pause hook, never from a running frame or audio callback.
+static void salvia_review_frontend_report()
+{
+    if (strcmp(EMU_LIB_NAME, "fbneo") != 0 || !g_review_loop.frames) return;
+    FILE *file = fopen("game:\\cv1000-gpu.log", "a");
+    if (!file) file = fopen("game:\\cv1000-gpu.log", "w");
+    if (!file) return;
+    LARGE_INTEGER frequency;
+    fprintf(file, "CV1000 review: build=%s frontend_interval_frames=%u samples=%u invalid=%u\n",
+        SALVIA_CV1K_REVIEW_BUILD, g_review_loop.frames, g_review_loop.samples, g_review_loop.invalid);
+    if (g_review_loop.samples && QueryPerformanceFrequency(&frequency) && frequency.QuadPart > 0) {
+        double unit = 1000.0 / (double)frequency.QuadPart;
+        double avg = unit / g_review_loop.samples;
+        fprintf(file, "CV1000 review: frontend_frame_ms sampling=random-1-in-64 game_and_ui=%.3f present=%.3f limiter=%.3f sampled_active_loop=%.3f sampled_peak=%.3f excludes=preloop_events\n",
+            g_review_loop.ticks[0] * avg, g_review_loop.ticks[1] * avg,
+            g_review_loop.ticks[2] * avg, g_review_loop.total * avg, g_review_loop.peak * unit);
+    }
+    fclose(file);
+    g_review_loop.clear_window();
+}
+#endif
 
 // Puente entre los eventos SDL del frontend y el callback de teclado que
 // el core ha registrado via RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK. La
@@ -137,6 +161,13 @@ static bool salvia_midi_flush(void) {
  * de core-options en caliente. */
 static void applyCoreAvInfo(const struct retro_system_av_info& av) {
 	gameMenu->sync->init_fps_counter((float)av.timing.fps);
+#ifdef _XBOX
+    if (gameMenu->g_audioBuffer.HasTempo()) {
+        SDL_LockAudio();
+        gameMenu->g_audioBuffer.Clear();
+        SDL_UnlockAudio();
+    }
+#endif
 	gameMenu->g_audioRate.reset();
 	gameMenu->g_audioRate.init(BUFF_SIZE);
 	gameMenu->g_midi.setSampleRate((int)av.timing.sample_rate);
@@ -160,6 +191,14 @@ static bool retro_environment(unsigned cmd, void *data) {
 	static char savePath[MAX_PATH] = {0};
 
     switch (cmd) {
+        case RETRO_ENVIRONMENT_SET_PROC_ADDRESS_CALLBACK: {
+            const struct retro_get_proc_address_interface* interface_ =
+                (const struct retro_get_proc_address_interface*)data;
+            if (!interface_ || !isFbneoStateCore()) return false;
+            g_state_get_proc = interface_->get_proc_address;
+            return g_state_get_proc != NULL;
+        }
+
         case RETRO_ENVIRONMENT_GET_LOG_INTERFACE: {
 			struct retro_log_callback *log = (struct retro_log_callback*)data;
 			log->log = retro_log_printf;
@@ -940,7 +979,12 @@ static inline void take_screenshot(void* final_src, unsigned width, unsigned hei
 
 	const std::size_t bytes_per_pixel = (bpp == 32) ? 4 : 2;
 	const std::size_t total_bytes = (std::size_t)width * height * bytes_per_pixel;
-    action_postponed.screenshot = new uint8_t[total_bytes];
+    action_postponed.screenshot = new (std::nothrow) uint8_t[total_bytes];
+    if (!action_postponed.screenshot) {
+        // Saving without a preview is preferable to throwing into the fatal handler.
+        action_postponed.cycles = 0;
+        return;
+    }
     action_postponed.width = width;
     action_postponed.height = height;
 	action_postponed.bpp = bpp;
@@ -1721,12 +1765,27 @@ void sdl_audio_callback(void* userdata, Uint8* stream, int len) {
      * antes de que el volumen bajase, que es justo el corte que el fundido
      * viene a evitar.  El core, al arrancar, todavia no tiene nada que sonar en
      * esos 250 ms, asi que no se pierde audio suyo. */
+#ifdef _XBOX
+    if (gameMenu->g_audioBuffer.HasTempo()) {
+        const bool playing = gameMenu->getEmuStatus() == EMU_STARTED &&
+            !gameMenu->current_fast_forward && *gameMenu->current_sync != SYNC_FAST_FORWARD;
+        gameMenu->g_audioBuffer.SetTempoPlayback(playing);
+    }
+#endif
     if (g_music && g_music->isActive() &&
         (musicWantedFor(gameMenu->getEmuStatus()) || !g_music->isSilent())) {
         g_music->readInto(samples, count);
         return;
     }
 
+#ifdef _XBOX
+    if (gameMenu->g_audioBuffer.HasTempo() && gameMenu->getEmuStatus() != EMU_STARTED) {
+        // A paused emulator cannot supply new game audio. Keep its old sound
+        // out of the menu instead of interpreting this as a slow game.
+        memset(stream, 0, len);
+        return;
+    }
+#endif
     gameMenu->g_audioBuffer.Read(samples, count);
 }
 
@@ -1779,6 +1838,32 @@ void init_sdl_audio(double sample_rate) {
 	}
 	LOG_INFO("Audio: dispositivo abierto a %d Hz (una sola vez por sesion)\n", g_audio_device_rate);
     SDL_PauseAudio(0); // Inicia el audio
+}
+
+// Called once when leaving gameplay, outside the audio callback. Take a short
+// consistent snapshot under the SDL lock, then perform all file I/O unlocked.
+extern "C" void salvia_fbneo_audio_log(void) {
+#ifdef _XBOX
+    salvia_review_frontend_report();
+    if (strcmp(EMU_LIB_NAME, "fbneo") != 0 || !gameMenu || !audio_opened) return;
+    SDL_LockAudio();
+    AudioTempo::Stats stats = gameMenu->g_audioBuffer.getTempoStats();
+    const bool enabled = gameMenu->g_audioBuffer.HasTempo();
+    const long underruns = gameMenu->g_audioBuffer.getUnderrunsTotal();
+    const long drops = gameMenu->g_audioBuffer.getDropsTotal();
+    const unsigned fill = (unsigned)gameMenu->g_audioBuffer.getUsed() / 2;
+    SDL_UnlockAudio();
+    FILE* file = fopen("game:\\fbneo-audio.log", "a");
+    if (!file) file = fopen("game:\\fbneo-audio.log", "w");
+    if (!file) return;
+    fprintf(file, "FBNeo audio: tempo=%s callbacks=%u output_frames=%u stretched_frames=%u "
+        "tempo_current=%.3f tempo_min=%.3f refill_events=%u underrun_callbacks=%ld "
+        "dropped_samples=%ld buffered_frames=%u rate=%d\n",
+        enabled ? "on" : "off", stats.callbacks, stats.generatedFrames,
+        stats.stretchedFrames, stats.tempo / 65536.0, stats.minTempo / 65536.0,
+        stats.shortages, underruns, drops, fill, g_audio_device_rate);
+    fclose(file);
+#endif
 }
 
 /**
@@ -1858,6 +1943,7 @@ void closeGame(){
 		gameMenu->g_midi.panic();
 		g_midiFastForwardCut = false;
 #ifndef NO_SRAM
+		waitSaveSystem();
 		saveSram(romPaths.sram.c_str());
 #endif
 
@@ -2112,7 +2198,15 @@ inline void updateGame() {
 	}
 }
 
+void salvia_state_progress(bool loading) {
+    gameMenu->showSystemMessage(loading ? "Loading state. Please wait..." :
+                                           "Saving state. Please wait...", 3000);
+    gameMenu->processFrontendEventsAfter();
+    salviaFlip(gameMenu->gameScreen);
+}
+
 void processFrontendEvents(){
+    pollSaveResult();
 	// Procesamos el teclado virtual de Xbox (si hay uno pendiente)
 	SOUtils::updateKeyboard();
 	
@@ -2130,16 +2224,7 @@ void processFrontendEvents(){
 			#ifdef NO_SAVEGAMES
 				gameMenu->showLangSystemMessage("msg.filesave.forbidden", 3000);
 			#else
-				SDL_mutexP(g_saveQueue.saveMutex);
-				if (g_saveQueue.action == SAVE_STATE){
-					LOG_ERROR("Savestate pending. Aborting new savestate...");
-					SDL_mutexV(g_saveQueue.saveMutex);
-					break;
-				}
-				SDL_mutexV(g_saveQueue.saveMutex);
-
-				action_postponed.cycles = 1;
-				action_postponed.action = SAVE_STATE;
+				requestSaveState(g_currentSlot);
 			#endif
 			break;
 
@@ -2261,6 +2346,12 @@ static void __declspec(noinline) runGameLoop() {
 	__try {
 		while (gameMenu->running) {
 			processFrontendEvents();
+#ifdef _XBOX
+			const bool reviewSample = strcmp(EMU_LIB_NAME, "fbneo") == 0 &&
+				gameMenu->getEmuStatus() == EMU_STARTED && g_review_loop.begin();
+			SalviaReviewTick reviewMarks[4];
+			if (reviewSample) reviewMarks[0] = salvia_review_clock();
+#endif
 
 			/* Musica de menu: aqui SOLO se abre o cierra el grifo.  El
 			 * decodificado corre en su propio hilo (IO_THREAD), porque cuando
@@ -2303,6 +2394,9 @@ static void __declspec(noinline) runGameLoop() {
 			}
 
 			gameMenu->processFrontendEventsAfter();
+#ifdef _XBOX
+			if (reviewSample) reviewMarks[1] = salvia_review_clock();
+#endif
 
 			/* Se presenta en cuanto el frame esta listo y la espera del
 			 * limitador va DESPUES: asi la latencia de input es la minima.
@@ -2314,7 +2408,16 @@ static void __declspec(noinline) runGameLoop() {
 			const double flipEnd = Constant::getTicks();
 			gameMenu->sync->note_flip(flipEnd - flipIni);
 			gameMenu->sync->note_present(flipEnd);
+#ifdef _XBOX
+			if (reviewSample) reviewMarks[2] = salvia_review_clock();
+#endif
 			gameMenu->sync->limit_fps(nextFrameTime, *gameMenu->current_sync, gameMenu->gameTicks);
+#ifdef _XBOX
+			if (reviewSample) {
+				reviewMarks[3] = salvia_review_clock();
+				g_review_loop.record(reviewMarks);
+			}
+#endif
 		}
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 		printAndDelay();

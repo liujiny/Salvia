@@ -216,7 +216,7 @@ static struct retro_core_option_v2_definition var_fbneo_render_cores = {
 	"fbneo-xbox360-render-cores",
 	"Rendering cores (Xbox 360)",
 	NULL,
-	"Software drawing for supported Raiden Fighters and Psikyo games. 2 cores balances drawing and audio; 3 may improve demanding scenes but shares a core with audio. Applies immediately.",
+	"Software drawing for supported Raiden Fighters, Psikyo, PGM (KOV2, DDP2, DDP3) and CV1000 games. 2 cores balances drawing and audio; 3 may improve demanding scenes but shares a core with audio. CV1000 uses one SH3 core and one blitter core in both 2 and 3 modes; Thread Blitter must be enabled. Applies immediately.",
 	NULL, NULL,
 	{
 		{ "2", "2 cores (default)" },

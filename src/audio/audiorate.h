@@ -239,6 +239,16 @@ public:
 
         /* Durante el warmup no se ajusta el DRC, pero SI se remuestrea: con una
          * tasa de dispositivo fija, escribir crudo sonaria a destiempo. */
+#if defined(_XBOX) || defined(SALVIA_AUDIO_TEST)
+        if (buffer.HasTempo()) {
+            // WSOLA owns FBNeo's occupancy correction without changing pitch.
+            // Retain only core/device sample-rate conversion here: a second
+            // controller would fight its target and bend musical pitch.
+            ratio = baseRatio;
+            recalcStep();
+            warmup = 0;
+        } else
+#endif
         if (warmup > 0) {
             warmup--;
         } else {

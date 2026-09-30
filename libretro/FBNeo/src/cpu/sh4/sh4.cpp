@@ -51,23 +51,54 @@ static int c_md7;
 static int c_md8;
 static int c_clock;
 
-static UINT32  m_ppc;
-static UINT32  m_pc;
+// The PPC backend and the interpreter share this register file. Guest state is
+// still scanned field by field, so existing save states retain their layout.
+#if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
+#define SH3_PPC_DRC 1
+struct Sh3PpcState {
+ UINT32 r[16], pc, ppc, pr, sr, gbr, mach, macl, ea, delay;
+ INT32 icount, total;
+ UINT8 **read_map, **write_map;
+ // Optional board-declared RAM window behind a read handler. Long reads at
+ // the watched address still use the handler (CV1000's idle-loop shortcut).
+ UINT8 *read_mirror;
+ UINT32 mirror_page, mirror_watch, mirror_handler;
+};
+static Sh3PpcState sh3_ppc_state;
+#define m_r sh3_ppc_state.r
+#define m_pc sh3_ppc_state.pc
+#define m_ppc sh3_ppc_state.ppc
+#define m_pr sh3_ppc_state.pr
+#define m_sr sh3_ppc_state.sr
+#define m_gbr sh3_ppc_state.gbr
+#define m_mach sh3_ppc_state.mach
+#define m_macl sh3_ppc_state.macl
+#define m_ea sh3_ppc_state.ea
+#define m_delay sh3_ppc_state.delay
+#define m_sh4_icount sh3_ppc_state.icount
+#define sh3_total_cycles sh3_ppc_state.total
+static void sh3_drc_reset();
+static void sh3_drc_exit();
+static void sh3_drc_invalidate_ram();
+static void sh3_drc_mapping_changed(UINT32 start, UINT32 end, INT32 type);
+#else
+static UINT32 m_r[16], m_pc, m_ppc, m_pr, m_sr, m_gbr;
+static UINT32 m_mach, m_macl, m_ea, m_delay;
+static INT32 m_sh4_icount, sh3_total_cycles;
+static void sh3_drc_reset() {}
+static void sh3_drc_exit() {}
+void Sh3SetDrc(INT32) {}
+void Sh3SetDrcReadMirror(UINT8*, UINT32, UINT32, INT32) {}
+INT32 Sh3SetDrcRam(UINT8*, UINT32, UINT32, UINT32) { return 0; }
+#endif
+
 static UINT32  m_spc;
-static UINT32  m_pr;
-static UINT32  m_sr;
 static UINT32  m_ssr;
-static UINT32  m_gbr;
 static UINT32  m_vbr;
-static UINT32  m_mach;
-static UINT32  m_macl;
-static UINT32  m_r[16];
 static UINT32  m_rbnk[2][8];
 static UINT32  m_sgr;
 static UINT32  m_fr[16];
 static UINT32  m_xf[16];
-static UINT32  m_ea;
-static UINT32  m_delay;
 static UINT32  m_cpu_off;
 static UINT32  m_pending_irq;
 static UINT32  m_test_irq;
@@ -149,7 +180,6 @@ static int     m_dma_source_increment[4];
 static int     m_dma_destination_increment[4];
 static int     m_dma_mode[4];
 
-static int     m_sh4_icount;
 static int     m_is_slave;
 static int     m_cpu_clock;
 static int     m_bus_clock;
@@ -183,7 +213,6 @@ static int     m_cpu_type;
 static UINT32  m_sh3internal_upper[0x3000/4];
 static UINT32  m_sh3internal_lower[0x1000];
 
-static INT32   sh3_total_cycles; // used externally (drivers/etc)
 
 static INT32   sh3_end_run;
 
@@ -285,31 +314,36 @@ struct sh4_dtimer
 	void run_prescale(INT32 cyc) {
 		prescale_counter += cyc * m_ratio;
 		while (prescale_counter >= timer_prescaler) {
-			prescale_counter -= timer_prescaler;
+			// The prescaler keeps running even when the timer is stopped.
+			// Consume whole ticks together, stopping at EVERY callback: it may
+			// reload the timer, change its prescaler, or alter the remainder.
+			if (!running) {
+				prescale_counter %= timer_prescaler;
+				return;
+			}
 
-			// note: we can't optimize this, f.ex:
-			//run(prescale_counter / timer_prescaler); prescale_counter %= timer_prescaler;
-			// why? when the timer hits, the prescaler can & will change.
+			UINT32 ticks = 1;
+			if (prescale_counter - timer_prescaler >= (UINT32)timer_prescaler)
+				ticks = prescale_counter / timer_prescaler;
 
-			// note2:
-			//run(1);  this is just the contents of run(1) from below
-			if (running) {
-				time_current += 1;
+			// Check the first increment separately to preserve zero periods,
+			// overdue timers and the UINT32 counter's wraparound behavior.
+			const UINT32 until_event = (UINT32)(time_current + 1) >= time_trig
+				? 1 : time_trig - time_current;
+			// A zero distance here represents a full 2^32-tick wrap.
+			if (until_event == 0 || ticks < until_event) {
+				time_current += ticks;
+				prescale_counter -= ticks * timer_prescaler;
+				return;
+			}
 
-				if (time_current >= time_trig) { // should be while (retrig needs this, not used by sh4)
-					//if (counter) bprintf(0, _T("timer %d hits @ %d\n"), timer_param, time_current);
-
-					if (retrig == 0) {
-						running = 0;
-						//time_trig = -1;
-						//stop();
-						//break;
-					}
-					if (timer_exec) {
-						timer_exec(timer_param); // NOTE: this cb _might_ re-start/init the timer!
-					}
-					//time_current -= time_trig;
-				}
+			prescale_counter -= until_event * timer_prescaler;
+			time_current += until_event;
+			if (retrig == 0) {
+				running = 0;
+			}
+			if (timer_exec) {
+				timer_exec(timer_param);
 			}
 		}
 	}
@@ -539,6 +573,8 @@ INT32 Sh3Scan(INT32 nAction)
 
 	cave_blitter_delay.scan();
 
+	if (nAction & ACB_WRITE) sh3_drc_reset();
+
 	return 0;
 }
 
@@ -582,6 +618,9 @@ static INT32 Sh3MapInit()
 
 INT32 Sh3MapMemory(UINT8* pMemory, UINT32 nStart, UINT32 nEnd, INT32 nType)
 {
+#ifdef SH3_PPC_DRC
+	sh3_drc_mapping_changed(nStart, nEnd, nType);
+#endif
 	UINT8* Ptr = pMemory - nStart;
 	UINT8** pMemMapR = MemMapR + (nStart >> SH3_SHIFT);
 	UINT8** pMemMapW = MemMapW + (nStart >> SH3_SHIFT);
@@ -598,6 +637,9 @@ INT32 Sh3MapMemory(UINT8* pMemory, UINT32 nStart, UINT32 nEnd, INT32 nType)
 
 INT32 Sh3MapHandler(uintptr_t nHandler, UINT32 nStart, UINT32 nEnd, INT32 nType)
 {
+#ifdef SH3_PPC_DRC
+	sh3_drc_mapping_changed(nStart, nEnd, nType);
+#endif
 	UINT8** pMemMapR = MemMapR + (nStart >> SH3_SHIFT);
 	UINT8** pMemMapW = MemMapW + (nStart >> SH3_SHIFT);
 	UINT8** pMemMapF = MemMapF + (nStart >> SH3_SHIFT);
@@ -629,6 +671,12 @@ INT32 Sh3SetReadByteHandler(INT32 i, pSh3ReadByteHandler pHandler)
 		return 1;
 	}
 
+#ifdef SH3_PPC_DRC
+	if (sh3_ppc_state.mirror_handler == (UINT32)i) {
+		sh3_ppc_state.read_mirror = NULL;
+		sh3_drc_invalidate_ram();
+	}
+#endif
 	ReadByte[i] = pHandler;
 	return 0;
 }
@@ -651,6 +699,12 @@ INT32 Sh3SetReadWordHandler(INT32 i, pSh3ReadWordHandler pHandler)
 		return 1;
 	}
 
+#ifdef SH3_PPC_DRC
+	if (sh3_ppc_state.mirror_handler == (UINT32)i) {
+		sh3_ppc_state.read_mirror = NULL;
+		sh3_drc_invalidate_ram();
+	}
+#endif
 	ReadWord[i] = pHandler;
 	return 0;
 }
@@ -673,6 +727,12 @@ INT32 Sh3SetReadLongHandler(INT32 i, pSh3ReadLongHandler pHandler)
 		return 1;
 	}
 
+#ifdef SH3_PPC_DRC
+	if (sh3_ppc_state.mirror_handler == (UINT32)i) {
+		sh3_ppc_state.read_mirror = NULL;
+		sh3_drc_invalidate_ram();
+	}
+#endif
 	ReadLong[i] = pHandler;
 	return 0;
 }
@@ -846,6 +906,7 @@ void Sh3Init(INT32 num, INT32 hz, char md0, char md1, char md2, char md3, char m
 	Sh3SetReadPortHandler(Sh3DummyReadLong);
 	Sh3SetWritePortHandler(Sh3DummyWriteLong);
 
+	Sh3SetDrcReadMirror(NULL, 0, 0, 0);
 	Sh3MapInit();
 
 	Sh3MapHandler(SH3_MAXHANDLER - 1, SH3_LOWER_REGBASE, SH3_LOWER_REGEND, MAP_READ | MAP_WRITE);
@@ -889,6 +950,7 @@ void Sh3Init(INT32 num, INT32 hz, char md0, char md1, char md2, char md3, char m
 
 void Sh3Exit()
 {
+	sh3_drc_exit();
 }
 
 void Sh3Open(const INT32 i)
@@ -966,7 +1028,11 @@ static inline UINT32 RL(UINT32 A)
 	UINT8 *pr = MemMapR[ A >> SH3_SHIFT ];
 	if ( (uintptr_t)pr >= SH3_MAXHANDLER ) {
 		UINT32 V = *((UINT32 *)(pr + (A & SH3_PAGEM)));
+#ifdef LSB_FIRST
+		// Mapped memory contains native-endian 16-bit words. Only little-
+		// endian hosts need to exchange the halves of a 32-bit SH3 access.
 		V = (V << 16) | (V >> 16);
+#endif
 		return V;
 	}
 	return ReadLong[(uintptr_t)pr](A);
@@ -1017,7 +1083,9 @@ static inline void WL(UINT32 A, UINT32 V)
 
 	UINT8 *pr = MemMapW[ A >> SH3_SHIFT ];
 	if ((uintptr_t)pr >= SH3_MAXHANDLER) {
+#ifdef LSB_FIRST
 		V = (V << 16) | (V >> 16);
+#endif
 		*((UINT32 *)(pr + (A & SH3_PAGEM))) = (UINT32)V;
 		return;
 	}
@@ -3843,6 +3911,7 @@ static void sh34_device_reset()
 
 void Sh3Reset()
 {
+	sh3_drc_reset();
 	sh34_device_reset();
 
 	m_SH4_TCOR0 = 0xffffffff;
@@ -4641,6 +4710,10 @@ static inline void execute_one(const UINT16 opcode)
 	}
 
 
+#ifdef SH3_PPC_DRC
+#include "sh3_drc_ppc.h"
+#endif
+
 static int Sh3Run_timerhack(int cycles)
 {
 	m_sh4_icount = cycles;
@@ -4655,6 +4728,9 @@ static int Sh3Run_timerhack(int cycles)
 
 	do
 	{
+#ifdef SH3_PPC_DRC
+		if (sh3_drc_enabled && !m_delay && !m_test_irq && sh3_drc_dispatch<true>()) continue;
+#endif
 		if (m_delay)
 		{
 			const UINT16 opcode = sh3_cpu_readop16((UINT32)(m_delay & AM));

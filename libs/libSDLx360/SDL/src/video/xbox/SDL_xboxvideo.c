@@ -357,6 +357,217 @@ LPDIRECT3DPIXELSHADER9 HLSLBackground_getAlphaFixShader(void)
  * Solo aplica al wrap del Present; el rendering normal sigue intacto. */
 static CRITICAL_SECTION g_xboxFlipCS;
 static int              g_xboxFlipCSInit = 0;
+static unsigned g_coreGpuGeneration = 1;
+#include "SDL_xbox_asyncpresent.h"
+static XBOX_AsyncPresent g_corePresent;
+static D3DTexture* g_coreFront[2]; /* auto front reference + ONE extra texture */
+static volatile LONG g_coreSwapObserve, g_coreSwapForcedSync;
+static volatile LONG g_coreSwapStart;
+static DWORD g_corePresentThreshold;
+
+/* DPC callback: integer/interlocked operations only. The runtime itself
+   schedules VBlank swaps and temporarily switches to sync for the Guide. */
+static void WINAPI XBOX_CoreSwapCallback(D3DSWAPDATA* data)
+{
+    /* Ignore a late DPC belonging to the preceding synchronous Present. */
+    if (g_coreSwapObserve && (LONG)(data->Swap - (DWORD)g_coreSwapStart) > 0 &&
+        !(data->Flags & D3DSWAPDATA_ASYNCHRONOUS))
+        InterlockedExchange(&g_coreSwapForcedSync, 1);
+}
+
+static void XBOX_CoreFrontDestroy(void* unused)
+{
+    (void)unused;
+    if (g_coreFront[1]) IDirect3DTexture9_Release(g_coreFront[1]);
+    if (g_coreFront[0]) IDirect3DTexture9_Release(g_coreFront[0]);
+    g_coreFront[0] = g_coreFront[1] = NULL;
+}
+
+static int XBOX_CoreFrontCreate(void* unused)
+{
+    D3DSURFACE_DESC desc;
+    MEMORYSTATUS memory;
+    ULONGLONG bytes;
+    (void)unused;
+    if (FAILED(IDirect3DDevice9_GetFrontBuffer(D3D_Device, &g_coreFront[0]))) return 0;
+    IDirect3DTexture9_GetLevelDesc(g_coreFront[0], 0, &desc);
+    memory.dwLength = sizeof(memory);
+    GlobalMemoryStatus(&memory);
+    bytes = (ULONGLONG)((desc.Width + 31) & ~31) * ((desc.Height + 31) & ~31) * 4;
+    /* Preserve heap headroom on memory-constrained CV1000 titles. */
+    if (!desc.Width || !desc.Height || bytes + 8 * 1024 * 1024 > memory.dwAvailPhys ||
+        FAILED(IDirect3DDevice9_CreateTexture(D3D_Device, desc.Width, desc.Height, 1, 0,
+            desc.Format, D3DPOOL_DEFAULT, &g_coreFront[1], NULL))) {
+        XBOX_CoreFrontDestroy(NULL);
+        return 0;
+    }
+    return 1;
+}
+
+static void XBOX_CoreSwapMode(void* unused, int enabled)
+{
+    D3DSWAP_STATUS status;
+    (void)unused;
+    InterlockedExchange(&g_coreSwapObserve, 0);
+    InterlockedExchange(&g_coreSwapForcedSync, 0);
+    if (enabled) {
+        IDirect3DDevice9_GetRenderState(D3D_Device, D3DRS_PRESENTIMMEDIATETHRESHOLD,
+            &g_corePresentThreshold);
+        IDirect3DDevice9_SetRenderState(D3D_Device, D3DRS_PRESENTIMMEDIATETHRESHOLD, 0);
+        IDirect3DDevice9_QuerySwapStatus(D3D_Device, &status);
+        InterlockedExchange(&g_coreSwapStart, (LONG)status.Swap);
+        IDirect3DDevice9_SetSwapCallback(D3D_Device, XBOX_CoreSwapCallback);
+        IDirect3DDevice9_SetSwapMode(D3D_Device, TRUE);
+        InterlockedExchange(&g_coreSwapObserve, 1);
+    } else {
+        IDirect3DDevice9_SetSwapMode(D3D_Device, FALSE);
+        IDirect3DDevice9_SetSwapCallback(D3D_Device, NULL);
+        IDirect3DDevice9_SetRenderState(D3D_Device, D3DRS_PRESENTIMMEDIATETHRESHOLD,
+            g_corePresentThreshold);
+    }
+}
+
+static unsigned XBOX_CoreSwapsPending(void* unused)
+{
+    D3DSWAP_STATUS status;
+    (void)unused;
+    IDirect3DDevice9_QuerySwapStatus(D3D_Device, &status);
+    return status.EnqueuedCount;
+}
+static int XBOX_CoreSwapForced(void* unused)
+{
+    (void)unused;
+    return InterlockedCompareExchange(&g_coreSwapForcedSync, 0, 0) != 0;
+}
+static void XBOX_CorePresentNormal(void* unused)
+{
+    (void)unused;
+    IDirect3DDevice9_Present(D3D_Device, NULL, NULL, NULL, NULL);
+}
+static int XBOX_CorePresentAsync(void* unused, unsigned index)
+{
+    (void)unused;
+    /* Zero disables the SDK's immediate mid-scanout threshold. Repeat here
+       after any core state restoration: asynchronous must still obey VSync. */
+    IDirect3DDevice9_SetRenderState(D3D_Device, D3DRS_PRESENTIMMEDIATETHRESHOLD, 0);
+    /* Same order as the SDK async-swap contract. The second front buffer
+       removes the need for a GPU SyncToVBlank before this Resolve. Swap
+       retains PresentationInterval=ONE and its VBlank-scheduled scanout. */
+    IDirect3DDevice9_Resolve(D3D_Device, D3DRESOLVE_RENDERTARGET0, NULL,
+        g_coreFront[index], NULL, 0, 0, NULL, 0.0f, 0, NULL);
+    IDirect3DDevice9_Swap(D3D_Device, (D3DBaseTexture*)g_coreFront[index], NULL);
+    return 1;
+}
+static unsigned XBOX_CorePresentFence(void* unused)
+{
+    (void)unused;
+    return IDirect3DDevice9_InsertFence(D3D_Device);
+}
+static int XBOX_CoreFencePending(void* unused, unsigned fence)
+{
+    (void)unused;
+    return IDirect3DDevice9_IsFencePending(D3D_Device, fence) != 0;
+}
+static unsigned XBOX_CorePresentTicks(void* unused) { (void)unused; return GetTickCount(); }
+static void XBOX_CorePresentDelay(void* unused) { (void)unused; Sleep(1); }
+static void XBOX_CorePresentResetClear(void* unused)
+{
+    (void)unused;
+    IDirect3DDevice9_Clear(D3D_Device, 0, NULL, D3DCLEAR_TARGET, 0, 1.0f, 0);
+}
+static const XBOX_AsyncPresentOps g_corePresentOps = {
+    XBOX_CoreFrontCreate, XBOX_CoreFrontDestroy, XBOX_CoreSwapMode,
+    XBOX_CoreSwapsPending, XBOX_CoreSwapForced, XBOX_CorePresentNormal,
+    XBOX_CorePresentAsync, XBOX_CorePresentFence, XBOX_CoreFencePending,
+    XBOX_CorePresentTicks, XBOX_CorePresentDelay, XBOX_CorePresentResetClear
+};
+
+void SDL_XBOX_SetCoreGpuAsync(int enabled)
+{
+    if (!g_xboxFlipCSInit) return;
+    EnterCriticalSection(&g_xboxFlipCS);
+    XBOX_AsyncRequest(&g_corePresent, enabled);
+    LeaveCriticalSection(&g_xboxFlipCS);
+}
+
+unsigned SDL_XBOX_GetCoreGpuFrameInfo(unsigned* sequence)
+{
+    unsigned mode;
+    if (!g_xboxFlipCSInit) { if (sequence) *sequence = 0; return 0; }
+    EnterCriticalSection(&g_xboxFlipCS);
+    if (sequence) *sequence = g_corePresent.sequence;
+    mode = g_corePresent.active && !g_corePresent.failed && !XBOX_CoreSwapForced(NULL) ? 1 :
+           (g_corePresent.requested && g_vsync_enabled ? 2 : 0);
+    LeaveCriticalSection(&g_xboxFlipCS);
+    return mode;
+}
+
+void SDL_XBOX_GetCoreGpuPresentStats(unsigned stats[8])
+{
+    int i;
+    if (!stats) return;
+    for (i = 0; i < 8; ++i) stats[i] = 0;
+    if (!g_xboxFlipCSInit) return;
+    EnterCriticalSection(&g_xboxFlipCS);
+    stats[0] = (unsigned)g_corePresent.requested;
+    stats[1] = (unsigned)g_corePresent.active;
+    stats[2] = (unsigned)g_corePresent.failed;
+    stats[3] = (unsigned)g_corePresent.resources;
+    stats[4] = g_corePresent.sequence;
+    stats[5] = g_corePresent.activations;
+    stats[6] = g_corePresent.fallbacks;
+    stats[7] = g_corePresent.timeouts;
+    LeaveCriticalSection(&g_xboxFlipCS);
+}
+
+/* All five frontend Present sites use this wrapper, including the loading
+   watchdog. Existing callers may already own this recursive critical section. */
+static void XBOX_Present(void)
+{
+    if (g_xboxFlipCSInit) EnterCriticalSection(&g_xboxFlipCS);
+    XBOX_AsyncPresentFrame(&g_corePresent, &g_corePresentOps, NULL, g_vsync_enabled);
+    if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
+}
+
+static int XBOX_CorePresentPrepareReset(void)
+{
+    int ok;
+    if (g_xboxFlipCSInit) EnterCriticalSection(&g_xboxFlipCS);
+    ok = XBOX_AsyncPrepareReset(&g_corePresent, &g_corePresentOps, NULL);
+    if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
+    return ok;
+}
+/* Registration, pause notification and teardown all run on the emulation
+   thread. The callback joins its worker before reading counters; do not
+   acquire the Present lock here. */
+static void (*g_coreGpuDiagnostics)(void);
+
+void SDL_XBOX_SetCoreGpuDiagnostics(void (*callback)(void))
+{
+    g_coreGpuDiagnostics = callback;
+}
+
+void SDL_XBOX_FlushCoreGpuDiagnostics(void)
+{
+    if (g_coreGpuDiagnostics) g_coreGpuDiagnostics();
+}
+
+/* Shared by FBNeo's CV1000 offscreen compositor and SDL's watchdog/Present.
+   A successful acquisition must be paired with ReleaseCoreGpu. */
+void *SDL_XBOX_AcquireCoreGpu(unsigned *generation)
+{
+    if (!g_xboxFlipCSInit) return NULL;
+    EnterCriticalSection(&g_xboxFlipCS);
+    if (!D3D_Device) { LeaveCriticalSection(&g_xboxFlipCS); return NULL; }
+    if (generation) *generation = g_coreGpuGeneration;
+    return D3D_Device;
+}
+
+void SDL_XBOX_ReleaseCoreGpu(void)
+{
+    LeaveCriticalSection(&g_xboxFlipCS);
+}
+
 
 /* Initialization/Query functions */
 static int XBOX_VideoInit(_THIS, SDL_PixelFormat *vformat);
@@ -974,9 +1185,13 @@ void SDL_XBOX_SetVSync(int enabled)
 	float bbw, bbh;
 
 	if (!D3D_Device) return;
-	g_vsync_enabled = enabled ? 1 : 0;
 
 	if (g_xboxFlipCSInit) EnterCriticalSection(&g_xboxFlipCS);
+	if (!XBOX_CorePresentPrepareReset()) {
+		if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
+		return;
+	}
+	g_vsync_enabled = enabled ? 1 : 0;
 
 	/* Unlock game texture before Reset */
 	if (this && this->hidden && this->hidden->SDL_primary &&
@@ -1012,6 +1227,7 @@ void SDL_XBOX_SetVSync(int enabled)
 
 	/* Reset device with new presentation parameters */
 	IDirect3DDevice9_Reset(D3D_Device, &D3D_PP);
+	++g_coreGpuGeneration;
 
 	/* Recreate game vertex buffer (D3DPOOL_DEFAULT fue destruido) */
 	IDirect3DDevice9_CreateVertexBuffer(D3D_Device, sizeof(triangleStripVertices),
@@ -1419,7 +1635,7 @@ void SDL_XBOX_SetOverscan(int x, int y)
 	XBOX_UpdateOverlayVertices();
 }
 
-SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
+static SDL_Surface *XBOX_SetVideoModeInternal(_THIS, SDL_Surface *current,
 				int width, int height, int bpp, Uint32 flags)
 {
 
@@ -1569,12 +1785,24 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
 	current->pixels = d3dlr.pBits;
 
 	IDirect3DDevice9_Clear(D3D_Device, 0, NULL, D3DCLEAR_TARGET, 0x00000000, 1.0f, 0L);
-	IDirect3DDevice9_Present(D3D_Device,NULL,NULL,NULL,NULL);
+	XBOX_Present();
 
 	SDL_XBOX_SetScreenResolution(width, height);
  
 	/* We're done */
 	return(current);
+}
+
+SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
+                int width, int height, int bpp, Uint32 flags)
+{
+    SDL_Surface* result = NULL;
+    if (g_xboxFlipCSInit) EnterCriticalSection(&g_xboxFlipCS);
+    if (XBOX_CorePresentPrepareReset())
+        result = XBOX_SetVideoModeInternal(this, current, width, height, bpp, flags);
+    else SDL_SetError("GPU presentation is still busy; video mode retained");
+    if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
+    return result;
 }
 
 /* =====================================================================
@@ -1598,7 +1826,7 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
  *                    a la textura D3D lockeada permanentemente, o NULL
  *                    si falla la creacion de la textura.
  * =================================================================== */
-SDL_Surface* XBOX_ResizeGameTexture(int width, int height, int bpp)
+static SDL_Surface* XBOX_ResizeGameTextureInternal(int width, int height, int bpp)
 {
 	SDL_VideoDevice *this = current_video;
 	D3DLOCKED_RECT d3dlr;
@@ -1672,9 +1900,20 @@ SDL_Surface* XBOX_ResizeGameTexture(int width, int height, int bpp)
 	 * (el unico flash que queda, inevitable).  Sin el, la GPU ve datos
 	 * stale del overlay aunque la CPU tenga alpha=0xFF. */
 	//IDirect3DDevice9_Clear(D3D_Device, 0, NULL, D3DCLEAR_TARGET, 0x00000000, 1.0f, 0L);
-	IDirect3DDevice9_Present(D3D_Device, NULL, NULL, NULL, NULL);
+	XBOX_Present();
 
 	return this->screen;
+}
+
+SDL_Surface* XBOX_ResizeGameTexture(int width, int height, int bpp)
+{
+    SDL_Surface* result = NULL;
+    if (g_xboxFlipCSInit) EnterCriticalSection(&g_xboxFlipCS);
+    if (XBOX_CorePresentPrepareReset())
+        result = XBOX_ResizeGameTextureInternal(width, height, bpp);
+    else SDL_SetError("GPU presentation is still busy; texture size retained");
+    if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
+    return result;
 }
 
 /* We don't actually allow hardware surfaces other than the main one */
@@ -1734,7 +1973,7 @@ static int XBOX_RenderSurface(_THIS, SDL_Surface *surface)
 	CRT_PERF_ADD(draw_ticks, t_stage);
 
 	CRT_PERF_NOW(t_stage);
-	IDirect3DDevice9_Present(D3D_Device, NULL, NULL, NULL, NULL);
+	XBOX_Present();
 	CRT_PERF_ADD(present_ticks, t_stage);
 
 	/* Lock another ring member for the next CPU frame. If this blocks, it is
@@ -1840,7 +2079,7 @@ static void XBOX_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
 	/* g_hlslBkg_active es estado retenido; ya no se resetea por-frame. */
 	XBOX_DrawOverlay(display_texture, 0);
 
-	IDirect3DDevice9_Present(D3D_Device, NULL, NULL, NULL, NULL);
+	XBOX_Present();
 
 	/* Re-lock a different ring member for subsequent CPU updates. */
 	if (XBOX_LockNextGameTexture(this, &d3dlr) != D3D_OK) {
@@ -1874,6 +2113,16 @@ void XBOX_VideoQuit(_THIS)
 	  * dispositivo USB. Idempotente. */
 	 XBOX_HIDMouse_Quit();
 #endif
+	 if (g_xboxFlipCSInit) EnterCriticalSection(&g_xboxFlipCS);
+	 XBOX_AsyncRequest(&g_corePresent, 0);
+	 if (!XBOX_CorePresentPrepareReset()) {
+		 /* Keep busy textures alive, but never leave a callback into code
+		    which SDL/title teardown may unload. The runtime owns scanout. */
+		 InterlockedExchange(&g_coreSwapObserve, 0);
+		 IDirect3DDevice9_SetSwapCallback(D3D_Device, NULL);
+		 if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
+		 return; /* Retain resources if scanout has not safely retired. */
+	 }
 	 HLSLBackground_shutdown();
 	 XBOX_DestroyOverlay();
 	 XBOX_MameIndexedShutdown();
@@ -1886,6 +2135,7 @@ void XBOX_VideoQuit(_THIS)
 		 this->screen->pixels = NULL;
 
 	 destroyShaders();
+	 if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
 }
 
 static int XBOX_SetHWAlpha(_THIS, SDL_Surface *surface, Uint8 alpha)
@@ -2021,7 +2271,7 @@ int XBOX_DisplayYUVOverlay(_THIS, SDL_Overlay *overlay, SDL_Rect *src, SDL_Rect 
 	IDirect3DTexture9_UnlockRect(surface, 0);
 
 	XBOX_DrawMainQuad();
-	IDirect3DDevice9_Present(D3D_Device,NULL,NULL,NULL,NULL);
+	XBOX_Present();
 
 	return 0;
 }

@@ -1814,7 +1814,19 @@ void GameMenu::processHotkeys(HOTKEYS_LIST hotkey){
 	}
 }
 
+#ifdef _XBOX
+extern "C" void salvia_fbneo_audio_log(void);
+#endif
+
 void GameMenu::setEmuStatus(int tmpStat){
+#ifdef _XBOX
+	// Write core statistics only after leaving gameplay, never every frame.
+	// The overlay also pauses retro_run, so it is safe to join the core worker.
+	if (romLoaded && status == EMU_STARTED && tmpStat != EMU_STARTED) {
+		SDL_XBOX_FlushCoreGpuDiagnostics();
+		salvia_fbneo_audio_log();
+	}
+#endif
 	if (status == EMU_MENU_IMAGE_VIEWER){
 		//No queremos volver al visor de imagenes
 		lastStatus = EMU_MENU;
