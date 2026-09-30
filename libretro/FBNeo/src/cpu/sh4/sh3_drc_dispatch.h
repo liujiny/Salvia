@@ -23,7 +23,7 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
  // warm cache it only returns true, so avoid its out-of-line call here.
  if(Count) ++sh3_drc_work.dispatch_calls;
  if(m_sh4_icount<=0 || failed || (!blocks && !allocate())) {
-  if(Count) ++sh3_drc_work.exit_gate;
+  if(Count) { ++sh3_drc_work.exit_gate; sh3_drc_work.fallback.last_origin=SH3_FB_GATE; }
   return false;
  }
  // Generated entries are leaf functions: they cannot release the cache or
@@ -32,7 +32,7 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   UINT32 pc=m_pc, phys=pc&AM;
   const UINT8 *page=MemMapF[phys>>SH3_SHIFT];
   if((uintptr_t)page<SH3_MAXHANDLER || (phys&1)) {
-   if(Count) ++sh3_drc_work.exit_fetch;
+   if(Count) { ++sh3_drc_work.exit_fetch; sh3_drc_work.fallback.last_origin=SH3_FB_FETCH; }
    return false;
   }
   if(Count) ++sh3_drc_work.lookups;
@@ -54,11 +54,11 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    set.tag[way]=pc;
   }
   if(!b.entry) {
-   if(Count) ++sh3_drc_work.exit_no_entry;
+   if(Count) { ++sh3_drc_work.exit_no_entry; sh3_drc_work.fallback.last_origin=SH3_FB_NO_ENTRY; }
    return false;
   }
   if(m_sh4_icount<b.cycles) {
-   if(Count) ++sh3_drc_work.exit_budget;
+   if(Count) { ++sh3_drc_work.exit_budget; sh3_drc_work.fallback.last_origin=SH3_FB_BUDGET; }
    return false;
   }
   // A partial/guarded block requests one interpreter step at its updated PC,
@@ -72,7 +72,7 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   const int completed=b.entry(&sh3_ppc_state);
   if(Count) sh3_drc_work.native_cycles+=(unsigned)(before-m_sh4_icount);
   if(!completed) {
-   if(Count) ++sh3_drc_work.exit_partial;
+   if(Count) { ++sh3_drc_work.exit_partial; sh3_drc_work.fallback.last_origin=SH3_FB_PARTIAL; }
    return false;
   }
   // These are exactly the outer timerhack loop's eligibility checks. Return

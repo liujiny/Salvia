@@ -15,8 +15,11 @@ def main():
     old=a.baseline_sh4.read_text()
     begin='static int Sh3Run_timerhack(int cycles)'
     end='static int Sh3Run_normal(int cycles)'
-    reference=old[old.index(begin):old.index(end)].replace('Sh3Run_timerhack(', 'reference_timerhack(',1)
     start='template<bool Count> static int Sh3Run_timerhack_impl(int cycles)'
+    if start in old:
+        reference=old[old.index(start):old.index(end)].replace('Sh3Run_timerhack_impl','reference_impl').replace('Sh3Run_timerhack(', 'reference_timerhack(',1)
+    else:
+        reference=old[old.index(begin):old.index(end)].replace('Sh3Run_timerhack(', 'reference_timerhack(',1)
     body=candidate[candidate.index(start):candidate.index(begin)]
     source=out/'outer-extracted.cpp'
     source.write_text('#include '+json.dumps(str(tests/'outer_fixture.h'))+'\n'+reference+'\n'+body)

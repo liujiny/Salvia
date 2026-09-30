@@ -250,7 +250,25 @@ static bool workload_profile_checks() {
  return true;
 }
 
+static bool fallback_origin_checks() {
+ for(unsigned which=0;which<5;++which) {
+  run(1,2,true);Sh3Ppc::clear();m_pc=0;m_sh4_icount=8;
+  m_delay=0;m_test_irq=0;sh3_drc_enabled=true;recycle=false;
+  sh3_drc_work.fallback.last_origin=SH3_FB_UNKNOWN;
+  unsigned expected=SH3_FB_UNKNOWN;
+  if(which==0){m_sh4_icount=0;expected=SH3_FB_GATE;}
+  if(which==1){m_pc=1;expected=SH3_FB_FETCH;}
+  if(which==2){ram[0][0]=0;expected=SH3_FB_NO_ENTRY;}
+  if(which==3){m_sh4_icount=1;expected=SH3_FB_BUDGET;}
+  if(which==4){ram[0][0]=0x3100;expected=SH3_FB_PARTIAL;}
+  if(sh3_drc_dispatch_impl<false,true>() || sh3_drc_work.fallback.last_origin!=expected)return false;
+ }
+ puts("PASS exact dispatcher fallback origins: gate, fetch, no-entry, budget and partial");
+ return true;
+}
+
 int main() {
+ if(!fallback_origin_checks()) {fputs("FAIL fallback origins\n",stderr);return 7;}
  if(!workload_profile_checks()) {fputs("FAIL workload profile\n",stderr);return 6;}
  if(!cache_lifetime()) {fputs("FAIL allocation lifecycle\n",stderr); return 4;}
  unsigned coverage[16]={0};

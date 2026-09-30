@@ -8,6 +8,7 @@ typedef unsigned __int64 Sh3WorkCount;
 #else
 typedef unsigned long long Sh3WorkCount;
 #endif
+#include "sh3_fallback_detail.h"
 struct Sh3DrcWorkProfile {
  Sh3WorkCount frames, slices, cpu_off_slices, normal_mode_slices;
  Sh3WorkCount dispatch_calls, lookups, rebuilds, validation_spans, validation_words;
@@ -17,6 +18,7 @@ struct Sh3DrcWorkProfile {
  Sh3WorkCount snapshot_lengths[34];
  // High-byte opcode families actually sent to the interpreter in sampled frames.
  Sh3WorkCount interpreter_hi8[256];
+ Sh3FallbackDetail fallback;
  void clear() { memset(this,0,sizeof(*this)); }
 };
 static Sh3DrcWorkProfile sh3_drc_work;

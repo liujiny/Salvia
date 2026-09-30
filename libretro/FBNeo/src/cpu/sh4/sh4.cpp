@@ -4716,6 +4716,7 @@ static inline void execute_one(const UINT16 opcode)
 #endif
 
 #include "sh3_interpreter_hot.h"
+#include "sh3_fallback_observer.h"
 
 template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 {
@@ -4733,6 +4734,14 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 
 	do
 	{
+		if (Count) {
+#ifdef SH3_PPC_DRC
+			sh3_drc_work.fallback.last_origin=!sh3_drc_enabled?SH3_FB_DISABLED:
+				(m_delay?SH3_FB_DELAY:(m_test_irq?SH3_FB_IRQ:SH3_FB_UNKNOWN));
+#else
+			sh3_drc_work.fallback.last_origin=SH3_FB_UNKNOWN;
+#endif
+		}
 #ifdef SH3_PPC_DRC
 		if (sh3_drc_enabled && !m_delay && !m_test_irq && sh3_drc_dispatch_impl<true,Count>()) continue;
 #endif
@@ -4741,6 +4750,7 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 		if (m_delay)
 		{
 			const UINT16 opcode = sh3_cpu_readop16((UINT32)(m_delay & AM));
+			if (Count) sh3_work_fallback_observe(opcode,m_delay,true);
 
 			m_delay = 0;
 			m_ppc = m_pc;
@@ -4751,6 +4761,7 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 		else
 		{
 			const UINT16 opcode = sh3_cpu_readop16((UINT32)(m_pc & AM));
+			if (Count) sh3_work_fallback_observe(opcode,m_pc,false);
 
 			m_pc += 2;
 			m_ppc = m_pc;
@@ -4764,7 +4775,11 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 		}
 
 		EAT(1);
-		if (Count) sh3_drc_work.interpreter_cycles += (unsigned)(interpreterBefore - m_sh4_icount);
+		if (Count) {
+			unsigned elapsed=(unsigned)(interpreterBefore-m_sh4_icount);
+			sh3_drc_work.interpreter_cycles+=elapsed;
+			sh3_drc_work.fallback.finish(elapsed);
+		}
 	} while( m_sh4_icount > 0);// && !sh3_end_run );
 
 	cycles = cycles - m_sh4_icount;
@@ -4875,6 +4890,7 @@ void Sh3WorkReport(void (*emit)(const char*))
 		selected[best]=true;
 		sprintf(text,"drc_work_interpreter rank=%u opcode_hi8=%02X count=%I64u",rank+1,best,p.interpreter_hi8[best]); emit(text);
 	}
+	sh3_fallback_report(p.fallback,emit);
 	sh3_drc_work.clear();
 }
 #endif

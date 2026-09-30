@@ -55,6 +55,11 @@ static void sh4_run_timers(int cycles) {
  if((s.timer_hash&15)==3)s.drc=true;
 }
 #define SH3_PPC_DRC 1
+// This fixture isolates outer-loop ordering. The detail suite separately uses
+// the real observer and real mapping classifier without guest memory reads.
+static void sh3_work_fallback_observe(unsigned op,unsigned pc,bool delay) {
+ sh3_drc_work.fallback.begin(pc,op,0,SH3_FB_ACCESS_UNKNOWN,delay);
+}
 template<bool Chained,bool Count> static bool sh3_drc_dispatch_impl() {
  in_interpreter=false;
  if(Count)++sh3_drc_work.dispatch_calls;
@@ -90,6 +95,13 @@ int main() {
   if(memcmp(&reference,&normal,sizeof(s)) || memcmp(&reference,&counted,sizeof(s))) {
    printf("FAIL outer loop seed=%u\n",seed);return 1;
   }
+  if(sh3_drc_work.fallback.observed!=counted.interpreter_calls)return 4;
+  Sh3WorkCount detail_steps=0,detail_cycles=0;
+  for(unsigned i=0;i<SH3_FB_ORIGINS;++i) {
+   detail_steps+=sh3_drc_work.fallback.origins[i];
+   detail_cycles+=sh3_drc_work.fallback.origin_cycles[i];
+  }
+  if(detail_steps!=counted.interpreter_calls || detail_cycles!=counted.interpreter_cycles)return 5;
   Sh3WorkCount histogram=0;
   for(unsigned i=0;i<256;++i)histogram+=sh3_drc_work.interpreter_hi8[i];
   if(sh3_drc_work.slices!=12 || sh3_drc_work.interpreter_steps!=counted.interpreter_calls ||
