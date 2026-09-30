@@ -8,7 +8,9 @@
 template<bool Chained> static bool sh3_drc_dispatch()
 {
  using namespace Sh3Ppc;
- if(m_sh4_icount<=0 || !allocate())return false;
+ // Preserve allocate()'s failure precedence and cold initialization. On a
+ // warm cache it only returns true, so avoid its out-of-line call here.
+ if(m_sh4_icount<=0 || failed || (!blocks && !allocate()))return false;
  // Generated entries are leaf functions: they cannot release the cache or
  // replace its allocation. Keep the dispatcher stack alive across entries.
  do {

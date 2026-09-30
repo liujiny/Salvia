@@ -28,9 +28,21 @@ namespace Sh3Ppc {
 enum { WAYS=4, CACHE_SETS=8, TABLE_SIZE=WAYS*CACHE_SETS, MAX_INSNS=32 };
 #include "../../src/cpu/sh4/sh3_drc_block.h"
 struct Lookup { UINT32 tag[WAYS]; unsigned next; };
-static Block blocks[TABLE_SIZE]; static Lookup lookup[CACHE_SETS];
-static void clear() { memset(blocks,0,sizeof(blocks)); memset(lookup,0,sizeof(lookup)); }
-static bool allocate() { ++allocations; return !allocation_failure; }
+static Block block_storage[TABLE_SIZE];
+static Block *blocks;
+static Lookup lookup[CACHE_SETS];
+static bool failed;
+static void clear() { memset(block_storage,0,sizeof(block_storage)); memset(lookup,0,sizeof(lookup)); }
+// Model the production cold/warm/sticky-failure allocation contract, rather
+// than treating a permanently present array as a newly allocated cache.
+static bool allocate() {
+ ++allocations;
+ if(failed)return false;
+ if(blocks)return true;
+ if(allocation_failure) {failed=true; return false;}
+ blocks=block_storage;
+ return true;
+}
 static int native(Sh3PpcState*);
 static void compile(Block& b,UINT32 pc,const UINT16* source) {
  ++compilations;
@@ -128,6 +140,7 @@ static unsigned mapid(UINT8* p) {
 }
 static Result run(unsigned seed,int mode,bool hot=false) {
  rng=seed?seed:1; allocations=compilations=native_calls=interpreted=outer_calls=0;
+ Sh3Ppc::blocks=NULL; Sh3Ppc::failed=false;
  memset(events,0,sizeof(events)); trace.clear(); Sh3Ppc::clear();
  allocation_failure=!hot && seed%29==0; recycle=!hot && seed%3==0;
  for(unsigned b=0;b<2;++b) for(unsigned i=0;i<512;++i)
@@ -177,7 +190,45 @@ static bool same(const Result& a,const Result& b) {
  a.events==b.events && memcmp(a.cache_tags,b.cache_tags,sizeof(a.cache_tags))==0 &&
   memcmp(a.replacements,b.replacements,sizeof(a.replacements))==0;
 }
+// Exercise the real dispatcher with an initially absent cache, a sticky
+// allocation failure, a warm retained cache, and an exit/reallocation cycle.
+static bool cache_lifetime() {
+ run(1,2,true); // deterministic mapped native callbacks; no external I/O
+ recycle=false; Sh3Ppc::blocks=NULL; Sh3Ppc::failed=false;
+ allocation_failure=false; Sh3Ppc::clear(); allocations=0;
+ m_pc=0; m_delay=0; m_test_irq=0; sh3_drc_enabled=true; m_sh4_icount=0;
+ if(sh3_drc_dispatch<false>() || allocations || Sh3Ppc::blocks || Sh3Ppc::failed)return false;
+ m_sh4_icount=2; allocation_failure=true;
+ if(sh3_drc_dispatch<false>() || allocations!=1 || Sh3Ppc::blocks || !Sh3Ppc::failed)return false;
+ allocation_failure=false;
+ if(sh3_drc_dispatch<false>() || Sh3Ppc::blocks || !Sh3Ppc::failed)return false;
+#ifdef SH3_CACHE_READY_EXPECT_FAST
+ if(allocations!=1)return false;
+#endif
+ // The production exit path resets failed before a new initialization.
+ Sh3Ppc::failed=false; allocations=0;
+ if(!sh3_drc_dispatch<false>() || allocations!=1 || !Sh3Ppc::blocks)return false;
+ Sh3Ppc::clear(); // reset/state-load invalidates code but retains allocation
+ unsigned before=allocations;
+ for(unsigned i=0;i<64;++i) {
+  m_pc=0; m_sh4_icount=2;
+  if(!sh3_drc_dispatch<false>())return false;
+ }
+#ifdef SH3_CACHE_READY_EXPECT_FAST
+ if(allocations!=before)return false;
+#endif
+ printf("PASS cache lifetime: 64 warm single-block entries made %u allocation-helper calls\n",allocations-before);
+ // Even a failed+non-null synthetic state must preserve failure precedence.
+ Sh3Ppc::failed=true; m_pc=0; m_sh4_icount=2;
+ if(sh3_drc_dispatch<false>() || m_pc!=0 || m_sh4_icount!=2)return false;
+ Sh3Ppc::blocks=NULL; Sh3Ppc::failed=false; Sh3Ppc::clear(); allocations=0;
+ if(!sh3_drc_dispatch<false>() || allocations!=1 || !Sh3Ppc::blocks)return false;
+ puts("PASS zero budget, initial failure, sticky failure, warm reset, failure precedence and reallocation");
+ return true;
+}
+
 int main() {
+ if(!cache_lifetime()) {fputs("FAIL allocation lifecycle\n",stderr); return 4;}
  unsigned coverage[16]={0};
  for(unsigned s=1;s<=12000;++s) {
   Result a=run(s,0),b=run(s,1),c=run(s,2);
@@ -185,8 +236,12 @@ int main() {
   for(unsigned i=0;i<16;++i) coverage[i]+=a.kinds[i];
  }
  for(unsigned i=0;i<16;++i) if(!coverage[i])return 2;
- Result a=run(1,0,true),b=run(1,2,true);
- if(!same(a,b)||b.calls>=a.calls||b.alloc>=a.alloc)return 3;
+ Result a=run(1,0,true),b=run(1,2,true),single=run(1,1,true);
+ if(!same(a,b)||!same(a,single)||b.calls>=a.calls||b.alloc>=a.alloc)return 3;
+#ifdef SH3_CACHE_READY_EXPECT_FAST
+ if(single.alloc!=1 || b.alloc!=1)return 5;
+ printf("PASS warm-entry check: %u native single-block entries, allocation-helper calls %u -> %u\n",a.native,a.alloc,single.alloc);
+#endif
  puts("PASS 12000 randomized traces x 12 slices: original/single/fused dispatcher states, memory, mappings, callback order and cycles identical");
  puts("PASS guards, partial exits, delay slots, IRQ gates, engine mode, exhausted/short budgets, mutable code, aliases, hash eviction and arena reset");
  puts("PASS all final cache tags and replacement cursors match the original loop");
