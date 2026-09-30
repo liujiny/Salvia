@@ -16,6 +16,7 @@ extern "C" void SDL_XBOX_SetCoreGpuDiagnostics(void (*callback)(void));
 extern "C" void SDL_XBOX_SetCoreGpuAsync(int enabled);
 extern "C" unsigned SDL_XBOX_GetCoreGpuFrameInfo(unsigned *presentSequence);
 extern "C" void SDL_XBOX_GetCoreGpuPresentStats(unsigned stats[8]);
+extern "C" void SDL_XBOX_GetCoreGpuRecoveryStats(unsigned stats[6]);
 
 static D3DDevice *epic12_xenos_device;
 static D3DTexture *epic12_xenos_atlas, *epic12_xenos_input, *epic12_xenos_result;
@@ -228,6 +229,11 @@ static void epic12_xenos_report()
 	sprintf(message,"present_state requested=%u active=%u failed=%u retained=%u sequence=%u activations=%u fallbacks=%u timeouts=%u",
 		presentStats[0],presentStats[1],presentStats[2],presentStats[3],
 		presentStats[4],presentStats[5],presentStats[6],presentStats[7]);
+	epic12_xenos_log(message);
+	unsigned recoveryStats[6];
+	SDL_XBOX_GetCoreGpuRecoveryStats(recoveryStats);
+	sprintf(message,"present_recovery reason=%u forced=%u attempts=%u last_epoch=%u ui_state=%u listener=%u",
+		recoveryStats[0],recoveryStats[1],recoveryStats[2],recoveryStats[3],recoveryStats[4],recoveryStats[5]);
 	epic12_xenos_log(message);
     if(QueryPerformanceFrequency(&frequency) && frequency.QuadPart>0) {
         for(int i=0;i<4;++i) {

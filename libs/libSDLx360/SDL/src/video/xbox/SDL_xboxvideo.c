@@ -359,11 +359,46 @@ static CRITICAL_SECTION g_xboxFlipCS;
 static int              g_xboxFlipCSInit = 0;
 static unsigned g_coreGpuGeneration = 1;
 #include "SDL_xbox_asyncpresent.h"
+#include "SDL_xbox_ui_recovery.h"
 static XBOX_AsyncPresent g_corePresent;
 static D3DTexture* g_coreFront[2]; /* auto front reference + ONE extra texture */
 static volatile LONG g_coreSwapObserve, g_coreSwapForcedSync;
 static volatile LONG g_coreSwapStart;
 static DWORD g_corePresentThreshold;
+static HANDLE g_coreUiListener;
+static XBOX_UiRecovery g_coreUiRecovery;
+
+/* One listener per explicit async request. Creation failure disables automatic
+   recovery, not presentation. Called only under the existing Present lock. */
+static void XBOX_CoreUiRequest(int enabled)
+{
+    if (g_coreUiListener) CloseHandle(g_coreUiListener);
+    g_coreUiListener = NULL;
+    XBOX_UiRecoveryReset(&g_coreUiRecovery);
+    if (enabled) {
+        g_coreUiListener = XNotifyCreateListener(XNOTIFY_SYSTEM);
+        if (g_coreUiListener == INVALID_HANDLE_VALUE) g_coreUiListener = NULL;
+    }
+}
+
+/* Only polled while handling a transient forced-sync fault, never from DPC
+   or the normal asynchronous hot path. Unknown visibility fails closed. */
+static unsigned XBOX_CoreRecoveryEpoch(void* unused)
+{
+    DWORD id;
+    ULONG_PTR visible;
+    unsigned drained;
+    (void)unused;
+    if (!g_coreUiListener) return 0;
+    for (drained = 0; drained < 32; ++drained) {
+        if (!XNotifyGetNext(g_coreUiListener, XN_SYS_UI, &id, &visible))
+            return XBOX_UiRecoveryEpoch(&g_coreUiRecovery);
+        if (id == XN_SYS_UI) XBOX_UiRecoveryEvent(&g_coreUiRecovery, visible != 0);
+    }
+    /* Do not decide from a possibly stale close when the queue budget ran out. */
+    return 0;
+}
+
 
 /* DPC callback: integer/interlocked operations only. The runtime itself
    schedules VBlank swaps and temporarily switches to sync for the Guide. */
@@ -479,13 +514,15 @@ static const XBOX_AsyncPresentOps g_corePresentOps = {
     XBOX_CoreFrontCreate, XBOX_CoreFrontDestroy, XBOX_CoreSwapMode,
     XBOX_CoreSwapsPending, XBOX_CoreSwapForced, XBOX_CorePresentNormal,
     XBOX_CorePresentAsync, XBOX_CorePresentFence, XBOX_CoreFencePending,
-    XBOX_CorePresentTicks, XBOX_CorePresentDelay, XBOX_CorePresentResetClear
+    XBOX_CorePresentTicks, XBOX_CorePresentDelay, XBOX_CorePresentResetClear,
+    XBOX_CoreRecoveryEpoch
 };
 
 void SDL_XBOX_SetCoreGpuAsync(int enabled)
 {
     if (!g_xboxFlipCSInit) return;
     EnterCriticalSection(&g_xboxFlipCS);
+    if (g_corePresent.requested != !!enabled) XBOX_CoreUiRequest(!!enabled);
     XBOX_AsyncRequest(&g_corePresent, enabled);
     LeaveCriticalSection(&g_xboxFlipCS);
 }
@@ -517,6 +554,24 @@ void SDL_XBOX_GetCoreGpuPresentStats(unsigned stats[8])
     stats[5] = g_corePresent.activations;
     stats[6] = g_corePresent.fallbacks;
     stats[7] = g_corePresent.timeouts;
+    LeaveCriticalSection(&g_xboxFlipCS);
+}
+
+/* Pause-time snapshot; this getter neither polls notifications nor retries. */
+void SDL_XBOX_GetCoreGpuRecoveryStats(unsigned stats[6])
+{
+    int i;
+    if (!stats) return;
+    for (i = 0; i < 6; ++i) stats[i] = 0;
+    stats[4] = 2; /* unknown UI state */
+    if (!g_xboxFlipCSInit) return;
+    EnterCriticalSection(&g_xboxFlipCS);
+    stats[0] = g_corePresent.failure_reason;
+    stats[1] = g_corePresent.forced_fallbacks;
+    stats[2] = g_corePresent.recovery_attempts;
+    stats[3] = g_corePresent.recovered_epoch;
+    stats[4] = !g_coreUiListener || g_coreUiRecovery.visible < 0 ? 2u : (unsigned)g_coreUiRecovery.visible;
+    stats[5] = g_coreUiListener != NULL;
     LeaveCriticalSection(&g_xboxFlipCS);
 }
 
@@ -2115,6 +2170,7 @@ void XBOX_VideoQuit(_THIS)
 #endif
 	 if (g_xboxFlipCSInit) EnterCriticalSection(&g_xboxFlipCS);
 	 XBOX_AsyncRequest(&g_corePresent, 0);
+	 XBOX_CoreUiRequest(0);
 	 if (!XBOX_CorePresentPrepareReset()) {
 		 /* Keep busy textures alive, but never leave a callback into code
 		    which SDL/title teardown may unload. The runtime owns scanout. */

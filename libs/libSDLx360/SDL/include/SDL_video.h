@@ -454,6 +454,9 @@ extern unsigned SDL_XBOX_GetCoreGpuFrameInfo(unsigned *presentSequence);
 /* Snapshot only; callers normally emit it with the pause-time core diagnostics.
    stats = requested, active, failed, retained, sequence, activations, fallbacks, timeouts. */
 extern void SDL_XBOX_GetCoreGpuPresentStats(unsigned stats[8]);
+/* Pause snapshot: failure reason, forced fallbacks, recovery attempts, close epoch,
+   UI state (0 closed, 1 open, 2 unknown), notification listener available. */
+extern void SDL_XBOX_GetCoreGpuRecoveryStats(unsigned stats[6]);
 
 /* Specify the main xbox resolution. w<=0 || h<=0 => "Auto": usa la resolucion
    del dashboard via XGetVideoMode, capada a 1280x720. */

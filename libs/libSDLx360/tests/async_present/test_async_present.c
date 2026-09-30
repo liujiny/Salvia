@@ -4,11 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "../../SDL/src/video/xbox/SDL_xbox_asyncpresent.h"
+#include "../../SDL/src/video/xbox/SDL_xbox_ui_recovery.h"
 
 typedef struct Mock {
     unsigned tick, due, fence_id, sync_fence, creates, destroys, normals, swaps, clears;
     int resource, mode, displayed, queued, synchronous, forced, oom, swap_fail, stuck;
     unsigned last_slot;
+    XBOX_UiRecovery ui;
+    unsigned ui_polls;
 } Mock;
 
 static void progress(Mock* m)
@@ -96,13 +99,20 @@ static int fence_pending(void* p, unsigned f)
 static unsigned ticks(void* p) { return ((Mock*)p)->tick; }
 static void delay(void* p) { ++((Mock*)p)->tick; progress((Mock*)p); }
 static void clear(void* p) { ++((Mock*)p)->clears; }
+static unsigned recovery_epoch(void* p)
+{
+    Mock* m = (Mock*)p;
+    ++m->ui_polls;
+    return XBOX_UiRecoveryEpoch(&m->ui);
+}
 static const XBOX_AsyncPresentOps op = {
     create, destroy, mode, pending, forced, normal, asynchronous, fence,
-    fence_pending, ticks, delay, clear
+    fence_pending, ticks, delay, clear, recovery_epoch
 };
 static void init(XBOX_AsyncPresent* s, Mock* m)
 {
     memset(s, 0, sizeof(*s)); memset(m, 0, sizeof(*m)); m->queued = -1;
+    XBOX_UiRecoveryReset(&m->ui);
 }
 static void frame(XBOX_AsyncPresent* s, Mock* m, int vsync)
 {
@@ -180,6 +190,108 @@ static void resets(void)
     }
     assert(m.creates == m.destroys);
 }
+static void advance_frame(XBOX_AsyncPresent* s, Mock* m, unsigned ms, int vsync)
+{
+    m->tick += ms; progress(m); frame(s, m, vsync);
+}
+static void ui_recovery(void)
+{
+    XBOX_AsyncPresent s; Mock m; unsigned i, start, creates;
+    init(&s, &m); activate(&s, &m);
+    for (i = 0; i < 8; ++i) advance_frame(&s, &m, 17, 1);
+    assert(!m.ui_polls); /* Healthy frames never poll notification state. */
+    XBOX_UiRecoveryEvent(&m.ui, 1); m.forced = 1; frame(&s, &m, 1);
+    assert(s.failed && s.failure_reason == XBOX_ASYNC_FORCED && s.forced_fallbacks == 1);
+    assert(s.retiring && !m.destroys);
+    for (i = 0; i < 120; ++i) advance_frame(&s, &m, 17, 1);
+    assert(!s.active && !s.resources && m.creates == 1 && !s.recovery_attempts);
+    XBOX_UiRecoveryEvent(&m.ui, 0); advance_frame(&s, &m, 17, 1);
+    start = m.tick;
+    advance_frame(&s, &m, 999, 1); assert(!s.active && m.creates == 1);
+    advance_frame(&s, &m, 1, 1);
+    assert(s.active && !s.failed && s.recovery_attempts == 1 && s.activations == 2);
+    assert((unsigned)(m.tick - start) >= 1000 && m.creates == 2 && m.destroys == 1);
+    /* A second forced swap without a NEW close must not become a retry loop. */
+    m.forced = 1; frame(&s, &m, 1);
+    for (i = 0; i < 150; ++i) advance_frame(&s, &m, 17, 1);
+    assert(s.failed && !s.active && m.creates == 2 && s.recovery_attempts == 1);
+    XBOX_UiRecoveryEvent(&m.ui, 0); /* duplicate close is not a new token */
+    advance_frame(&s, &m, 2000, 1); assert(m.creates == 2);
+    XBOX_UiRecoveryEvent(&m.ui, 1); advance_frame(&s, &m, 17, 1);
+    XBOX_UiRecoveryEvent(&m.ui, 0); advance_frame(&s, &m, 17, 1);
+    advance_frame(&s, &m, 1001, 1); assert(s.active && s.recovery_attempts == 2);
+    /* Reopening UI cancels an in-progress quiet interval. */
+    XBOX_UiRecoveryEvent(&m.ui, 1); m.forced = 1; frame(&s, &m, 1);
+    XBOX_UiRecoveryEvent(&m.ui, 0); advance_frame(&s, &m, 17, 1);
+    advance_frame(&s, &m, 900, 1);
+    XBOX_UiRecoveryEvent(&m.ui, 1); advance_frame(&s, &m, 17, 1);
+    XBOX_UiRecoveryEvent(&m.ui, 0); advance_frame(&s, &m, 17, 1);
+    advance_frame(&s, &m, 999, 1); assert(!s.active);
+    advance_frame(&s, &m, 1, 1); assert(s.active && s.recovery_attempts == 3);
+    assert(XBOX_AsyncPrepareReset(&s, &op, &m));
+    /* No resources may be freed/recreated while the old scanout is stalled. */
+    init(&s, &m); activate(&s, &m);
+    XBOX_UiRecoveryEvent(&m.ui, 1); m.forced = 1; frame(&s, &m, 1);
+    m.stuck = 1; XBOX_UiRecoveryEvent(&m.ui, 0);
+    for (i = 0; i < 150; ++i) advance_frame(&s, &m, 17, 1);
+    assert(s.resources && s.retiring && !s.active && !m.destroys && m.creates == 1);
+    m.stuck = 0; advance_frame(&s, &m, 17, 1); assert(s.active && m.creates == 2);
+    /* OOM during retry is hard, even with subsequent UI-close notifications. */
+    XBOX_UiRecoveryEvent(&m.ui, 1); m.forced = 1; frame(&s, &m, 1);
+    XBOX_UiRecoveryEvent(&m.ui, 0); m.oom = 1;
+    advance_frame(&s, &m, 17, 1); advance_frame(&s, &m, 1001, 1);
+    assert(s.failure_reason == XBOX_ASYNC_CREATE && !s.active);
+    creates = m.creates; m.oom = 0;
+    XBOX_UiRecoveryEvent(&m.ui, 1); XBOX_UiRecoveryEvent(&m.ui, 0);
+    for (i = 0; i < 100; ++i) advance_frame(&s, &m, 17, 1);
+    assert(m.creates == creates && s.failed);
+}
+
+static void recovery_faults(void)
+{
+    XBOX_AsyncPresent s; Mock m; unsigned i, creates;
+    init(&s, &m); m.swap_fail = 1; XBOX_AsyncRequest(&s, 1); frame(&s, &m, 1);
+    assert(s.failure_reason == XBOX_ASYNC_SUBMIT);
+    XBOX_UiRecoveryEvent(&m.ui, 1); XBOX_UiRecoveryEvent(&m.ui, 0);
+    m.swap_fail = 0;
+    for (i = 0; i < 100; ++i) advance_frame(&s, &m, 17, 1);
+    assert(s.failed && m.creates == 1 && !s.recovery_attempts && !m.ui_polls);
+    init(&s, &m); activate(&s, &m); m.stuck = 1; frame(&s, &m, 1);
+    assert(s.failure_reason == XBOX_ASYNC_QUEUE_TIMEOUT);
+    m.stuck = 0; XBOX_UiRecoveryEvent(&m.ui, 1); XBOX_UiRecoveryEvent(&m.ui, 0);
+    for (i = 0; i < 100; ++i) advance_frame(&s, &m, 17, 1);
+    assert(s.failed && !s.recovery_attempts && !m.ui_polls);
+    /* Timeout in the recovery fence is also sticky; never force activation. */
+    init(&s, &m); activate(&s, &m);
+    XBOX_UiRecoveryEvent(&m.ui, 1); m.forced = 1; frame(&s, &m, 1);
+    XBOX_UiRecoveryEvent(&m.ui, 0); advance_frame(&s, &m, 17, 1);
+    advance_frame(&s, &m, 100, 1); assert(!s.resources);
+    m.stuck = 1; advance_frame(&s, &m, 1001, 1);
+    assert(s.failure_reason == XBOX_ASYNC_RESET_TIMEOUT && !s.active && m.creates == 1);
+    m.stuck = 0; advance_frame(&s, &m, 1001, 1); assert(s.failed && m.creates == 1);
+    /* No UI callback, unknown state or close-without-open keeps old behavior. */
+    init(&s, &m); activate(&s, &m); m.forced = 1; frame(&s, &m, 1);
+    XBOX_UiRecoveryEvent(&m.ui, 0);
+    for (i = 0; i < 100; ++i) advance_frame(&s, &m, 17, 1);
+    assert(s.failed && m.creates == 1 && !s.recovery_attempts);
+    /* VSync disabled and request cancellation prevent recovery. */
+    XBOX_UiRecoveryEvent(&m.ui, 1); XBOX_UiRecoveryEvent(&m.ui, 0);
+    for (i = 0; i < 100; ++i) advance_frame(&s, &m, 17, 0);
+    assert(!s.active && !s.recovery_attempts);
+    XBOX_AsyncRequest(&s, 0); creates = m.creates;
+    for (i = 0; i < 100; ++i) advance_frame(&s, &m, 17, 1);
+    assert(m.creates == creates && !s.active);
+    /* Both millisecond and notification epochs may wrap unsigned integers. */
+    init(&s, &m); m.tick = UINT_MAX - 500; activate(&s, &m);
+    m.ui.epoch = UINT_MAX; XBOX_UiRecoveryEvent(&m.ui, 1);
+    m.forced = 1; frame(&s, &m, 1); XBOX_UiRecoveryEvent(&m.ui, 0);
+    assert(m.ui.epoch == 1);
+    advance_frame(&s, &m, 17, 1); advance_frame(&s, &m, 1001, 1);
+    assert(s.active && !s.failed && s.recovery_attempts == 1);
+    assert(XBOX_AsyncPrepareReset(&s, &op, &m));
+    puts("PASS UI-close recovery: stable closure, one retry/epoch, scanout retirement, hard faults, cancellation and wrap");
+}
+
 static void stress(void)
 {
     XBOX_AsyncPresent s; Mock m; unsigned rng = 0x832d9247, i;
@@ -196,6 +308,8 @@ static void stress(void)
         case 4: assert(XBOX_AsyncPrepareReset(&s, &op, &m)); break;
         case 5: m.oom ^= 1; break;
         case 6: m.swap_fail ^= 1; break;
+        case 7: XBOX_UiRecoveryEvent(&m.ui, 1); break;
+        case 8: XBOX_UiRecoveryEvent(&m.ui, 0); break;
         default: break;
         }
         frame(&s, &m, vsync);
@@ -205,7 +319,7 @@ static void stress(void)
 }
 int main(void)
 {
-    lifecycle(); failures(); resets(); stress();
+    lifecycle(); failures(); resets(); ui_recovery(); recovery_faults(); stress();
     puts("async presentation policy: PASS (lifetime, queue, fallback, timeout, wrap, 100000 events)");
     return 0;
 }
