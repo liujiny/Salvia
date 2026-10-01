@@ -12,6 +12,8 @@
 #include "cv1k_review_profile.h"
 extern INT32 nBurnRenderCores;
 static SalviaReviewProfile<4> cv1k_review;
+static SalviaReviewTail<4> cv1k_review_tail;
+static SalviaReviewTick cv1k_review_slow_ticks;
 #endif
 
 #define SH3_CLOCK (12800000 * 8)
@@ -71,9 +73,24 @@ void cv1k_review_report(void (*emit)(const char*))
             cv1k_review.ticks[2] * avg, cv1k_review.ticks[3] * avg,
             cv1k_review.total * avg, cv1k_review.peak * unit);
         emit(text);
+        if (cv1k_review_slow_ticks) {
+            const SalviaReviewTail<4>& tail = cv1k_review_tail;
+            double slowAvg = tail.slowSamples ? unit / tail.slowSamples : 0.0;
+            sprintf(text, "core_slow_frame_ms threshold_ms=%.3f samples=%u prep=%.3f cpu_io=%.3f audio_tail_misc=%.3f draw_sync=%.3f total=%.3f dominant_prep=%u dominant_cpu_io=%u dominant_audio=%u dominant_draw_sync=%u sampled_only=1 excludes=frontend_present_limiter",
+                cv1k_review_slow_ticks * unit, tail.slowSamples,
+                tail.slowTicks[0] * slowAvg, tail.slowTicks[1] * slowAvg,
+                tail.slowTicks[2] * slowAvg, tail.slowTicks[3] * slowAvg, tail.slowTotal * slowAvg,
+                tail.dominant[0], tail.dominant[1], tail.dominant[2], tail.dominant[3]);
+            emit(text);
+            sprintf(text, "core_sampled_peak_ms interval_frame=%u prep=%.3f cpu_io=%.3f audio_tail_misc=%.3f draw_sync=%.3f total=%.3f same_frame=1 excludes=frontend_present_limiter",
+                tail.peakFrame, tail.peakTicks[0] * unit, tail.peakTicks[1] * unit,
+                tail.peakTicks[2] * unit, tail.peakTicks[3] * unit, tail.peak * unit);
+            emit(text);
+        }
     }
     Sh3WorkReport(emit);
     cv1k_review.clear_window();
+    cv1k_review_tail.clear_window();
 }
 #endif
 
@@ -562,6 +579,10 @@ static INT32 DrvInit()
 {
 #ifdef _XBOX
 	cv1k_review.clear_window();
+	cv1k_review_tail.clear_window();
+	LARGE_INTEGER reviewFrequency;
+	cv1k_review_slow_ticks = (QueryPerformanceFrequency(&reviewFrequency) && reviewFrequency.QuadPart > 0)
+		? (SalviaReviewTick)reviewFrequency.QuadPart / 40 : 0; // strict >25 ms core samples
 	Sh3WorkReset();
 	salvia_cv1k_work_sample_frame = 0;
 #endif
@@ -761,7 +782,8 @@ static INT32 DrvFrame()
 #ifdef _XBOX
 	if (reviewSample) {
 		reviewMarks[4] = salvia_review_clock();
-		cv1k_review.record(reviewMarks);
+		if (cv1k_review.record(reviewMarks))
+			cv1k_review_tail.record_validated(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks);
 	}
 #endif
 

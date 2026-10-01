@@ -2,7 +2,7 @@
 #ifndef SALVIA_CV1K_REVIEW_PROFILE_H
 #define SALVIA_CV1K_REVIEW_PROFILE_H
 #include <string.h>
-#define SALVIA_CV1K_REVIEW_BUILD "cv1k-tile-alpha-fused-20261001-r1"
+#define SALVIA_CV1K_REVIEW_BUILD "cv1k-slow-frame-profile-20261001-r1"
 // Use the existing PRNG result. Workload-count frames and timing frames are disjoint.
 static inline bool salvia_review_work_sample(unsigned randomWord, bool timingSample) {
     return !timingSample && (randomWord & 255u) == 1u;
@@ -40,6 +40,35 @@ template<unsigned N> struct SalviaReviewProfile {
         if (elapsed > peak) peak = elapsed;
         ++samples;
         return true;
+    }
+};
+
+// Reuse already validated frame marks. Peak phases all belong to ONE sample;
+// unrelated per-phase maxima must not be combined into a fictitious frame.
+template<unsigned N> struct SalviaReviewTail {
+    unsigned slowSamples, peakFrame, dominant[N];
+    SalviaReviewTick slowTicks[N], slowTotal, peakTicks[N], peak;
+    void clear_window() { memset(this, 0, sizeof(*this)); }
+    void record_validated(const SalviaReviewTick (&stamp)[N + 1], unsigned frame,
+                          SalviaReviewTick threshold) {
+        if (!threshold) return;
+        SalviaReviewTick elapsed = stamp[N] - stamp[0];
+        if (elapsed > peak) {
+            peak = elapsed;
+            peakFrame = frame;
+            for (unsigned i = 0; i < N; ++i) peakTicks[i] = stamp[i + 1] - stamp[i];
+        }
+        if (elapsed <= threshold) return;
+        ++slowSamples;
+        slowTotal += elapsed;
+        unsigned largest = 0;
+        SalviaReviewTick largestTicks = 0;
+        for (unsigned i = 0; i < N; ++i) {
+            SalviaReviewTick delta = stamp[i + 1] - stamp[i];
+            slowTicks[i] += delta;
+            if (delta > largestTicks) { largestTicks = delta; largest = i; }
+        }
+        ++dominant[largest]; // ties retain the first largest phase
     }
 };
 
