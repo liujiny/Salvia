@@ -2,6 +2,7 @@
 #ifndef SALVIA_CV1K_REVIEW_PROFILE_H
 #define SALVIA_CV1K_REVIEW_PROFILE_H
 #include <string.h>
+#include "salvia_fbneo_diagnostics.h"
 #define SALVIA_CV1K_REVIEW_BUILD "cv1k-clipped-invalidation-20261001-r1"
 // Use the existing PRNG result. Workload-count frames and timing frames are disjoint.
 static inline bool salvia_review_work_sample(unsigned randomWord, bool timingSample) {

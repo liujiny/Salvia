@@ -56,6 +56,7 @@ static INT32 speedhack_burn; // 10ms @ cpu clock, calculated in DrvFrame
 // These are sampled core intervals, not whole-emulator frame-rate measurements.
 void cv1k_review_report(void (*emit)(const char*))
 {
+#if SALVIA_FBNEO_DIAGNOSTICS
     if (!emit || !cv1k_review.frames) return;
     char text[768];
     const char *game = BurnDrvGetTextA(DRV_NAME);
@@ -91,6 +92,7 @@ void cv1k_review_report(void (*emit)(const char*))
     Sh3WorkReport(emit);
     cv1k_review.clear_window();
     cv1k_review_tail.clear_window();
+#endif
 }
 #endif
 
@@ -581,7 +583,7 @@ static INT32 DrvInit()
 	cv1k_review.clear_window();
 	cv1k_review_tail.clear_window();
 	LARGE_INTEGER reviewFrequency;
-	cv1k_review_slow_ticks = (QueryPerformanceFrequency(&reviewFrequency) && reviewFrequency.QuadPart > 0)
+	cv1k_review_slow_ticks = (SALVIA_FBNEO_DIAGNOSTICS && QueryPerformanceFrequency(&reviewFrequency) && reviewFrequency.QuadPart > 0)
 		? (SalviaReviewTick)reviewFrequency.QuadPart / 40 : 0; // strict >25 ms core samples
 	Sh3WorkReset();
 	salvia_cv1k_work_sample_frame = 0;
@@ -668,8 +670,8 @@ static INT32 DrvFrame()
 		DrvDoReset();
 	}
 #ifdef _XBOX
-	const bool reviewSample = cv1k_review.begin();
-	const bool workSample = salvia_review_work_sample(cv1k_review.rng, reviewSample) &&
+	const bool reviewSample = SALVIA_FBNEO_DIAGNOSTICS && cv1k_review.begin();
+	const bool workSample = SALVIA_FBNEO_DIAGNOSTICS && salvia_review_work_sample(cv1k_review.rng, reviewSample) &&
 		(DrvDips[1] & 2) && !(DrvDips[3] & 0x10);
 	salvia_cv1k_work_sample_frame = workSample ? 1u : 0u;
 	SalviaReviewTick reviewMarks[5];

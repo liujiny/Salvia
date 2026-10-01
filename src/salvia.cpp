@@ -19,6 +19,7 @@ static unsigned g_review_work_skipped;
 // Called by the existing pause hook, never from a running frame or audio callback.
 static void salvia_review_frontend_report()
 {
+#if SALVIA_FBNEO_DIAGNOSTICS
     if (strcmp(EMU_LIB_NAME, "fbneo") != 0 || !g_review_loop.frames) return;
     FILE *file = fopen("game:\\cv1000-gpu.log", "a");
     if (!file) file = fopen("game:\\cv1000-gpu.log", "w");
@@ -36,6 +37,7 @@ static void salvia_review_frontend_report()
     fclose(file);
     g_review_loop.clear_window();
     g_review_work_skipped = 0;
+#endif
 }
 #endif
 
@@ -1846,7 +1848,7 @@ void init_sdl_audio(double sample_rate) {
 // Called once when leaving gameplay, outside the audio callback. Take a short
 // consistent snapshot under the SDL lock, then perform all file I/O unlocked.
 extern "C" void salvia_fbneo_audio_log(void) {
-#ifdef _XBOX
+#if defined(_XBOX) && SALVIA_FBNEO_DIAGNOSTICS
     salvia_review_frontend_report();
     if (strcmp(EMU_LIB_NAME, "fbneo") != 0 || !gameMenu || !audio_opened) return;
     SDL_LockAudio();
@@ -2351,7 +2353,7 @@ static void __declspec(noinline) runGameLoop() {
 			processFrontendEvents();
 #ifdef _XBOX
 			salvia_cv1k_work_sample_frame = 0;
-			const bool reviewSample = strcmp(EMU_LIB_NAME, "fbneo") == 0 &&
+			const bool reviewSample = SALVIA_FBNEO_DIAGNOSTICS && strcmp(EMU_LIB_NAME, "fbneo") == 0 &&
 				gameMenu->getEmuStatus() == EMU_STARTED && g_review_loop.begin();
 			SalviaReviewTick reviewMarks[4];
 			if (reviewSample) reviewMarks[0] = salvia_review_clock();

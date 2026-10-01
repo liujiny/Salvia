@@ -14,6 +14,7 @@
 #include <io.h>
 #endif
 #include <io/statefile.h>
+#include "../../libretro/FBNeo/src/burn/devices/salvia_fbneo_diagnostics.h"
 
 const Uint32 INTERVAL_SRAM_SAVE = 60000;
 Uint32 lastSramSaved = 0;
@@ -39,6 +40,7 @@ static FbneoStateStream getFbneoStateStream() {
     return (FbneoStateStream)g_state_get_proc("fbneo_state_stream_v1");
 }
 static void stateLog(const char* stage, size_t size, bool ok) {
+#if SALVIA_FBNEO_DIAGNOSTICS
     if (!isFbneoStateCore()) return;
 #if defined(_XBOX) || defined(_XBOX360)
     FILE* f = fopen("game:\\fbneo-state.log", "a");
@@ -55,6 +57,9 @@ static void stateLog(const char* stage, size_t size, bool ok) {
     fprintf(f, "memory_available=%lu\n", (unsigned long)memory.dwAvailPhys);
 #endif
     fclose(f);
+#else
+    (void)stage; (void)size; (void)ok;
+#endif
 }
 static void stateError(const char* reason) {
     LOG_ERROR("Save/load state: %s", reason);

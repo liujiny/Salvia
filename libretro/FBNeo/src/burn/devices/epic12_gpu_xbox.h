@@ -3,6 +3,7 @@
 #ifndef FBNEO_EPIC12_GPU_XBOX_H
 #define FBNEO_EPIC12_GPU_XBOX_H
 #include <xtl.h>
+#include "salvia_fbneo_diagnostics.h"
 #include <d3dx9.h>
 #include <xgraphics.h>
 #include "epic12_gpu_untile.h"
@@ -61,6 +62,7 @@ static unsigned epic12_xenos_present_sequence, epic12_xenos_present_mode;
 static bool epic12_xenos_present_known;
 static bool epic12_xenos_sample_batch()
 {
+ if (!SALVIA_FBNEO_DIAGNOSTICS) return false;
  unsigned x=epic12_xenos_sample_rng;
  x^=x<<13; x^=x>>17; x^=x<<5; epic12_xenos_sample_rng=x;
  return !(x&63);
@@ -160,6 +162,7 @@ static const char epic12_xenos_shader[] =
 
 static void epic12_xenos_log(const char *message)
 {
+#if SALVIA_FBNEO_DIAGNOSTICS
 	// A separate file works even when frontend logging is disabled.
 	FILE *f = fopen("game:\\cv1000-gpu.log", "a");
 	// The libretro VFS maps append to UPDATE_EXISTING, which cannot create
@@ -167,10 +170,12 @@ static void epic12_xenos_log(const char *message)
 	if (!f) f = fopen("game:\\cv1000-gpu.log", "w");
 	if (f) { fprintf(f,"CV1000 GPU: %s (batches=%u)\n",message,epic12_xenos_batches); fclose(f); }
 	bprintf(0,_T("CV1000 GPU: %hs\n"),message);
+#endif
 }
 
 static void epic12_xenos_report()
 {
+#if SALVIA_FBNEO_DIAGNOSTICS
 	if (epic12_xenos_batches == epic12_xenos_last_report) return;
 	char message[512];
 	sprintf(message,"session renderer=%s commands=%I64u pixels=%I64u readback_pixels=%I64u",
@@ -251,6 +256,7 @@ static void epic12_xenos_report()
         }
     }
 	epic12_xenos_last_report=epic12_xenos_batches;
+#endif
 }
 
 // Registered/unregistered on the emulation thread. Pause callbacks run there

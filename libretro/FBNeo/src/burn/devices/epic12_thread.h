@@ -3,6 +3,7 @@
 // while the main core emulates the SH3; do not split dependent commands.
 #if defined(_XBOX) || defined(FBNEO_RENDER_THREADS_TEST)
 #include "render_worker.h"
+#include "salvia_fbneo_diagnostics.h"
 
 static void epic12_thread_job(INT32, INT32, INT32);
 
@@ -11,7 +12,7 @@ struct epic12_thread {
 	void (*our_callback)();
 	INT32 startup_frame;
 	bool available, enabled, pending;
-#ifdef _XBOX
+#if defined(_XBOX) && SALVIA_FBNEO_DIAGNOSTICS
 	UINT64 diag_wait_ticks, diag_wait_peak;
 	unsigned diag_jobs, diag_wait_calls, diag_wait_samples, diag_wait_rng;
 #endif
@@ -21,7 +22,7 @@ struct epic12_thread {
 		startup_frame = 0;
 		enabled = true;
 		pending = false;
-#ifdef _XBOX
+#if defined(_XBOX) && SALVIA_FBNEO_DIAGNOSTICS
 		diag_wait_ticks=diag_wait_peak=0;
 		diag_jobs=diag_wait_calls=diag_wait_samples=0;
 		diag_wait_rng=0x9e3779b9u;
@@ -31,7 +32,7 @@ struct epic12_thread {
 
 	void notify_wait() {
 		if (!pending) { worker.finish(); return; }
-#ifdef _XBOX
+#if defined(_XBOX) && SALVIA_FBNEO_DIAGNOSTICS
 		++diag_wait_calls;
 		unsigned x=diag_wait_rng;
 		x^=x<<13; x^=x>>17; x^=x<<5; diag_wait_rng=x;
@@ -41,7 +42,7 @@ struct epic12_thread {
 #endif
 		worker.finish();
 		pending=false;
-#ifdef _XBOX
+#if defined(_XBOX) && SALVIA_FBNEO_DIAGNOSTICS
 		if(sample) {
 			QueryPerformanceCounter(&end);
 			UINT64 ticks=end.QuadPart-begin.QuadPart;
@@ -69,7 +70,7 @@ struct epic12_thread {
 		} else if (available && enabled) {
 			worker.start(0, 0);
 			pending = true;
-#ifdef _XBOX
+#if defined(_XBOX) && SALVIA_FBNEO_DIAGNOSTICS
 			++diag_jobs;
 #endif
 		} else {
