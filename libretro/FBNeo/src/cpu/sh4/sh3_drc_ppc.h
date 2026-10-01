@@ -81,6 +81,7 @@ struct BlockExit {
  int count, cycles;
  UINT32 pc, target;
  bool delay_slot, conditional;
+ unsigned service_opcode;
  Slot slots[HOST_REGS];
 };
 struct CodeWriteCheck { UINT32 *compare; unsigned size; };
@@ -89,7 +90,8 @@ struct Compiler {
  UINT32 pc, source_begin, block_pc;
  Slot slots[HOST_REGS];
  int clock, cycles, exit_count, write_check_count;
- BlockExit exits[MAX_INSNS];
+ // A watched read may need separate general, service and mirror guards.
+ BlockExit exits[MAX_INSNS*3];
  CodeWriteCheck write_checks[MAX_INSNS];
  bool ended, folded_slot, in_delay_slot;
 
@@ -174,15 +176,26 @@ struct Compiler {
  // Branch out of the straight-line fast path only when a guard fails.
  // All guards for one memory operation share an exit before that operation.
  void guard(int bit, bool set) {
-  if (!exit_count || exits[exit_count-1].pc != pc || exits[exit_count-1].conditional) {
+  if (!exit_count || exits[exit_count-1].pc != pc || exits[exit_count-1].conditional || exits[exit_count-1].service_opcode) {
    BlockExit &e = exits[exit_count++];
    e.count = 0; e.pc = pc; e.cycles = cycles;
    e.delay_slot = in_delay_slot;
-   e.conditional = false;
+   e.conditional = false; e.service_opcode=0;
    memcpy(e.slots, slots, sizeof(slots));
   }
   BlockExit &e = exits[exit_count-1];
   e.branches[e.count++] = branch(bit, !set);
+ }
+ // A distinct taken edge encodes the validated MOV.L in its return value.
+ // Generated functions stay leaf functions; the dispatcher calls RL safely
+ // through the normal C++ ABI, with all cached guest registers committed.
+ void guard_watch(unsigned opcode) {
+  if(!opcode) { guard(2,false); return; }
+  BlockExit &e=exits[exit_count++];
+  e.count=1; e.pc=pc; e.cycles=cycles; e.delay_slot=in_delay_slot;
+  e.conditional=false; e.service_opcode=opcode;
+  memcpy(e.slots,slots,sizeof(slots));
+  e.branches[0]=branch(2,true); // equality with the watched longword
  }
  void emit_exits() {
   for (int i = 0; i < exit_count; i++) {
@@ -198,7 +211,7 @@ struct Compiler {
    // pending slot only on this slow path, so the interpreter executes it
    // exactly once with the state it would see after interpreting the branch.
    if (e.delay_slot) constant(SO(delay),e.pc);
-   finish(e.pc, e.cycles, 0, !e.delay_slot);
+   finish(e.pc, e.cycles, e.service_opcode ? (int)(2u|(e.service_opcode<<2)) : 0, !e.delay_slot);
   }
  }
  void protect_code(int words) {
@@ -233,7 +246,7 @@ struct Compiler {
   }
  }
  bool memory(bool write, int size, int value, int base, int index, int disp,
-             UINT32 absolute, bool ea, bool pre, bool post) {
+             UINT32 absolute, bool ea, bool pre, bool post, unsigned service_opcode=0) {
   const RamWindow &ram=ram_window;
   bool constant_ram=ram.base && base==-1 &&
    ((absolute&0x7fffffffu)&~(ram.span-1))==ram.start;
@@ -258,7 +271,7 @@ struct Compiler {
    if(size>1) { emit(d(28,11,0,size-1)); guard(2,true); }
    rotate(12,11,0,32-ram.span_bits,31);
    if(!write && size==4 && ram.watch!=0xffffffffu) {
-    imm(0,ram.watch-ram.start); cmp(12,0); guard(2,false);
+    imm(0,ram.watch-ram.start); cmp(12,0); guard_watch(service_opcode);
    }
    if(ram.backing_bits!=ram.span_bits)rotate(12,12,0,32-ram.backing_bits,31);
    imm(0,(UINT32)(uintptr_t)ram.base); add(12,12,0);
@@ -281,7 +294,7 @@ struct Compiler {
     // longword and all other device handlers on the interpreter path.
     load(0, SO(mirror_handler)); cmp(12, 0); guard(2, true);
     rotate(0, 11, 0, 0, 15); load(12, SO(mirror_page)); cmp(0, 12); guard(2, true);
-    if (size == 4) { load(12, SO(mirror_watch)); cmp(11, 12); guard(2, false); }
+    if (size == 4) { load(12, SO(mirror_watch)); cmp(11, 12); guard_watch(service_opcode); }
     load(12, SO(read_mirror)); cmpi(12, SH3_MAXHANDLER, true); guard(0, false);
     patch(mapped);
    }
@@ -327,7 +340,7 @@ struct Compiler {
   }
   if ((op & 0xf000) == 0x6000 && (lo <= 2 || (lo >= 4 && lo <= 6))) {
    bool post = (lo & 4) != 0;
-   return memory(false,1<<(lo&3),n,m,-1,0,0,!post,false,post);
+   return memory(false,1<<(lo&3),n,m,-1,0,0,!post,false,post,lo==2?op:0);
   }
   if ((op & 0xf000) == 0 && ((lo >= 4 && lo <= 6) || (lo >= 12 && lo <= 14))) {
    bool wr = lo < 8;
@@ -526,7 +539,7 @@ struct Compiler {
     // for the common fallthrough case. Both paths keep their exact costs.
     BlockExit &e=exits[exit_count++];
     e.branches[0]=taken; e.count=1; e.pc=pc+2; e.target=target;
-    e.cycles=cycles+3; e.delay_slot=false; e.conditional=true;
+    e.cycles=cycles+3; e.delay_slot=false; e.conditional=true; e.service_opcode=0;
     memcpy(e.slots,slots,sizeof(slots));
     cycles++;
     return true;
@@ -625,7 +638,7 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
  if(available>MAX_INSNS)available=MAX_INSNS;
  int count=0, validate=0; bool check_read=false;
  for(;count<available;count++) {
-  if(c.out-c.start+c.exit_count*32>MAX_WORDS-256)break; // reserve the largest instruction and exit
+  if(c.exit_count>MAX_INSNS*3-3 || c.out-c.start+c.exit_count*32>MAX_WORDS-256)break; // reserve the largest instruction and exit
   UINT16 op=source[count];
   if((op&0xf0ff)==0x4010) {
    // DT reads the following opcode for the existing busy-loop hack. Do not

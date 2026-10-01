@@ -4716,11 +4716,15 @@ static inline void execute_one(const UINT16 opcode)
 
 #include "sh3_drc_work_profile.h"
 #ifdef SH3_PPC_DRC
+template<bool Count> static bool sh3_drc_service_movll(unsigned opcode);
 #include "sh3_drc_ppc.h"
 #endif
 
 #include "sh3_interpreter_hot.h"
 #include "sh3_fallback_observer.h"
+#ifdef SH3_PPC_DRC
+#include "sh3_drc_movll_service.h"
+#endif
 
 template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 {
@@ -4896,6 +4900,8 @@ void Sh3WorkReport(void (*emit)(const char*))
 	}
 	sh3_fallback_report(p.fallback,emit);
 	sh3_idle_candidate_report(p.idle_candidates,emit);
+	sprintf(text,"drc_movll_service handled=%I64u guest_cycles=%I64u rejected=%I64u handler=RL native_returns_retained=1",
+		p.movll_services,p.movll_service_cycles,p.movll_service_rejects); emit(text);
 	sh3_drc_work.clear();
 }
 #endif

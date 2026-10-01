@@ -77,6 +77,7 @@ static bool reference_dispatch() {
  if(!b.entry || m_sh4_icount<b.cycles)return false;
  return b.entry(&sh3_ppc_state)!=0;
 }
+template<bool Count> static bool sh3_drc_service_movll(unsigned) { return false; }
 #include "../../src/cpu/sh4/sh3_drc_dispatch.h"
 static UINT16 fetch(UINT32 pc) {
  UINT8* p=MemMapF[(pc&AM)>>SH3_SHIFT];

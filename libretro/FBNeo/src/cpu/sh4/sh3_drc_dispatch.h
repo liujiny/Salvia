@@ -71,7 +71,11 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   }
   const int completed=b.entry(&sh3_ppc_state);
   if(Count) sh3_drc_work.native_cycles+=(unsigned)(before-m_sh4_icount);
-  if(!completed) {
+  // A compiler-tagged watched MOV.L needs one real handler access, but
+  // no opcode refetch or trip through the outer interpreter decoder.
+  bool serviced=false;
+  if((completed&3)==2) serviced=sh3_drc_service_movll<Count>((unsigned)completed>>2);
+  if(!completed || ((completed&3)==2 && !serviced)) {
    if(Count) { ++sh3_drc_work.exit_partial; sh3_drc_work.fallback.last_origin=SH3_FB_PARTIAL; }
    return false;
   }

@@ -29,6 +29,14 @@ static void step() {
 static UINT8 mirror8(UINT32 a){return ram[a&65535];}
 static UINT16 mirror16(UINT32 a){return *(UINT16*)(ram+(a&65534));}
 static UINT32 mirror32(UINT32 a){if(a==0x0c004000){calls++;EAT(5);}return *(UINT32*)(ram+(a&65532));}
+static UINT32 service_ram=0x0c004000, service_pc, service_burn;
+static UINT32 service32(UINT32 a) {
+ ++calls;
+ UINT32 pc=Sh3GetPC(-1);
+ if(a==service_ram && (pc==service_pc || pc==service_pc+2))Sh3BurnCycles(service_burn);
+ // Include the real handler-visible PC in the read result as well as cycles.
+ return *(UINT32*)(ram+(a&65532))^pc;
+}
 static unsigned cases,compiled,fallback;
 static void check(bool verbose=false) {
  Sh3PpcState before=sh3_ppc_state;
@@ -285,6 +293,58 @@ int main() {
  // Tiny time slices, pending interrupts and delayed slots take the original
  // dispatch path; the full game test also exercises these in normal runs.
  printf("EDGE lifecycle / self-modification / remap / page boundary PASS\n");
+ // Native emitter -> tagged watched-load edge -> real RL/ReadLong handler.
+ // Compare with execute_one, including all Rm/Rn pairs, aliases, live idle PC,
+ // positive/zero burns, negative remaining budget and branch delay slots.
+ Sh3MapHandler(1,0x0c000000,0x0c00ffff,MAP_READ);
+ Sh3SetReadLongHandler(1,service32);
+ Sh3SetDrcReadMirror(ram,0x0c000000,service_ram,1);
+ Sh3SetDrcIdleWatch(&service_ram,&service_pc);
+ const UINT32 service_alias[]={0x0c000000,0x8c000000,0xac000000,0xcc000000};
+ unsigned service_cases=0;
+ for(unsigned variant=0;variant<32;++variant)for(unsigned n=0;n<16;++n)for(unsigned m=0;m<16;++m) {
+  state(1); UINT16 *p=(UINT16*)(ram+0x100);
+  unsigned op=0x6002|(n<<8)|(m<<4);
+  bool slot=(variant&1)!=0;
+  p[0]=slot?0xa00e:(UINT16)op;p[1]=slot?(UINT16)op:0xffff;
+  p[2]=0xffff; *(UINT16*)(ram+0x120)=0xffff;
+  service_pc=slot?0x0c000120:0x0c000102;
+  if(variant&2)service_pc+=0x40; // guarded rejection keeps original fallback
+  service_burn=variant&4?1024:0;
+  m_r[m]=service_alias[(variant>>3)&3]+(service_ram&65535);
+  m_sh4_icount=(variant&8)?3:500;
+  *(UINT32*)(ram+0x4000)=rnd();
+  check(); ++service_cases;
+ }
+ // Direct RAM emitter has a separate watched-address guard: exercise it too.
+ if(Sh3SetDrcRam(ram,0x0c000000,0x10000,0x10000))return 24;
+ for(unsigned i=0;i<4096;++i) {
+  state(1);UINT16 *p=(UINT16*)(ram+0x100);
+  p[0]=0xa00e;p[1]=0x6022;p[2]=0xffff;*(UINT16*)(ram+0x120)=0xffff;
+  service_pc=0x0c000120;service_burn=i&1?1024:0;
+  m_r[2]=service_alias[(i>>1)&3]+0x4000;
+  m_sh4_icount=3;check();++service_cases;
+ }
+ // Counted and ordinary variants must execute the same semantic service.
+ state(1);{UINT16 *p=(UINT16*)(ram+0x100);p[0]=0xa00e;p[1]=0x6022;}
+ m_r[2]=service_ram;service_pc=0x0c000120;service_burn=1024;m_sh4_icount=3;
+ sh3_drc_work.clear();calls=0;
+ if(!sh3_drc_dispatch_impl<false,true>() || calls!=1 || m_delay ||
+    m_pc!=service_pc || m_ppc!=service_pc || m_ea!=service_ram ||
+    m_sh4_icount!=-1024 || sh3_drc_work.movll_services!=1 ||
+    sh3_drc_work.interpreter_steps || sh3_drc_work.exit_partial)return 25;
+ if(sh3_drc_work.movll_service_cycles!=1025 || sh3_drc_work.idle_candidates.matching!=1)return 26;
+ // Source edits must invalidate a cached opcode/operand even on service edges.
+ for(unsigned i=0;i<256;++i) {
+  state(1);UINT16 *p=(UINT16*)(ram+0x100);
+  p[0]=0xa00e;p[1]=0x6002|((i&15)<<4);p[2]=0xffff;
+  service_pc=0x0c000120;service_burn=1024;m_r[i&15]=service_ram;
+  m_sh4_icount=3;check();++service_cases;
+ }
+ Sh3SetDrcIdleWatch(NULL,NULL);
+ state(1);{UINT16 *p=(UINT16*)(ram+0x100);p[0]=0xa00e;p[1]=0x6022;}
+ m_r[2]=service_ram;service_pc=0x0c000120;service_burn=1024;check();++service_cases;
+ printf("EDGE compiled watched MOV.L service / delay / live PC / exact handler and burn / validation PASS cases=%u\n",service_cases);
  // Observe before executing the real MOVLL/RL/handler path: diagnostic
  // calls must change only counters, never registers, cycles, RAM or callbacks.
  Sh3MapHandler(1,0x0c000000,0x0c00ffff,MAP_READ);
