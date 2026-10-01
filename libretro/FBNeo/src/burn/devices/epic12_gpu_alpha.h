@@ -3,6 +3,7 @@
 #ifndef FBNEO_EPIC12_GPU_ALPHA_H
 #define FBNEO_EPIC12_GPU_ALPHA_H
 #include <stdint.h>
+#include "epic12_gpu_alpha_vmx.h"
 
 #if defined(_XBOX)
 #include <ppcintrinsics.h>
@@ -59,6 +60,13 @@ struct Epic12GpuAlphaPage {
     void build_row(int y,const uint32_t* source)
     {
         invalidate_cache();
+#if defined(EPIC12_ALPHA_VECTOR)
+        if(epic12_alpha_vector_enabled && !((size_t)source&15)) {
+            Epic12GpuAlphaVector vector;
+            build_vector_row(y,source,vector);
+            return;
+        }
+#endif
         for(int word=0;word<WORDS;++word) {
             uint32_t mask=0;
             for(int x=0;x<32;++x)
@@ -73,8 +81,28 @@ struct Epic12GpuAlphaPage {
     // source is the page's upper-left pixel; pitchWords is at least 128.
     void build(const uint32_t* source,int pitchWords)
     {
+#if defined(EPIC12_ALPHA_VECTOR)
+        if(epic12_alpha_vector_enabled && !((size_t)source&15) && !(pitchWords&3)) {
+            Epic12GpuAlphaVector vector;
+            invalidate_cache();
+            for(int y=0;y<SIZE;++y)build_vector_row(y,source+y*pitchWords,vector);
+            return;
+        }
+#endif
         for(int y=0;y<SIZE;++y) build_row(y,source+y*pitchWords);
     }
+
+#if defined(EPIC12_ALPHA_VECTOR)
+    void build_vector_row(int y,const uint32_t* source,const Epic12GpuAlphaVector& vector)
+    {
+        vector.row(source,rows[y]);
+        for(int word=0;word<WORDS;++word) {
+            if(!(y&(GROUP_ROWS-1)))groups[y/GROUP_ROWS][word]=rows[y][word];
+            else groups[y/GROUP_ROWS][word]|=rows[y][word];
+        }
+        EPIC12_ALPHA_COUNT(builtPixels,SIZE);
+    }
+#endif
 
     uint32_t row_bits(int y,int firstWord,int lastWord,const uint32_t* masks) const
     {
