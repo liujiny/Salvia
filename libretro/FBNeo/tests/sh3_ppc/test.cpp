@@ -97,6 +97,45 @@ int main() {
   }
   printf("MODE %d cases %u compiled %u fallback %u\n",mode,cases,compiled,fallback);
  }
+ // Independent stack-transfer oracle as well as full interpreter comparison.
+ // Exact budgets prove both instructions actually execute natively and keep
+ // their distinct 2/3-cycle costs, EA, stack pointer and unchanged SR.
+ unsigned gbr_cases=0;
+ const UINT32 gbr_values[]={0,1,0x7fffffff,0x80000000,0xffffffff,0xac005000};
+ for(int direct=0;direct<2;direct++) {
+  if(direct && Sh3SetDrcRam(ram,0x0c000000,0x10000,0x10000))return 33;
+  for(int n=0;n<16;n++)for(int wr=0;wr<2;wr++)for(unsigned v=0;v<sizeof(gbr_values)/4;v++) {
+   state(1);UINT16 *p=(UINT16*)(ram+0x100);
+   p[0]=0x4000|(n<<8)|(wr?0x13:0x17);p[1]=0xffff;
+   UINT32 old_gbr=gbr_values[v],old_sr=m_sr,old_cycles=sh3_total_cycles;
+   m_gbr=old_gbr;m_r[n]=0xac005004;
+   UINT32 value=gbr_values[(v+1)%(sizeof(gbr_values)/4)];
+   *(UINT32*)(ram+0x5004)=value;
+   m_sh4_icount=wr?2:3;unsigned was_compiled=compiled;
+   check();++gbr_cases;
+   if(compiled!=was_compiled+1 || m_sh4_icount!=0 || m_sr!=old_sr ||
+      sh3_total_cycles!=old_cycles+(wr?2:3) || m_ea!=(wr?0xac005000:0xac005004) ||
+      m_r[n]!=(wr?0xac005000:0xac005008) || m_gbr!=(wr?old_gbr:value) ||
+      (wr && *(UINT32*)(ram+0x5000)!=old_gbr))return 34;
+  }
+  // Dirty GBR/address slots, all RAM aliases and internal/handler addresses,
+  // misalignment, self-modification, delay slots and short cycle admission.
+  const UINT32 stacks[]={0x0c005004,0x2c005004,0x4c005004,0x6c005004,
+   0x8c005004,0xac005004,0xcc005004,0xec005004,0x10000504,0x0c000108};
+  for(int n=0;n<16;n++)for(int wr=0;wr<2;wr++)
+  for(unsigned a=0;a<sizeof(stacks)/4;a++)for(int dirty=0;dirty<2;dirty++)
+  for(int slot=0;slot<2;slot++)for(int unaligned=0;unaligned<2;unaligned++) {
+   state(1);UINT16 *p=(UINT16*)(ram+0x100);
+   p[0]=dirty?0x441e:0x0009; // LDC R4,GBR
+   p[1]=dirty?(0x7000|(n<<8)|4):0x0009;
+   p[2]=slot?0xa008:0x0009;p[3]=0x4000|(n<<8)|(wr?0x13:0x17);
+   p[4]=0x0512;p[5]=0xffff; // STC GBR,R5 consumer
+   m_r[n]=stacks[a]+unaligned;m_sh4_icount=1+(n+a+wr+dirty+slot+unaligned)%9;
+   check();++gbr_cases;
+  }
+  if(direct)Sh3SetDrcRam(NULL,0,0,0);
+ }
+ printf("EDGE native GBR stack / independent state and cycles / all registers / dirty slots / aliases / guarded delays PASS cases=%u\n",gbr_cases);
  const UINT16 ops[]={0xe010,0x7001,0x71ff,0x6013,0x6233,0x6323,0x301c,0x3218,0x2129,0x212a,0x212b,0x6018,0x6219,0x3210,0x3212,0x3213,0x3216,0x3217,0x4010,0x4211,0x4215,0x4200,0x4201,0x4208,0x4229,0x0207,0x212f,0x431c,0x431d,0x6432,0x2432,0x7434,0x2436,0x6346,0x0346,0x600c,0x642e,0x0009,0x0018,0x0008,0x6833,0x69a3,0x6bc3,0x6dc3,0x6ed3,0x3e8c,0x8bf0,0x8df0,0xaffe,0xa010,0x402b,0x000b};
  for(int i=0;i<40000;i++) {
   state(i%5);

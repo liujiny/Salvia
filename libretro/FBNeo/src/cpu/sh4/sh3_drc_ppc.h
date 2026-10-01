@@ -370,6 +370,15 @@ struct Compiler {
    bool wr=(op&15)==2;
    return memory(wr,4,special,n,-1,wr?-4:0,0,true,wr,!wr);
   }
+  if ((op & 0xf0ff) == 0x4013 || (op & 0xf0ff) == 0x4017) {
+   // STC.L GBR,@-Rn / LDC.L @Rn+,GBR. Reuse the checked memory
+   // transfer, including EA and stack updates only after its guards.
+   // These control transfers cost 2 / 3 guest cycles respectively.
+   bool wr=(op&15)==3;
+   if(!memory(wr,4,G_GBR,n,-1,wr?-4:0,0,true,wr,!wr))return false;
+   cycles+=wr?1:2;
+   return true;
+  }
   if ((op & 0xf000) == 0xe000) { dst=reg(n,false); imm(dst,(INT32)(INT8)op); dirty(dst); return true; }
   if ((op & 0xf000) == 0x7000) { dst=reg(n); addi(dst,dst,(INT8)op); dirty(dst); return true; }
   if ((op & 0xff00) == 0xc700) {
