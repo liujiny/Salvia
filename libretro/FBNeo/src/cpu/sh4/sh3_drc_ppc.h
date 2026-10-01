@@ -436,6 +436,16 @@ struct Compiler {
     compare_t(lo==0?2:lo==2||lo==3?0:1,lo!=2&&lo!=3); return true;
    case 0x200d:
     a=reg(n); b=reg(m); rotate(0,b,16,0,15); rotate(a,a,16,16,31); logic(a,a,0,444); dirty(a); return true;
+   case 0x3005: case 0x300d: { // DMULU.L / DMULS.L, exact 32x32 -> 64
+    a=reg(n); b=reg(m);
+    int low=reg(G_MACL,false), high=reg(G_MACH,false);
+    // Word multiply instructions select the low 32 operand bits on Xenon;
+    // no 64-bit carry flag or sign extension of cached GPRs is assumed.
+    emit(x(high,a,b,lo==13?75:11)); // mulhw / mulhwu
+    emit(x(low,a,b,235)); // mullw
+    dirty(high); dirty(low); cycles++; // one extra cycle, plus base cycle
+    return true;
+   }
    case 0x0007: case 0x200e: case 0x200f:
     a=reg(n); b=reg(m); dst=reg(G_MACL,false);
     if (lo==7) { emit(x(dst,a,b,235)); cycles++; }
