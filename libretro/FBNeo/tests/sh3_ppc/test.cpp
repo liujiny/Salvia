@@ -222,6 +222,22 @@ int main() {
   state(1);UINT16 *p=(UINT16*)(ram+0x100);p[0]=(wr?0x2130:0x6210)+width;p[1]=0xffff;
   m_r[1]=aliases[a]+0x5000;check();
  }
+ // Cold/dirty destinations, address/destination aliases, R0 indexing and
+ // postincrement must survive both successful guards and handler exits.
+ // The oracle checks the full architectural state, RAM and handler counts.
+ const UINT16 memory_operands[]={0x6210,0x6211,0x6212,0x6112,0x6214,0x6215,
+  0x6216,0x6116,0x021c,0x021d,0x021e,0x011e,0x5213,0x5113,0x2132,0x2136};
+ unsigned operand_cases=0;
+ for(unsigned op=0;op<sizeof(memory_operands)/2;op++)
+ for(int alias=0;alias<8;alias++)for(int dirty=0;dirty<2;dirty++)
+ for(int slot=0;slot<2;slot++)for(int misalign=0;misalign<2;misalign++) {
+  state(1);UINT16 *p=(UINT16*)(ram+0x100);
+  p[0]=dirty?0xe277:0x0009;p[1]=slot?0xa005:0x0009;
+  p[2]=memory_operands[op];p[3]=0xffff;
+  m_r[0]=0;m_r[1]=aliases[alias]+0x5000+misalign;
+  m_sh4_icount=slot?4:3;check();++operand_cases;
+ }
+ printf("EDGE memory operands / dirty destinations / aliased addresses / guarded delay slots PASS cases=%u\n",operand_cases);
  // Cached PC-relative loads read literal data on every execution.
  for(int i=0;i<10;i++) {
   state(1);UINT16 *p=(UINT16*)(ram+0x100);p[0]=0xd27f;p[1]=0xffff;

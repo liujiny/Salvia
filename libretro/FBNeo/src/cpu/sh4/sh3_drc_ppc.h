@@ -252,7 +252,12 @@ struct Compiler {
   // Keep real memory reads: literal data can change without changing code.
   if (constant_ram && ((absolute&(size-1)) ||
       (!write && size==4 && (absolute&AM)==ram.watch))) return false;
-  int data = reg(value); // destination may also be an address register
+  // A load overwrites its destination. Its old value is needed only when
+  // that same guest register supplies the address. Guard exits preserve an
+  // uncached destination in architectural RAM; already dirty slots retain
+  // their normal snapshots and flushes even when read is false.
+  bool address_value=value==base || value==index || (base==-2 && value==G_GBR);
+  int data = reg(value,write || address_value);
   if (constant_ram) {
    imm(12,(UINT32)(uintptr_t)(ram.base+((absolute-ram.start)&ram.mask)));
   } else if (direct) {
@@ -303,12 +308,19 @@ struct Compiler {
    // overlap this block's validated instruction bytes, through any alias.
    // Aligned store widths also catch a longword straddling the first/last
    // instruction. The final source length is patched after decoding.
-   imm(11,source_begin&~((UINT32)size-1)); sub(0,12,11);
+   // Keep the original direct-RAM effective address in r11 until every
+   // guard has succeeded. r0 is scratch and is not a cached guest register.
+   imm(0,source_begin&~((UINT32)size-1)); sub(0,12,0);
    CodeWriteCheck &w=write_checks[write_check_count++];
    w.compare=out; w.size=size;
    cmpi(0,0,true); guard(0,false);
   }
-  if (ea) { address(base, index, disp, absolute); store(11, SO(ea)); }
+  if (ea) {
+   // The direct path still has the complete guest alias in r11. Generic
+   // translation masks it, and constant operands have not initialized it.
+   if(!direct || constant_ram)address(base,index,disp,absolute);
+   store(11, SO(ea));
+  }
   if (write) emit(d(size == 1 ? 38 : size == 2 ? 44 : 36, data, 12, 0));
   else {
    emit(d(size == 1 ? 34 : size == 2 ? 40 : 32, data, 12, 0));
