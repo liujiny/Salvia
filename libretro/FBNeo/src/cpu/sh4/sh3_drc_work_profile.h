@@ -15,6 +15,7 @@ struct Sh3DrcWorkProfile {
  Sh3WorkCount dispatch_calls, lookups, rebuilds, validation_spans, validation_words;
  Sh3WorkCount native_calls, native_cycles, interpreter_steps, interpreter_cycles;
  Sh3WorkCount movll_services, movll_service_cycles, movll_service_rejects;
+ Sh3WorkCount device_services[2], device_service_cycles[2], device_fallbacks[2];
  Sh3WorkCount exit_gate, exit_fetch, exit_no_entry, exit_budget, exit_partial, exit_boundary;
  // Requested snapshot lengths, not necessarily executed opcode counts.
  Sh3WorkCount snapshot_lengths[34];

@@ -175,12 +175,12 @@ struct Compiler {
  }
  // Branch out of the straight-line fast path only when a guard fails.
  // All guards for one memory operation share an exit before that operation.
- void guard(int bit, bool set) {
-  if (!exit_count || exits[exit_count-1].pc != pc || exits[exit_count-1].conditional || exits[exit_count-1].service_opcode) {
+ void guard(int bit, bool set, unsigned service_opcode=0) {
+  if (!exit_count || exits[exit_count-1].pc != pc || exits[exit_count-1].conditional || exits[exit_count-1].service_opcode!=service_opcode) {
    BlockExit &e = exits[exit_count++];
    e.count = 0; e.pc = pc; e.cycles = cycles;
    e.delay_slot = in_delay_slot;
-   e.conditional = false; e.service_opcode=0;
+   e.conditional = false; e.service_opcode=service_opcode;
    memcpy(e.slots, slots, sizeof(slots));
   }
   BlockExit &e = exits[exit_count-1];
@@ -190,12 +190,7 @@ struct Compiler {
  // Generated functions stay leaf functions; the dispatcher calls RL safely
  // through the normal C++ ABI, with all cached guest registers committed.
  void guard_watch(unsigned opcode) {
-  if(!opcode) { guard(2,false); return; }
-  BlockExit &e=exits[exit_count++];
-  e.count=1; e.pc=pc; e.cycles=cycles; e.delay_slot=in_delay_slot;
-  e.conditional=false; e.service_opcode=opcode;
-  memcpy(e.slots,slots,sizeof(slots));
-  e.branches[0]=branch(2,true); // equality with the watched longword
+  guard(2,false,opcode); // equality with the watched longword
  }
  void emit_exits() {
   for (int i = 0; i < exit_count; i++) {
@@ -248,6 +243,7 @@ struct Compiler {
  bool memory(bool write, int size, int value, int base, int index, int disp,
              UINT32 absolute, bool ea, bool pre, bool post, unsigned service_opcode=0) {
   const RamWindow &ram=ram_window;
+  const unsigned device_opcode=(sh3_device_reads[0].callback || sh3_device_reads[1].callback)?service_opcode:0;
   bool constant_ram=ram.base && base==-1 &&
    ((absolute&0x7fffffffu)&~(ram.span-1))==ram.start;
   bool direct=constant_ram || (ram.base && base!=-1 &&
@@ -265,10 +261,10 @@ struct Compiler {
    // the uncached acxxxxxx addresses used heavily by CV1000. Internal
    // addresses >= e0000000 must never alias ordinary RAM. Word compares
    // and rotates also discard Xenon's upper 32 general-register bits.
-   rotate(0,11,3,29,31); cmpi(0,7,true); guard(0,true);
+   rotate(0,11,3,29,31); cmpi(0,7,true); guard(0,true,device_opcode);
    rotate(0,11,32-ram.span_bits,ram.span_bits+3,31);
-   cmpi(0,ram.start>>ram.span_bits,true); guard(2,true);
-   if(size>1) { emit(d(28,11,0,size-1)); guard(2,true); }
+   cmpi(0,ram.start>>ram.span_bits,true); guard(2,true,device_opcode);
+   if(size>1) { emit(d(28,11,0,size-1)); guard(2,true,device_opcode); }
    rotate(12,11,0,32-ram.span_bits,31);
    if(!write && size==4 && ram.watch!=0xffffffffu) {
     imm(0,ram.watch-ram.start); cmp(12,0); guard_watch(service_opcode);
@@ -279,8 +275,8 @@ struct Compiler {
    address(base, index, disp, absolute);
    // All address arithmetic is explicitly reduced to 32 bits for Xenon.
    rotate(11, 11, 0, 0, 31);
-   imm(0, 0xe0000000); cmp(11, 0, true); guard(0, true);
-   if (size > 1) { emit(d(28, 11, 0, size - 1)); guard(2, true); }
+   imm(0, 0xe0000000); cmp(11, 0, true); guard(0, true,device_opcode);
+   if (size > 1) { emit(d(28, 11, 0, size - 1)); guard(2, true,device_opcode); }
    rotate(11, 11, 0, 3, 31); // SH3 physical address mask (AM)
    rotate(0, 11, 18, 14, 29); // (address >> 16) * sizeof(pointer)
    load(12, write ? SO(write_map) : SO(read_map));
@@ -291,9 +287,10 @@ struct Compiler {
     UINT32 *mapped = branch(0, false);
     // CV1000 routes a busy RAM page through its idle-loop read handler.
     // The board can explicitly expose that RAM while keeping the watched
-    // longword and all other device handlers on the interpreter path.
-    load(0, SO(mirror_handler)); cmp(12, 0); guard(2, true);
-    rotate(0, 11, 0, 0, 15); load(12, SO(mirror_page)); cmp(0, 12); guard(2, true);
+    // longword on its real handler. Explicitly registered device reads can
+    // use the tagged service exit; other handlers still fall back normally.
+    load(0, SO(mirror_handler)); cmp(12, 0); guard(2, true,device_opcode);
+    rotate(0, 11, 0, 0, 15); load(12, SO(mirror_page)); cmp(0, 12); guard(2, true,device_opcode);
     if (size == 4) { load(12, SO(mirror_watch)); cmp(11, 12); guard_watch(service_opcode); }
     load(12, SO(read_mirror)); cmpi(12, SH3_MAXHANDLER, true); guard(0, false);
     patch(mapped);
@@ -698,6 +695,17 @@ void Sh3SetDrcIdleWatch(const UINT32* idle_ram, const UINT32* idle_pc)
 {
  sh3_idle_watch_ram=idle_ram; sh3_idle_watch_pc=idle_pc;
 }
+void Sh3SetDrcDeviceRead(INT32 slot, UINT32 address, INT32 handler)
+{
+ if(slot<0 || slot>=2)return;
+ Sh3DrcDeviceRead &read=sh3_device_reads[slot];
+ read.address=0; read.handler=0; read.callback=NULL;
+ if(handler>=0 && handler<SH3_MAXHANDLER && address<=AM && !(address&3)) {
+  read.address=address; read.handler=handler; read.callback=ReadLong[handler];
+ }
+ // Tagged exits depend on registration at compile time, not just execution.
+ sh3_drc_reset();
+}
 void Sh3SetDrcReadMirror(UINT8* ram, UINT32 page, UINT32 watched, INT32 handler)
 {
  Sh3SetDrcIdleWatch(NULL,NULL);
@@ -750,6 +758,7 @@ static void sh3_drc_exit()
 #endif
  Sh3Ppc::code=NULL; Sh3Ppc::used=0; Sh3Ppc::failed=false;
  sh3_drc_enabled=true;
+ memset(sh3_device_reads,0,sizeof(sh3_device_reads));
  Sh3SetDrcReadMirror(NULL,0,0,0);
 }
 #include "sh3_drc_dispatch.h"

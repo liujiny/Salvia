@@ -65,9 +65,15 @@ struct Sh3PpcState {
  UINT32 mirror_page, mirror_watch, mirror_handler;
 };
 static Sh3PpcState sh3_ppc_state;
-// Driver-owned configuration, read only by sampled diagnostics. Never scanned
+// Driver-owned idle configuration, used by servicing and diagnostics. Never scanned
 // or embedded into generated instructions. The mirror lifecycle revokes it.
 static const UINT32 *sh3_idle_watch_ram, *sh3_idle_watch_pc;
+// Optional board-declared device reads. Configuration is not guest state.
+struct Sh3DrcDeviceRead {
+ UINT32 address, handler;
+ pSh3ReadLongHandler callback;
+};
+static Sh3DrcDeviceRead sh3_device_reads[2];
 #define m_r sh3_ppc_state.r
 #define m_pc sh3_ppc_state.pc
 #define m_ppc sh3_ppc_state.ppc
@@ -93,6 +99,7 @@ static void sh3_drc_exit() {}
 void Sh3SetDrc(INT32) {}
 void Sh3SetDrcReadMirror(UINT8*, UINT32, UINT32, INT32) {}
 void Sh3SetDrcIdleWatch(const UINT32*, const UINT32*) {}
+void Sh3SetDrcDeviceRead(INT32, UINT32, INT32) {}
 INT32 Sh3SetDrcRam(UINT8*, UINT32, UINT32, UINT32) { return 0; }
 #endif
 
@@ -911,6 +918,8 @@ void Sh3Init(INT32 num, INT32 hz, char md0, char md1, char md2, char md3, char m
 	Sh3SetWritePortHandler(Sh3DummyWriteLong);
 
 	Sh3SetDrcReadMirror(NULL, 0, 0, 0);
+	Sh3SetDrcDeviceRead(0, 0, -1);
+	Sh3SetDrcDeviceRead(1, 0, -1);
 	Sh3MapInit();
 
 	Sh3MapHandler(SH3_MAXHANDLER - 1, SH3_LOWER_REGBASE, SH3_LOWER_REGEND, MAP_READ | MAP_WRITE);
@@ -4902,6 +4911,10 @@ void Sh3WorkReport(void (*emit)(const char*))
 	sh3_idle_candidate_report(p.idle_candidates,emit);
 	sprintf(text,"drc_movll_service handled=%I64u guest_cycles=%I64u rejected=%I64u handler=RL native_returns_retained=1",
 		p.movll_services,p.movll_service_cycles,p.movll_service_rejects); emit(text);
+	for(unsigned i=0;i<2;++i) {
+		sprintf(text,"drc_device_read slot=%u address=%08X handler=%u handled=%I64u guest_cycles=%I64u fallback=%I64u handler_path=RL",
+			i,sh3_device_reads[i].address,sh3_device_reads[i].handler,p.device_services[i],p.device_service_cycles[i],p.device_fallbacks[i]); emit(text);
+	}
 	sh3_drc_work.clear();
 }
 #endif

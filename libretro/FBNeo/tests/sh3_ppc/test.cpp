@@ -37,6 +37,10 @@ static UINT32 service32(UINT32 a) {
  // Include the real handler-visible PC in the read result as well as cycles.
  return *(UINT32*)(ram+(a&65532))^pc;
 }
+static UINT32 device32(UINT32 a) {
+ ++calls;Sh3BurnCycles(service_burn);
+ return a^Sh3GetPC(-1); // detect wrong alias masking / delay-slot prologue
+}
 static unsigned cases,compiled,fallback;
 static void check(bool verbose=false) {
  Sh3PpcState before=sh3_ppc_state;
@@ -345,6 +349,50 @@ int main() {
  state(1);{UINT16 *p=(UINT16*)(ram+0x100);p[0]=0xa00e;p[1]=0x6022;}
  m_r[2]=service_ram;service_pc=0x0c000120;service_burn=1024;check();++service_cases;
  printf("EDGE compiled watched MOV.L service / delay / live PC / exact handler and burn / validation PASS cases=%u\n",service_cases);
+ // Board-declared device reads use the same tagged contract in both the
+ // direct-RAM range guard and generic map guard. The callback stays real RL.
+ const UINT32 devices[]={0x18000010,0x0400002c};
+ const UINT32 device_alias[]={0,0x80000000u,0xa0000000u,0xc0000000u};
+ pSh3ReadLongHandler original_lower=ReadLong[7];unsigned device_cases=0;
+ for(unsigned direct=0;direct<2;++direct)for(unsigned slot=0;slot<2;++slot) {
+  unsigned handler=slot?7:0;
+  Sh3SetDrcRam(NULL,0,0,0);
+  if(direct && Sh3SetDrcRam(ram,0x0c000000,0x10000,0x10000))return 27;
+  Sh3MapHandler(handler,devices[slot]&~65535u,(devices[slot]&~65535u)+65535u,MAP_READ);
+  Sh3SetReadLongHandler(handler,device32);Sh3SetDrcDeviceRead(slot,devices[slot],handler);
+  if(Sh3Ppc::used)return 28;
+  for(unsigned v=0;v<16;++v)for(unsigned n=0;n<16;++n)for(unsigned m=0;m<16;++m) {
+   state(1);UINT16 *p=(UINT16*)(ram+0x100);unsigned op=0x6002|(n<<8)|(m<<4);
+   p[0]=v&1?0xa00e:(UINT16)op;p[1]=v&1?(UINT16)op:0xffff;
+   p[2]=0xffff;*(UINT16*)(ram+0x120)=0xffff;
+   m_r[m]=devices[slot]|device_alias[(v>>2)&3];
+   service_burn=v&2?1024:0;m_sh4_icount=v&2?3:500;
+   check();++device_cases;
+  }
+  state(1);{UINT16 *p=(UINT16*)(ram+0x100);p[0]=0xa00e;p[1]=0x6012;}
+  m_r[1]=devices[slot]|0xa0000000u;service_burn=1024;m_sh4_icount=3;
+  sh3_drc_work.clear();calls=0;
+  if(!sh3_drc_dispatch_impl<false,true>() || calls!=1 || m_delay || m_pc!=0xc000120 ||
+     m_sh4_icount!=-1024 || sh3_drc_work.device_services[slot]!=1 ||
+     sh3_drc_work.device_service_cycles[slot]!=1025 || sh3_drc_work.exit_partial ||
+     sh3_drc_work.idle_candidates.watched_movll)return 29;
+  // Changed callbacks, remapped data and explicit revocation must reject a
+  // stale tag and preserve interpreter behavior. Re-registration flushes it.
+  Sh3SetReadLongHandler(handler,read32);
+  state(1);{UINT16 *p=(UINT16*)(ram+0x100);p[0]=0x6012;p[1]=0xffff;}
+  m_r[1]=devices[slot];check();++device_cases;
+  Sh3MapMemory(ram,devices[slot]&~65535u,(devices[slot]&~65535u)+65535u,MAP_READ);
+  state(1);{UINT16 *p=(UINT16*)(ram+0x100);p[0]=0x6012;p[1]=0xffff;}
+  m_r[1]=devices[slot];check();++device_cases;
+  Sh3MapHandler(handler,devices[slot]&~65535u,(devices[slot]&~65535u)+65535u,MAP_READ);
+  Sh3SetReadLongHandler(handler,device32);
+  Sh3SetDrcDeviceRead(slot,0,-1);if(Sh3Ppc::used || sh3_device_reads[slot].callback)return 30;
+  state(1);{UINT16 *p=(UINT16*)(ram+0x100);p[0]=0x6012;p[1]=0xffff;}
+  m_r[1]=devices[slot];check();++device_cases;
+  Sh3SetReadLongHandler(handler,slot?original_lower:read32);
+ }
+ Sh3SetDrcRam(NULL,0,0,0);
+ printf("EDGE compiled device MOV.L / all operands / aliases / delay / callback and mapping revocation PASS cases=%u\n",device_cases);
  // Observe before executing the real MOVLL/RL/handler path: diagnostic
  // calls must change only counters, never registers, cycles, RAM or callbacks.
  Sh3MapHandler(1,0x0c000000,0x0c00ffff,MAP_READ);

@@ -23,6 +23,9 @@ static void sh3_work_fallback_observe(unsigned opcode, unsigned pc, bool delay)
   }
   access=sh3_fallback_access(size,address,mapped,mirror,physical,watched);
 #ifdef SH3_PPC_DRC
+  if(movll) for(unsigned i=0;i<2;++i)
+   if(sh3_device_reads[i].callback && address<0xe0000000u && physical==sh3_device_reads[i].address)
+    ++sh3_drc_work.device_fallbacks[i];
   if(movll && access==SH3_FB_WATCHED) {
    // The interpreter clears delay BEFORE RL. In a delay slot the handler
    // sees the committed branch target, not the slot instruction address.

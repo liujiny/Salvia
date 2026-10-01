@@ -11,6 +11,7 @@ enum { AM=0x1fffffff, SH3_SHIFT=16, SH3_PAGEM=65535, SH3_MAXHANDLER=8 };
 static unsigned m_r[16], m_pc;
 static const unsigned *sh3_idle_watch_ram,*sh3_idle_watch_pc;
 static UINT8 *MemMapR[8192];
+static struct {unsigned address; void *callback;} sh3_device_reads[2];
 static struct { UINT8* read_mirror; unsigned mirror_page,mirror_watch,mirror_handler; } sh3_ppc_state;
 #define SH3_PPC_DRC 1
 #include "../../src/cpu/sh4/sh3_fallback_observer.h"
@@ -62,6 +63,16 @@ static void observer() {
  require(sh3_drc_work.fallback.observed==10);
  require(sh3_drc_work.fallback.accesses[SH3_FB_WATCHED]==2);
  require(sh3_drc_work.fallback.accesses[SH3_FB_MAPPED]==1);
+ // Independent device totals remain exact when the general site table fills.
+ sh3_device_reads[0].address=0x18000010;sh3_device_reads[0].callback=(void*)(uintptr_t)1;
+ for(unsigned i=0;i<1000;++i) {
+  m_r[1]=0xb8000010;sh3_work_fallback_observe(0x6012,0xc100000+i*2,false);
+  sh3_drc_work.fallback.finish(1025);
+ }
+ require(sh3_drc_work.device_fallbacks[0]==1000 && sh3_drc_work.device_fallbacks[1]==0);
+ m_r[1]=0xf8000010;sh3_work_fallback_observe(0x6012,0xc001000,false);
+ require(sh3_drc_work.device_fallbacks[0]==1000);
+ sh3_device_reads[0].callback=NULL;
 }
 static void accumulation() {
  Sh3FallbackDetail p={};Sh3WorkCount totals[SH3_FB_ORIGINS]={},cycles[SH3_FB_ORIGINS]={};

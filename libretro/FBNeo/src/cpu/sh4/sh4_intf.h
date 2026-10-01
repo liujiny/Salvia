@@ -31,6 +31,9 @@ void Sh3SetDrcReadMirror(UINT8* ram, UINT32 page, UINT32 watched, INT32 handler)
 // Sampled MOV.L diagnostics only; caller retains pointer ownership until exit.
 // Register after SetDrcReadMirror; replacing the mirror revokes this metadata.
 void Sh3SetDrcIdleWatch(const UINT32* idle_ram, const UINT32* idle_pc);
+// Two optional external MOV.L device reads, retaining RL and the live handler.
+// A negative handler revokes the slot. Registration changes flush DRC blocks.
+void Sh3SetDrcDeviceRead(INT32 slot, UINT32 address, INT32 handler);
 // Register a fully mapped RAM window (power-of-two span and backing size).
 // Mapping/handler changes revoke the window and invalidate compiled blocks.
 INT32 Sh3SetDrcRam(UINT8* ram, UINT32 start, UINT32 span, UINT32 backing_size);

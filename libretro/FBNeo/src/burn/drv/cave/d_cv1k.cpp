@@ -598,6 +598,10 @@ static INT32 DrvInit()
 
 	init_speedhack(); // install the hacky speedhack handler
 	Sh3SetDrcRam(DrvMainRAM, 0x0c000000, 0x1000000, is_type_d ? 0x1000000 : 0x800000);
+	// Frequent CV1000 polling: blitter busy and DMA channel 0 completion.
+	// DRC servicing calls RL, preserving the device handler, burn and IRQ order.
+	Sh3SetDrcDeviceRead(0, 0x18000010, 0);
+	Sh3SetDrcDeviceRead(1, 0x0400002c, 7);
 
 	Sh3Close();
 

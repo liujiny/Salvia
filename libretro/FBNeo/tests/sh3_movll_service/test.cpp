@@ -24,6 +24,10 @@ static const unsigned *sh3_idle_watch_ram=&idle_ram,*sh3_idle_watch_pc=&idle_pc;
 static bool sh3_drc_enabled=true;
 static unsigned m_test_irq;
 static unsigned char *MemMapR[8192];
+typedef unsigned (*pSh3ReadLongHandler)(unsigned);
+struct Sh3DrcDeviceRead {unsigned address,handler;pSh3ReadLongHandler callback;};
+static Sh3DrcDeviceRead sh3_device_reads[2];
+static pSh3ReadLongHandler ReadLong[8];
 #include "../../src/cpu/sh4/sh3_drc_work_profile.h"
 static unsigned reads,irq_calls,read_pc,read_address;
 #define EAT(n) { m_sh4_icount-=(n); sh3_ppc_state.total+=(n); }
@@ -92,6 +96,46 @@ int main() {
   assert(sh3_drc_work.movll_service_rejects==1);++cases;
   idle_ram=0x0c002310;
  }
- printf("PASS %u service prologue/operand/alias/budget/IRQ and guarded rejection cases\n",cases);
+ const unsigned device_address[2]={0x18000010,0x0400002c};
+ for(unsigned slot=0;slot<2;++slot) {
+  unsigned handler=slot?7:0;
+  sh3_device_reads[slot].address=device_address[slot];
+  sh3_device_reads[slot].handler=handler;
+  sh3_device_reads[slot].callback=RL;ReadLong[handler]=RL;
+  MemMapR[device_address[slot]>>16]=(unsigned char*)(uintptr_t)handler;
+  for(unsigned v=0;v<16;++v)for(unsigned n=0;n<16;++n)for(unsigned m=0;m<16;++m) {
+   setup(v,n,m);sh3_idle_watch_ram=sh3_idle_watch_pc=NULL;
+   m_r[m]=device_address[slot]|((v&2)?0xa0000000u:0);
+   unsigned op=0x6002|(n<<8)|(m<<4);State before=sh3_ppc_state;unsigned irq_before=m_test_irq;
+   bool counted=(v&8)!=0;
+   assert(counted?sh3_drc_service_movll<true>(op):sh3_drc_service_movll<false>(op));
+   assert(reads==1 && read_address==device_address[slot] && read_pc==idle_pc);
+   assert(sh3_drc_work.device_services[slot]==(counted?1u:0u));
+   assert(sh3_drc_work.device_service_cycles[slot]==(counted?(1032u+((v&4)?3u:0u)):0u));
+   assert(sh3_drc_work.idle_candidates.watched_movll==0);
+   State got=sh3_ppc_state;unsigned irq_got=m_test_irq;
+   sh3_ppc_state=before;m_test_irq=irq_before;reads=irq_calls=0;
+   if(m_delay)m_delay=0;else m_pc+=2;m_ppc=m_pc;
+   MOVLL((UINT16)op);if(m_test_irq&&!m_delay)sh4_check_pending_irq();EAT(1);
+   assert(!memcmp(&got,&sh3_ppc_state,sizeof(got)) && irq_got==m_test_irq);++cases;
+  }
+  for(unsigned bad=0;bad<5;++bad) {
+   setup(0,0,1);m_r[1]=device_address[slot];
+   switch(bad) {
+    case 0:ReadLong[handler]=NULL;break;
+    case 1:MemMapR[device_address[slot]>>16]=(unsigned char*)(uintptr_t)0x100000;break;
+    case 2:sh3_device_reads[slot].callback=NULL;break;
+    case 3:m_r[1]+=4;break;
+    case 4:m_r[1]|=0xe0000000u;break;
+   }
+   State before=sh3_ppc_state;
+   assert(!sh3_drc_service_movll<true>(0x6012) && reads==0 && irq_calls==0);
+   assert(!memcmp(&before,&sh3_ppc_state,sizeof(before)));++cases;
+   ReadLong[handler]=RL;sh3_device_reads[slot].callback=RL;
+   MemMapR[device_address[slot]>>16]=(unsigned char*)(uintptr_t)handler;
+  }
+  sh3_device_reads[slot].callback=NULL;
+ }
+ printf("PASS %u idle/device service prologue/operand/alias/budget/IRQ and guarded rejection cases\n",cases);
  puts("Scope: production service over modeled RL/IRQ; actual emitter/helper execution is in the PPC suite");
 }

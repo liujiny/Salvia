@@ -71,7 +71,7 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   }
   const int completed=b.entry(&sh3_ppc_state);
   if(Count) sh3_drc_work.native_cycles+=(unsigned)(before-m_sh4_icount);
-  // A compiler-tagged watched MOV.L needs one real handler access, but
+  // A compiler-tagged idle/device MOV.L needs one real handler access, but
   // no opcode refetch or trip through the outer interpreter decoder.
   bool serviced=false;
   if((completed&3)==2) serviced=sh3_drc_service_movll<Count>((unsigned)completed>>2);
