@@ -825,7 +825,7 @@ static void gfx_draw(UINT32 *addr)
 
 #if defined(_XBOX) || defined(EPIC12_GPU_TEST)
 	if (epic12_gpu_submit(flipx,trans,blend,s_mode,d_mode,draw_params)) return;
-	epic12_gpu_cpu_write(x,y,dimx,dimy,EPIC12_GPU_FLUSH_CPU_DRAW);
+	epic12_gpu_cpu_draw(x,y,dimx,dimy,m_clip);
 #endif
 
 #if defined(_XBOX) || defined(FBNEO_RENDER_THREADS_TEST) || defined(EPIC12_BLIT_TEST)

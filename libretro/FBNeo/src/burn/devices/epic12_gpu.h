@@ -179,4 +179,21 @@ static void epic12_gpu_cpu_write(int x, int y, int w, int h,
 	rectangle r(x,x+w-1,y,y+h-1);
 	epic12_gpu_invalidate(r);
 }
+// Software sprite rasterizers clip destination writes; uploads can spill rows
+// and must keep the conservative cpu_write path above. Always drain queued
+// draws, including for an empty rectangle, preserving the existing ordering.
+static void epic12_gpu_cpu_draw(int x, int y, int w, int h, const rectangle &clip)
+{
+	int x0=x>clip.min_x?x:clip.min_x;
+	int y0=y>clip.min_y?y:clip.min_y;
+	int x1=x+w-1<clip.max_x?x+w-1:clip.max_x;
+	int y1=y+h-1<clip.max_y?y+h-1:clip.max_y;
+	if (x1<x0 || y1<y0) {
+		epic12_gpu_flush(EPIC12_GPU_FLUSH_CPU_DRAW);
+		return;
+	}
+	// cpu_write still resets the cache if the clipped rectangle is outside
+	// physical VRAM. Do not assume that every configured clip is in bounds.
+	epic12_gpu_cpu_write(x0,y0,x1-x0+1,y1-y0+1,EPIC12_GPU_FLUSH_CPU_DRAW);
+}
 #endif

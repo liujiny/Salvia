@@ -260,6 +260,68 @@ static bool alpha_snapshot_integration(UINT32 *ref, UINT32 *got)
 	return true;
 }
 
+static bool clipped_cpu_invalidation(UINT32 *ref, UINT32 *got, const UINT32 *initial)
+{
+	const int cases[][4]={{-8,32,16,16},{32,-8,16,16},{248,32,16,16},
+		{32,216,16,16},{-8,-8,16,16},{-64,0,16,16},{256,0,16,16},
+		{0,224,16,16},{120,120,16,16},{0,0,8192,4096}};
+	rectangle clip(0,255,0,223);
+	// Populate every physical page in groups, then independently enumerate
+	// destination pixels to check which cached pages must be discarded.
+	for(int capacity=128;capacity<=256;capacity+=128) {
+		gpu_test_set_capacity(capacity);
+		for(unsigned k=0;k<sizeof(cases)/sizeof(cases[0]);++k) {
+			bool touched[2048]; memset(touched,0,sizeof(touched));
+			const int *c=cases[k];
+			for(int y=0;y<=223;++y) for(int x=0;x<=255;++x)
+				if(x>=c[0] && x<c[0]+c[2] && y>=c[1] && y<c[1]+c[3])
+					touched[(y/128)*64+x/128]=true;
+			for(int base=0;base<2048;base+=capacity) {
+				gpu_test_cache.clear();
+				for(int i=0;i<capacity;++i) gpu_test_cache.pages[i]=base+i;
+				UINT64 resets=gpu_test_cache_resets;
+				epic12_gpu_cpu_draw(c[0],c[1],c[2],c[3],clip);
+				if(gpu_test_cache_resets!=resets) return false;
+				for(int i=0;i<capacity;++i)
+					if(gpu_test_cache.pages[i]!=(touched[base+i]?-1:base+i)) return false;
+			}
+		}
+	}
+	// Invalid physical clips and uploads retain the old conservative reset.
+	UINT64 resets=gpu_test_cache_resets;
+	rectangle outside(-10,255,0,223);
+	epic12_gpu_cpu_draw(-8,32,16,16,outside);
+	if(gpu_test_cache_resets!=resets+1) return false;
+	epic12_gpu_cpu_write(8190,32,16,1,EPIC12_GPU_FLUSH_CPU_UPLOAD);
+	if(gpu_test_cache_resets!=resets+2) return false;
+
+	// Exercise the real gfx_draw dispatch against the untouched software
+	// rasterizers: every source/destination blend mode and flip combination,
+	// clipping on all sides, empty clips and page boundaries.
+	memcpy(ref,initial,8192u*4096u*4u); memcpy(got,initial,8192u*4096u*4u);
+	gpu_test_fail=false; m_main_rammask=31; unsigned draws=0;
+	for(unsigned k=0;k<9;++k) for(int mode=0;mode<64;++mode) for(int flip=0;flip<4;++flip) {
+		UINT16 cmd[10]={0}; const int *c=cases[k];
+		cmd[0]=0x1200|((mode&7)<<4)|(mode>>3)|((flip&1)?0x800:0)|((flip&2)?0x400:0);
+		if(mode&1) cmd[0]|=0x100;
+		cmd[1]=0x8870; cmd[2]=512; cmd[3]=256;
+		cmd[4]=(UINT16)c[0];cmd[5]=(UINT16)c[1];cmd[6]=c[2]-1;cmd[7]=c[3]-1;
+		cmd[8]=128;cmd[9]=0x8078;
+		UINT64 delay=0;
+		for(int pass=0;pass<2;++pass) {
+			m_bitmaps=pass?got:ref; epic12_gpu_reset(); epic12_gpu_enabled=pass!=0;
+			epic12_device_blit_delay=0; m_clip=clip; m_ram16_copy=cmd;
+			UINT32 addr=0; gfx_draw(&addr); epic12_gpu_flush();
+			if(!pass) delay=epic12_device_blit_delay;
+			else if(delay!=epic12_device_blit_delay) return false;
+		}
+		++draws;
+	}
+	if(memcmp(ref,got,8192u*4096u*4u)) return false;
+	printf("PASS clipped CPU invalidation: all 2048 pages at 128/256 slots; conservative upload/invalid-clip reset; %u all-mode draws, full VRAM and delay identical\n",draws);
+	return true;
+}
+
 int main()
 {
 	setbuf(stdout,NULL);
@@ -301,6 +363,7 @@ int main()
 	// Distinct opaque/transparent colors in active atlas, viewport and wrap rows.
 	for(int y=0;y<1024;++y) for(int x=0;x<1024;++x) initial[y*8192+x]=rnd()&0x20f8f8f8;
 	for(int y=4090;y<4096;++y) for(int x=0;x<1024;++x) initial[y*8192+x]=rnd()&0x20f8f8f8;
+	if(!clipped_cpu_invalidation(ref,got,initial)) { puts("FAIL clipped CPU invalidation"); return 30; }
 	UINT16 cmds[120][10]; m_main_rammask=31;
 	for(int test=0;test<120;++test) {
 		gpu_test_set_capacity(test&1?128:256);
