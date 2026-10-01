@@ -9,6 +9,7 @@
 #include "epic12_gpu_cache.h"
 #include "epic12_gpu_alpha.h"
 #include "epic12_gpu_tile.h"
+#include "epic12_gpu_tile_alpha.h"
 
 extern "C" void *SDL_XBOX_AcquireCoreGpu(unsigned *generation);
 extern "C" void SDL_XBOX_ReleaseCoreGpu(void);
@@ -176,9 +177,10 @@ static void epic12_xenos_report()
 		epic12_xenos_attributes?"sprite-attributes":"uniform-compatible",
 		epic12_xenos_commands,epic12_xenos_pixels,epic12_xenos_readback);
 	epic12_xenos_log(message);
-	sprintf(message,"pipeline shaders=%s transfer=%s alpha_masks=%s",
+	sprintf(message,"pipeline shaders=%s transfer=%s alpha_masks=%s page_upload=%s",
 		epic12_xenos_attributes?(epic12_xenos_specialized?"split":"unified"):"uniform",
-		epic12_xenos_fast_transfer?"vmx-fused":"sdk-compatible",epic12_alpha_vector_enabled?"vmx-bitpack":"scalar");
+		epic12_xenos_fast_transfer?"vmx-fused":"sdk-compatible",epic12_alpha_vector_enabled?"vmx-bitpack":"scalar",
+		epic12_xenos_tiled && epic12_tile_alpha_enabled && epic12_alpha_vector_enabled && epic12_xenos_alpha_trim?"fused-alpha":"separate");
 	epic12_xenos_log(message);
 	sprintf(message,"work alpha=%s snapshots=%s atlas_layout=%s raster_commands=%I64u raster_pixels=%I64u",
 		epic12_xenos_alpha_trim?"cropped":"full",epic12_xenos_snapshot_reuse?"lookahead":"adjacent",
@@ -406,6 +408,8 @@ static bool epic12_xenos_create()
 	epic12_xenos_log(alphaVector?"VMX alpha mask self-test passed":"VMX alpha mask unavailable; using scalar masks");
 	epic12_xenos_tiled=epic12_gpu_tile_selftest();
 	epic12_xenos_log(epic12_xenos_tiled?"tiled atlas layout self-test passed":"tiled atlas unavailable; using linear layout");
+	bool fusedAlpha=epic12_xenos_tiled && alphaVector && epic12_gpu_tile_alpha_selftest();
+	epic12_xenos_log(fusedAlpha?"fused atlas/alpha self-test passed":"fused atlas/alpha unavailable; using separate passes");
 	if(!epic12_xenos_create_atlas(256) && !epic12_xenos_create_atlas(128)) {
 		if(!epic12_xenos_tiled) return false;
 		epic12_xenos_tiled=false;
@@ -477,8 +481,10 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 		int ax=(next&15)*128, ay=(next>>4)*128;
 		const UINT32 *source=vram+sy*8192+sx;
 		if(epic12_xenos_tiled) {
-			epic12_gpu_tile_page(lr.pBits,source,next);
-			if(epic12_xenos_alpha_trim) epic12_xenos_alpha[next].build(source,8192);
+			if(!epic12_xenos_alpha_trim || !epic12_gpu_tile_alpha_page(lr.pBits,source,next,epic12_xenos_alpha[next])) {
+				epic12_gpu_tile_page(lr.pBits,source,next);
+				if(epic12_xenos_alpha_trim) epic12_xenos_alpha[next].build(source,8192);
+			}
 		} else for(int y=0;y<128;++y) {
 			memcpy((BYTE*)lr.pBits+(ay+y)*lr.Pitch+ax*4,source+y*8192,128*4);
 			if(epic12_xenos_alpha_trim) epic12_xenos_alpha[next].build_row(y,source+y*8192);

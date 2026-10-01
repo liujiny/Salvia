@@ -43,16 +43,19 @@ struct Epic12GpuAlphaVector {
   bit29=__lvx(epic12_alpha_bit29,0);rotate=__lvx(epic12_alpha_rotate,0);
   pack=__lvx(epic12_alpha_pack,0);
  }
- EPIC12_ALPHA_INLINE __vector4 half(const uint32_t* source) const {
-  __vector4 a=__vperm(__lvx(source,0),__lvx(source,16),gather8);
-  __vector4 b=__vperm(__lvx(source,32),__lvx(source,48),gather8);
+  EPIC12_ALPHA_INLINE __vector4 half(__vector4 v0,__vector4 v1,__vector4 v2,__vector4 v3) const {
+   __vector4 a=__vperm(v0,v1,gather8);
+   __vector4 b=__vperm(v2,v3,gather8);
   __vector4 bits=__vrlb(__vand(__vperm(a,b,gather16),bit29),rotate);
   // Byte 0 collects pixels 0..7, byte 8 collects pixels 8..15.
   // Only those two bytes are used: rotations crossing group edges are ignored.
   bits=__vor(bits,__vsldoi(bits,bits,1));
   bits=__vor(bits,__vsldoi(bits,bits,2));
-  return __vor(bits,__vsldoi(bits,bits,4));
- }
+   return __vor(bits,__vsldoi(bits,bits,4));
+  }
+  EPIC12_ALPHA_INLINE __vector4 half(const uint32_t* source) const {
+   return half(__lvx(source,0),__lvx(source,16),__lvx(source,32),__lvx(source,48));
+  }
  EPIC12_ALPHA_INLINE void row(const uint32_t* source,uint32_t* masks) const {
   for(int word=0;word<4;++word) {
    __vector4 value=__vperm(half(source+word*32),half(source+word*32+16),pack);
