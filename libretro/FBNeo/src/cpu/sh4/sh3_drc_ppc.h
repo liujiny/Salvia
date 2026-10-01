@@ -425,6 +425,28 @@ struct Compiler {
     rotate(sr,11,8,23,23,true); rotate(sr,12,9,22,22,true);
     logic(0,11,12,316); rotate(sr,0,0,31,31,true); dirty(sr); return true;
    }
+   case 0x300a: case 0x300e: { // SUBC / ADDC: explicit 32-bit borrow/carry
+    if(lo==10 && n==m) {
+     // Rn-Rn-T = -T; the outgoing borrow equals the incoming T. Preserve
+     // SR and avoid reading the overwritten Rn, even in a dirty slot.
+     int sr=reg(G_SR); dst=reg(n,false);
+     rotate(0,sr,0,31,31); emit(x(dst,0,0,104)); dirty(dst);
+     return true;
+    }
+    a=reg(n); b=reg(m); int sr=reg(G_SR);
+    rotate(11,sr,0,31,31); move(12,a); // incoming T and original Rn
+    if(lo==14)add(a,a,b);else sub(a,a,b);
+    // cmplw compares only the low word, including when Xenon's add/sub
+    // leaves a nonzero upper half. Do not use its 64-bit XER CA flag.
+    cmp(a,12,true); emit(0x7c000026);
+    rotate(0,0,lo==14?1:2,31,31); // first carry (LT) / borrow (GT)
+    move(12,a); // intermediate word, before applying incoming T
+    if(lo==14)add(a,a,11);else sub(a,a,11);
+    cmp(a,12,true); emit(0x7c000026u|(11u<<21)); // mfcr r11
+    rotate(11,11,lo==14?1:2,31,31);
+    logic(0,0,11,444); rotate(sr,0,0,31,31,true);
+    dirty(a); dirty(sr); return true;
+   }
    case 0x300c: case 0x3008:
     a=reg(n); b=reg(m); if (lo==12) add(a,a,b); else sub(a,a,b); dirty(a); return true;
    case 0x2009: case 0x200a: case 0x200b:

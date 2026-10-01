@@ -140,6 +140,30 @@ int main() {
   m_sh4_icount=1+rnd()%14;check();++dmul_cases;
  }
  printf("EDGE signed/unsigned long multiply / all operand pairs / accumulators / delay and budgets PASS cases=%u\n",dmul_cases);
+ // Independent wide arithmetic oracle: carry/borrow may come from either
+ // stage, and only T may change in SR. Include all source/destination aliases.
+ unsigned carry_cases=0;
+ for(int add=0;add<2;add++)for(int n=0;n<16;n++)for(int m=0;m<16;m++)
+ for(unsigned ni=0;ni<8;ni++)for(unsigned mi=0;mi<8;mi++)for(int t=0;t<2;t++) {
+  state(0);m_r[n]=limits[ni];m_r[m]=limits[mi];m_sr=(m_sr&~T)|t;
+  UINT64 left=m_r[n],right=m_r[m],wide=add?left+right+t:left-right-t;
+  UINT32 expected_sr=(m_sr&~T)|(add?(UINT32)(wide>>32):(left<right+t));
+  UINT16 *p=(UINT16*)(ram+0x100);p[0]=0x3000|(n<<8)|(m<<4)|(add?14:10);p[1]=0xffff;
+  m_sh4_icount=1;check();++carry_cases;
+  if(m_r[n]!=(UINT32)wide || m_sr!=expected_sr)return 32;
+ }
+ // Dirty T and register slots, chained carry propagation, branch consumers,
+ // MOVT and taken delay slots all use the same native arithmetic path.
+ for(int i=0;i<24000;i++) {
+  state(i%5);int n=rnd()%16,m=i&1?n:rnd()%16;
+  UINT16 *p=(UINT16*)(ram+0x100);
+  p[0]=i&2?0x0018:0x0008;p[1]=i&4?0xa005:0x0009;
+  p[2]=0x3000|(n<<8)|(m<<4)|(i&8?14:10);
+  p[3]=0x3000|(m<<8)|(n<<4)|(i&16?14:10);p[4]=0x0529;
+  p[5]=i&32?0x8904:0x8b04;p[6]=0x2132;p[7]=0xffff;
+  m_sh4_icount=1+rnd()%12;check();++carry_cases;
+ }
+ printf("EDGE native carry/borrow / independent arithmetic / all aliases / dirty T / chained and delayed consumers PASS cases=%u\n",carry_cases);
  for(int i=0;i<10000;i++) {
   state(1);m_r[1]=0x0c004000;m_r[2]=0x0c005000;m_r[3]=1+rnd()%70;
   UINT16 *p=(UINT16*)(ram+0x100);
