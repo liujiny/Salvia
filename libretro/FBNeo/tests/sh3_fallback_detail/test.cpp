@@ -8,7 +8,8 @@
 #include "../../src/cpu/sh4/sh3_drc_work_profile.h"
 typedef uint8_t UINT8;
 enum { AM=0x1fffffff, SH3_SHIFT=16, SH3_PAGEM=65535, SH3_MAXHANDLER=8 };
-static unsigned m_r[16];
+static unsigned m_r[16], m_pc;
+static const unsigned *sh3_idle_watch_ram,*sh3_idle_watch_pc;
 static UINT8 *MemMapR[8192];
 static struct { UINT8* read_mirror; unsigned mirror_page,mirror_watch,mirror_handler; } sh3_ppc_state;
 #define SH3_PPC_DRC 1

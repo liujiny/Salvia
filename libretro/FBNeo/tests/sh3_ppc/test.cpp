@@ -285,6 +285,33 @@ int main() {
  // Tiny time slices, pending interrupts and delayed slots take the original
  // dispatch path; the full game test also exercises these in normal runs.
  printf("EDGE lifecycle / self-modification / remap / page boundary PASS\n");
+ // Observe before executing the real MOVLL/RL/handler path: diagnostic
+ // calls must change only counters, never registers, cycles, RAM or callbacks.
+ Sh3MapHandler(1,0x0c000000,0x0c00ffff,MAP_READ);
+ Sh3SetReadLongHandler(1,mirror32);
+ Sh3SetDrcReadMirror(ram,0x0c000000,0x0c004000,1);
+ UINT32 idle_ram=0x0c004000,idle_pc=0x0c000200;
+ Sh3SetDrcIdleWatch(&idle_ram,&idle_pc);
+ for(unsigned i=0;i<4096;++i) {
+  state(1);m_r[2]=(i&1?0xac000000u:0x0c000000u)+0x4000;
+  bool delayed=(i&2)!=0; m_pc=(i&4)?idle_pc:idle_pc+0x40;
+  if(!delayed)m_pc-=2;
+  m_delay=delayed?0x0c000104:0;
+  UINT16 opcode=0x6022;
+  sh3_drc_work.clear(); sh3_drc_work.fallback.last_origin=SH3_FB_PARTIAL;
+  Sh3PpcState unchanged=sh3_ppc_state; unsigned old_calls=calls;
+  sh3_work_fallback_observe(opcode,delayed?m_delay:m_pc,delayed);
+  if(memcmp(&unchanged,&sh3_ppc_state,sizeof(unchanged)) || calls!=old_calls)return 20;
+  const Sh3IdleCandidates &obs=sh3_drc_work.idle_candidates;
+  if(obs.watched_movll!=1 || obs.matching!=((i&4)?1u:0u))return 21;
+  if(delayed)m_delay=0;else m_pc+=2;
+  m_ppc=m_pc; MOVLL(opcode); EAT(1);
+  if(obs.sites[0].handler_pc!=Sh3GetPC(-1))return 22;
+  idle_pc+=2; // live pointer metadata must reflect driver changes
+ }
+ Sh3SetDrcReadMirror(ram,0x0c000000,idle_ram,1);
+ if(sh3_idle_watch_ram || sh3_idle_watch_pc)return 23;
+ printf("EDGE sampled idle candidates / live metadata / handler PC / no state mutation PASS\n");
  printf("PASS %u cases compiled %u fallback %u\n",cases,compiled,fallback);
  Sh3Exit();return 0;
 }

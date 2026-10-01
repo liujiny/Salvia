@@ -681,8 +681,13 @@ static void sh3_drc_mapping_changed(UINT32 start, UINT32 end, INT32 type)
  if(ram.base && (type&(MAP_READ|MAP_WRITE)) &&
     start<ram.start+ram.span && end>=ram.start)sh3_drc_invalidate_ram();
 }
+void Sh3SetDrcIdleWatch(const UINT32* idle_ram, const UINT32* idle_pc)
+{
+ sh3_idle_watch_ram=idle_ram; sh3_idle_watch_pc=idle_pc;
+}
 void Sh3SetDrcReadMirror(UINT8* ram, UINT32 page, UINT32 watched, INT32 handler)
 {
+ Sh3SetDrcIdleWatch(NULL,NULL);
  sh3_drc_invalidate_ram();
  sh3_ppc_state.read_mirror=ram;
  sh3_ppc_state.mirror_page=page;

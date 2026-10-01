@@ -428,6 +428,7 @@ static void speedhack_set(UINT32 ram, UINT32 pc)
 	Sh3SetReadWordHandler (1, speedhack_read_word);
 	Sh3SetReadLongHandler (1, speedhack_read_long);
 	Sh3SetDrcReadMirror(DrvMainRAM, 0x0c000000, hacky_idle_ram, 1);
+	Sh3SetDrcIdleWatch(&hacky_idle_ram, &hacky_idle_pc);
 }
 
 #if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)

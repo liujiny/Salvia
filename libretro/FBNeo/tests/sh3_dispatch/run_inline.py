@@ -23,7 +23,7 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     tests = Path(__file__).resolve().parent.parent
-    cases = ('sh3_dispatch', 'sh3_lookup', 'sh3_source_check', 'sh3_block_layout', 'sh3_work_profile', 'sh3_fallback_detail')
+    cases = ('sh3_dispatch', 'sh3_lookup', 'sh3_source_check', 'sh3_block_layout', 'sh3_work_profile', 'sh3_fallback_detail', 'sh3_idle_candidate')
     modes = {
         'optimized': ['-O3'],
         'asan-ubsan': ['-O1', '-g', '-fsanitize=address,undefined',

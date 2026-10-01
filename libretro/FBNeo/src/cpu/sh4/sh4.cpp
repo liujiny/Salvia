@@ -65,6 +65,9 @@ struct Sh3PpcState {
  UINT32 mirror_page, mirror_watch, mirror_handler;
 };
 static Sh3PpcState sh3_ppc_state;
+// Driver-owned configuration, read only by sampled diagnostics. Never scanned
+// or embedded into generated instructions. The mirror lifecycle revokes it.
+static const UINT32 *sh3_idle_watch_ram, *sh3_idle_watch_pc;
 #define m_r sh3_ppc_state.r
 #define m_pc sh3_ppc_state.pc
 #define m_ppc sh3_ppc_state.ppc
@@ -89,6 +92,7 @@ static void sh3_drc_reset() {}
 static void sh3_drc_exit() {}
 void Sh3SetDrc(INT32) {}
 void Sh3SetDrcReadMirror(UINT8*, UINT32, UINT32, INT32) {}
+void Sh3SetDrcIdleWatch(const UINT32*, const UINT32*) {}
 INT32 Sh3SetDrcRam(UINT8*, UINT32, UINT32, UINT32) { return 0; }
 #endif
 
@@ -4891,6 +4895,7 @@ void Sh3WorkReport(void (*emit)(const char*))
 		sprintf(text,"drc_work_interpreter rank=%u opcode_hi8=%02X count=%I64u",rank+1,best,p.interpreter_hi8[best]); emit(text);
 	}
 	sh3_fallback_report(p.fallback,emit);
+	sh3_idle_candidate_report(p.idle_candidates,emit);
 	sh3_drc_work.clear();
 }
 #endif
