@@ -16,10 +16,16 @@ static SH3_HOT_INLINE void sh3_execute_hot_fallback(const UINT16 opcode)
  // all mapped memory handlers, idle-cycle charging and postincrement semantics.
  // Only the high-frequency R0 destination family skips the general decoder.
  if ((opcode & 0xff00) == 0x6000) {
+  // Exact-opcode samples identify MOV.L @Rm,R0 as the dominant 0x60 fallback.
+  // Keep the original helper, including WaitState/ReadLong and idle accounting;
+  // only bypass the remaining multiway decode for this common operation.
+  if ((opcode & 0x0f) == 2) {
+   MOVLL(opcode);
+   return;
+  }
   switch (opcode & 0x0f) {
    case 0x00: MOVBL(opcode); break;
    case 0x01: MOVWL(opcode); break;
-   case 0x02: MOVLL(opcode); break;
    case 0x03: MOV(opcode); break;
    case 0x04: MOVBP(opcode); break;
    case 0x05: MOVWP(opcode); break;

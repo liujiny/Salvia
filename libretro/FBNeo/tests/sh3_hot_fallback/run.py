@@ -45,6 +45,27 @@ int main() {
   }
   hot+=selected; ++cases;
  }
+ // Directed MOV.L @Rm,R0 cases. Memory callbacks remain modeled.
+ const UINT32 addresses[]={0x0c002310u,0x8c002310u,0xac002310u,
+  0x0c000040u,0xac000040u,0xa4000000u,0xfffffea8u,0u,1u,
+  0x1ffffffcu,0xfffffffcu,0x0c002311u};
+ const UINT32 pcs[]={0x0c001000u,0x0c001002u,0x0c001004u,
+  0x0c1d134cu,0x8c000604u,0xfffffffcu};
+ const int budgets[]={-1024,-1,0,1,1024,1000000};
+ unsigned directed=0;
+ for(unsigned m=0;m<16;++m)for(unsigned a=0;a<sizeof(addresses)/sizeof(*addresses);++a)
+  for(unsigned p=0;p<sizeof(pcs)/sizeof(*pcs);++p)for(unsigned b=0;b<sizeof(budgets)/sizeof(*budgets);++b) {
+   const UINT16 op=(UINT16)(0x6002u|(m<<4));
+   TestState initial=initial_state(6,op);
+   initial.r[m]=addresses[a];initial.pc=pcs[p];initial.cycles=budgets[b];
+   state=initial;generic_calls=0;execute_one(op);TestState expected=state;
+   state=initial;generic_calls=0;sh3_execute_hot_fallback(op);
+   if(memcmp(&state,&expected,sizeof(state)) || generic_calls || state.reads!=1 || state.ea!=addresses[a]) {
+    fprintf(stderr,"FAIL directed MOVLL op=%04X address=%08X pc=%08X budget=%d\n",op,addresses[a],pcs[p],budgets[b]);return 3;
+   }
+   ++directed;
+  }
+ printf("PASS %u directed longword loads: all Rm, aliases, callback PC, signed budgets, exact one read and EA\n",directed);
  printf("PASS %u complete-opcode/state cases; all 65536 opcodes; %u hot cases bypass general decoding\n",cases,hot);
  puts("PASS production 16 helpers: registers/T/EA, same-register postincrement, memory callback width/address/order, watched idle-cycle charging and cached/uncached addresses");
  puts("Scope: actual helper bodies with modeled memory; other opcode handlers stubbed; not a full CPU/PPC/game replay");
