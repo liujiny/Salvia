@@ -3884,13 +3884,30 @@ struct System32MixerContext {
 };
 static System32MixerContext system32_mixer;
 
+// Remove scanlines already known to be transparent before walking pixels.
+// Keep sprite processing and the opaque background terminator in their order.
+static void system32_compact_layers(mixer_layer_info compact[16][8],
+	const mixer_layer_info source[16][8], UINT32 active, INT32 groupmask)
+{
+	for (INT32 group = 0; group <= groupmask; group++) {
+		INT32 out = 0;
+		for (INT32 i = 0; i < 8; i++) {
+			const mixer_layer_info &layer = source[group][i];
+			if (active & (1U << layer.index)) compact[group][out++] = layer;
+			if (layer.index == MIXER_LAYER_BACKGROUND) break;
+		}
+	}
+}
+
 static void system32_mix_rows(INT32 top, INT32 bottom, INT32)
 {
  const System32MixerContext &c = system32_mixer;
  const INT32 which=c.which, xoffs=c.xoffs, blendfactor=c.blendfactor;
  const clip_struct &cliprect=c.cliprect;
  UINT16 *m_paletteram=c.m_paletteram;
- const mixer_layer_info (*layerorder)[8]=c.layerorder;
+ mixer_layer_info compact[16][8];
+ const mixer_layer_info (*layerorder)[8]=compact;
+ UINT32 previous_active = ~0U;
  const INT32 (*rgboffs)[3]=c.rgboffs;
  const INT32 sprgroup_shift=c.sprgroup_shift, sprgroup_mask=c.sprgroup_mask;
  const INT32 sprshadowmask=c.sprshadowmask, sprpixmask=c.sprpixmask, sprshadow=c.sprshadow;
@@ -3911,6 +3928,14 @@ static void system32_mix_rows(INT32 top, INT32 bottom, INT32)
 		layerbase[MIXER_LAYER_BITMAP] = get_layer_scanline(MIXER_LAYER_BITMAP, y);
 		layerbase[MIXER_LAYER_SPRITES] = get_layer_scanline(which ? MIXER_LAYER_MULTISPR : MIXER_LAYER_SPRITES, spry); // works ok instead of swap?
 		layerbase[MIXER_LAYER_BACKGROUND] = get_layer_scanline(MIXER_LAYER_BACKGROUND, y);
+
+		UINT32 active = (1U << MIXER_LAYER_SPRITES) | (1U << MIXER_LAYER_BACKGROUND);
+		for (INT32 layer = MIXER_LAYER_TEXT; layer <= MIXER_LAYER_BITMAP; layer++)
+			if (layerbase[layer] != solid_0000) active |= 1U << layer;
+		if (active != previous_active) {
+			system32_compact_layers(compact, c.layerorder, active, sprgroup_mask);
+			previous_active = active;
+		}
 
 		/* loop over columns */
 		for (INT32 x = cliprect.nMinx, sprx = sprx_start; x <= cliprect.nMaxx; x++, sprx += sprdx)
