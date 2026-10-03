@@ -5138,6 +5138,11 @@ static INT32 Ga2Init()
 	if (DrvLoadRoms(true)) return 1;
 
 	system32_v60_map();
+#if defined(_XBOX) || defined(FBNEO_V60_WAIT_LOOP_TEST)
+	// Main RAM is updated by this CPU/interrupts; V25 and timers run between
+	// scanline slices, never concurrently inside v60Run().
+	v60SetIdleLoopRAM(0x200000, 0x20ffff);
+#endif
 	system32_sound_init();
 	tilemap_configure_allocate();
 
