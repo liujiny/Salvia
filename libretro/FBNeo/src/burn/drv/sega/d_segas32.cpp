@@ -3654,46 +3654,78 @@ static INT32 draw_one_sprite(UINT16 const *data, INT32 xoffs, INT32 yoffs, const
 			/* 4bpp case */
 			if (!bpp8)
 			{
-				/* start at the word before because we preincrement below */
-				UINT32 curaddr = addr - 1;
-				for (INT32 x = xpos; x != xtarget; )
-				{
-					UINT32 pixels = BURN_ENDIAN_SWAP_INT32(spritedata[++curaddr & addrmask]);
+				// A 1:1 horizontal step always consumes exactly one source pixel.
+				// Keep the same clipping, indirect palette, shadow and end markers.
+				if (hzoom == 0x10000) {
+					UINT32 curaddr = addr - 1;
+					for (INT32 x = xpos; x != xtarget; ) {
+						UINT32 pixels = BURN_ENDIAN_SWAP_INT32(spritedata[++curaddr & addrmask]);
+						pix = (pixels >> 28) & 0xf; if (x != xtarget) { sprite_draw_pixel_16(transp); x += xdelta; }
+						pix = (pixels >> 24) & 0xf; if (x != xtarget) { sprite_draw_pixel_16(0); x += xdelta; }
+						pix = (pixels >> 20) & 0xf; if (x != xtarget) { sprite_draw_pixel_16(0); x += xdelta; }
+						pix = (pixels >> 16) & 0xf; if (x != xtarget) { sprite_draw_pixel_16(0); x += xdelta; }
+						pix = (pixels >> 12) & 0xf; if (x != xtarget) { sprite_draw_pixel_16(0); x += xdelta; }
+						pix = (pixels >>  8) & 0xf; if (x != xtarget) { sprite_draw_pixel_16(0); x += xdelta; }
+						pix = (pixels >>  4) & 0xf; if (x != xtarget) { sprite_draw_pixel_16(0); x += xdelta; }
+						pix = (pixels >>  0) & 0xf; if (x != xtarget) { sprite_draw_pixel_16(transp); x += xdelta; }
+						if (transp != 0 && pix == 0x0f) break;
+					}
+				} else {
+					/* start at the word before because we preincrement below */
+					UINT32 curaddr = addr - 1;
+					for (INT32 x = xpos; x != xtarget; )
+					{
+						UINT32 pixels = BURN_ENDIAN_SWAP_INT32(spritedata[++curaddr & addrmask]);
 
-					/* draw four pixels */
-					pix = (pixels >> 28) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(transp)  x += xdelta; xacc += hzoom; } xacc -= 0x10000;
-					pix = (pixels >> 24) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
-					pix = (pixels >> 20) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
-					pix = (pixels >> 16) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
-					pix = (pixels >> 12) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
-					pix = (pixels >>  8) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
-					pix = (pixels >>  4) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
-					pix = (pixels >>  0) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(transp); x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						/* draw four pixels */
+						pix = (pixels >> 28) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(transp)  x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						pix = (pixels >> 24) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						pix = (pixels >> 20) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						pix = (pixels >> 16) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						pix = (pixels >> 12) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						pix = (pixels >>  8) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						pix = (pixels >>  4) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						pix = (pixels >>  0) & 0xf; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_16(transp); x += xdelta; xacc += hzoom; } xacc -= 0x10000;
 
-					/* check for end code */
-					if (transp != 0 && pix == 0x0f)
-						break;
+						/* check for end code */
+						if (transp != 0 && pix == 0x0f)
+							break;
+					}
 				}
 			}
 
 			/* 8bpp case */
 			else
 			{
-				/* start at the word before because we preincrement below */
-				UINT32 curaddr = addr - 1;
-				for (INT32 x = xpos; x != xtarget; )
-				{
-					UINT32 pixels = BURN_ENDIAN_SWAP_INT32(spritedata[++curaddr & addrmask]);
+				// A 1:1 horizontal step always consumes exactly one source pixel.
+				// Keep the same clipping, indirect palette, shadow and end markers.
+				if (hzoom == 0x10000) {
+					UINT32 curaddr = addr - 1;
+					for (INT32 x = xpos; x != xtarget; ) {
+						UINT32 pixels = BURN_ENDIAN_SWAP_INT32(spritedata[++curaddr & addrmask]);
+						pix = (pixels >> 24) & 0xff; if (x != xtarget) { sprite_draw_pixel_256(transp); x += xdelta; }
+						pix = (pixels >> 16) & 0xff; if (x != xtarget) { sprite_draw_pixel_256(0); x += xdelta; }
+						pix = (pixels >>  8) & 0xff; if (x != xtarget) { sprite_draw_pixel_256(0); x += xdelta; }
+						pix = (pixels >>  0) & 0xff; if (x != xtarget) { sprite_draw_pixel_256(transp); x += xdelta; }
+						if (transp != 0 && pix == 0xff) break;
+					}
+				} else {
+					/* start at the word before because we preincrement below */
+					UINT32 curaddr = addr - 1;
+					for (INT32 x = xpos; x != xtarget; )
+					{
+						UINT32 pixels = BURN_ENDIAN_SWAP_INT32(spritedata[++curaddr & addrmask]);
 
-					/* draw four pixels */
-					pix = (pixels >> 24) & 0xff; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_256(transp); x += xdelta; xacc += hzoom; } xacc -= 0x10000;
-					pix = (pixels >> 16) & 0xff; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_256(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
-					pix = (pixels >>  8) & 0xff; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_256(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
-					pix = (pixels >>  0) & 0xff; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_256(transp); x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						/* draw four pixels */
+						pix = (pixels >> 24) & 0xff; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_256(transp); x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						pix = (pixels >> 16) & 0xff; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_256(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						pix = (pixels >>  8) & 0xff; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_256(0);      x += xdelta; xacc += hzoom; } xacc -= 0x10000;
+						pix = (pixels >>  0) & 0xff; while (xacc < 0x10000 && x != xtarget) { sprite_draw_pixel_256(transp); x += xdelta; xacc += hzoom; } xacc -= 0x10000;
 
-					/* check for end code */
-					if (transp != 0 && pix == 0xff)
-						break;
+						/* check for end code */
+						if (transp != 0 && pix == 0xff)
+							break;
+					}
 				}
 			}
 		}
