@@ -5171,6 +5171,15 @@ static INT32 Ga2Init()
 	system32_sound_init();
 	tilemap_configure_allocate();
 
+#if defined(_XBOX) || defined(FBNEO_Z80_STATUS_POLL_TEST)
+	// YM3438 status reads of 0/2 have cleared any busy flag. Timer A/B
+	// cannot change status inside ZetRun: BurnTimerUpdate stops it at the
+	// next timer event. No other emulated CPU runs inside that segment.
+	ZetOpen(0);
+	ZetSetStableStatusPoll(0x0000, 0x1fff, 0xff80);
+	ZetClose();
+#endif
+
 	v25_protection_init(ga2_opcode_table);
 #if defined(_XBOX) || defined(FBNEO_V25_WAIT_LOOP_TEST)
 	VezOpen(0);
