@@ -3902,6 +3902,7 @@ struct mixer_layer_info
 		UINT8       effpri;             /* effective priority = (priority << 3) | layer_priority */
 		UINT8       mixshift;           /* shift from control reg */
 		UINT8       coloroffs;          /* color offset index */
+		UINT8       blend_no_sprites;   /* possible non-sprite target below this row */
 	};
 
 
@@ -3927,6 +3928,16 @@ static void system32_compact_layers(mixer_layer_info compact[16][8],
 			const mixer_layer_info &layer = source[group][i];
 			if (active & (1U << layer.index)) compact[group][out++] = layer;
 			if (layer.index == MIXER_LAYER_BACKGROUND) break;
+		}
+		// A second-pixel search is unnecessary if none of the remaining
+		// layers can blend, and no lower sprite can change the shadow flag.
+		UINT32 below = 0;
+		for (INT32 i = out - 1; i >= 0; i--) {
+			mixer_layer_info &layer = compact[group][i];
+			layer.blend_no_sprites = (below & layer.blendmask & ~(1U << MIXER_LAYER_SPRITES)) != 0;
+			if (!(below & ((1U << MIXER_LAYER_SPRITES) | layer.blendmask)))
+				layer.blendmask = 0;
+			below |= 1U << layer.index;
 		}
 	}
 }
@@ -4011,9 +4022,13 @@ static void system32_mix_rows(INT32 top, INT32 bottom, INT32)
 			/* adjust the first pixel */
 			firstpix = BURN_ENDIAN_SWAP_INT16(m_paletteram[(first->palbase + ((firstpix >> first->mixshift) & 0xfff0) + (firstpix & 0x0f)) & 0x3fff]);
 
+			// 0xffff is an absent sprite with no shadow effect. With no
+			// eligible tile/backdrop below, the second search cannot affect RGB.
+			const INT32 blend = first->blendmask && (first->blend_no_sprites || sprpix != 0xffff);
+
 			/* compute R, G, B */
 			INT32 const *rgbdelta = &rgboffs[first->coloroffs][0];
-			if (first->blendmask == 0 && !(rgbdelta[0] | rgbdelta[1] | rgbdelta[2])) {
+			if (!blend && !(rgbdelta[0] | rgbdelta[1] | rgbdelta[2])) {
 				if (shadow) firstpix = (firstpix >> 1) & 0x3def;
 				dest[x] = ((firstpix & 0x001f) << 10) | (firstpix & 0x03e0) | ((firstpix >> 10) & 0x001f);
 				continue;
@@ -4023,7 +4038,7 @@ static void system32_mix_rows(INT32 top, INT32 bottom, INT32)
 			INT32 b = ((firstpix >> 10) & 0x1f) + rgbdelta[2];
 
 			/* if there are potential blends, keep looking */
-			if (first->blendmask != 0)
+			if (blend)
 			{
 				mixer_layer_info const *second;
 				INT32 secondpix;

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare actual System 32 mixer code with its pre-compaction loop."""
+"""Check row pruning and compare the actual mixer with its original loop."""
 from pathlib import Path
 import subprocess,tempfile
 p=Path(__file__).resolve().parent;r=p.parents[1]
@@ -36,7 +36,37 @@ static UINT32 seed=0x532360;
 static UINT32 rnd(){seed=seed*1664525+1013904223;return seed;}
 """
 main=r"""
+static void check_blend_candidates() {
+ mixer_layer_info source[16][8] = {}, compact[16][8] = {};
+ const int ids[8] = {6, 0, 1, 2, 3, 4, 5, 7};
+ for(int i=0;i<8;i++)source[0][i].index=ids[i];
+ const UINT32 active=(1U<<0)|(1U<<1)|(1U<<6)|(1U<<7);
+ // A blend target that is empty on this row cannot contribute. Sprites
+ // above this layer have already supplied any shadow to the first search.
+ source[0][1].blendmask=1U<<2;
+ system32_compact_layers(compact,source,active,0);
+ assert(compact[0][1].index==0 && compact[0][1].blendmask==0 && !compact[0][1].blend_no_sprites);
+ // Keep a possible lower tile or backdrop contribution.
+ source[0][1].blendmask=1U<<1;
+ system32_compact_layers(compact,source,active,0);
+ assert(compact[0][1].blendmask==(1U<<1) && compact[0][1].blend_no_sprites);
+ source[0][1].blendmask=1U<<7;
+ system32_compact_layers(compact,source,active,0);
+ assert(compact[0][1].blendmask==(1U<<7) && compact[0][1].blend_no_sprites);
+ // A target above the first layer cannot be the second pixel.
+ source[0][2].blendmask=1U<<0;
+ system32_compact_layers(compact,source,active,0);
+ assert(compact[0][2].index==1 && compact[0][2].blendmask==0);
+ // A lower sprite may update shadow even when its group cannot blend.
+ std::swap(source[0][0],source[0][1]);
+ source[0][0].blendmask=1U<<2;source[0][0].sprblendmask=0;
+ system32_compact_layers(compact,source,active,0);
+ assert(compact[0][0].index==0 && compact[0][0].blendmask==(1U<<2));
+ assert(!compact[0][0].blend_no_sprites);
+}
 int main(){
+ assert(sizeof(mixer_layer_info)==10); // New flag uses existing padding.
+ check_blend_candidates();
  for(int i=0;i<512;i++)solid_ffff[i]=0xffff;
  UINT16 expected[W*H],actual[W*H];
  for(int trial=0;trial<2000;trial++){
@@ -55,13 +85,13 @@ int main(){
   }
   for(int layer=0;layer<8;layer++)for(int y=0;y<H;y++){
    empty[layer][y]=(trial%4==0)||((rnd()>>16)%3==0);
-   for(int x=0;x<W;x++){UINT16 v=rnd()>>16;if(x%5==0)v=layer==6?0xffff:0;if(layer==6&&x%7==0)v=c.sprshadow;pixels[layer][y][x]=v;}
+   for(int x=0;x<W;x++){UINT16 v=rnd()>>16;if(x%5==0)v=layer==6?0xffff:0;if(layer==6&&x%7==0)v=c.sprshadow;if(layer==6&&trial%4==1)v=0xffff;if(layer==6&&trial%4==2)v=0x7fff;pixels[layer][y][x]=v;}
   }
   pTransDraw=expected;reference_mix_rows(0,H,0);
   pTransDraw=actual;system32_mix_rows(0,H,0);assert(!memcmp(expected,actual,sizeof(actual)));
   memset(actual,0,sizeof(actual));system32_mix_rows(0,H/3,0);system32_mix_rows(H/3,2*H/3,1);system32_mix_rows(2*H/3,H,2);assert(!memcmp(expected,actual,sizeof(actual)));
  }
- puts("PASS System 32 empty-layer compaction: 2000 blend/shadow/flip/endian/group cases, whole and split rows");
+ puts("PASS System 32 row pruning: blend-candidate guards plus 2000 blend/shadow/flip/endian/group cases, whole and split rows");
 }
 """
 with tempfile.TemporaryDirectory() as tmp:
