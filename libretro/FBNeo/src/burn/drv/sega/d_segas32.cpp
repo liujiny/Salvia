@@ -5172,6 +5172,11 @@ static INT32 Ga2Init()
 	tilemap_configure_allocate();
 
 	v25_protection_init(ga2_opcode_table);
+#if defined(_XBOX) || defined(FBNEO_V25_WAIT_LOOP_TEST)
+	VezOpen(0);
+	VezSetV25IdleLoopRange(0x00000, 0x0ffff);
+	VezClose();
+#endif
 	custom_io_read_0 = extra_custom_io_read;
 
 	clr_opposites = 4;

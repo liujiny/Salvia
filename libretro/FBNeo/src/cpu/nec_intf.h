@@ -47,6 +47,8 @@ INT32 VezGetHALT(INT32 nCPU);
 
 INT32 VezInit(INT32 nCPU, INT32 type, INT32 clock); // v20/v25/v30/v33/v35
 INT32 VezInit(INT32 cpu, INT32 type); // v20/v30/v33 only
+// Opt in only for direct ROM with no fetch handler side effects.
+void VezSetV25IdleLoopRange(UINT32 start, UINT32 end);
 void VezSetDecode(UINT8 *decode); // set opcode decode
 void VezExit();
 void VezOpen(INT32 nCPU);
