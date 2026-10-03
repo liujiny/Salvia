@@ -142,7 +142,14 @@ static UINT16 cpu_readop16(UINT32 a)
 #ifdef LOG_MEM
 //		bprintf (0, _T("OP16: %6.6x %4.4x\n"), a, *z);
 #endif
+#if defined(_XBOX) || defined(FBNEO_V60_BYTE_READ_TEST)
+		// V60 instruction parameters need not be naturally aligned. Avoid
+		// unaligned halfword/word accesses on Xbox 360 PowerPC.
+		const UINT8 *zbytes = (const UINT8 *)z;
+		return zbytes[0] | ((UINT16)zbytes[1] << 8);
+#else
 		return BURN_ENDIAN_SWAP_INT16(*z);
+#endif
 	}
 
 	if (v60_read16) {
@@ -169,7 +176,14 @@ static UINT32 cpu_readop32(UINT32 a)
 //		bprintf (0, _T("OP32: %6.6x %8.8x\n"), a, *z);
 #endif
 
+#if defined(_XBOX) || defined(FBNEO_V60_BYTE_READ_TEST)
+		// V60 instruction parameters need not be naturally aligned. Avoid
+		// unaligned halfword/word accesses on Xbox 360 PowerPC.
+		const UINT8 *zbytes = (const UINT8 *)z;
+		return zbytes[0] | ((UINT32)zbytes[1] << 8) | ((UINT32)zbytes[2] << 16) | ((UINT32)zbytes[3] << 24);
+#else
 		return BURN_ENDIAN_SWAP_INT32(*z);
+#endif
 	}
 
 	if (v60_read32) {
@@ -195,7 +209,14 @@ static UINT16 program_read_word_16le(UINT32 a)
 		bprintf (0, _T("PRW: %6.6x %4.4x\n"), a, *z);
 #endif
 
+#if defined(_XBOX) || defined(FBNEO_V60_BYTE_READ_TEST)
+		// V60 instruction parameters need not be naturally aligned. Avoid
+		// unaligned halfword/word accesses on Xbox 360 PowerPC.
+		const UINT8 *zbytes = (const UINT8 *)z;
+		return zbytes[0] | ((UINT16)zbytes[1] << 8);
+#else
 		return BURN_ENDIAN_SWAP_INT16(*z);
+#endif
 	}
 
 	if (v60_read16) {
