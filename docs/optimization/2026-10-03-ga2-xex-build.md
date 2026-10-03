@@ -35,8 +35,14 @@ SHA256:
 
 This XEX includes the retained V60 wait-loop, V25 self-jump, Z80 status-poll,
 empty-layer row, unscaled sprite, blend-candidate and contiguous tile-span
-optimizations. Test GA2 with the existing one/two/three-core settings; actual
-console improvement and the 60 FPS target remain to be measured.
+optimizations. The user-reported console result for GA2 is recorded below;
+other System 32 games have not yet been individually benchmarked on console.
+
+## Console acceptance
+
+On 2026-10-03, the user reported that GA2 runs at full frame rate on the
+Xbox 360 with this build. This records the user's console test result; the
+per-core setting and a frame-time trace were not provided.
 
 ## Rollback
 
