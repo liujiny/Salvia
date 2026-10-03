@@ -2881,6 +2881,49 @@ static void get_tilemaps(INT32 bgnum, INT32 *tilemaps)
 }
 
 
+// Copy a contiguous section of a cached tile row. The direction and
+// transparency mode are fixed for the whole section, not chosen per pixel.
+template<INT32 Step, bool Opaque>
+static INT32 system32_copy_tile_chunk(UINT16 *dst, const UINT16 *src, INT32 count)
+{
+	INT32 transparent = 0;
+	for (INT32 x = 0; x < count; x++) {
+		UINT16 pix = src[x * Step];
+		if (!Opaque && (pix & 0x0f) == 0) {
+			pix = 0;
+			transparent++;
+		}
+		dst[x] = BURN_ENDIAN_SWAP_INT16(pix);
+	}
+	return transparent;
+}
+
+static INT32 system32_copy_tile_span(UINT16 *dst, const UINT16 *const src[2],
+	UINT32 srcx, INT32 step, INT32 count, INT32 opaque)
+{
+	INT32 transparent = 0;
+	while (count > 0) {
+		// Two 512-pixel pages repeat across the source row. Split only at
+		// page boundaries so the inner loop can use consecutive loads.
+		srcx &= 0x3ff;
+		const INT32 offset = srcx & 0x1ff;
+		INT32 pixels = step > 0 ? 512 - offset : offset + 1;
+		if (pixels > count) pixels = count;
+		const UINT16 *page = src[srcx >> 9] + offset;
+		if (step > 0) {
+			if (opaque) transparent += system32_copy_tile_chunk<1, true>(dst, page, pixels);
+			else transparent += system32_copy_tile_chunk<1, false>(dst, page, pixels);
+		} else {
+			if (opaque) transparent += system32_copy_tile_chunk<-1, true>(dst, page, pixels);
+			else transparent += system32_copy_tile_chunk<-1, false>(dst, page, pixels);
+		}
+		dst += pixels;
+		srcx += step * pixels;
+		count -= pixels;
+	}
+	return transparent;
+}
+
 static void update_tilemap_zoom(clip_struct cliprect, UINT16 *ram, INT32 destbmp, INT32 bgnum)
 {
 	INT32 tilemaps[4];
@@ -2970,7 +3013,12 @@ static void update_tilemap_zoom(clip_struct cliprect, UINT16 *ram, INT32 destbmp
 			{
 				if (clipdraw)
 				{
-					for (INT32 x = extents[0]; x < extents[1]; x++)
+					if (srcxstep == 0x100000U || srcxstep == 0xfff00000U) {
+						const INT32 pixels = extents[1] - extents[0];
+						transparent += system32_copy_tile_span(dst + extents[0], src, srcx >> 20,
+							srcxstep == 0x100000U ? 1 : -1, pixels, 0);
+						srcx += srcxstep * pixels;
+					} else for (INT32 x = extents[0]; x < extents[1]; x++)
 					{
 						UINT16 pix = src[(srcx >> 29) & 1][(srcx >> 20) & 0x1ff];
 						srcx += srcxstep;
@@ -3092,13 +3140,9 @@ static void update_tilemap_rowscroll(clip_struct cliprect, UINT16 *m_videoram, I
 				/* if we're drawing on this extent, draw it */
 				if (clipdraw)
 				{
-					for (INT32 x = extents[0]; x < extents[1]; x++, srcx += srcxstep)
-					{
-						UINT16 pix = src[(srcx >> 9) & 1][srcx & 0x1ff];
-						if ((pix & 0x0f) == 0 && !opaque)
-							pix = 0, transparent++;
-						dst[x] = BURN_ENDIAN_SWAP_INT16(pix);
-					}
+					const INT32 pixels = extents[1] - extents[0];
+					transparent += system32_copy_tile_span(dst + extents[0], src, srcx, srcxstep, pixels, opaque);
+					srcx += srcxstep * pixels;
 				}
 
 				/* otherwise, clear to zero */
