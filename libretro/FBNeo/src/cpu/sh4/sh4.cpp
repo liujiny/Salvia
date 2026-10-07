@@ -4888,6 +4888,8 @@ void Sh3WorkReport(void (*emit)(const char*))
 		p.frames,p.slices,p.cpu_off_slices,p.normal_mode_slices); emit(text);
 	sprintf(text,"drc_work_dispatch calls=%I64u lookups=%I64u rebuilds=%I64u validation_spans=%I64u requested_words=%I64u",
 		p.dispatch_calls,p.lookups,p.rebuilds,p.validation_spans,p.validation_words); emit(text);
+	sprintf(text,"drc_work_arena bytes=%u words=%u recycles=%I64u peak_words=%I64u peak_bytes=%I64u",
+		(unsigned)Sh3Ppc::CACHE_BYTES,(unsigned)(Sh3Ppc::CACHE_BYTES/4),p.arena_recycles,p.arena_peak,p.arena_peak*4); emit(text);
 	sprintf(text,"drc_work_execution native_calls=%I64u native_guest_cycles=%I64u interpreter_steps=%I64u interpreter_guest_cycles=%I64u not_host_time=1",
 		p.native_calls,p.native_cycles,p.interpreter_steps,p.interpreter_cycles); emit(text);
 	sprintf(text,"drc_work_exits gate=%I64u fetch=%I64u no_entry=%I64u short_budget=%I64u partial=%I64u boundary=%I64u",

@@ -678,6 +678,7 @@ static bool allocate()
 static void compile(Block &block, UINT32 pc, const UINT16 *source)
 {
  if(used+MAX_WORDS >= CACHE_BYTES/4) {
+  ++sh3_drc_work.arena_recycles;
   memset(blocks,0,TABLE_SIZE*sizeof(Block));
   memset(lookup,0,CACHE_SETS*sizeof(Lookup)); used=0;
  }
@@ -724,6 +725,7 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
  if(count) {
   sync_code(code+used,c.out);
   used=(unsigned)(c.out-code+3)&~3u; // 16-byte block alignment
+  if(used>sh3_drc_work.arena_peak)sh3_drc_work.arena_peak=used;
  }
 }
 #undef SO

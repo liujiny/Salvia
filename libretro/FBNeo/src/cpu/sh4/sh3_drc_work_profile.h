@@ -13,6 +13,11 @@ typedef unsigned long long Sh3WorkCount;
 struct Sh3DrcWorkProfile {
  Sh3WorkCount frames, slices, cpu_off_slices, normal_mode_slices;
  Sh3WorkCount dispatch_calls, lookups, rebuilds, validation_spans, validation_words;
+ // Code-arena pressure. `arena_recycles` counts full-arena resets caused by the
+ // overflow guard; `arena_peak` is the highest word count reached since the
+ // last report. Both are written on the compile path only, never from
+ // generated code or the dispatched hot loop.
+ Sh3WorkCount arena_recycles, arena_peak;
  Sh3WorkCount native_calls, native_cycles, interpreter_steps, interpreter_cycles;
  Sh3WorkCount movll_services, movll_service_cycles, movll_service_rejects;
  Sh3WorkCount device_services[2], device_service_cycles[2], device_fallbacks[2];
