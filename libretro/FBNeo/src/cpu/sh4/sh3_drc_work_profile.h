@@ -13,6 +13,11 @@ typedef unsigned long long Sh3WorkCount;
 struct Sh3DrcWorkProfile {
  Sh3WorkCount frames, slices, cpu_off_slices, normal_mode_slices;
  Sh3WorkCount dispatch_calls, lookups, rebuilds, validation_spans, validation_words;
+ // Why a compile() was requested. `conflict` is a tag/source-pointer miss (the
+ // set could not hold this PC), `source` is a same-PC snapshot mismatch (the
+ // guest rewrote or re-uploaded the opcodes), `map` is a read-map change only.
+ // Written on the compile path, never from generated code or the hot loop.
+ Sh3WorkCount rebuild_conflict, rebuild_source, rebuild_map;
  // Code-arena pressure. `arena_recycles` counts full-arena resets caused by the
  // overflow guard; `arena_peak` is the highest word count reached since the
  // last report. Both are written on the compile path only, never from

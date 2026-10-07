@@ -14,8 +14,24 @@
 #include <sys/mman.h>
 #endif
 
+// Arena size override, so the host differential harness can select an arena
+// size from otherwise identical sources. Overflow runs the full reset in
+// compile(), which discards every compiled block and makes the guest rebuild
+// its whole native working set through the interpreter fallback.
+#ifndef SH3_PPC_CACHE_BYTES
+#define SH3_PPC_CACHE_BYTES (8 * 1024 * 1024)
+#endif
+
+// Number of block-table entries, four ways per set. The original 32768-entry
+// table thrashing on set conflicts was measured as the dominant rebuild cause
+// on CV1000; the override lets host differential tests size it from identical
+// sources.
+#ifndef SH3_PPC_TABLE_SIZE
+#define SH3_PPC_TABLE_SIZE 131072
+#endif
+
 namespace Sh3Ppc {
-enum { CACHE_BYTES = 8 * 1024 * 1024, TABLE_SIZE = 32768, WAYS = 4, CACHE_SETS = TABLE_SIZE / WAYS,
+enum { CACHE_BYTES = SH3_PPC_CACHE_BYTES, TABLE_SIZE = SH3_PPC_TABLE_SIZE, WAYS = 4, CACHE_SETS = TABLE_SIZE / WAYS,
        MAX_INSNS = 32, MAX_WORDS = 4096, HOST_REGS = 7 };
 enum { G_SR = 16, G_MACL, G_MACH, G_PR, G_GBR };
 #define SO(field) ((int)offsetof(Sh3PpcState, field))

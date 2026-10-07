@@ -43,12 +43,25 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   Block &b=blocks[index*WAYS+way];
   // Recheck EVERY entry, including successors, aliases, DMA/cheat writes and
   // changed fetch/read mappings. No cached host entry bypasses these guards.
-  if(Count && b.source==source && b.pc==pc) {
-   ++sh3_drc_work.validation_spans;
-   sh3_drc_work.validation_words+=b.words;
+  bool rebuild;
+  if(Count) {
+   // Classify before compile() overwrites the record it is derived from.
+   const bool tag_hit=(b.source==source && b.pc==pc);
+   const bool same=tag_hit && sh3_drc_source_equal(b.original,source,b.words);
+   const bool map_ok=(!b.check_read_map || MemMapR[phys>>SH3_SHIFT]==page);
+   if(tag_hit) {
+    ++sh3_drc_work.validation_spans;
+    sh3_drc_work.validation_words+=b.words;
+   }
+   if(!tag_hit) ++sh3_drc_work.rebuild_conflict;
+   else if(!same) ++sh3_drc_work.rebuild_source;
+   else if(!map_ok) ++sh3_drc_work.rebuild_map;
+   rebuild=!tag_hit || !same || !map_ok;
+  } else {
+   rebuild=(b.source!=source || b.pc!=pc || !sh3_drc_source_equal(b.original,source,b.words) ||
+     (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page));
   }
-  if(b.source!=source || b.pc!=pc || !sh3_drc_source_equal(b.original,source,b.words) ||
-     (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page)) {
+  if(rebuild) {
    compile(b,pc,source);
    if(Count) ++sh3_drc_work.rebuilds;
    set.tag[way]=pc;
