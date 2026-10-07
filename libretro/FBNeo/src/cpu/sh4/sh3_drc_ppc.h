@@ -18,8 +18,15 @@
 // size from otherwise identical sources. Overflow runs the full reset in
 // compile(), which discards every compiled block and makes the guest rebuild
 // its whole native working set through the interpreter fallback.
+//
+// The 131072-entry table removes the set conflicts that made the arena fill
+// up, so the measured knee is now 20 MiB: the host sweep recorded the same
+// 43214 rebuilds and the same 17 MiB high-water mark at 20, 24, 32 and 64 MiB,
+// while 16 MiB already regressed to 58511 rebuilds. On a 512 MiB console the
+// arena is a static array in .bss, and the Xenos compositor still has to find
+// room for its atlas, so the arena is pinned to the knee instead of the cap.
 #ifndef SH3_PPC_CACHE_BYTES
-#define SH3_PPC_CACHE_BYTES (32 * 1024 * 1024)
+#define SH3_PPC_CACHE_BYTES (20 * 1024 * 1024)
 #endif
 
 // Number of block-table entries, four ways per set. The original 32768-entry
