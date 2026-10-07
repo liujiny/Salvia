@@ -19,7 +19,7 @@
 // compile(), which discards every compiled block and makes the guest rebuild
 // its whole native working set through the interpreter fallback.
 #ifndef SH3_PPC_CACHE_BYTES
-#define SH3_PPC_CACHE_BYTES (8 * 1024 * 1024)
+#define SH3_PPC_CACHE_BYTES (32 * 1024 * 1024)
 #endif
 
 // Number of block-table entries, four ways per set. The original 32768-entry
