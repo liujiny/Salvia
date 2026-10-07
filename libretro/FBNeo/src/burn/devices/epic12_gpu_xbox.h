@@ -78,12 +78,38 @@ static void epic12_xenos_set_status(int status)
 	InterlockedExchange(&epic12_xenos_notice, status);
 }
 
+// Name of the resource whose creation failed, for the fallback message above.
+static char epic12_xenos_init_step[64];
+static unsigned epic12_xenos_init_entry_free;
+static unsigned epic12_xenos_init_hr;
+static bool epic12_xenos_init_reported;
+// Last HRESULT from a shader compile or resource creation, so a failure can
+// name both the step and the code that the banner has no room for.
+static HRESULT epic12_xenos_last_hr;
+
+static unsigned epic12_xenos_free_mb()
+{
+	MEMORYSTATUS memory; memory.dwLength=sizeof(memory);
+	GlobalMemoryStatus(&memory);
+	return (unsigned)(memory.dwAvailPhys>>20);
+}
+
 const char *epic12_gpu_take_message()
 {
 	switch (InterlockedExchange(&epic12_xenos_notice, 0)) {
 		case 1: return "CV1000 GPU: active (sprite batching)";
 		case 2: return "CV1000 GPU: off - CPU rendering";
-		case 3: return "CV1000 GPU: CPU fallback - initialization failed";
+		case 3:
+		{
+			// Lead with the failing resource: the frontend truncates the banner
+			// to the overlay width, and this fallback only appears on hardware.
+			static char message[160];
+			sprintf(message,"CV1000 GPU: init@%s free %u->%uMB hr=%08X",
+				epic12_xenos_init_step[0]?epic12_xenos_init_step:"unknown",
+				epic12_xenos_init_entry_free,epic12_xenos_free_mb(),
+				epic12_xenos_init_hr);
+			return message;
+		}
 		case 4: return "CV1000 GPU: CPU fallback - pixel self-test failed";
 		case 5: return "CV1000 GPU: CPU fallback - display unavailable";
 		case 6: return "CV1000 GPU: CPU fallback - transfer failed";
@@ -334,6 +360,7 @@ static bool epic12_xenos_compile(const char *entry, const char *profile, ID3DXBu
 	ID3DXBuffer *error=NULL;
 	HRESULT hr=D3DXCompileShader(epic12_xenos_shader,(UINT)strlen(epic12_xenos_shader),NULL,NULL,
 		entry,profile,0,code,&error,NULL);
+	epic12_xenos_last_hr=hr;
 	if (error) { if (FAILED(hr)) epic12_xenos_log((const char*)error->GetBufferPointer()); error->Release(); }
 	return SUCCEEDED(hr) && *code;
 }
@@ -343,6 +370,7 @@ static bool epic12_xenos_create_pixel_shader(const char *entry, D3DPixelShader *
 	ID3DXBuffer *code=NULL;
 	if(!epic12_xenos_compile(entry,"ps_3_0",&code)) return false;
 	HRESULT hr=epic12_xenos_device->CreatePixelShader((DWORD*)code->GetBufferPointer(),shader);
+	epic12_xenos_last_hr=hr;
 	code->Release();
 	return SUCCEEDED(hr);
 }
@@ -354,8 +382,39 @@ static bool epic12_xenos_create_atlas(int capacity)
 	if(epic12_xenos_atlas) { epic12_xenos_atlas->Release(); epic12_xenos_atlas=NULL; }
 	epic12_xenos_cache.reset(capacity);
 	epic12_xenos_atlas_height=capacity*8;
-	return SUCCEEDED(epic12_xenos_device->CreateTexture(2048,epic12_xenos_atlas_height,1,0,
-		(epic12_xenos_tiled?D3DFMT_A8R8G8B8:D3DFMT_LIN_A8R8G8B8),D3DPOOL_DEFAULT,&epic12_xenos_atlas,NULL));
+	HRESULT hr=epic12_xenos_device->CreateTexture(2048,epic12_xenos_atlas_height,1,0,
+		(epic12_xenos_tiled?D3DFMT_A8R8G8B8:D3DFMT_LIN_A8R8G8B8),D3DPOOL_DEFAULT,&epic12_xenos_atlas,NULL);
+	epic12_xenos_last_hr=hr;
+	return SUCCEEDED(hr);
+}
+
+// Record the failing step and keep the false return readable at each call site.
+// The banner is clipped to the overlay width on hardware, so the first failure
+// of a boot is also written once to a file with the HRESULT and the free-memory
+// delta. This runs only when the GPU path is about to be lost.
+static bool epic12_xenos_init_failed(const char *step, HRESULT hr)
+{
+	unsigned i=0;
+	if (step) while (step[i] && i+1<sizeof(epic12_xenos_init_step)) { epic12_xenos_init_step[i]=step[i]; ++i; }
+	epic12_xenos_init_step[i]=0;
+	epic12_xenos_init_hr=(unsigned)hr;
+	if(!epic12_xenos_init_reported) {
+		epic12_xenos_init_reported=true;
+		FILE *f=fopen("game:\\cv1000-gpu.log","a");
+		if(!f) f=fopen("game:\\cv1000-gpu.log","w");
+		if(f) {
+			fprintf(f,"CV1000 GPU: INIT FAILED step=%s hr=0x%08X free=%uMB->%uMB "
+				"tiled=%d fast_transfer=%d alpha_vector=%d tile_alpha=%d cache=%u "
+				"specialized=%d attributes=%d (batches=%u)\n",
+				epic12_xenos_init_step,(unsigned)hr,epic12_xenos_init_entry_free,
+				epic12_xenos_free_mb(),epic12_xenos_tiled?1:0,epic12_xenos_fast_transfer?1:0,
+				epic12_alpha_vector_enabled?1:0,epic12_tile_alpha_enabled?1:0,
+				epic12_xenos_cache.capacity,epic12_xenos_specialized?1:0,
+				epic12_xenos_attributes?1:0,epic12_xenos_batches);
+			fclose(f);
+		}
+	}
+	return false;
 }
 
 static bool epic12_xenos_create()
@@ -363,15 +422,16 @@ static bool epic12_xenos_create()
 	D3DDevice *d=epic12_xenos_device;
 	ID3DXBuffer *code=NULL;
 	HRESULT hr;
-	if (!epic12_xenos_compile("vs_main","vs_3_0",&code)) return false;
+	epic12_xenos_init_entry_free=epic12_xenos_free_mb();
+	if (!epic12_xenos_compile("vs_main","vs_3_0",&code)) return epic12_xenos_init_failed("vs_main shader",epic12_xenos_last_hr);
 	hr=d->CreateVertexShader((DWORD*)code->GetBufferPointer(),&epic12_xenos_vs); code->Release(); code=NULL;
-	if (FAILED(hr)) return false;
-	if (!epic12_xenos_compile("vs_uniform","vs_3_0",&code)) return false;
+	if (FAILED(hr)) return epic12_xenos_init_failed("vs_main create",hr);
+	if (!epic12_xenos_compile("vs_uniform","vs_3_0",&code)) return epic12_xenos_init_failed("vs_uniform shader",epic12_xenos_last_hr);
 	hr=d->CreateVertexShader((DWORD*)code->GetBufferPointer(),&epic12_xenos_uniform_vs); code->Release(); code=NULL;
-	if (FAILED(hr)) return false;
-	if (!epic12_xenos_compile("ps_uniform","ps_3_0",&code)) return false;
+	if (FAILED(hr)) return epic12_xenos_init_failed("vs_uniform create",hr);
+	if (!epic12_xenos_compile("ps_uniform","ps_3_0",&code)) return epic12_xenos_init_failed("ps_uniform shader",epic12_xenos_last_hr);
 	hr=d->CreatePixelShader((DWORD*)code->GetBufferPointer(),&epic12_xenos_uniform_ps); code->Release(); code=NULL;
-	if (FAILED(hr)) return false;
+	if (FAILED(hr)) return epic12_xenos_init_failed("ps_uniform create",hr);
 	// Keep the already tested uniform path if the new shader cannot be used.
 	epic12_xenos_attributes=false;
 	if (epic12_xenos_compile("ps_main","ps_3_0",&code)) {
@@ -381,29 +441,35 @@ static bool epic12_xenos_create()
 	epic12_xenos_specialized=epic12_xenos_attributes &&
 		epic12_xenos_create_pixel_shader("ps_fast",&epic12_xenos_fast_ps) &&
 		epic12_xenos_create_pixel_shader("ps_feedback",&epic12_xenos_feedback_ps);
-	if (!epic12_xenos_compile("copy_main","ps_3_0",&code)) return false;
+	if (!epic12_xenos_compile("copy_main","ps_3_0",&code)) return epic12_xenos_init_failed("copy_main shader",epic12_xenos_last_hr);
 	hr=d->CreatePixelShader((DWORD*)code->GetBufferPointer(),&epic12_xenos_copy_ps); code->Release();
-	if (FAILED(hr)) return false;
+	if (FAILED(hr)) return epic12_xenos_init_failed("copy_main create",hr);
 	D3DVERTEXELEMENT9 elements[]={
 		{0,0,D3DDECLTYPE_USHORT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
 		{0,4,D3DDECLTYPE_USHORT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
 		{0,8,D3DDECLTYPE_UBYTE4,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
 		{0,12,D3DDECLTYPE_UBYTE4,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},D3DDECL_END()};
-	if (FAILED(d->CreateVertexDeclaration(elements,&epic12_xenos_decl))) return false;
+	hr=d->CreateVertexDeclaration(elements,&epic12_xenos_decl);
+	if (FAILED(hr)) return epic12_xenos_init_failed("vertex declaration",hr);
 	D3DVERTEXELEMENT9 uniformElements[]={
 		{0,0,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
 		{0,8,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},D3DDECL_END()};
-	if (FAILED(d->CreateVertexDeclaration(uniformElements,&epic12_xenos_uniform_decl))) return false;
-	if (FAILED(d->CreateStateBlock(D3DSBT_ALL,&epic12_xenos_state))) return false;
-	if (FAILED(d->CreateTexture(512,512,1,0,D3DFMT_LIN_A8R8G8B8,D3DPOOL_DEFAULT,&epic12_xenos_input,NULL))) return false;
+	hr=d->CreateVertexDeclaration(uniformElements,&epic12_xenos_uniform_decl);
+	if (FAILED(hr)) return epic12_xenos_init_failed("uniform declaration",hr);
+	hr=d->CreateStateBlock(D3DSBT_ALL,&epic12_xenos_state);
+	if (FAILED(hr)) return epic12_xenos_init_failed("state block",hr);
+	hr=d->CreateTexture(512,512,1,0,D3DFMT_LIN_A8R8G8B8,D3DPOOL_DEFAULT,&epic12_xenos_input,NULL);
+	if (FAILED(hr)) return epic12_xenos_init_failed("input texture",hr);
 	// Xenos Resolve requires a tiled destination. Readonly LockRect provides
 	// synchronization/cache coherency; untile only the batch's output region.
-	if (FAILED(d->CreateTexture(512,512,1,0,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&epic12_xenos_result,NULL))) return false;
+	hr=d->CreateTexture(512,512,1,0,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&epic12_xenos_result,NULL);
+	if (FAILED(hr)) return epic12_xenos_init_failed("result texture",hr);
 	// Present has completed under the shared lock. Borrow EDRAM base 0;
 	// SDL clears/redraws its backbuffer at its next Present. This avoids
 	// depending on spare EDRAM at higher output resolutions.
 	D3DSURFACE_PARAMETERS surface={0};
-	if (FAILED(d->CreateRenderTarget(512,512,D3DFMT_A8R8G8B8,D3DMULTISAMPLE_NONE,0,FALSE,&epic12_xenos_target,&surface))) return false;
+	hr=d->CreateRenderTarget(512,512,D3DFMT_A8R8G8B8,D3DMULTISAMPLE_NONE,0,FALSE,&epic12_xenos_target,&surface);
+	if (FAILED(hr)) return epic12_xenos_init_failed("render target",hr);
 	// Validate real VMX loads/stores and all 512x512 tile addresses once,
 	// including unaligned destination rows, before using the fused transfer.
 	epic12_xenos_fast_transfer=epic12_gpu_untile_selftest();
@@ -417,9 +483,9 @@ static bool epic12_xenos_create()
 	bool fusedAlpha=epic12_xenos_tiled && alphaVector && epic12_gpu_tile_alpha_selftest();
 	epic12_xenos_log(fusedAlpha?"fused atlas/alpha self-test passed":"fused atlas/alpha unavailable; using separate passes");
 	if(!epic12_xenos_create_atlas(256) && !epic12_xenos_create_atlas(128)) {
-		if(!epic12_xenos_tiled) return false;
+		if(!epic12_xenos_tiled) return epic12_xenos_init_failed("atlas texture",epic12_xenos_last_hr);
 		epic12_xenos_tiled=false;
-		if(!epic12_xenos_create_atlas(256) && !epic12_xenos_create_atlas(128)) return false;
+		if(!epic12_xenos_create_atlas(256) && !epic12_xenos_create_atlas(128)) return epic12_xenos_init_failed("atlas texture",epic12_xenos_last_hr);
 	}
 	return true;
 }
