@@ -69,6 +69,11 @@ struct Sh3PpcState {
  // the watched address still use the handler (CV1000's idle-loop shortcut).
  UINT8 *read_mirror;
  UINT32 mirror_page, mirror_watch, mirror_handler;
+ // Host copy of the registered RAM window base. A driver field, never scanned:
+ // the generated code keeps it in r4 so a translated access does not rebuild
+ // the 32-bit host pointer, and every registration or mapping change revokes
+ // the code before this can go stale.
+ UINT8 *ram_base;
 };
 static Sh3PpcState sh3_ppc_state;
 // Driver-owned idle configuration, used by servicing and diagnostics. Never scanned

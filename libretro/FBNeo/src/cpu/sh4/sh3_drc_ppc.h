@@ -39,7 +39,13 @@
 
 namespace Sh3Ppc {
 enum { CACHE_BYTES = SH3_PPC_CACHE_BYTES, TABLE_SIZE = SH3_PPC_TABLE_SIZE, WAYS = 4, CACHE_SETS = TABLE_SIZE / WAYS,
-       MAX_INSNS = 32, MAX_WORDS = 4096, HOST_REGS = 7 };
+       MAX_INSNS = 32, MAX_WORDS = 4096, HOST_REGS = 6 };
+// Host general registers used by the generated code: r3 is the state pointer,
+// r4 keeps the registered RAM window base for the whole block, r5..r10 are the
+// cached guest register slots, r11/r12 and r0 are the address/immediate
+// scratch. Keeping the base in r4 costs one guest slot but removes the 32-bit
+// host-pointer materialisation from every translated memory access.
+enum { FIRST_SLOT = 5, RAM_BASE_REG = 4 };
 enum { G_SR = 16, G_MACL, G_MACH, G_PR, G_GBR };
 #define SO(field) ((int)offsetof(Sh3PpcState, field))
 
@@ -127,9 +133,18 @@ struct Compiler {
  BlockExit exits[MAX_INSNS*3];
  CodeWriteCheck write_checks[MAX_INSNS];
  bool ended, folded_slot, in_delay_slot;
+ // Every guard exit and the block's own completion end with the same
+ // "publish pc/ppc, charge the guest cycles, return to the dispatcher"
+ // sequence. Emit it once per block instead of once per exit: each caller
+ // jumps to it with the pc value in r0, the cycles in r12 and the dispatcher
+ // result code in r5, all of which are dead once the cached guest registers
+ // have been written back. Exits are cold, so the extra branch costs nothing
+ // on the hot path; what it removes is a large share of the emitted words.
+ UINT32 *tail_pc_jump[MAX_INSNS*3+4], *tail_nopc_jump[MAX_INSNS*3+4];
+ int tail_pc_jumps, tail_nopc_jumps;
 
  Compiler(UINT32 *dest, UINT32 address, const UINT16 *source)
-  : start(dest), out(dest), pc(address), block_pc(address), clock(0), cycles(0), exit_count(0), write_check_count(0), ended(false), folded_slot(false), in_delay_slot(false)
+  : start(dest), out(dest), pc(address), block_pc(address), clock(0), cycles(0), exit_count(0), write_check_count(0), ended(false), folded_slot(false), in_delay_slot(false), tail_pc_jumps(0), tail_nopc_jumps(0)
  {
   source_begin = (UINT32)(uintptr_t)source;
   cat = CAT_BODY;
@@ -137,6 +152,15 @@ struct Compiler {
   for (int i = 0; i < HOST_REGS; i++) {
    slots[i].guest = -1; slots[i].age = 0;
    slots[i].dirty = slots[i].locked = false;
+  }
+  // Keep the registered RAM window base in r4 for the whole block. The
+  // window cannot move while generated code lives (registration, mapping and
+  // handler changes all revoke it), so this is a one-word prologue that
+  // replaces a two-word host-pointer materialisation per translated access.
+  if (ram_base_registered()) {
+   cat = CAT_MEMADDR;
+   load(RAM_BASE_REG, SO(ram_base));
+   cat = CAT_BODY;
   }
  }
  void emit(UINT32 x) { *out++ = x; ++cat_words[cat]; }
@@ -190,17 +214,17 @@ struct Compiler {
   }
   Slot &s = slots[found];
   if (s.guest != guest) {
-   if (s.dirty) store(found + 4, reg_offset(s.guest));
+   if (s.dirty) store(found + FIRST_SLOT, reg_offset(s.guest));
    s.guest = guest; s.dirty = false;
-   if (read) load(found + 4, reg_offset(guest));
+   if (read) load(found + FIRST_SLOT, reg_offset(guest));
   }
   s.age = ++clock; s.locked = true;
-  return found + 4;
+  return found + FIRST_SLOT;
  }
- void dirty(int host) { slots[host - 4].dirty = true; }
+ void dirty(int host) { slots[host - FIRST_SLOT].dirty = true; }
  void flush() {
   for (int i = 0; i < HOST_REGS; i++)
-   if (slots[i].dirty) store(i + 4, reg_offset(slots[i].guest));
+   if (slots[i].dirty) store(i + FIRST_SLOT, reg_offset(slots[i].guest));
  }
  void charge(int count) {
   load(11, SO(total)); addi(11, 11, count); store(11, SO(total));
@@ -210,10 +234,32 @@ struct Compiler {
   CatGuard catScope(*this, cat == CAT_EXIT ? CAT_EXIT : CAT_COMPLETE);
   flush();
   imm(0,next);
-  if (set_pc) store(0,SO(pc));
-  store(0,SO(ppc));
-  charge(cost);
-  imm(3, result); emit(0x4e800020); // blr
+  imm(12,cost);
+  imm(5,result);
+  tail_jump(set_pc); // the shared tail stores pc/ppc, charges and returns
+ }
+ void tail_jump(bool set_pc) {
+  UINT32 *p = jump();
+  if (set_pc) tail_pc_jump[tail_pc_jumps++] = p;
+  else tail_nopc_jump[tail_nopc_jumps++] = p;
+ }
+ // One per block, shared by every guard exit and by the block's completion.
+ // Emitted last and reached only by an unconditional branch, so it never
+ // falls through from the exit it follows.
+ void emit_tail() {
+  if (!tail_pc_jumps && !tail_nopc_jumps) return;
+  CatGuard catScope(*this, CAT_EXIT);
+  if (tail_pc_jumps) {
+   for (int i = 0; i < tail_pc_jumps; i++) patch(tail_pc_jump[i]);
+   store(0, SO(pc));
+  }
+  for (int i = 0; i < tail_nopc_jumps; i++) patch(tail_nopc_jump[i]);
+  store(0, SO(ppc));
+  load(11, SO(total)); load(6, SO(icount));
+  add(11, 11, 12); sub(6, 6, 12);
+  store(11, SO(total)); store(6, SO(icount));
+  move(3, 5);
+  emit(0x4e800020); // blr
  }
  // Branch out of the straight-line fast path only when a guard fails.
  // All guards for one memory operation share an exit before that operation.
@@ -241,17 +287,27 @@ struct Compiler {
    BlockExit &e = exits[i];
    for (int j = 0; j < e.count; j++) patch(e.branches[j]);
    memcpy(slots, e.slots, sizeof(slots));
+   flush(); // this exit's own dirty set, before r5/r12 become arguments
    if (e.conditional) {
-    constant(SO(pc),e.target); constant(SO(ea),e.target);
-    finish(e.pc,e.cycles,1,false);
+    // pc and ea carry the taken target, ppc keeps the fall-through address.
+    // ppc is the only value the shared tail can publish here, because pc and
+    // ea differ from it; r0 holds e.pc when the tail runs.
+    imm(0,e.target); store(0,SO(pc)); store(0,SO(ea));
+    imm(0,e.pc); store(0,SO(ppc));
+    imm(12,e.cycles); imm(5,1);
+    tail_jump(false);
     continue;
    }
    // The branch has already committed its target and PR. Publish the
    // pending slot only on this slow path, so the interpreter executes it
    // exactly once with the state it would see after interpreting the branch.
    if (e.delay_slot) constant(SO(delay),e.pc);
-   finish(e.pc, e.cycles, e.service_opcode ? (int)(2u|(e.service_opcode<<2)) : 0, !e.delay_slot);
+   else imm(0,e.pc);
+   imm(12,e.cycles);
+   imm(5,e.service_opcode ? (int)(2u|(e.service_opcode<<2)) : 0);
+   tail_jump(!e.delay_slot);
   }
+  emit_tail();
  }
  void protect_code(int words) {
   for (int i=0;i<write_check_count;i++) {
@@ -284,6 +340,23 @@ struct Compiler {
    else addi(11, b, disp);
   }
  }
+ // True when r4 really holds the registered RAM window base. The driver field
+ // is refreshed wherever the window is set; an out-of-sync pair falls back to
+ // the immediate form rather than trusting the register.
+ bool ram_base_registered() const {
+  return ram_window.base && sh3_ppc_state.ram_base == ram_window.base;
+ }
+ // rD = ram_window.base + off, where off is an offset inside the window.
+ void ram_address(int rd, UINT32 off) {
+  if (ram_base_registered() && off <= 32767) addi(rd, RAM_BASE_REG, (int)off);
+  else imm(rd, (UINT32)(uintptr_t)ram_window.base + off);
+ }
+ // rD += ram_window.base: the direct path already holds a window-relative
+ // offset in rD, so one register add replaces lis/ori plus an add.
+ void ram_bias(int rd) {
+  if (ram_base_registered()) add(rd, rd, RAM_BASE_REG);
+  else { imm(0, (UINT32)(uintptr_t)ram_window.base); add(rd, rd, 0); }
+ }
  bool memory(bool write, int size, int value, int base, int index, int disp,
              UINT32 absolute, bool ea, bool pre, bool post, unsigned service_opcode=0) {
   CatGuard catScope(*this, CAT_MEMADDR);
@@ -304,7 +377,8 @@ struct Compiler {
   bool address_value=value==base || value==index || (base==-2 && value==G_GBR);
   int data = reg(value,write || address_value);
   if (constant_ram) {
-   imm(12,(UINT32)(uintptr_t)(ram.base+((absolute-ram.start)&ram.mask)));
+   // A compile-time-bound RAM operand needs no runtime translation at all.
+   ram_address(12,(absolute-ram.start)&ram.mask);
   } else if (direct) {
    address(base,index,disp,absolute);
    // Match every external alias accepted by the interpreter, including
@@ -320,7 +394,7 @@ struct Compiler {
     imm(0,ram.watch-ram.start); cmp(12,0); guard_watch(service_opcode);
    }
    if(ram.backing_bits!=ram.span_bits)rotate(12,12,0,32-ram.backing_bits,31);
-   imm(0,(UINT32)(uintptr_t)ram.base); add(12,12,0);
+   ram_bias(12);
   } else {
    address(base, index, disp, absolute);
    // All address arithmetic is explicitly reduced to 32 bits for Xenon.
@@ -355,7 +429,13 @@ struct Compiler {
    // instruction. The final source length is patched after decoding.
    // Keep the original direct-RAM effective address in r11 until every
    // guard has succeeded. r0 is scratch and is not a cached guest register.
-   imm(0,source_begin&~((UINT32)size-1)); sub(0,12,0);
+   // r0 = store address - the block's own first byte, without rebuilding the
+   // 32-bit source pointer when it is ram_window.base plus a small offset.
+   UINT32 src=source_begin&~((UINT32)size-1);
+   UINT32 src_off=src-(UINT32)(uintptr_t)ram.base;
+   if(ram_base_registered() && src_off<=32767) addi(0,RAM_BASE_REG,(int)src_off);
+   else imm(0,src);
+   sub(0,12,0);
    CodeWriteCheck &w=write_checks[write_check_count++];
    w.compare=out; w.size=size;
    cmpi(0,0,true); guard(0,false);
@@ -791,6 +871,7 @@ static void sh3_drc_invalidate_ram()
 {
  if(Sh3Ppc::ram_window.base) {
   Sh3Ppc::ram_window.base=NULL;
+  sh3_ppc_state.ram_base=NULL;
   sh3_drc_reset();
  }
 }
@@ -845,6 +926,7 @@ INT32 Sh3SetDrcRam(UINT8* ram, UINT32 start, UINT32 span, UINT32 backing_size)
   }
  }
  ram_window.base=ram; ram_window.start=start; ram_window.span=span;
+ sh3_ppc_state.ram_base=ram;
  ram_window.mask=backing_size-1; ram_window.watch=watch;
  ram_window.span_bits=ram_window.backing_bits=0;
  while((1u<<ram_window.span_bits)<span)ram_window.span_bits++;
