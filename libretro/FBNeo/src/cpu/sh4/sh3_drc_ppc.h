@@ -385,13 +385,27 @@ struct Compiler {
    // the uncached acxxxxxx addresses used heavily by CV1000. Internal
    // addresses >= e0000000 must never alias ordinary RAM. Word compares
    // and rotates also discard Xenon's upper 32 general-register bits.
-   rotate(0,11,3,29,31); cmpi(0,7,true); guard(0,true,device_opcode);
+   //
+   // Bits 29..31 of the effective address are its area select and bits 0..1
+   // its alignment. Rotating left by three places both fields next to each
+   // other, so one five-bit (three-bit + 2-byte alignment) or four-bit
+   // (three-bit + halfword alignment) extract is "<= 6" exactly when the
+   // address is outside the internal area and aligned. That folds the
+   // alignment guard into the area guard, saving a rotate, a compare and a
+   // branch on every translated word and long access.
+   if (size > 1) {
+    rotate(0,11,3,size==2?28:27,31);
+    cmpi(0,6,true); guard(1,false,device_opcode);
+   } else {
+    rotate(0,11,3,29,31); cmpi(0,7,true); guard(0,true,device_opcode);
+   }
    rotate(0,11,32-ram.span_bits,ram.span_bits+3,31);
    cmpi(0,ram.start>>ram.span_bits,true); guard(2,true,device_opcode);
-   if(size>1) { emit(d(28,11,0,size-1)); guard(2,true,device_opcode); }
    rotate(12,11,0,32-ram.span_bits,31);
    if(!write && size==4 && ram.watch!=0xffffffffu) {
-    imm(0,ram.watch-ram.start); cmp(12,0); guard_watch(service_opcode);
+    UINT32 watch_off=ram.watch-ram.start;
+    if(watch_off<=0xffff) { cmpi(12,(int)watch_off,true); guard(2,false,service_opcode); }
+    else { imm(0,watch_off); cmp(12,0); guard_watch(service_opcode); }
    }
    if(ram.backing_bits!=ram.span_bits)rotate(12,12,0,32-ram.backing_bits,31);
    ram_bias(12);
@@ -692,13 +706,22 @@ struct Compiler {
  void finish_delay(bool loop) {
   CatGuard catScope(*this, cat == CAT_EXIT ? CAT_EXIT : CAT_COMPLETE);
   flush();
-  charge(cycles);
-  if (loop) {
-   cmpi(11,cycles);
-   UINT32 *done=branch(0,true);
-   emit(0x48000000 | ((UINT32)((char*)start-(char*)out)&0x03fffffc));
-   patch(done);
+  if (!loop) {
+   // A completed slot leaves PC at the target and PPC at that same value.
+   // This is the shared tail's no-pc entry with the block pc as its value,
+   // which is what load(0,SO(pc)) produced inline before.
+   load(0,SO(pc));
+   imm(12,cycles);
+   imm(5,1);
+   tail_jump(false);
+   return;
   }
+  charge(cycles);
+  // charge() leaves the remaining budget in r11 for the loop-back test.
+  cmpi(11,cycles);
+  UINT32 *done=branch(0,true);
+  emit(0x48000000 | ((UINT32)((char*)start-(char*)out)&0x03fffffc));
+  patch(done);
   // A completed slot leaves PC at the target, and PPC at that same value.
   load(0,SO(pc)); store(0,SO(ppc));
   imm(3,1); emit(0x4e800020);
