@@ -119,15 +119,9 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
 // Normal callers instantiate no workload bookkeeping and no runtime Count test.
 template<bool Chained> static SH3_DISPATCH_INLINE bool sh3_drc_dispatch()
 {
-#if SALVIA_CV1K_PROBE
- const unsigned long long probeStart=salvia_cv1k_tick();
- const bool probeResult=sh3_drc_dispatch_impl<Chained,false>();
- const unsigned long long probeEnd=salvia_cv1k_tick();
- if(probeStart && probeEnd) { salvia_cv1k_probe[4]+=probeEnd-probeStart; ++salvia_cv1k_probe[5]; }
- return probeResult;
-#else
+ // The CV1000 frame loop enters sh3_drc_dispatch_impl directly, so a probe here
+ // would read zero. Probe the chained loop itself when that number is needed.
  return sh3_drc_dispatch_impl<Chained,false>();
-#endif
 }
 #undef SH3_DISPATCH_INLINE
 #endif

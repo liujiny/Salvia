@@ -86,10 +86,10 @@ switch is off.
 
 `cv1k_review_report()` prints them as one `core_phase_ms` line next to
 `core_frame_ms` and clears them, so each pause window is independent.
-`drc_dispatch` is the decisive one: if it accounts for most of `cpu_io`, the
-generated code or the dispatcher is the cost. If it is small, the cost is the
-blitter write path or the outer loop, and `worker_busy` says whether the worker
-was still busy while the emulation thread was inside that span.
+The result of that build is in `2026-10-08-cv1k-phase-split-result.md`. The
+`drc_dispatch` field read zero and was removed: the CV1000 frame loop calls
+`sh3_drc_dispatch_impl` directly, so instrumenting the `sh3_drc_dispatch`
+wrapper measured nothing.
 
 `timers` covers the remaining suspect. `Sh3Run_timerhack_impl` calls
 `sh4_run_timers(cycles)` once per slice with the *whole* slice budget, including
