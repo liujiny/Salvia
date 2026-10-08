@@ -95,39 +95,30 @@ state hash (`0cf251c3d512ddbb`) on the PowerPC harness before any console build.
   generated entry address of a recompiled block can be reused; the epoch plus
   the tag check must both pass.
 
-## Status
+## Status: implemented, measured, reverted
 
-Step 3 and step 4 are landed in `bb2455d6`: `Block` carries
-`link_block`/`link_pc`, the size asserts moved from 84 to 92 bytes, and the
-chained dispatcher takes the linked record when its tag, source pointer,
-instruction snapshot and read map all still match, falling back to the
-four-way probe otherwise. Nothing skips a validation, so the emulation result
-is unchanged by construction; the build and the hash regression for that
-commit are still outstanding.
+Steps 3 and 4 were implemented (`bb2455d6`, plus the `Block` fields that the
+first patch failed to add, in `adb3d02c`) and then reverted (`a3eec114`,
+`b8b2921f`).
 
-Steps 1, 2 and 5 are **not** implemented. They are the half that actually
-removes the metadata traffic, and they are the half that changes generated PPC,
-so they must land together with the epoch bumps. Concretely, still missing:
+On the PowerPC harness with the same 60-frame `ddpdfk` state, the linked
+dispatcher produced identical per-frame video and audio hashes and an identical
+final state (`0cf251c3d512ddbb`), so the structure was correct. It was also
+**17.5% slower in wall time: 22.63 s against the 19.26 s baseline**. Skipping the
+four-way tag probe did not pay for the extra `prev` bookkeeping and the second
+validation path.
 
-- `sh3_code_page[256]`, set by `compile()` for each block's source page.
-- A page test in the store guard emitted by `Compiler::memory()`
-  (`sh3_drc_ppc.h`, the `if (write)` block that materialises
-  `source_begin&~(size-1)` into r0). The store path has no free register: r3 is
-  the state base, r4-r10 are the guest-register cache, r11 and r12 are the
-  address scratch pair and r0 is the compare scratch, so the page index and the
-  bitmap base have to be folded into the existing comparison rather than added
-  beside it.
-- `sh3_code_epoch`, bumped from that guard, from `sh3_drc_reset()`, from the
-  arena overflow path in `allocate()`, and from the paths that drop blocks
-  (`Sh3SetDrcReadMirror`, `Sh3SetDrcDeviceRead`, `Sh3SetDrcRam`,
-  `sh3_drc_invalidate_ram`).
-- An external-write guard for cheats: the FBNeo cheat engine writes guest RAM
-  directly, so it never runs generated store code. The core must bump the epoch
-  whenever any cheat is active, or links must be disabled while it is.
-- The epilogue link check itself, in `Compiler::finish()`/`emit_exits()`: the
-  successor PC is a compile-time constant, so the check is a compare against
-  `m_pc` plus a compare against the linked epoch, then a branch to the linked
-  entry instead of `blr`.
+An earlier run appeared to pass at 19.34 s. That measurement was invalid: the
+change lives in a header, and the harness only rebuilds a translation unit when
+its `.cpp` is newer, so that run executed the previous object file.
 
-No XEX has been built from any of this. The measurement that justifies the work
-is `c12a0a60`.
+This removes the reason to write the emitter half. The dispatcher link already
+removed the probe it was meant to remove and made the frame slower, and there is
+no positive evidence for the cache-miss theory the emitter work would need. The
+direction is abandoned rather than carried into a console build.
+
+Steps 1, 2 and 5 are therefore not implemented. The specific obstacle they would
+have hit is recorded above: the store guard has no free register.
+
+No XEX was built from any of this. The measurement that motivated the attempt is
+`c12a0a60`.
