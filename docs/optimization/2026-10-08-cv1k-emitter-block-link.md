@@ -109,34 +109,34 @@ requires a real run of the XEX below.
 
 ## XEX identity
 
-The runtime tree (`E:\Baiduyundownload\salvia-toolchain\.work\Salvia-main`) was
-verified to match `ab940770` for the four changed files before the mirror, so
-only the reviewed paths were copied:
+The mirror and build are scripted: `/home/humor/salvia-tests/xex-build/build-xex.sh`.
+It mirrors only the reviewed `libretro/FBNeo/src` paths into the runtime tree
+(refusing to overwrite runtime drift unless `--force`), builds the FBNeo core
+and the Salvia frontend with the packaged VS2010/XDK toolchain over WSL Windows
+interop, checks the artifact, archives it with its logs, and deploys it. The run
+for this change was
 
 ```
-call E:\Baiduyundownload\salvia-toolchain\scripts\msbuild.cmd \
-  E:\...\Salvia-main\libretro\FBNeo\projectfiles\visualstudio-2010-libretro-360\fba_vs2010_libretro_360.sln \
-  /p:Configuration=Release /t:Build
-call E:\Baiduyundownload\salvia-toolchain\scripts\msbuild.cmd \
-  E:\...\Salvia-main\Salvia.vcxproj /p:Configuration=Release_finalburn /t:Build
+build-xex.sh --tag emitter-link --baseline ab940770 --expect-symbol sh3_code_epoch
 ```
 
-Both builds exited 0. The diagnostics header was left in the state it was found
-(`SALVIA_FBNEO_DIAGNOSTICS 1`), so `Distro360/fbneo.xex` in the runtime tree is
-the diagnostics image.
+which mirrored the four changed files (each verified to match `ab940770` in the
+runtime tree first), built both flavors, and confirmed `sh3_code_epoch` is
+present in the linked `libretro.lib`. Both flavors are `XEX2`. The container is
+encrypted, so the embedded PPC PE machine type is not file-verifiable here, and
+this toolchain package has no `xextool.exe` (the build log warns the XEX is
+copied uncompressed). Sizes match the archived known-good release class
+(34,598,912) and the prior diagnostics images (34,631,680).
 
-| Image | Size | SHA256 |
-| --- | ---: | --- |
-| release (`SALVIA_FBNEO_DIAGNOSTICS 0`) | 34,598,912 | `043a2ebe8770d2667b1f330f74871dc41def35b5975bc019774aaf01e001b6a4` |
-| diagnostics (`SALVIA_FBNEO_DIAGNOSTICS 1`) | 34,631,680 | `9497e534cae11cc42792064a09048b0f005c1e02695b2cc508bface5d032705f` |
+| Image | Size | SHA256 | Archive | Deployed |
+| --- | ---: | --- | --- | --- |
+| release (`SALVIA_FBNEO_DIAGNOSTICS 0`) | 34,598,912 | `e02d480025504f42f983dfbdbf81b01344cb9a7cc6aac536cf90567dbad67fda` | `xex-archive/fbneo-20261008-emitter-link-release.xex` | `Distro360/fbneo.xex`, `fbneo-release.xex` |
+| diagnostics (`SALVIA_FBNEO_DIAGNOSTICS 1`) | 34,631,680 | `ee01a8395d50118f837bb004814d5bd9ab6f6319d9a88f35be88318471578b99` | `xex-archive/fbneo-20261008-emitter-link-diag.xex` | `Distro360/fbneo-diag.xex` |
 
-Both are archived outside the checkout under
-`/home/humor/salvia-tests/emitter-link-20261008/` with their build logs. Each
-starts with the `XEX2` magic; the container is encrypted, so the embedded PPC PE
-machine type is not file-verifiable here, and this toolchain package has no
-`xextool.exe` (the build log warns the XEX is copied uncompressed). Sizes match
-the archived known-good release class (34,598,912) and the prior diagnostics
-images (34,631,680).
+`Distro360/fbneo.xex` is the primary flavor (release); the diagnostics image is
+`Distro360/fbneo-diag.xex`. `Distro360/` is gitignored, so the images are
+delivery artifacts, not commits. `salvia-tests/xex-build/artifact-emitter-link.json`
+records both images with their build times.
 
 What to measure on the console: frame rate under `ddpdfk`/`ddpsdoj` with the
 release image, and `drc_work_dispatch lookups`/`native_calls` plus
