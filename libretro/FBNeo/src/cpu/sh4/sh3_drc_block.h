@@ -10,13 +10,19 @@ struct Block {
  UINT16 words, cycles;
  bool check_read_map;
  UINT16 original[MAX_INSNS + 1];
+ // Successor link. The dispatcher records here which block it resolved and
+ // validated after this one, so the next visit can skip the four-way tag probe.
+ // The entry is never trusted without rechecking its tag, source pointer and
+ // instruction snapshot, so this stays a cache, never a correctness shortcut.
+ Block *link_block;
+ UINT32 link_pc;
 };
 
 // Keep frequently used metadata before the variable-length validated snapshot.
 // The 32-bit Xbox/PPC record must retain its old allocation size. The host-only
 // control-flow tests also include this declaration under their native ABI.
 typedef char Block32BitSizeUnchanged[
- (sizeof(void*) != 4 || sizeof(Block) == 84) ? 1 : -1];
+ (sizeof(void*) != 4 || sizeof(Block) == 92) ? 1 : -1];
 typedef char Block32BitHotOffsets[
  (sizeof(void*) != 4 ||
   (offsetof(Block,pc) == 0 && offsetof(Block,source) == 4 &&
@@ -25,4 +31,7 @@ typedef char Block32BitHotOffsets[
    offsetof(Block,original) == 18)) ? 1 : -1];
 typedef char BlockSnapshotHalfwordAligned[
  (offsetof(Block,original) % sizeof(UINT16) == 0) ? 1 : -1];
+typedef char Block32BitLinkOffsets[
+ (sizeof(void*) != 4 ||
+  (offsetof(Block,link_block) == 84 && offsetof(Block,link_pc) == 88)) ? 1 : -1];
 #endif
