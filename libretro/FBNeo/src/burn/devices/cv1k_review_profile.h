@@ -3,7 +3,17 @@
 #define SALVIA_CV1K_REVIEW_PROFILE_H
 #include <string.h>
 #include "salvia_fbneo_diagnostics.h"
-#define SALVIA_CV1K_REVIEW_BUILD "cv1k-clipped-invalidation-20261001-r1"
+#include "salvia_cv1k_buildtag.h"
+// Name the image in every pause report, so a log cannot be attributed to the
+// wrong build. The build script injects tag+commit+time+flavor through the
+// buildtag header; without it the compile date/time and the flavor remain.
+#ifdef SALVIA_CV1K_BUILD_TAG
+#define SALVIA_CV1K_REVIEW_BUILD SALVIA_CV1K_BUILD_TAG
+#elif SALVIA_FBNEO_DIAGNOSTICS
+#define SALVIA_CV1K_REVIEW_BUILD "drc " __DATE__ " " __TIME__ " diag"
+#else
+#define SALVIA_CV1K_REVIEW_BUILD "drc " __DATE__ " " __TIME__ " release"
+#endif
 // Use the existing PRNG result. Workload-count frames and timing frames are disjoint.
 static inline bool salvia_review_work_sample(unsigned randomWord, bool timingSample) {
     return !timingSample && (randomWord & 255u) == 1u;
