@@ -31,6 +31,12 @@ struct Sh3DrcWorkProfile {
  Sh3WorkCount snapshot_lengths[34];
  // High-byte opcode families actually sent to the interpreter in sampled frames.
  Sh3WorkCount interpreter_hi8[256];
+#if defined(SH3_PPC_DRC_WORK_TEST)
+ // Host differential builds only: exact 16-bit histogram of the opcodes the
+ // interpreter fallback sites consume. Diagnostic width, never in the console
+ // image, and the increment is compiled out of the console work-sample path.
+ Sh3WorkCount interpreter_op16[65536];
+#endif
  Sh3FallbackDetail fallback;
  Sh3IdleCandidates idle_candidates;
  void clear() { memset(this,0,sizeof(*this)); }

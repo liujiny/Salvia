@@ -46,7 +46,7 @@ INT32 Sh3GetActive();
 
 void Sh3Reset();
 INT32 Sh3Run(INT32 cycles);
-#ifdef _XBOX
+#if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
 // Explicit low-frequency diagnostic runner; ordinary Sh3Run remains uninstrumented.
 void Sh3WorkBeginFrame();
 INT32 Sh3WorkRun(INT32 cycles);

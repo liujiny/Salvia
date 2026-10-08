@@ -73,10 +73,12 @@ template<unsigned N> struct SalviaReviewTail {
     }
 };
 
-#ifdef _XBOX
-#include <xtl.h>
 // Defined by the statically linked frontend; accessed only on the emulation thread.
 extern "C" { extern unsigned salvia_cv1k_work_sample_frame; }
+// The wall clock is a Windows/console facility; host differential builds only
+// need the workload counters, never the timing samples.
+#ifdef _XBOX
+#include <xtl.h>
 static inline SalviaReviewTick salvia_review_clock() {
     LARGE_INTEGER now;
     if (!QueryPerformanceCounter(&now) || now.QuadPart <= 0) return 0;

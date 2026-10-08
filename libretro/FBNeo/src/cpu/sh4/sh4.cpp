@@ -4773,6 +4773,9 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 			m_ppc = m_pc;
 
 			if (Count) ++sh3_drc_work.interpreter_hi8[opcode >> 8];
+#if defined(SH3_PPC_DRC_WORK_TEST)
+			if (Count) ++sh3_drc_work.interpreter_op16[opcode];
+#endif
 			sh3_execute_hot_fallback(opcode);
 		}
 		else
@@ -4784,6 +4787,9 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 			m_ppc = m_pc;
 
 			if (Count) ++sh3_drc_work.interpreter_hi8[opcode >> 8];
+#if defined(SH3_PPC_DRC_WORK_TEST)
+			if (Count) ++sh3_drc_work.interpreter_op16[opcode];
+#endif
 			sh3_execute_hot_fallback(opcode);
 		}
 		if (m_test_irq && !m_delay)
@@ -4867,7 +4873,13 @@ int Sh3Run(int cycles)
 	return (timer_granularity == 0) ? Sh3Run_normal(cycles) : Sh3Run_timerhack(cycles);
 }
 
-#ifdef _XBOX
+#if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
+// Portable 64-bit counter format: MSVC spells it %I64u, everything else %llu.
+#if defined(_MSC_VER)
+#define SH3_WORK_COUNT "I64u"
+#else
+#define SH3_WORK_COUNT "llu"
+#endif
 void Sh3WorkBeginFrame() { ++sh3_drc_work.frames; }
 void Sh3WorkReset() { sh3_drc_work.clear(); }
 int Sh3WorkRun(int cycles)
@@ -4884,22 +4896,22 @@ void Sh3WorkReport(void (*emit)(const char*))
 	if (!emit) return;
 	char text[768];
 	const Sh3DrcWorkProfile &p = sh3_drc_work;
-	sprintf(text,"drc_work sampling=random-1-in-256-disjoint frames=%I64u slices=%I64u cpu_off=%I64u normal_mode=%I64u counts_only=1",
+	sprintf(text,"drc_work sampling=random-1-in-256-disjoint frames=%" SH3_WORK_COUNT " slices=%" SH3_WORK_COUNT " cpu_off=%" SH3_WORK_COUNT " normal_mode=%" SH3_WORK_COUNT " counts_only=1",
 		p.frames,p.slices,p.cpu_off_slices,p.normal_mode_slices); emit(text);
-	sprintf(text,"drc_work_dispatch calls=%I64u lookups=%I64u rebuilds=%I64u validation_spans=%I64u requested_words=%I64u",
+	sprintf(text,"drc_work_dispatch calls=%" SH3_WORK_COUNT " lookups=%" SH3_WORK_COUNT " rebuilds=%" SH3_WORK_COUNT " validation_spans=%" SH3_WORK_COUNT " requested_words=%" SH3_WORK_COUNT,
 		p.dispatch_calls,p.lookups,p.rebuilds,p.validation_spans,p.validation_words); emit(text);
-	sprintf(text,"drc_work_rebuild_causes conflict=%I64u source=%I64u read_map=%I64u",
+	sprintf(text,"drc_work_rebuild_causes conflict=%" SH3_WORK_COUNT " source=%" SH3_WORK_COUNT " read_map=%" SH3_WORK_COUNT,
 		p.rebuild_conflict,p.rebuild_source,p.rebuild_map); emit(text);
-	sprintf(text,"drc_work_arena bytes=%u words=%u recycles=%I64u peak_words=%I64u peak_bytes=%I64u",
+	sprintf(text,"drc_work_arena bytes=%u words=%u recycles=%" SH3_WORK_COUNT " peak_words=%" SH3_WORK_COUNT " peak_bytes=%" SH3_WORK_COUNT,
 		(unsigned)Sh3Ppc::CACHE_BYTES,(unsigned)(Sh3Ppc::CACHE_BYTES/4),p.arena_recycles,p.arena_peak,p.arena_peak*4); emit(text);
-	sprintf(text,"drc_work_execution native_calls=%I64u native_guest_cycles=%I64u interpreter_steps=%I64u interpreter_guest_cycles=%I64u not_host_time=1",
+	sprintf(text,"drc_work_execution native_calls=%" SH3_WORK_COUNT " native_guest_cycles=%" SH3_WORK_COUNT " interpreter_steps=%" SH3_WORK_COUNT " interpreter_guest_cycles=%" SH3_WORK_COUNT " not_host_time=1",
 		p.native_calls,p.native_cycles,p.interpreter_steps,p.interpreter_cycles); emit(text);
-	sprintf(text,"drc_work_exits gate=%I64u fetch=%I64u no_entry=%I64u short_budget=%I64u partial=%I64u boundary=%I64u",
+	sprintf(text,"drc_work_exits gate=%" SH3_WORK_COUNT " fetch=%" SH3_WORK_COUNT " no_entry=%" SH3_WORK_COUNT " short_budget=%" SH3_WORK_COUNT " partial=%" SH3_WORK_COUNT " boundary=%" SH3_WORK_COUNT,
 		p.exit_gate,p.exit_fetch,p.exit_no_entry,p.exit_budget,p.exit_partial,p.exit_boundary); emit(text);
 	// Bounded groups remain safe even if every 64-bit counter reaches 20 digits.
 	for (unsigned start=0;start<34;start+=8) {
 		int n=sprintf(text,"drc_work_snapshot_lengths");
-		for (unsigned i=start;i<start+8 && i<34;++i) n+=sprintf(text+n," %u=%I64u",i,p.snapshot_lengths[i]);
+		for (unsigned i=start;i<start+8 && i<34;++i) n+=sprintf(text+n," %u=%" SH3_WORK_COUNT,i,p.snapshot_lengths[i]);
 		emit(text);
 	}
 	bool selected[256]={false};
@@ -4909,18 +4921,42 @@ void Sh3WorkReport(void (*emit)(const char*))
 			if (!selected[i] && p.interpreter_hi8[i] && (best==256 || p.interpreter_hi8[i]>p.interpreter_hi8[best])) best=i;
 		if (best==256) break;
 		selected[best]=true;
-		sprintf(text,"drc_work_interpreter rank=%u opcode_hi8=%02X count=%I64u",rank+1,best,p.interpreter_hi8[best]); emit(text);
+		sprintf(text,"drc_work_interpreter rank=%u opcode_hi8=%02X count=%" SH3_WORK_COUNT,rank+1,best,p.interpreter_hi8[best]); emit(text);
 	}
+#if defined(SH3_PPC_DRC_WORK_TEST)
+	{
+		// Exact interpreter opcodes, highest first. Bounded output; a fixed
+		// 16-entry insertion list keeps the report allocation-free.
+		unsigned top_op[16]; Sh3WorkCount top_ct[16];
+		memset(top_op,0,sizeof(top_op)); memset(top_ct,0,sizeof(top_ct));
+		for (unsigned i=0;i<0x10000u;++i) {
+			Sh3WorkCount v=p.interpreter_op16[i];
+			if (!v) continue;
+			for (unsigned k=0;k<16;++k) {
+				if (v>top_ct[k]) {
+					for (unsigned j=15;j>k;--j) { top_ct[j]=top_ct[j-1]; top_op[j]=top_op[j-1]; }
+					top_ct[k]=v; top_op[k]=i;
+					break;
+				}
+			}
+		}
+		for (unsigned k=0;k<16 && top_ct[k];++k) {
+			sprintf(text,"drc_work_opcode16 rank=%u opcode=%04X count=%" SH3_WORK_COUNT,k+1,top_op[k],top_ct[k]);
+			emit(text);
+		}
+	}
+#endif
 	sh3_fallback_report(p.fallback,emit);
 	sh3_idle_candidate_report(p.idle_candidates,emit);
-	sprintf(text,"drc_movll_service handled=%I64u guest_cycles=%I64u rejected=%I64u handler=RL native_returns_retained=1",
+	sprintf(text,"drc_movll_service handled=%" SH3_WORK_COUNT " guest_cycles=%" SH3_WORK_COUNT " rejected=%" SH3_WORK_COUNT " handler=RL native_returns_retained=1",
 		p.movll_services,p.movll_service_cycles,p.movll_service_rejects); emit(text);
 	for(unsigned i=0;i<2;++i) {
-		sprintf(text,"drc_device_read slot=%u address=%08X handler=%u handled=%I64u guest_cycles=%I64u fallback=%I64u handler_path=RL",
+		sprintf(text,"drc_device_read slot=%u address=%08X handler=%u handled=%" SH3_WORK_COUNT " guest_cycles=%" SH3_WORK_COUNT " fallback=%" SH3_WORK_COUNT " handler_path=RL",
 			i,sh3_device_reads[i].address,sh3_device_reads[i].handler,p.device_services[i],p.device_service_cycles[i],p.device_fallbacks[i]); emit(text);
 	}
 	sh3_drc_work.clear();
 }
+#undef SH3_WORK_COUNT
 #endif
 
 #if 0
