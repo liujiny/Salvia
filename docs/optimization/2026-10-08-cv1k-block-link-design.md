@@ -97,6 +97,37 @@ state hash (`0cf251c3d512ddbb`) on the PowerPC harness before any console build.
 
 ## Status
 
-Design only. No source change is committed with this document, and no XEX was
-built from it. The previous landing (`c12a0a60`) is the measurement that
-justifies the work.
+Step 3 and step 4 are landed in `bb2455d6`: `Block` carries
+`link_block`/`link_pc`, the size asserts moved from 84 to 92 bytes, and the
+chained dispatcher takes the linked record when its tag, source pointer,
+instruction snapshot and read map all still match, falling back to the
+four-way probe otherwise. Nothing skips a validation, so the emulation result
+is unchanged by construction; the build and the hash regression for that
+commit are still outstanding.
+
+Steps 1, 2 and 5 are **not** implemented. They are the half that actually
+removes the metadata traffic, and they are the half that changes generated PPC,
+so they must land together with the epoch bumps. Concretely, still missing:
+
+- `sh3_code_page[256]`, set by `compile()` for each block's source page.
+- A page test in the store guard emitted by `Compiler::memory()`
+  (`sh3_drc_ppc.h`, the `if (write)` block that materialises
+  `source_begin&~(size-1)` into r0). The store path has no free register: r3 is
+  the state base, r4-r10 are the guest-register cache, r11 and r12 are the
+  address scratch pair and r0 is the compare scratch, so the page index and the
+  bitmap base have to be folded into the existing comparison rather than added
+  beside it.
+- `sh3_code_epoch`, bumped from that guard, from `sh3_drc_reset()`, from the
+  arena overflow path in `allocate()`, and from the paths that drop blocks
+  (`Sh3SetDrcReadMirror`, `Sh3SetDrcDeviceRead`, `Sh3SetDrcRam`,
+  `sh3_drc_invalidate_ram`).
+- An external-write guard for cheats: the FBNeo cheat engine writes guest RAM
+  directly, so it never runs generated store code. The core must bump the epoch
+  whenever any cheat is active, or links must be disabled while it is.
+- The epilogue link check itself, in `Compiler::finish()`/`emit_exits()`: the
+  successor PC is a compile-time constant, so the check is a compare against
+  `m_pc` plus a compare against the linked epoch, then a branch to the linked
+  entry instead of `blr`.
+
+No XEX has been built from any of this. The measurement that justifies the work
+is `c12a0a60`.
