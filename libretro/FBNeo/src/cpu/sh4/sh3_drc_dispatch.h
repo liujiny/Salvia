@@ -5,6 +5,12 @@
 #include "sh3_drc_source_check.h"
 #include "sh3_drc_lookup.h"
 #include "sh3_drc_work_profile.h"
+#if defined(_XBOX)
+#include "salvia_cv1k_probe.h"
+#endif
+#ifndef SALVIA_CV1K_PROBE
+#define SALVIA_CV1K_PROBE 0
+#endif
 
 // Keep the native loop in the caller: interpreter fallback should not pay a
 // second dispatcher stack frame. This does not inline/link generated PPC blocks.
@@ -82,7 +88,19 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    ++sh3_drc_work.native_calls;
    ++sh3_drc_work.snapshot_lengths[b.words<=33?b.words:33];
   }
+#if SALVIA_CV1K_PROBE
+  static unsigned probeTick=0;
+  const bool probeNow=((++probeTick&63u)==0);
+  unsigned long long probeStart=0;
+  if(probeNow) probeStart=salvia_cv1k_tick();
+#endif
   const int completed=b.entry(&sh3_ppc_state);
+#if SALVIA_CV1K_PROBE
+  if(probeNow) {
+   const unsigned long long probeEnd=salvia_cv1k_tick();
+   if(probeStart && probeEnd) { salvia_cv1k_probe[6]+=probeEnd-probeStart; ++salvia_cv1k_probe[7]; }
+  }
+#endif
   if(Count) sh3_drc_work.native_cycles+=(unsigned)(before-m_sh4_icount);
   // A compiler-tagged idle/device MOV.L needs one real handler access, but
   // no opcode refetch or trip through the outer interpreter decoder.
@@ -101,7 +119,15 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
 // Normal callers instantiate no workload bookkeeping and no runtime Count test.
 template<bool Chained> static SH3_DISPATCH_INLINE bool sh3_drc_dispatch()
 {
+#if SALVIA_CV1K_PROBE
+ const unsigned long long probeStart=salvia_cv1k_tick();
+ const bool probeResult=sh3_drc_dispatch_impl<Chained,false>();
+ const unsigned long long probeEnd=salvia_cv1k_tick();
+ if(probeStart && probeEnd) { salvia_cv1k_probe[4]+=probeEnd-probeStart; ++salvia_cv1k_probe[5]; }
+ return probeResult;
+#else
  return sh3_drc_dispatch_impl<Chained,false>();
+#endif
 }
 #undef SH3_DISPATCH_INLINE
 #endif

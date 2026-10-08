@@ -8,8 +8,13 @@
 #include "serflash.h"
 #include "rtc9701.h"
 #include "ymz770.h"
-#ifdef _XBOX
+#if defined(_XBOX) || defined(SH3_PPC_DRC_WORK_TEST)
 #include "cv1k_review_profile.h"
+#endif
+#if defined(_XBOX)
+#include "salvia_cv1k_probe.h"
+#endif
+#ifdef _XBOX
 extern INT32 nBurnRenderCores;
 static SalviaReviewProfile<4> cv1k_review;
 static SalviaReviewTail<4> cv1k_review_tail;
@@ -90,6 +95,24 @@ void cv1k_review_report(void (*emit)(const char*))
         }
     }
     Sh3WorkReport(emit);
+#if SALVIA_CV1K_PROBE
+    {
+        LARGE_INTEGER probeFrequency;
+        if (QueryPerformanceFrequency(&probeFrequency) && probeFrequency.QuadPart > 0) {
+            const double unit = 1000.0 / (double)probeFrequency.QuadPart;
+            sprintf(text, "core_phase_ms window=%u worker_busy=%.3f worker_jobs=%I64u blit_write=%.3f blit_calls=%I64u drc_dispatch=%.3f dispatch_calls=%I64u blk_entry=%.3f entry_samples=%I64u movll_service=%.3f service_samples=%I64u timers=%.3f timer_callbacks=%I64u",
+                cv1k_review.frames,
+                salvia_cv1k_probe[0] * unit, (unsigned __int64)salvia_cv1k_probe[1],
+                salvia_cv1k_probe[2] * unit, (unsigned __int64)salvia_cv1k_probe[3],
+                salvia_cv1k_probe[4] * unit, (unsigned __int64)salvia_cv1k_probe[5],
+                salvia_cv1k_probe[6] * unit, (unsigned __int64)salvia_cv1k_probe[7],
+                salvia_cv1k_probe[8] * unit, (unsigned __int64)salvia_cv1k_probe[9],
+                salvia_cv1k_probe[10] * unit, (unsigned __int64)salvia_cv1k_probe[11]);
+            emit(text);
+            for (unsigned i = 0; i < 12; ++i) salvia_cv1k_probe[i] = 0;
+        }
+    }
+#endif
     cv1k_review.clear_window();
     cv1k_review_tail.clear_window();
 #endif
@@ -669,7 +692,13 @@ static INT32 DrvFrame()
 	if (DrvReset) {
 		DrvDoReset();
 	}
-#ifdef _XBOX
+#if defined(SH3_PPC_DRC_WORK_TEST)
+	// Host differential build: a fixed replay is replayed frame for frame, so
+	// profiling every frame is deterministic and strictly more useful than the
+	// console's random 1-in-256 disjoint sample. No clocks, no file I/O.
+	const bool workSample = (DrvDips[1] & 2) && !(DrvDips[3] & 0x10);
+	salvia_cv1k_work_sample_frame = workSample ? 1u : 0u;
+#elif defined(_XBOX)
 	const bool reviewSample = SALVIA_FBNEO_DIAGNOSTICS && cv1k_review.begin();
 	const bool workSample = SALVIA_FBNEO_DIAGNOSTICS && salvia_review_work_sample(cv1k_review.rng, reviewSample) &&
 		(DrvDips[1] & 2) && !(DrvDips[3] & 0x10);
@@ -742,7 +771,7 @@ static INT32 DrvFrame()
 
 	Sh3Open(0);
 
-#ifdef _XBOX
+#if defined(_XBOX) || defined(SH3_PPC_DRC_WORK_TEST)
 	if (workSample) {
 		Sh3WorkBeginFrame();
 		for (INT32 i = 0; i < nInterleave; i++) {

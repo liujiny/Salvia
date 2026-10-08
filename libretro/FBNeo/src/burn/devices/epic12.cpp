@@ -11,7 +11,20 @@ Redistributions may not be sold, nor may they be used in a commercial product or
 #include "sh4_intf.h"
 #include "epic12_thread.h"
 #include "rectangle.h"
+#include "salvia_cv1k_probe.h"
 #include <math.h> // floor()
+
+#if SALVIA_CV1K_PROBE
+#include <xtl.h>
+extern "C" {
+unsigned long long salvia_cv1k_probe[12];
+unsigned long long salvia_cv1k_tick(void)
+{
+	LARGE_INTEGER now;
+	return QueryPerformanceCounter(&now) ? (unsigned long long)now.QuadPart : 0ull;
+}
+}
+#endif
 
 static const int EP1C_VRAM_CLK_NANOSEC = 13;
 static const int EP1C_SRAM_CLK_NANOSEC = 20;
@@ -310,7 +323,14 @@ static void gfx_exec(); // forward
 static void run_blitter_cb()
 {
 	epic12_device_blit_delay = 0;
+#if SALVIA_CV1K_PROBE
+	unsigned long long jobStart = salvia_cv1k_tick();
+#endif
 	gfx_exec();
+#if SALVIA_CV1K_PROBE
+	unsigned long long jobEnd = salvia_cv1k_tick();
+	if (jobStart && jobEnd) { salvia_cv1k_probe[0] += jobEnd - jobStart; ++salvia_cv1k_probe[1]; }
+#endif
 }
 
 void epic12_exit()
@@ -1088,6 +1108,9 @@ static void gfx_exec_write(UINT32 data)
 	{
 		if (data & 1)
 		{
+#if SALVIA_CV1K_PROBE
+			unsigned long long writeStart = salvia_cv1k_tick();
+#endif
 			thready.notify_wait();
 
 			m_gfx_clip_x_shadowcopy = m_gfx_clip_x;
@@ -1099,6 +1122,10 @@ static void gfx_exec_write(UINT32 data)
 			gfx_create_shadow_copy();
 
 			m_gfx_addr_shadowcopy = m_gfx_addr;
+#if SALVIA_CV1K_PROBE
+			unsigned long long writeEnd = salvia_cv1k_tick();
+			if (writeStart && writeEnd) { salvia_cv1k_probe[2] += writeEnd - writeStart; ++salvia_cv1k_probe[3]; }
+#endif
 
 			if (m_delay_method) // old method
 			{

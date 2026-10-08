@@ -28,6 +28,12 @@ Redistributions may not be sold, nor may they be used in a commercial product or
  *****************************************************************************/
 
 #include "burnint.h"
+#if defined(_XBOX)
+#include "salvia_cv1k_probe.h"
+#endif
+#ifndef SALVIA_CV1K_PROBE
+#define SALVIA_CV1K_PROBE 0
+#endif
 #include "sh4_intf.h"
 #include <stddef.h>
 #include "sh4.h"
@@ -354,6 +360,9 @@ struct sh4_dtimer
 				running = 0;
 			}
 			if (timer_exec) {
+#if SALVIA_CV1K_PROBE
+				++salvia_cv1k_probe[11];
+#endif
 				timer_exec(timer_param);
 			}
 		}
@@ -373,6 +382,9 @@ struct sh4_dtimer
 					//break;
 				}
 				if (timer_exec) {
+#if SALVIA_CV1K_PROBE
+					++salvia_cv1k_probe[11];
+#endif
 					timer_exec(timer_param); // NOTE: this cb _might_ re-start/init the timer!
 				}
 				//time_current -= time_trig;
@@ -4807,7 +4819,16 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 
 	cycles = cycles - m_sh4_icount;
 
+#if SALVIA_CV1K_PROBE
+	{
+		const unsigned long long timerStart=salvia_cv1k_tick();
+		sh4_run_timers(cycles);
+		const unsigned long long timerEnd=salvia_cv1k_tick();
+		if(timerStart && timerEnd) salvia_cv1k_probe[10]+=timerEnd-timerStart;
+	}
+#else
 	sh4_run_timers(cycles);
+#endif
 
 	m_sh4_icount = 0;
 

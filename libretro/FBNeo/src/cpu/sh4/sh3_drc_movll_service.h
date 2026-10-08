@@ -2,6 +2,12 @@
 // Handles board-declared idle/device loads. No direct RAM/device shortcut.
 #ifndef FBNEO_SH3_DRC_MOVLL_SERVICE_H
 #define FBNEO_SH3_DRC_MOVLL_SERVICE_H
+#if defined(_XBOX)
+#include "salvia_cv1k_probe.h"
+#endif
+#ifndef SALVIA_CV1K_PROBE
+#define SALVIA_CV1K_PROBE 0
+#endif
 template<bool Count> static bool sh3_drc_service_movll(unsigned opcode)
 {
  if(!sh3_drc_enabled || (opcode&0xf00fu)!=0x6002u) {
@@ -37,6 +43,12 @@ template<bool Count> static bool sh3_drc_service_movll(unsigned opcode)
   return false;
  }
  int before=0;
+#if SALVIA_CV1K_PROBE
+  static unsigned probeTick=0;
+  const bool probeNow=((++probeTick&63u)==0);
+  unsigned long long probeStart=0;
+  if(probeNow) probeStart=salvia_cv1k_tick();
+#endif
  if(Count) {
   before=m_sh4_icount; ++sh3_drc_work.movll_services;
   if(device<2) ++sh3_drc_work.device_services[device];
@@ -50,6 +62,12 @@ template<bool Count> static bool sh3_drc_service_movll(unsigned opcode)
  MOVLL((UINT16)opcode); // unchanged EA update -> RL -> WaitState/ReadLong
  if(m_test_irq && !m_delay) sh4_check_pending_irq();
  EAT(1); // base instruction cost AFTER handler/IRQ, as in timerhack
+#if SALVIA_CV1K_PROBE
+  if(probeNow) {
+   const unsigned long long probeEnd=salvia_cv1k_tick();
+   if(probeStart && probeEnd) { salvia_cv1k_probe[8]+=probeEnd-probeStart; ++salvia_cv1k_probe[9]; }
+  }
+#endif
  if(Count) {
   const unsigned elapsed=(unsigned)(before-m_sh4_icount);
   sh3_drc_work.movll_service_cycles+=elapsed;
