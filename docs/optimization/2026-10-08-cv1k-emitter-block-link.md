@@ -209,6 +209,56 @@ supported by the console data. The linked blocks do not pay for themselves
 per frame, and the extra time sits in the block-entry span (which now includes
 linked successors), not in the dispatcher machinery.
 
+## Console A/B, workload-matched windows
+
+The pair above is not workload-matched. The follow-up runs used the same state
+with identical (no) input and several pauses, so windows can be paired. Two
+diagnostics logs, three and four pauses: `cv1000-gpu.baseline.log`
+(`2c8c2d1f…`) and `cv1000-gpu.link.log` (tag
+`emitter-link c0c6989b 20261008-2145 diag`).
+
+Per window (`interval_frames` accumulates from the state load; the emulation is
+deterministic, so equal cumulative frames mean equal scenes):
+
+| Window | cumulative frames | timing samples | `cpu_io` | `drc_dispatch`/frame | dispatcher blocks/frame | executed guest cycles/frame |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| baseline W2 | 1482 | 24 | 13.668 | 11.841 | 39,782 | 457,096 |
+| baseline W3 | 2729 | 18 | 15.010 | 14.447 | 45,820 | 451,077 |
+| link W2 | 891 | 16 | 12.811 | 11.270 | 27,995 | 307,669 |
+| link W3 | 2886 | 29 | 15.261 | 14.097 | 34,241 | 444,460 |
+| link W4 | 3388 | 6 | 12.596 | 11.472 | 28,453 | 323,193 |
+
+Only baseline W3 and link W3 are workload-matched: executed guest cycles per
+frame differ by 1.5% and idle burn by 0.5% (both windows sum to the same
+one-frame slice budget), and their cumulative frame indices are 157 apart.
+
+| Matched pair (baseline W3 vs link W3) | baseline | link | delta |
+| --- | ---: | ---: | ---: |
+| executed guest cycles/frame | 451,077 | 444,460 | -1.5% |
+| idle-burn guest cycles/frame | 1,255,756 | 1,262,248 | +0.5% |
+| dispatcher-issued blocks/frame | 45,820 | 34,241 | **-25.3%** |
+| work-sampled `native_calls`/frame | 47,648 | 37,206 | **-21.9%** |
+| `core_frame_ms cpu_io` | 15.010 | 15.261 | +1.7% |
+| `core_frame_ms total` | 16.002 | 16.258 | +1.6% |
+| `frontend_frame_ms sampled_active_loop` | 17.969 | 17.900 | -0.4% |
+| `core_phase_ms drc_dispatch` | 14.447 | 14.097 | -2.4% |
+| chained entries/frame | 1,489 | 1,521 | +2.1% |
+| sampled block-entry span | 0.1799 us | 0.2667 us | +48% |
+
+At matched workload the change is neutral: the whole-iteration time is -0.4%
+and the core is +1.6-1.7%, while the link demonstrably removes 22-25% of the
+dispatcher's block entries. Window-to-window spread at comparable work reaches
+-10% (baseline W2 vs W3: 13.668 vs 15.010 ms), so a 2% effect is not
+resolvable from these logs.
+
+**What this means for the next step.** Removing 22% of dispatcher block entries
+bought no frame time, so the dispatcher's per-block cost is not exposed on the
+Xenon: at most ~110 host cycles per removed entry, not the ~737 the phase-split
+result assumed when it subtracted an estimated generated-code share. The
+"737 cycles mostly cache-miss stalls" model is not supported. The next target
+should be the generated code itself and the number of blocks, not the
+dispatcher's metadata traffic.
+
 What to measure on the console: frame rate under `ddpdfk`/`ddpsdoj` with the
 release image, and `drc_work_dispatch lookups`/`native_calls` plus
 `core_phase_ms drc_dispatch` with the diagnostics image, where the link shows up
