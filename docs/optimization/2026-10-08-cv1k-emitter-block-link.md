@@ -168,6 +168,47 @@ the `sh3_code_page[4096]` bitmap — and `.text` by 480 bytes, and
 `.reloc` by 176. The release and diagnostics images differ in size only by the
 probe code, so sizes alone cannot identify a flavor; the `.data` delta can.
 
+## Console A/B result
+
+Two diagnostics runs of `ddpdfk` from the same state and DIPs
+(`00,07,00,00`), one pause each: `Distro360/fbneo-baseline-diag.xex`
+(ab940770, `2c8c2d1f…`) and `Distro360/fbneo.xex` (`da42738c…`, tagged
+`emitter-link c0c6989b 20261008-2145 diag`). The pause reports are
+`Distro360/cv1000-gpu.baseline.log` and `cv1000-gpu.link.log`.
+
+The main window of each log (the cold first window is excluded):
+
+| Per frame | baseline ab940770 | emitter link | delta |
+| --- | ---: | ---: | ---: |
+| window / timing samples | 2900 / 45 | 3615 / 52 | |
+| `core_frame_ms cpu_io` | 16.319 | 17.000 | +4.2% |
+| `core_frame_ms total` | 17.531 | 18.025 | +2.8% |
+| `frontend_frame_ms sampled_active_loop` | 19.711 | 19.915 | +1.0% |
+| `core_phase_ms drc_dispatch` | 14.387 | 15.665 | +8.9% |
+| chained entries | 1,494 | 1,510 | +1.1% |
+| dispatcher-issued blocks (`entry_samples*64`) | 46,342 | 37,467 | **-19.2%** |
+| sampled block-entry span | 0.1804 us | 0.2709 us | +50% |
+| work-sampled `native_calls` | 40,578 | 40,433 | -0.4% |
+| work-sampled executed guest cycles | 370,222 | 483,863 | **+30.7%** |
+| work-sampled idle-burn guest cycles | 1,336,532 | 1,222,865 | -8.5% |
+| arena `peak_words` / `recycles` | 5,239,444 / 1 | 5,238,992 / 2 | full |
+
+What the pair settles: the link fires — the dispatcher issues 19.2% fewer block
+entries, which matches the 20-23% the host harness measured.
+
+What it does not settle: the two runs are not workload-matched. Executed guest
+cycles per frame differ by 30.7% while idle burn differs by -8.5% (both sum to
+the same 1,706,7xx one-frame slice budget), so the emitter-link run played a
+busier scene. Read per frame the change is +2.8% slower; read per executed
+guest cycle it is ~21% cheaper. The frame-time mean (45/52 samples) and the
+workload sample (12/14 disjoint work frames) come from different frames, so the
+two readings cannot be combined.
+
+No gain is demonstrated. The earlier 5-12% estimate in this document is not
+supported by the console data. The linked blocks do not pay for themselves
+per frame, and the extra time sits in the block-entry span (which now includes
+linked successors), not in the dispatcher machinery.
+
 What to measure on the console: frame rate under `ddpdfk`/`ddpsdoj` with the
 release image, and `drc_work_dispatch lookups`/`native_calls` plus
 `core_phase_ms drc_dispatch` with the diagnostics image, where the link shows up
