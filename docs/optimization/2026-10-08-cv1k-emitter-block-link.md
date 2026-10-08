@@ -130,13 +130,22 @@ copied uncompressed). Sizes match the archived known-good release class
 
 | Image | Size | SHA256 | Archive | Deployed |
 | --- | ---: | --- | --- | --- |
-| release (`SALVIA_FBNEO_DIAGNOSTICS 0`) | 34,598,912 | `e02d480025504f42f983dfbdbf81b01344cb9a7cc6aac536cf90567dbad67fda` | `xex-archive/fbneo-20261008-emitter-link-release.xex` | `Distro360/fbneo.xex`, `fbneo-release.xex` |
-| diagnostics (`SALVIA_FBNEO_DIAGNOSTICS 1`) | 34,631,680 | `ee01a8395d50118f837bb004814d5bd9ab6f6319d9a88f35be88318471578b99` | `xex-archive/fbneo-20261008-emitter-link-diag.xex` | `Distro360/fbneo-diag.xex` |
+| release (`SALVIA_FBNEO_DIAGNOSTICS 0`) | 34,598,912 | `e02d480025504f42f983dfbdbf81b01344cb9a7cc6aac536cf90567dbad67fda` | `xex-archive/fbneo-20261008-emitter-link-release.xex` | `Distro360/fbneo-release.xex` |
+| diagnostics (`SALVIA_FBNEO_DIAGNOSTICS 1`) | 34,631,680 | `ee01a8395d50118f837bb004814d5bd9ab6f6319d9a88f35be88318471578b99` | `xex-archive/fbneo-20261008-emitter-link-diag.xex` | `Distro360/fbneo.xex`, `fbneo-diag.xex` |
 
-`Distro360/fbneo.xex` is the primary flavor (release); the diagnostics image is
-`Distro360/fbneo-diag.xex`. `Distro360/` is gitignored, so the images are
-delivery artifacts, not commits. `salvia-tests/xex-build/artifact-emitter-link.json`
-records both images with their build times.
+`Distro360/fbneo.xex` is the diagnostics image, matching the convention the
+earlier probe runs used: the review report and every probe are inside
+`#if SALVIA_FBNEO_DIAGNOSTICS`, so a release image compiles the whole log path
+out and pausing writes nothing at all. Use `fbneo.xex`/`fbneo-diag.xex` for the
+`cv1000-gpu.log` evidence and `fbneo-release.xex` for a frame-rate measurement.
+`Distro360/` is gitignored, so the images are delivery artifacts, not commits.
+`salvia-tests/xex-build/artifact-emitter-link.json` records both images with
+their build times.
+
+The diagnostics image writes `game:\cv1000-gpu.log` next to the XEX. It is
+flushed from the pause callback (`epic12_xenos_pause_diagnostics` ->
+`cv1k_review_report`), so a run must be **paused** once before the file appears.
+The `drc_work_*` counters additionally need DIP B bit 2 set (`dips=00,07,00,00`).
 
 What to measure on the console: frame rate under `ddpdfk`/`ddpsdoj` with the
 release image, and `drc_work_dispatch lookups`/`native_calls` plus
