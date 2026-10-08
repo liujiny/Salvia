@@ -211,3 +211,36 @@ and measured 17.5% slower, so "skip one table access" is not the fix. The
 consistent reading is that the fixed per-block cost is large and mostly not
 instruction work, which makes the number of blocks, not the cost of a probe, the
 quantity to attack.
+
+## Why the fixed cost hurts: the blocks are tiny
+
+Block instruction-length histogram from the 60-frame host trace of the same
+state (5,658,274 dispatched blocks, `drc_work_snapshot_lengths`):
+
+| Snapshot length (SH3 instructions) | Dispatches | Share |
+| --- | ---: | ---: |
+| 1-7 | 2,700,400 | 47.7% |
+| 8-15 | 1,794,206 | 31.7% |
+| 16-23 | 320,096 | 5.7% |
+| 24-31 | 93,429 | 1.7% |
+| 32 (the `MAX_INSNS` cap) | 223,238 | 3.9% |
+
+Nearly half of all dispatches execute a block of one to seven SH3
+instructions. Only 3.9% reach the cap, so raising `MAX_INSNS` would not help:
+blocks end because SH3 control flow branches every few instructions, not because
+the compiler truncates them. At roughly 737 cycles of fixed per-block work, a
+three-instruction block cannot pay for itself.
+
+Two consequences for anyone continuing this work:
+
+- The emitter-side link (skip validation and the dispatch on a direct branch)
+  is the change that matches this shape, and it is a different change from the
+  dispatcher-side probe removal that measured 17.5% slower in `a3eec114`. It
+  needs the compiled-page plus code-epoch contract, because the cheat engine and
+  DMA write guest RAM without running generated store code.
+- Forming longer blocks across conditional or backward branches (traces) attacks
+  the same cost from the other side and is the larger change of the two.
+
+Also note `drc_work_arena peak_words=5,111,560` against a 5,242,880-word
+capacity: the arena reached 97.5% in one 1813-frame session, so an overflow
+reset (a full recompile stall) is a live risk in long dense sessions.
