@@ -59,3 +59,33 @@ duplicated 32-bit constant materialisation in `memaddr`, and measure the effect
 on the host: `drc_work_codegen`, plus `drc_work_arena peak_words`/`recycles` and
 `drc_work_dispatch rebuilds` over a long run, which is the same signal a console
 stall shows. One console A/B only once a candidate actually reduces recycles.
+
+## Reproduce (host only)
+
+The host PowerPC harness cross-compiles the real core and runs it under
+`qemu-ppc`, so every measurement below needs no console and no XDK:
+
+```sh
+# 60-frame ddpdfk run; STATE must stay 0cf251c3d512ddbb, PROFILE carries the counters
+cd /home/humor/salvia-tests/cv1k-ddpdfk-profile-20261007
+touch /home/humor/src/Salvia/libretro/FBNeo/src/cpu/sh4/sh4.cpp   # see note below
+python3 build.py
+root=/home/humor/salvia-tests/toolchains/ppc/root
+LD_LIBRARY_PATH=$root/usr/lib/x86_64-linux-gnu CV1K_DIPB=07 CV1K_DIPC=00 CV1K_DIPD=00 \
+  $root/usr/bin/qemu-ppc -cpu g4 ./game /home/humor/salvia-tests/cv1000-boot/ddpdfk 1 60 \
+  /tmp/out /home/humor/salvia-tests/cv1k-ddpdfk-opt-20261007/user-ddpdfk4-core.state 0 2
+
+# emitter instruction-level differential suite
+cd /home/humor/src/Salvia
+python3 libretro/FBNeo/tests/sh3_ppc/run.py \
+  --toolchain-root /home/humor/salvia-tests/toolchains/ppc/root --output /tmp/sh3ppc
+```
+
+Note: `build.py` decides to rebuild from the `.cpp` timestamp only, so a
+header-only edit silently reuses a stale object and reports the old numbers.
+Always `touch` the changed translation unit (or its `sh4.cpp`), or the
+measurement is invalid — that trap already produced one wrong result once.
+
+Console images are built with `salvia-tests/xex-build/build-xex.sh --tag <tag>`
+(diagnostics flavor only while iterating; add `--flavor release` only on an
+accepted change, see `AGENTS.md`).
