@@ -49,6 +49,29 @@ enum { G_SR = 16, G_MACL, G_MACH, G_PR, G_GBR };
 struct Lookup { UINT32 tag[WAYS]; unsigned next; };
 static Lookup *lookup;
 static Block *blocks;
+// Direct-branch block links. One slot per table index, filled by the
+// dispatcher with the record it validated after the block that published the
+// slot, so a generated epilogue can jump straight to a compile-time successor
+// while the compiled-page epoch is unchanged. A slot is a cache: the epoch
+// field is compared before use, so a stale or reused slot can only cost a
+// miss. The target field is compared against the block's own constant
+// successor, which also makes a slot handed to a different block harmless.
+struct LinkSlot { UINT32 target, entry, cycles, epoch; };
+static LinkSlot *link_slots;
+// Compiled-page bitmap keyed by the AM-masked 64 KiB page number
+// ((address & AM) >> 16, 4096 entries). compile() marks every page that holds
+// a compiled block so a guest store can revoke every link on the page. The
+// mask folds every external alias onto the same page the interpreter uses.
+enum { SH3_CODE_PAGE_SLOTS = 4096 };
+static UINT8 sh3_code_page[SH3_CODE_PAGE_SLOTS];
+// Compiled-page epoch. Bumped whenever already generated code can become
+// stale (a guest store to a compiled page, an interpreted RAM write, or a
+// block-table reset/recycle). A block link is only honoured while its
+// recorded epoch still matches. Never guest state and never scanned.
+static UINT32 sh3_code_epoch = 1;
+// Link slot the last executed linkable block published for the dispatcher to
+// fill with the successor it validated next.
+static UINT32 *sh3_drc_pending_slot;
 typedef char PointerAbiMustBe32Bits[(sizeof(void*) == 4) ? 1 : -1];
 static UINT32 *code;
 static unsigned used;
@@ -62,6 +85,19 @@ struct RamWindow {
  int span_bits, backing_bits;
 };
 static RamWindow ram_window;
+// Compiled-page bookkeeping. The epoch is the single invalidation token a
+// generated block link compares against; it must be bumped by every path that
+// can make already generated code stale. The bitmap lets a guest store find
+// out whether its page holds compiled code without hashing.
+static void sh3_code_bump_epoch() { ++sh3_code_epoch; }
+static UINT32 sh3_code_page_index(UINT32 address) { return (address & AM) >> 16; }
+static void sh3_code_mark_page(UINT32 pc)
+{
+ if(!ram_window.base) return;
+ UINT32 pa = pc & AM;
+ if(pa < ram_window.start || pa - ram_window.start >= ram_window.span) return;
+ sh3_code_page[sh3_code_page_index(pa)] = 1;
+}
 #ifdef _XBOX
 // The XEX's static data is executable, as used by the existing PPC cores.
 // XPhysicalAlloc and the CRT heap must not be used for generated instructions.
@@ -111,6 +147,9 @@ struct CodeWriteCheck { UINT32 *compare; unsigned size; };
 struct Compiler {
  UINT32 *start, *out;
  UINT32 pc, source_begin, block_pc;
+ // Link slot this block publishes and reads. NULL in the host tests, which
+ // compile into a local probe record and never form a link.
+ LinkSlot *link_slot;
  Slot slots[HOST_REGS];
  int clock, cycles, exit_count, write_check_count;
  // A watched read may need separate general, service and mirror guards.
@@ -118,8 +157,8 @@ struct Compiler {
  CodeWriteCheck write_checks[MAX_INSNS];
  bool ended, folded_slot, in_delay_slot;
 
- Compiler(UINT32 *dest, UINT32 address, const UINT16 *source)
-  : start(dest), out(dest), pc(address), block_pc(address), clock(0), cycles(0), exit_count(0), write_check_count(0), ended(false), folded_slot(false), in_delay_slot(false)
+ Compiler(UINT32 *dest, UINT32 address, const UINT16 *source, LinkSlot *slot=0)
+  : start(dest), out(dest), pc(address), block_pc(address), link_slot(slot), clock(0), cycles(0), exit_count(0), write_check_count(0), ended(false), folded_slot(false), in_delay_slot(false)
  {
   source_begin = (UINT32)(uintptr_t)source;
   for (int i = 0; i < HOST_REGS; i++) {
@@ -136,6 +175,8 @@ struct Compiler {
  }
  void load(int rt, int off) { emit(d(32, rt, 3, off)); }
  void store(int rt, int off) { emit(d(36, rt, 3, off)); }
+ void load_base(int rt, int ra, int off) { emit(d(32, rt, ra, off)); }
+ void store_base(int rt, int ra, int off) { emit(d(36, rt, ra, off)); }
  void imm(int rt, UINT32 value) {
   if ((INT32)value >= -32768 && (INT32)value <= 32767) emit(d(14, rt, 0, value));
   else {
@@ -188,12 +229,40 @@ struct Compiler {
   load(11, SO(total)); addi(11, 11, count); store(11, SO(total));
   load(11, SO(icount)); addi(11, 11, -count); store(11, SO(icount));
  }
- void finish(UINT32 next, int cost, int result, bool set_pc = true) {
+ // Attempt a direct link to a compile-time successor. The block is ending in
+ // a clean completion (result 1, no pending delay slot) with a constant
+ // successor PC, so jump straight to the successor's generated entry when its
+ // link slot still names this exact successor at the current compiled-page
+ // epoch, holds an entry, and the remaining budget covers its cycle cost.
+ // Otherwise fall through to the normal dispatcher return. r0/r11/r12 are
+ // scratch here; every dirty guest register has already been flushed.
+ void link_check(UINT32 successor) {
+  UINT32 *fail[4]; int nf=0;
+  imm(12, (UINT32)(uintptr_t)link_slot);
+  imm(11, (UINT32)(uintptr_t)&sh3_code_epoch);
+  load_base(0, 11, 0);                        // r0 = current epoch
+  load_base(11, 12, 12);                      // r11 = slot->epoch
+  cmp(0, 11); fail[nf++] = branch(2, false);  // bne fail
+  imm(0, successor);
+  load_base(11, 12, 0);                       // r11 = slot->target
+  cmp(0, 11); fail[nf++] = branch(2, false);  // bne fail
+  load_base(0, 12, 4); cmpi(0, 0);            // slot->entry
+  fail[nf++] = branch(2, true);               // beq fail
+  load_base(11, 12, 8);                       // r11 = slot->cycles
+  load(0, SO(icount)); cmp(0, 11);
+  fail[nf++] = branch(0, true);               // blt fail
+  load_base(0, 12, 4);                        // entry
+  emit(0x7c0903a6);                           // mtctr r0
+  emit(0x4e800420);                           // bctr
+  for (int i = 0; i < nf; i++) patch(fail[i]);
+ }
+ void finish(UINT32 next, int cost, int result, bool set_pc = true, INT32 link_successor = -1) {
   flush();
   imm(0,next);
   if (set_pc) store(0,SO(pc));
   store(0,SO(ppc));
   charge(cost);
+  if (link_successor >= 0 && link_slot) link_check((UINT32)link_successor);
   imm(3, result); emit(0x4e800020); // blr
  }
  // Branch out of the straight-line fast path only when a guard fails.
@@ -209,6 +278,24 @@ struct Compiler {
   BlockExit &e = exits[exit_count-1];
   e.branches[e.count++] = branch(bit, !set);
  }
+ // Revoke compiled-page links before a store commits. r0 must already hold the
+ // 64 KiB page number ((address & AM) >> 16). Rather than exiting to the
+ // interpreter, the store stays native and only bumps the epoch when its page
+ // holds compiled code; the block's own-bytes guard below still protects the
+ // executing block, and a store that rewrites another block's code revokes the
+ // links to it here. Clobbers r12 (the bitmap base), which the caller
+ // recomputes as the translated host pointer afterwards.
+ void code_page_touch() {
+  imm(12, (UINT32)(uintptr_t)sh3_code_page);
+  emit(x(0, 12, 0, 87)); // lbzx r0,r12,r0
+  cmpi(0, 0);
+  UINT32 *skip = branch(2, true); // beq: page holds no compiled code
+  imm(12, (UINT32)(uintptr_t)&sh3_code_epoch);
+  load_base(0, 12, 0); addi(0, 0, 1); store_base(0, 12, 0);
+  patch(skip);
+ }
+ // Page number for the guest address in r11 (a raw alias, so mask with AM).
+ void code_page_touch_r11() { rotate(0, 11, 16, 20, 31); code_page_touch(); }
  // A distinct taken edge encodes the validated MOV.L in its return value.
  // Generated functions stay leaf functions; the dispatcher calls RL safely
  // through the normal C++ ABI, with all cached guest registers committed.
@@ -222,7 +309,7 @@ struct Compiler {
    memcpy(slots, e.slots, sizeof(slots));
    if (e.conditional) {
     constant(SO(pc),e.target); constant(SO(ea),e.target);
-    finish(e.pc,e.cycles,1,false);
+    finish(e.pc,e.cycles,1,false,(INT32)e.target);
     continue;
    }
    // The branch has already committed its target and PR. Publish the
@@ -282,6 +369,7 @@ struct Compiler {
   bool address_value=value==base || value==index || (base==-2 && value==G_GBR);
   int data = reg(value,write || address_value);
   if (constant_ram) {
+   if(write) { imm(0, (absolute & AM) >> 16); code_page_touch(); }
    imm(12,(UINT32)(uintptr_t)(ram.base+((absolute-ram.start)&ram.mask)));
   } else if (direct) {
    address(base,index,disp,absolute);
@@ -293,6 +381,8 @@ struct Compiler {
    rotate(0,11,32-ram.span_bits,ram.span_bits+3,31);
    cmpi(0,ram.start>>ram.span_bits,true); guard(2,true,device_opcode);
    if(size>1) { emit(d(28,11,0,size-1)); guard(2,true,device_opcode); }
+   // A store to a compiled page must not silently keep a stale successor link.
+   if(write) code_page_touch_r11();
    rotate(12,11,0,32-ram.span_bits,31);
    if(!write && size==4 && ram.watch!=0xffffffffu) {
     imm(0,ram.watch-ram.start); cmp(12,0); guard_watch(service_opcode);
@@ -306,6 +396,7 @@ struct Compiler {
    imm(0, 0xe0000000); cmp(11, 0, true); guard(0, true,device_opcode);
    if (size > 1) { emit(d(28, 11, 0, size - 1)); guard(2, true,device_opcode); }
    rotate(11, 11, 0, 3, 31); // SH3 physical address mask (AM)
+   if(write) code_page_touch_r11();
    rotate(0, 11, 18, 14, 29); // (address >> 16) * sizeof(pointer)
    load(12, write ? SO(write_map) : SO(read_map));
    emit(x(12, 12, 0, 23)); // lwzx map entry
@@ -584,7 +675,7 @@ struct Compiler {
   return ok;
  }
 
- void finish_delay(bool loop) {
+ void finish_delay(bool loop, INT32 link_successor = -1) {
   flush();
   charge(cycles);
   if (loop) {
@@ -595,6 +686,7 @@ struct Compiler {
   }
   // A completed slot leaves PC at the target, and PPC at that same value.
   load(0,SO(pc)); store(0,SO(ppc));
+  if (!loop && link_successor >= 0 && link_slot) link_check((UINT32)link_successor);
   imm(3,1); emit(0x4e800020);
  }
 
@@ -642,7 +734,7 @@ struct Compiler {
     constant(SO(pc),target); constant(SO(ea),target);
     cycles+=delayed?2:3;
     folded_slot=delayed && delay_instruction(slot);
-    if (folded_slot) finish_delay(target==block_pc);
+    if (folded_slot) finish_delay(target==block_pc, (INT32)target);
     else {
      if (delayed) constant(SO(delay),pc+2);
      finish(pc+2,cycles,1,false);
@@ -658,14 +750,15 @@ struct Compiler {
    if ((op&0xffff)==0xaffe) return false;
    unlock();
    bool call=(op&0xf000)==0xb000||(op&0xf0ff)==0x0003||(op&0xf0ff)==0x400b;
-   if (relative) { INT32 disp=(INT32)(op&0xfff); if(disp&0x800)disp-=0x1000; imm(12,pc+4+disp*2); }
+   INT32 link_target=-1;
+   if (relative) { INT32 disp=(INT32)(op&0xfff); if(disp&0x800)disp-=0x1000; imm(12,pc+4+disp*2); link_target=(INT32)(pc+4+disp*2); }
    else if (op==0x000b) { int pr=reg(G_PR); move(12,pr); }
    else { int a=reg(n); if(regrel) { imm(12,pc+4); add(12,12,a); } else move(12,a); }
    store(12,SO(pc)); if(!regrel)store(12,SO(ea));
    if(call) { int pr=reg(G_PR,false); imm(pr,pc+4); dirty(pr); }
    cycles+=((op&0xf0ff)==0x402b)?1:2;
    folded_slot=delay_instruction(slot);
-   if (folded_slot) finish_delay(false);
+   if (folded_slot) finish_delay(false, link_target);
    else { constant(SO(delay),pc+2); finish(pc+2,cycles,1,false); }
    ended=true; return true;
   }
@@ -679,33 +772,46 @@ static bool allocate()
  if (blocks) return true;
  blocks=(Block*)calloc(TABLE_SIZE,sizeof(Block));
  lookup=(Lookup*)calloc(CACHE_SETS,sizeof(Lookup));
+ link_slots=(LinkSlot*)calloc(TABLE_SIZE,sizeof(LinkSlot));
 #ifdef _XBOX
  code=xbox_code;
 #else
  code=(UINT32*)mmap(NULL,CACHE_BYTES,PROT_READ|PROT_WRITE|PROT_EXEC,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
  if(code==MAP_FAILED)code=NULL;
 #endif
- if(!blocks || !lookup || !code) {
-  free(blocks); blocks=NULL; free(lookup); lookup=NULL;
+ if(!blocks || !lookup || !link_slots || !code) {
+  free(blocks); blocks=NULL; free(lookup); lookup=NULL; free(link_slots); link_slots=NULL;
 #ifndef _XBOX
   if(code)munmap(code,CACHE_BYTES);
 #endif
   code=NULL; failed=true; return false;
  }
  used=0;
+ // A fresh epoch invalidates every link recorded against a previous arena.
+ ++sh3_code_epoch;
+ sh3_drc_pending_slot=NULL;
+ memset(sh3_code_page,0,sizeof(sh3_code_page));
  sh3_ppc_state.read_map=MemMapR;
  sh3_ppc_state.write_map=MemMapW;
  return true;
 }
 
-static void compile(Block &block, UINT32 pc, const UINT16 *source)
+static void compile(Block &block, UINT32 pc, const UINT16 *source, LinkSlot *link_slot=0)
 {
  if(used+MAX_WORDS >= CACHE_BYTES/4) {
   ++sh3_drc_work.arena_recycles;
   memset(blocks,0,TABLE_SIZE*sizeof(Block));
-  memset(lookup,0,CACHE_SETS*sizeof(Lookup)); used=0;
+  memset(lookup,0,CACHE_SETS*sizeof(Lookup));
+  if(link_slots)memset(link_slots,0,TABLE_SIZE*sizeof(LinkSlot));
+  used=0;
+  // The arena is reused from the start, so every previously generated entry
+  // address can now refer to different code. Revoke every link.
+  sh3_code_bump_epoch();
  }
- Compiler c(code+used,pc,source);
+ // Remember that this page holds compiled code so a guest store there can
+ // revoke every link on the page.
+ sh3_code_mark_page(pc);
+ Compiler c(code+used,pc,source,link_slot);
  int available=(int)((4096-((uintptr_t)source&4095))/2);
  int guest_available=(int)((SH3_PAGE_SIZE-(pc&SH3_PAGEM))/2);
  if(available>guest_available)available=guest_available;
@@ -734,7 +840,7 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
  int max_cycles=c.cycles;
  for(int i=0;i<c.exit_count;i++)
   if(c.exits[i].cycles>max_cycles)max_cycles=c.exits[i].cycles;
- if(!c.ended)c.finish(pc+count*2,c.cycles,1);
+ if(!c.ended)c.finish(pc+count*2,c.cycles,1,true,(INT32)(pc+count*2));
  c.emit_exits();
  block.pc=pc; block.source=source;
  block.words=(UINT16)(validate>count?validate:count);
@@ -762,6 +868,13 @@ static void sh3_drc_invalidate_ram()
   Sh3Ppc::ram_window.base=NULL;
   sh3_drc_reset();
  }
+}
+// Interpreted stores reach RAM through WB/WW/WL, which do not run generated
+// store guards. Revoke compiled-page links when such a store lands on a page
+// that holds compiled code, exactly like the generated guard would.
+static void sh3_drc_note_ram_write(UINT32 phys)
+{
+ if(Sh3Ppc::sh3_code_page[(phys & AM) >> 16]) ++Sh3Ppc::sh3_code_epoch;
 }
 static void sh3_drc_mapping_changed(UINT32 start, UINT32 end, INT32 type)
 {
@@ -825,16 +938,24 @@ static void sh3_drc_reset()
 {
  if(Sh3Ppc::blocks)memset(Sh3Ppc::blocks,0,Sh3Ppc::TABLE_SIZE*sizeof(Sh3Ppc::Block));
  if(Sh3Ppc::lookup)memset(Sh3Ppc::lookup,0,Sh3Ppc::CACHE_SETS*sizeof(Sh3Ppc::Lookup));
+ if(Sh3Ppc::link_slots)memset(Sh3Ppc::link_slots,0,Sh3Ppc::TABLE_SIZE*sizeof(Sh3Ppc::LinkSlot));
+ memset(Sh3Ppc::sh3_code_page,0,sizeof(Sh3Ppc::sh3_code_page));
+ Sh3Ppc::sh3_drc_pending_slot=NULL;
+ // Dropped blocks may have left live links pointing at freed or replaced
+ // generated entries; revoke them all.
+ ++Sh3Ppc::sh3_code_epoch;
  Sh3Ppc::used=0;
 }
 static void sh3_drc_exit()
 {
  free(Sh3Ppc::blocks); Sh3Ppc::blocks=NULL;
  free(Sh3Ppc::lookup); Sh3Ppc::lookup=NULL;
+ free(Sh3Ppc::link_slots); Sh3Ppc::link_slots=NULL;
 #ifndef _XBOX
  if(Sh3Ppc::code)munmap(Sh3Ppc::code,Sh3Ppc::CACHE_BYTES);
 #endif
  Sh3Ppc::code=NULL; Sh3Ppc::used=0; Sh3Ppc::failed=false;
+ ++Sh3Ppc::sh3_code_epoch;
  sh3_drc_enabled=true;
  memset(sh3_device_reads,0,sizeof(sh3_device_reads));
  Sh3SetDrcReadMirror(NULL,0,0,0);

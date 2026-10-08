@@ -71,6 +71,10 @@ struct Sh3PpcState {
  UINT32 mirror_page, mirror_watch, mirror_handler;
 };
 static Sh3PpcState sh3_ppc_state;
+// Interpreted RAM writes bypass generated store guards, so they must revoke
+// compiled-page links too. The PPC backend defines this below.
+static void sh3_drc_note_ram_write(UINT32 phys);
+#define SH3_NOTE_RAM_WRITE(phys) sh3_drc_note_ram_write(phys)
 // Driver-owned idle configuration, used by servicing and diagnostics. Never scanned
 // or embedded into generated instructions. The mirror lifecycle revokes it.
 static const UINT32 *sh3_idle_watch_ram, *sh3_idle_watch_pc;
@@ -102,6 +106,7 @@ static UINT32 m_mach, m_macl, m_ea, m_delay;
 static INT32 m_sh4_icount, sh3_total_cycles;
 static void sh3_drc_reset() {}
 static void sh3_drc_exit() {}
+#define SH3_NOTE_RAM_WRITE(phys) ((void)0)
 void Sh3SetDrc(INT32) {}
 void Sh3SetDrcReadMirror(UINT8*, UINT32, UINT32, INT32) {}
 void Sh3SetDrcIdleWatch(const UINT32*, const UINT32*) {}
@@ -1072,6 +1077,7 @@ static inline void WB(UINT32 A, UINT8 V)
 
 	UINT8 *pr = MemMapW[ A >> SH3_SHIFT ];
 	if ((uintptr_t)pr >= SH3_MAXHANDLER) {
+		SH3_NOTE_RAM_WRITE(A);
 #ifdef LSB_FIRST
 	    A ^= 1;
 #endif
@@ -1090,6 +1096,7 @@ static inline void WW(UINT32 A, UINT16 V)
 
 	UINT8 *pr = MemMapW[ A >> SH3_SHIFT ];
 	if ((uintptr_t)pr >= SH3_MAXHANDLER) {
+		SH3_NOTE_RAM_WRITE(A);
 #ifdef LSB_FIRST
 	 //   A ^= 2;
 #endif
@@ -1108,6 +1115,7 @@ static inline void WL(UINT32 A, UINT32 V)
 
 	UINT8 *pr = MemMapW[ A >> SH3_SHIFT ];
 	if ((uintptr_t)pr >= SH3_MAXHANDLER) {
+		SH3_NOTE_RAM_WRITE(A);
 #ifdef LSB_FIRST
 		V = (V << 16) | (V >> 16);
 #endif

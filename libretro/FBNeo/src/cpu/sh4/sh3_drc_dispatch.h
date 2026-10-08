@@ -34,6 +34,12 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
  }
  // Generated entries are leaf functions: they cannot release the cache or
  // replace its allocation. Keep the dispatcher stack alive across entries.
+ // A link slot belongs to the block that executed last. A block that ended in
+ // a clean completion left the current PC as its exact constant successor, so
+ // the slot records the record validated for this PC. The generated epilogue
+ // still rechecks the target, the epoch and the entry, so a slot handed to a
+ // different block (a tail-linked chain) can only cost a missed link.
+ LinkSlot *prev_slot=0; bool prev_clean=false;
  do {
   UINT32 pc=m_pc, phys=pc&AM;
   const UINT8 *page=MemMapF[phys>>SH3_SHIFT];
@@ -68,7 +74,7 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
      (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page));
   }
   if(rebuild) {
-   compile(b,pc,source);
+   compile(b,pc,source,&link_slots[index*WAYS+way]);
    if(Count) ++sh3_drc_work.rebuilds;
    set.tag[way]=pc;
   }
@@ -79,6 +85,10 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   if(m_sh4_icount<b.cycles) {
    if(Count) { ++sh3_drc_work.exit_budget; sh3_drc_work.fallback.last_origin=SH3_FB_BUDGET; }
    return false;
+  }
+  if(prev_slot && prev_clean) {
+   prev_slot->target=pc; prev_slot->entry=(UINT32)(uintptr_t)b.entry;
+   prev_slot->cycles=b.cycles; prev_slot->epoch=sh3_code_epoch;
   }
   // A partial/guarded block requests one interpreter step at its updated PC,
   // even when earlier blocks in this call completed. Do not return true here.
@@ -102,6 +112,7 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   }
 #endif
   if(Count) sh3_drc_work.native_cycles+=(unsigned)(before-m_sh4_icount);
+  prev_slot=&link_slots[index*WAYS+way]; prev_clean=(completed==1);
   // A compiler-tagged idle/device MOV.L needs one real handler access, but
   // no opcode refetch or trip through the outer interpreter decoder.
   bool serviced=false;

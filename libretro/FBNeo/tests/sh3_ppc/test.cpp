@@ -67,6 +67,26 @@ static void check(bool verbose=false) {
  }
  cases++;
 }
+// Chained dispatch for a loop program: the generated epilogues may link, so
+// this compares the whole chained run (including a possible interpreter step
+// when the dispatcher asks for one) against an interpreter replay.
+static void check_chained() {
+ Sh3PpcState before=sh3_ppc_state;
+ memcpy(saved,ram,0x10000);
+ calls=0;
+ bool ran=sh3_drc_dispatch_impl<true,false>();
+ if(!ran)step();
+ Sh3PpcState got=sh3_ppc_state; unsigned actual_calls=calls; memcpy(actual,ram,0x10000);
+ sh3_ppc_state=before;memcpy(ram,saved,0x10000);calls=0;
+ unsigned watchdog=0;
+ while(m_sh4_icount>got.icount && watchdog++<200000)step();
+ bool eq=memcmp(&sh3_ppc_state,&got,sizeof(got))==0 && memcmp(ram,actual,0x10000)==0 && calls==actual_calls;
+ if(!eq) {
+  fprintf(stderr,"FAIL chained start %08x consumed %d ran %d calls %u/%u pc %08x/%08x r0 %08x/%08x\n",
+   before.pc, before.icount-got.icount, ran, calls, actual_calls, got.pc, m_pc, got.r[0], m_r[0]);
+  exit(1);
+ }
+}
 static void state(int mode) {
  for(int i=0;i<16;i++)m_r[i]=rnd();
  m_pc=0x0c000100;m_ppc=rnd();m_sr=rnd();m_pr=rnd();m_gbr=0x0c005000;m_mach=rnd();m_macl=rnd();m_ea=rnd();m_delay=0;
@@ -518,9 +538,32 @@ int main() {
   if(obs.sites[0].handler_pc!=Sh3GetPC(-1))return 22;
   idle_pc+=2; // live pointer metadata must reflect driver changes
  }
- Sh3SetDrcReadMirror(ram,0x0c000000,idle_ram,1);
- if(sh3_idle_watch_ram || sh3_idle_watch_pc)return 23;
- printf("EDGE sampled idle candidates / live metadata / handler PC / no state mutation PASS\n");
- printf("PASS %u cases compiled %u fallback %u\n",cases,compiled,fallback);
+	Sh3SetDrcReadMirror(ram,0x0c000000,idle_ram,1);
+	if(sh3_idle_watch_ram || sh3_idle_watch_pc)return 23;
+	printf("EDGE sampled idle candidates / live metadata / handler PC / no state mutation PASS\n");
+	// Block linking: a two-block loop of constant direct branches must link in
+	// the generated epilogues, stay identical to the interpreter, and be
+	// revoked when a compiled page is rewritten. Read the same contract the
+	// game regression shows as fewer dispatcher entries.
+	if(Sh3SetDrcRam(ram,0x0c000000,0x10000,0x10000))return 40;
+	for(unsigned variant=0;variant<4;++variant) {
+		// A @0x100: add #1,r0 ; bra B ; nop     B @0x10a: add #1,r0 ; bra A ; nop
+		UINT16 *a=(UINT16*)(ram+0x100), *b=(UINT16*)(ram+0x10a);
+		a[0]=variant&1?0x7002:0x7001; a[1]=0xa000|2; a[2]=0x0009;
+		b[0]=variant&2?0x7004:0x7001; b[1]=0xa000|0xff8; b[2]=0x0009;
+		// A host-side program rewrite is not a guest path. Model the
+		// interpreted/DMA store to a compiled page that revokes live links.
+		sh3_drc_note_ram_write(0x0c000100);sh3_drc_note_ram_write(0x0c00010a);
+		state(0);m_r[0]=0;m_sh4_icount=(int)(64+variant*37);check_chained();
+	}
+	// A silent rewrite of a live link target must still be revalidated: the
+	// interpreted/DMA write hook bumps the epoch, so the link is revoked and
+	// the recompiled successor matches the interpreter exactly.
+	{ UINT16 *b=(UINT16*)(ram+0x10a); b[0]=0x7003; }
+	sh3_drc_note_ram_write(0x0c00010a);
+	state(0);m_r[0]=0;m_sh4_icount=200;check_chained();
+	Sh3SetDrcRam(NULL,0,0,0);
+	printf("EDGE chained block links / two-block loop / live-link revocation PASS cases=%u\n",4u+1u);
+	printf("PASS %u cases compiled %u fallback %u\n",cases,compiled,fallback);
  Sh3Exit();return 0;
 }
