@@ -319,9 +319,12 @@ struct Compiler {
  }
  void set_t(int value) {
   int sr = reg(G_SR);
-  rotate(sr, sr, 0, 0, 30); // clear T, preserving the other G_SR bits
-  if (value >= 0) { if (value) emit(d(24, sr, sr, 1)); }
-  else logic(sr, sr, 0, 444); // r0 contains 0/1
+  // T is the low bit of G_SR. From r0 (a 0/1 produced by compare_t or a shift)
+  // one rlwimi replaces the clear-then-OR pair; setting T outright is a single
+  // OR; only clearing needs the masked move.
+  if (value < 0) rotate(sr, 0, 0, 31, 31, true); // rlwimi sr,r0,0,31,31
+  else if (value) emit(d(24, sr, sr, 1));        // ori sr,sr,1
+  else rotate(sr, sr, 0, 0, 30);                 // clear T, keep the rest
   dirty(sr);
  }
  void compare_t(int bit, bool set) {
@@ -464,8 +467,11 @@ struct Compiler {
   }
   if (write) emit(d(size == 1 ? 38 : size == 2 ? 44 : 36, data, 12, 0));
   else {
-   emit(d(size == 1 ? 34 : size == 2 ? 40 : 32, data, 12, 0));
-   if (size < 4) emit(x(data, data, 0, size == 1 ? 954 : 922));
+   // Every SH3 word load sign-extends, and lha is exactly that load, so the
+   // halfword case needs one instruction instead of lhz plus extsh.
+   if (size == 2) emit(d(42, data, 12, 0));
+   else emit(d(size == 1 ? 34 : 32, data, 12, 0));
+   if (size == 1) emit(x(data, data, 0, 954));
    dirty(data);
   }
   if (pre || (post && value != base)) {
