@@ -108,9 +108,19 @@ struct BlockExit {
  Slot slots[HOST_REGS];
 };
 struct CodeWriteCheck { UINT32 *compare; unsigned size; };
+// Compile-time accounting of emitted words per phase. The emitter runs only on
+// compilation, so counting here costs nothing at frame time and is available on
+// both host and console. Averages per compiled block say where the generated
+// code actually goes.
+enum { CAT_BODY=0, CAT_MEMADDR, CAT_MEMGUARD, CAT_MEMACCESS, CAT_COMPLETE, CAT_EXIT, CAT_COUNT };
+static unsigned long long sh3_gen_words[CAT_COUNT];
+static unsigned long long sh3_gen_blocks;
+
 struct Compiler {
  UINT32 *start, *out;
  UINT32 pc, source_begin, block_pc;
+ int cat;
+ unsigned long long cat_words[CAT_COUNT];
  Slot slots[HOST_REGS];
  int clock, cycles, exit_count, write_check_count;
  // A watched read may need separate general, service and mirror guards.
@@ -122,12 +132,20 @@ struct Compiler {
   : start(dest), out(dest), pc(address), block_pc(address), clock(0), cycles(0), exit_count(0), write_check_count(0), ended(false), folded_slot(false), in_delay_slot(false)
  {
   source_begin = (UINT32)(uintptr_t)source;
+  cat = CAT_BODY;
+  for (int i = 0; i < CAT_COUNT; i++) cat_words[i] = 0;
   for (int i = 0; i < HOST_REGS; i++) {
    slots[i].guest = -1; slots[i].age = 0;
    slots[i].dirty = slots[i].locked = false;
   }
  }
- void emit(UINT32 x) { *out++ = x; }
+ void emit(UINT32 x) { *out++ = x; ++cat_words[cat]; }
+ // Attribute every word emitted inside the scope to one phase.
+ struct CatGuard {
+  Compiler &c; int save;
+  CatGuard(Compiler &owner, int k) : c(owner), save(owner.cat) { c.cat = k; }
+  ~CatGuard() { c.cat = save; }
+ };
  static UINT32 d(int op, int rt, int ra, int imm) {
   return ((UINT32)op << 26) | (rt << 21) | (ra << 16) | (imm & 0xffff);
  }
@@ -189,6 +207,7 @@ struct Compiler {
   load(11, SO(icount)); addi(11, 11, -count); store(11, SO(icount));
  }
  void finish(UINT32 next, int cost, int result, bool set_pc = true) {
+  CatGuard catScope(*this, cat == CAT_EXIT ? CAT_EXIT : CAT_COMPLETE);
   flush();
   imm(0,next);
   if (set_pc) store(0,SO(pc));
@@ -199,6 +218,7 @@ struct Compiler {
  // Branch out of the straight-line fast path only when a guard fails.
  // All guards for one memory operation share an exit before that operation.
  void guard(int bit, bool set, unsigned service_opcode=0) {
+  CatGuard catScope(*this, CAT_MEMGUARD);
   if (!exit_count || exits[exit_count-1].pc != pc || exits[exit_count-1].conditional || exits[exit_count-1].service_opcode!=service_opcode) {
    BlockExit &e = exits[exit_count++];
    e.count = 0; e.pc = pc; e.cycles = cycles;
@@ -216,6 +236,7 @@ struct Compiler {
   guard(2,false,opcode); // equality with the watched longword
  }
  void emit_exits() {
+  CatGuard catScope(*this, CAT_EXIT);
   for (int i = 0; i < exit_count; i++) {
    BlockExit &e = exits[i];
    for (int j = 0; j < e.count; j++) patch(e.branches[j]);
@@ -265,6 +286,7 @@ struct Compiler {
  }
  bool memory(bool write, int size, int value, int base, int index, int disp,
              UINT32 absolute, bool ea, bool pre, bool post, unsigned service_opcode=0) {
+  CatGuard catScope(*this, CAT_MEMADDR);
   const RamWindow &ram=ram_window;
   const unsigned device_opcode=(sh3_device_reads[0].callback || sh3_device_reads[1].callback)?service_opcode:0;
   bool constant_ram=ram.base && base==-1 &&
@@ -338,6 +360,8 @@ struct Compiler {
    w.compare=out; w.size=size;
    cmpi(0,0,true); guard(0,false);
   }
+  {
+  CatGuard accessScope(*this, CAT_MEMACCESS);
   if (ea) {
    // The direct path still has the complete guest alias in r11. Generic
    // translation masks it, and constant operands have not initialized it.
@@ -352,6 +376,7 @@ struct Compiler {
   }
   if (pre || (post && value != base)) {
    int b = reg(base); addi(b, b, pre ? -size : size); dirty(b);
+  }
   }
   return true;
  }
@@ -585,6 +610,7 @@ struct Compiler {
  }
 
  void finish_delay(bool loop) {
+  CatGuard catScope(*this, cat == CAT_EXIT ? CAT_EXIT : CAT_COMPLETE);
   flush();
   charge(cycles);
   if (loop) {
@@ -628,6 +654,7 @@ struct Compiler {
     // few SH3 instructions. A NOP delay slot can be folded without changing
     // the interpreter's PC-relative or interrupt semantics.
     int cost=cycles+3;
+    CatGuard catScope(*this, CAT_COMPLETE);
     flush(); constant(SO(ea),target); charge(cost);
     // charge leaves the remaining budget in r11.
     cmpi(11,cost);
@@ -736,6 +763,10 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
   if(c.exits[i].cycles>max_cycles)max_cycles=c.exits[i].cycles;
  if(!c.ended)c.finish(pc+count*2,c.cycles,1);
  c.emit_exits();
+ if(count) {
+  ++sh3_gen_blocks;
+  for(int i=0;i<CAT_COUNT;i++)sh3_gen_words[i]+=c.cat_words[i];
+ }
  block.pc=pc; block.source=source;
  block.words=(UINT16)(validate>count?validate:count);
  // Keep unsupported first opcodes in the lookup table without generating

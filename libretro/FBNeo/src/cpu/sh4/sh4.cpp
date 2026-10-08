@@ -4937,6 +4937,12 @@ void Sh3WorkReport(void (*emit)(const char*))
 		p.rebuild_conflict,p.rebuild_source,p.rebuild_map); emit(text);
 	sprintf(text,"drc_work_arena bytes=%u words=%u recycles=%" SH3_WORK_COUNT " peak_words=%" SH3_WORK_COUNT " peak_bytes=%" SH3_WORK_COUNT,
 		(unsigned)Sh3Ppc::CACHE_BYTES,(unsigned)(Sh3Ppc::CACHE_BYTES/4),p.arena_recycles,p.arena_peak,p.arena_peak*4); emit(text);
+	// Emitted words per compiled block by phase: where the generated code goes,
+	// independent of how often each block then runs.
+	sprintf(text,"drc_work_codegen blocks=%" SH3_WORK_COUNT " body=%" SH3_WORK_COUNT " memaddr=%" SH3_WORK_COUNT " memguard=%" SH3_WORK_COUNT " memaccess=%" SH3_WORK_COUNT " complete=%" SH3_WORK_COUNT " exit=%" SH3_WORK_COUNT,
+		Sh3Ppc::sh3_gen_blocks,Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_BODY],Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_MEMADDR],
+		Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_MEMGUARD],Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_MEMACCESS],
+		Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_COMPLETE],Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_EXIT]); emit(text);
 	sprintf(text,"drc_work_execution native_calls=%" SH3_WORK_COUNT " native_guest_cycles=%" SH3_WORK_COUNT " interpreter_steps=%" SH3_WORK_COUNT " interpreter_guest_cycles=%" SH3_WORK_COUNT " not_host_time=1",
 		p.native_calls,p.native_cycles,p.interpreter_steps,p.interpreter_cycles); emit(text);
 	sprintf(text,"drc_work_exits gate=%" SH3_WORK_COUNT " fetch=%" SH3_WORK_COUNT " no_entry=%" SH3_WORK_COUNT " short_budget=%" SH3_WORK_COUNT " partial=%" SH3_WORK_COUNT " boundary=%" SH3_WORK_COUNT,
