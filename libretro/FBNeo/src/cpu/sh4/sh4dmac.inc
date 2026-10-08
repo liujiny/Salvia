@@ -133,7 +133,6 @@ static int sh4_dma_transfer(int channel, int timermode, UINT32 chcr, UINT32 *sar
 			x_or = 1;
 #endif
 			UINT8 *pw = MemMapW[ dst >> SH3_SHIFT ];
-			SH3_NOTE_RAM_WRITE(dst);
 			pw[(dst^x_or) & SH3_PAGEM] = serflash_io_read();
 
 			//WB(dst, serflash_io_read());

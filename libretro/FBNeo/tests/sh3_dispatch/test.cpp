@@ -31,12 +31,6 @@ struct Lookup { UINT32 tag[WAYS]; unsigned next; };
 static Block block_storage[TABLE_SIZE];
 static Block *blocks;
 static Lookup lookup[CACHE_SETS];
-// The production dispatcher records the successor it resolved into the
-// predecessor's link slot. The synthetic native callback never links, so the
-// slot is only written here; the control-flow trace is unaffected.
-struct LinkSlot { UINT32 target, entry, cycles, epoch; };
-static LinkSlot link_slots[TABLE_SIZE];
-static UINT32 sh3_code_epoch = 1;
 static bool failed;
 static void clear() { memset(block_storage,0,sizeof(block_storage)); memset(lookup,0,sizeof(lookup)); }
 // Model the production cold/warm/sticky-failure allocation contract, rather
@@ -50,7 +44,7 @@ static bool allocate() {
  return true;
 }
 static int native(Sh3PpcState*);
-static void compile(Block& b,UINT32 pc,const UINT16* source,LinkSlot* = 0) {
+static void compile(Block& b,UINT32 pc,const UINT16* source) {
  ++compilations;
  if(recycle && compilations%17==0) clear();
  b.pc=pc; b.source=source;
