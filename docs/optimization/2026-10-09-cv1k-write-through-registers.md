@@ -92,3 +92,19 @@ what the smaller arena high-water mark does to a Xenon stall.
 ## Revert
 
 Revert this commit: `sh3_drc_ppc.h` only.
+
+## Console A/B images and host wall time
+
+Only the diagnostics flavor was built. The image for the state after all four
+rounds (`04245442`) is `29d56e8ac2d3cfdb35052fb787c82ad54d5fadbd18324c71cdb30f179026601f`,
+34,631,680 bytes, archived as
+`xex-archive/fbneo-20261009-0035-codegen-shrink-r4-diag.xex` and deployed as
+`Distro360/fbneo.xex` / `fbneo-diag.xex`. The matched `3336c491` baseline image
+is unchanged (`3faa500e...`, `Distro360/fbneo-codegen-shrink-base-diag.xex`), so
+the same pair still covers the A/B.
+
+Host wall time, 6 interleaved 60-frame runs of the two binaries: baseline
+minima 16.50 s, this build 15.81 s (-4.2%), and every pair favoured this build.
+The bimodality the earlier rounds saw (14.9 s vs 18.6 s) did not appear in this
+batch; the number is still only a host-side sanity check that the extra stores
+on the hot path did not cost anything measurable.
