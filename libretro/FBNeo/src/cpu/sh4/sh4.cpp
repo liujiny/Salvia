@@ -4772,7 +4772,19 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 #endif
 		}
 #ifdef SH3_PPC_DRC
+#if SALVIA_CV1K_PROBE
+		// One pair per chained entry (about 900 per frame) instead of one per
+		// block, so the clock cost cannot dominate the measured span.
+		{
+			const unsigned long long dispatchStart=salvia_cv1k_tick();
+			const bool dispatchOk=sh3_drc_enabled && !m_delay && !m_test_irq && sh3_drc_dispatch_impl<true,Count>();
+			const unsigned long long dispatchEnd=salvia_cv1k_tick();
+			if(dispatchStart&&dispatchEnd) { salvia_cv1k_probe[4]+=dispatchEnd-dispatchStart; ++salvia_cv1k_probe[5]; }
+			if(dispatchOk) continue;
+		}
+#else
 		if (sh3_drc_enabled && !m_delay && !m_test_irq && sh3_drc_dispatch_impl<true,Count>()) continue;
+#endif
 #endif
 		int interpreterBefore = 0;
 		if (Count) { interpreterBefore = m_sh4_icount; ++sh3_drc_work.interpreter_steps; }

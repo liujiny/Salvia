@@ -6,7 +6,7 @@
 #if SALVIA_FBNEO_DIAGNOSTICS && defined(_XBOX)
 #define SALVIA_CV1K_PROBE 1
 // [0]/[1] blitter worker job ticks/jobs, [2]/[3] main-thread blit write
-// ticks/calls, [4]/[5] reserved for a chained dispatcher probe, [6]/[7] block entry
+// ticks/calls, [4]/[5] chained dispatcher ticks/calls, [6]/[7] block entry
 // ticks/samples, [8]/[9] idle-device MOV.L service ticks/samples,
 // [10]/[11] sh4_run_timers ticks/callback count.
 // The clock helper is defined beside the counters in epic12.cpp: the SH4 core
