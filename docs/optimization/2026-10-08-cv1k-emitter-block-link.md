@@ -147,6 +147,27 @@ flushed from the pause callback (`epic12_xenos_pause_diagnostics` ->
 `cv1k_review_report`), so a run must be **paused** once before the file appears.
 The `drc_work_*` counters additionally need DIP B bit 2 set (`dips=00,07,00,00`).
 
+## Controlled A/B set
+
+A single image set is two compiles: the log path is inside
+`#if SALVIA_FBNEO_DIAGNOSTICS`, so only the diagnostics flavor writes anything,
+while the release flavor is the one to time. A controlled comparison therefore
+needs four compiles: {baseline, this change} x {release, diagnostics}. Built
+with `build-xex.sh --source-rev ab940770` for the baseline:
+
+| Image | Flavor | Size | SHA256 |
+| --- | --- | ---: | --- |
+| `Distro360/fbneo-baseline-release.xex` | ab940770 release | 34,598,912 | `e3ade659fe4f691209a91843504f04bb8e387d2c2913f4671caa0df39d171ed6` |
+| `Distro360/fbneo-release.xex` | this change release | 34,598,912 | `e02d480025504f42f983dfbdbf81b01344cb9a7cc6aac536cf90567dbad67fda` |
+| `Distro360/fbneo-baseline-diag.xex` | ab940770 diagnostics | 34,631,680 | `2c8c2d1fd7be6f9fe406f188557c27791420c7294fc14d98fd68752c1d5c3b32` |
+| `Distro360/fbneo.xex` / `fbneo-diag.xex` | this change diagnostics | 34,631,680 | `ee01a8395d50118f837bb004814d5bd9ab6f6319d9a88f35be88318471578b99` |
+
+The linked PPC image carries the change: against the ab940770 build the linked
+`Salvia.exe` (PowerPC PE, machine `0x1f2`) grows `.data` by exactly 4096 bytes —
+the `sh3_code_page[4096]` bitmap — and `.text` by 480 bytes, and
+`.reloc` by 176. The release and diagnostics images differ in size only by the
+probe code, so sizes alone cannot identify a flavor; the `.data` delta can.
+
 What to measure on the console: frame rate under `ddpdfk`/`ddpsdoj` with the
 release image, and `drc_work_dispatch lookups`/`native_calls` plus
 `core_phase_ms drc_dispatch` with the diagnostics image, where the link shows up
