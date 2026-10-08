@@ -177,3 +177,37 @@ Compared against what `cpu_io` still shows after `blk_entry`, `movll_service`,
 `timers` and `blit_write` are subtracted, it says whether the remaining ~830
 cycles per block are the dispatcher itself or the generated code, which are
 different optimisation targets.
+
+## Result: the dispatcher machinery is the cost
+
+Console log from the `acb674da` image, steady window (ddpdfk, 1813 frames, 28
+timing samples), normalised to milliseconds per frame:
+
+| Reading | ms/frame | share of `cpu_io` |
+| --- | ---: | ---: |
+| `frontend_frame_ms sampled_active_loop` | 19.654 | whole iteration |
+| `core_frame_ms total` | 18.616 | |
+| `core_frame_ms cpu_io` | 17.603 | 100% |
+| `core_phase_ms drc_dispatch` | **14.980** | 85% |
+| `core_phase_ms blk_entry` (clock corrected, estimate) | ~4.3 | 24% |
+| `core_phase_ms blit_write` | 0.304 | 2% |
+| `core_phase_ms timers` | 0.099 | 1% |
+| `core_phase_ms movll_service` | 0.004 | 0% |
+
+`drc_dispatch` covers the chained entry, so it includes the generated block
+calls. Removing the generated code from it leaves **about 10.7 ms per frame,
+61% of `cpu_io`, spent in the dispatcher around the blocks.** Per block that is
+about 1,025 host cycles, of which the generated code is roughly 288 and the
+dispatcher's own share roughly 737. The dispatcher's literal instructions are
+only about 150-200 of those cycles, so most of its cost is not instruction
+work.
+
+Two further facts from the same window: `native_calls` is 46,728 blocks per
+frame over 1,522 chained entries (30.7 blocks per entry), and the code arena
+reached `peak_words=5,111,560` of a 5,242,880-word capacity, i.e. 97.5% full.
+
+The earlier block-link experiment removed exactly one of those metadata probes
+and measured 17.5% slower, so "skip one table access" is not the fix. The
+consistent reading is that the fixed per-block cost is large and mostly not
+instruction work, which makes the number of blocks, not the cost of a probe, the
+quantity to attack.
