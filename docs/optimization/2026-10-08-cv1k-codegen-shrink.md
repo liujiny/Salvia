@@ -151,3 +151,48 @@ the diagnostics image, and only if a candidate actually reduces recycles.
 
 Revert this commit: `sh3_drc_ppc.h` plus the `ram_base` field in `sh4.cpp`. No
 artifact, runtime copy or save-state format is part of it.
+
+## Console A/B images
+
+Only the diagnostics flavor was built, as the iteration rule requires; the
+release flavor is for an accepted change. Both images are `XEX2`, 34,631,680
+bytes, and were built by `salvia-tests/xex-build/build-xex.sh` with
+`--tag codegen-shrink` / `codegen-shrink-base` against `--baseline 3336c491`:
+
+| Image | Source | SHA256 | Archive |
+| --- | --- | --- | --- |
+| baseline | `3336c491` | `3faa500e48cb42244eaed5a9cab105f7329ac8eed1169d53f062ff24d1e35d94` | `xex-archive/fbneo-20261008-2326-codegen-shrink-base-diag.xex` |
+| this change | `8635834f` | `85a74937d9f2f47eeec5f24cba46626f9d740a28f22d91751f1fac27f7cbd69e` | `xex-archive/fbneo-20261008-2330-codegen-shrink-diag.xex` |
+
+`Distro360/fbneo.xex` and `Distro360/fbneo-diag.xex` are the change image;
+`Distro360/fbneo-codegen-shrink-base-diag.xex` is the matched baseline. Both
+carry an injected build tag, so every pause window names its own image.
+
+The build needs `cpu/sh4/sh3_drc_dispatch.h` and `cpu/sh4/sh4dmac.inc` in the
+mirror set as well: the runtime tree still held the reverted emitter-link
+versions of both, which made even the baseline source fail to compile
+(`sh4dmac.inc(136): error C3861: 'SH3_NOTE_RAM_WRITE'`). Mirroring the reverted
+files from the reviewed revision fixed the tree, and is what the previous
+round's revert note asked for. Two further runtime files
+(`cpu/sh4/sh4_intf.h`, `cpu/sh3_drc_work_profile.h` in the same directory) still
+predate several commits; their differences are inside `SH3_PPC_DRC_TEST`, which
+the XBOX build never defines, so they were left alone rather than expanded into
+this change.
+
+Requested console run: same state, no input, three or four pauses, so the
+windows can be paired by cumulative frame number. The signals to compare are
+`drc_work_arena peak_words`/`recycles` and `drc_work_dispatch rebuilds` per
+window, plus the existing `core_frame_ms`/`driver_frame_ms` fields.
+
+## What is left on the table
+
+- `memguard` (135,965 words) is the guard branch words themselves.
+- `memaddr`'s remaining ~9.7 words per direct access are the two
+  rotate/compare address-pattern checks, the alignment mask and the watched
+  read check; they are semantics, not materialisation.
+- The store-side source pointer (43,697 words, 14,592 stores) only becomes
+  cheaper with a second reserved register holding the block's source, which
+  would cost another guest slot; the literal pool path already uses `addi`.
+- `finish_delay()` still carries its own charge/return copy and could share the
+  same tail, but its loop variant depends on `charge()` leaving the remaining
+  budget in r11.
