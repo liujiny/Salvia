@@ -160,3 +160,20 @@ probably a mixture of that pattern and lighter play.
 ## Revert
 
 Revert this commit; it adds only a report.
+
+## Follow-up build: chained-dispatch timing
+
+`acb674da` moves the dispatcher clock from one pair per block to one pair per
+chained entry, so probe cost no longer rivals the measured span.
+
+Artifact: `Distro360/fbneo.xex`, 34,631,680 bytes, SHA256
+`989be71778e92188470ce3fb4547ca1dc671cd8b38e1eab7176ff6f65f6c4b01`, built
+2026-10-08 19:22:51 from checkpoint `acb674da`. The block-link experiment that
+preceded it is reverted (`a3eec114`, `b8b2921f`) and is not in this image.
+
+What the next console log decides: `drc_dispatch` divided by `dispatch_calls`
+gives the true per-entry cost of the dispatcher, clock confound removed.
+Compared against what `cpu_io` still shows after `blk_entry`, `movll_service`,
+`timers` and `blit_write` are subtracted, it says whether the remaining ~830
+cycles per block are the dispatcher itself or the generated code, which are
+different optimisation targets.
