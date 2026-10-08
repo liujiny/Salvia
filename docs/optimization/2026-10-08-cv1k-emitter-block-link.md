@@ -92,8 +92,8 @@ guard and epilogue instructions.
 
 ## Validation limits
 
-This is a host PowerPC build under QEMU. **No XEX was built and no console
-frame rate is claimed.**
+The host evidence above is a PowerPC build under QEMU. **No console frame rate
+is claimed**, because the host cannot run the XEX.
 
 Wall time on the QEMU host is bimodal (each binary lands near either 14.9 s or
 18.6 s depending on machine state), so only the minimum over interleaved runs is
@@ -105,8 +105,43 @@ QEMU executes the generated PPC and the C++ dispatcher both at native speed, so
 it does not reproduce the Xenon's per-dispatch cache-miss stalls that the
 phase-split result identified as the frame cost. A neutral host wall time
 therefore neither supports nor refutes a console gain; the console number
-requires an XDK build and a real run. The runtime mirror and the XEX build are
-left to that workflow.
+requires a real run of the XEX below.
+
+## XEX identity
+
+The runtime tree (`E:\Baiduyundownload\salvia-toolchain\.work\Salvia-main`) was
+verified to match `ab940770` for the four changed files before the mirror, so
+only the reviewed paths were copied:
+
+```
+call E:\Baiduyundownload\salvia-toolchain\scripts\msbuild.cmd \
+  E:\...\Salvia-main\libretro\FBNeo\projectfiles\visualstudio-2010-libretro-360\fba_vs2010_libretro_360.sln \
+  /p:Configuration=Release /t:Build
+call E:\Baiduyundownload\salvia-toolchain\scripts\msbuild.cmd \
+  E:\...\Salvia-main\Salvia.vcxproj /p:Configuration=Release_finalburn /t:Build
+```
+
+Both builds exited 0. The diagnostics header was left in the state it was found
+(`SALVIA_FBNEO_DIAGNOSTICS 1`), so `Distro360/fbneo.xex` in the runtime tree is
+the diagnostics image.
+
+| Image | Size | SHA256 |
+| --- | ---: | --- |
+| release (`SALVIA_FBNEO_DIAGNOSTICS 0`) | 34,598,912 | `043a2ebe8770d2667b1f330f74871dc41def35b5975bc019774aaf01e001b6a4` |
+| diagnostics (`SALVIA_FBNEO_DIAGNOSTICS 1`) | 34,631,680 | `9497e534cae11cc42792064a09048b0f005c1e02695b2cc508bface5d032705f` |
+
+Both are archived outside the checkout under
+`/home/humor/salvia-tests/emitter-link-20261008/` with their build logs. Each
+starts with the `XEX2` magic; the container is encrypted, so the embedded PPC PE
+machine type is not file-verifiable here, and this toolchain package has no
+`xextool.exe` (the build log warns the XEX is copied uncompressed). Sizes match
+the archived known-good release class (34,598,912) and the prior diagnostics
+images (34,631,680).
+
+What to measure on the console: frame rate under `ddpdfk`/`ddpsdoj` with the
+release image, and `drc_work_dispatch lookups`/`native_calls` plus
+`core_phase_ms drc_dispatch` with the diagnostics image, where the link shows up
+as fewer dispatcher entries and a smaller dispatch phase.
 
 ## Revert
 
