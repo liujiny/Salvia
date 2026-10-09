@@ -74,6 +74,10 @@ struct Sh3PpcState {
  // the 32-bit host pointer, and every registration or mapping change revokes
  // the code before this can go stale.
  UINT8 *ram_base;
+ // Host pointer to the per-guest-page code generations (sh3_drc_ppc.h). Also a
+ // driver field, never scanned: the generated stores read it through this
+ // field to bump the page they write.
+ UINT32 *code_page_gen;
 };
 static Sh3PpcState sh3_ppc_state;
 // Driver-owned idle configuration, used by servicing and diagnostics. Never scanned
@@ -101,11 +105,16 @@ static void sh3_drc_reset();
 static void sh3_drc_exit();
 static void sh3_drc_invalidate_ram();
 static void sh3_drc_mapping_changed(UINT32 start, UINT32 end, INT32 type);
+// Bumps the compiled-code generation of the guest page a write lands on; the
+// interpreter's WB/WW/WL are the only write paths it has to cover, since a
+// state load or a mapping change drops the whole cache instead.
+static void sh3_drc_code_page_touch(UINT32 addr);
 #else
 static UINT32 m_r[16], m_pc, m_ppc, m_pr, m_sr, m_gbr;
 static UINT32 m_mach, m_macl, m_ea, m_delay;
 static INT32 m_sh4_icount, sh3_total_cycles;
 static void sh3_drc_reset() {}
+static void sh3_drc_code_page_touch(UINT32) {}
 static void sh3_drc_exit() {}
 void Sh3SetDrc(INT32) {}
 void Sh3SetDrcReadMirror(UINT8*, UINT32, UINT32, INT32) {}
@@ -1070,6 +1079,7 @@ static inline UINT32 RL(UINT32 A)
 
 static inline void WB(UINT32 A, UINT8 V)
 {
+	sh3_drc_code_page_touch(A);
 	if (A < 0xe0000000) {
 		A &= AM;
 		WaitState(A, 1);
@@ -1088,6 +1098,7 @@ static inline void WB(UINT32 A, UINT8 V)
 
 static inline void WW(UINT32 A, UINT16 V)
 {
+	sh3_drc_code_page_touch(A);
 	if (A < 0xe0000000) {
 		A &= AM;
 		WaitState(A, 1);
@@ -1106,6 +1117,7 @@ static inline void WW(UINT32 A, UINT16 V)
 
 static inline void WL(UINT32 A, UINT32 V)
 {
+	sh3_drc_code_page_touch(A);
 	if (A < 0xe0000000) {
 		A &= AM;
 		WaitState(A, 1);
@@ -4744,6 +4756,7 @@ static inline void execute_one(const UINT16 opcode)
 #ifdef SH3_PPC_DRC
 template<bool Count> static bool sh3_drc_service_movll(unsigned opcode);
 #include "sh3_drc_ppc.h"
+static void sh3_drc_code_page_touch(UINT32 addr) { Sh3Ppc::code_page_touch(addr); }
 #endif
 
 #include "sh3_interpreter_hot.h"
@@ -4938,8 +4951,8 @@ void Sh3WorkReport(void (*emit)(const char*))
 		p.frames,p.slices,p.cpu_off_slices,p.normal_mode_slices); emit(text);
 	sprintf(text,"drc_work_dispatch calls=%" SH3_WORK_COUNT " lookups=%" SH3_WORK_COUNT " rebuilds=%" SH3_WORK_COUNT " validation_spans=%" SH3_WORK_COUNT " requested_words=%" SH3_WORK_COUNT,
 		p.dispatch_calls,p.lookups,p.rebuilds,p.validation_spans,p.validation_words); emit(text);
-	sprintf(text,"drc_work_rebuild_causes conflict=%" SH3_WORK_COUNT " source=%" SH3_WORK_COUNT " read_map=%" SH3_WORK_COUNT,
-		p.rebuild_conflict,p.rebuild_source,p.rebuild_map); emit(text);
+	sprintf(text,"drc_work_rebuild_causes conflict=%" SH3_WORK_COUNT " source=%" SH3_WORK_COUNT " read_map=%" SH3_WORK_COUNT " epoch_stale=%" SH3_WORK_COUNT " epoch_missed=%" SH3_WORK_COUNT,
+		p.rebuild_conflict,p.rebuild_source,p.rebuild_map,p.epoch_stale,p.epoch_missed); emit(text);
 	sprintf(text,"drc_work_arena bytes=%u words=%u recycles=%" SH3_WORK_COUNT " evictions=%" SH3_WORK_COUNT " evicted_slots=%" SH3_WORK_COUNT " peak_words=%" SH3_WORK_COUNT " peak_bytes=%" SH3_WORK_COUNT,
 		(unsigned)Sh3Ppc::CACHE_BYTES,(unsigned)(Sh3Ppc::CACHE_BYTES/4),p.arena_recycles,p.arena_evictions,p.arena_evicted_slots,p.arena_peak,p.arena_peak*4); emit(text);
 	// Emitted words per compiled block by phase: where the generated code goes,

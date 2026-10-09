@@ -73,6 +73,18 @@ static Block *blocks;
 // only has to drop the slots that name it; without this map the cache would
 // have to scan every record's embedded entry pointer on each reuse.
 static UINT8 *slot_sector;
+// One generation counter per 64 KiB guest page, indexed exactly like the
+// interpreter's map ((address & AM) >> SH3_SHIFT, so every external alias folds
+// onto one page). Every write that could change bytes a block was compiled
+// from bumps the page's generation: the emitter bumps it inline after every
+// generated store, and the interpreter's WB/WW/WL (which also carry the DMAC
+// and the cheat path) call code_page_touch(). A block records its page's
+// generation when it is compiled, so "generation unchanged" is a cheap
+// necessary condition for the source snapshot still being valid. State loads,
+// mapping changes and the arena's sector reuse all drop the affected records
+// outright, so they need no bump.
+enum { CODE_PAGE_COUNT = (AM + 1) >> SH3_SHIFT };
+static UINT32 *code_page_gen;
 typedef char PointerAbiMustBe32Bits[(sizeof(void*) == 4) ? 1 : -1];
 static UINT32 *code;
 static unsigned used;
@@ -481,7 +493,19 @@ struct Compiler {
    if(!direct || constant_ram)address(base,index,disp,absolute);
    store(11, SO(ea));
   }
-  if (write) emit(d(size == 1 ? 38 : size == 2 ? 44 : 36, data, 12, 0));
+  if (write) {
+   emit(d(size == 1 ? 38 : size == 2 ? 44 : 36, data, 12, 0));
+   // Bump the generation of the guest page this store lands on, so any block
+   // compiled from that page recompiles. One rotate gives the page index for
+   // both the RAM-window and the generic path: the 13-bit width applies the
+   // AM mask by itself. r0/r12 are scratch here and nothing later in the
+   // access needs them.
+   rotate(0,11,16,19,31);          // r0 = (addr & AM) >> 16
+   load(12,SO(code_page_gen));
+   emit(x(11,12,0,23));            // lwzx r11,r12,r0 -- r11 is free here
+   addi(11,11,1);
+   emit(x(11,12,0,151));          // stwx r11,r12,r0
+  }
   else {
    // Every SH3 word load sign-extends, and lha is exactly that load, so the
    // halfword case needs one instruction instead of lhz plus extsh.
@@ -831,15 +855,17 @@ static bool allocate()
  lookup=(Lookup*)calloc(CACHE_SETS,sizeof(Lookup));
  slot_sector=(UINT8*)malloc(TABLE_SIZE);
  if(slot_sector)memset(slot_sector,0xFF,TABLE_SIZE); // no slot has code yet
+ code_page_gen=(UINT32*)calloc(CODE_PAGE_COUNT,sizeof(UINT32));
 #ifdef _XBOX
  code=xbox_code;
 #else
  code=(UINT32*)mmap(NULL,CACHE_BYTES,PROT_READ|PROT_WRITE|PROT_EXEC,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
  if(code==MAP_FAILED)code=NULL;
 #endif
- if(!blocks || !lookup || !slot_sector || !code) {
+ if(!blocks || !lookup || !slot_sector || !code_page_gen || !code) {
   free(blocks); blocks=NULL; free(lookup); lookup=NULL;
   free(slot_sector); slot_sector=NULL;
+  free(code_page_gen); code_page_gen=NULL;
 #ifndef _XBOX
   if(code)munmap(code,CACHE_BYTES);
 #endif
@@ -848,7 +874,16 @@ static bool allocate()
  used=0;
  sh3_ppc_state.read_map=MemMapR;
  sh3_ppc_state.write_map=MemMapW;
+ sh3_ppc_state.code_page_gen=code_page_gen;
  return true;
+}
+
+// Every interpreted write that reaches RAM passes through WB/WW/WL, so this is
+// the one hook those three need. The generated stores bump the generation
+// themselves, inline, with the same page index.
+static void code_page_touch(UINT32 addr)
+{
+ if(code_page_gen) ++code_page_gen[(addr & AM) >> SH3_SHIFT];
 }
 
 // Drop every block-table slot whose code lived in this sector. The slot keeps
@@ -940,6 +975,9 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
  c.protect_code(block.words);
  memcpy(block.original,source,block.words*2);
  block.cycles=(UINT16)max_cycles; block.check_read_map=check_read;
+ // Remember the generation of the page this code was compiled from; a write to
+ // that page bumps it and tells the dispatcher the snapshot must be rechecked.
+ block.code_gen=code_page_gen?code_page_gen[(pc&AM)>>SH3_SHIFT]:0;
  block.entry=count?(int (*)(Sh3PpcState*))(code+used):NULL;
  if(count) {
   sync_code(code+used,c.out);
@@ -1031,6 +1069,8 @@ static void sh3_drc_exit()
  free(Sh3Ppc::blocks); Sh3Ppc::blocks=NULL;
  free(Sh3Ppc::lookup); Sh3Ppc::lookup=NULL;
  free(Sh3Ppc::slot_sector); Sh3Ppc::slot_sector=NULL;
+ free(Sh3Ppc::code_page_gen); Sh3Ppc::code_page_gen=NULL;
+ sh3_ppc_state.code_page_gen=NULL;
 #ifndef _XBOX
  if(Sh3Ppc::code)munmap(Sh3Ppc::code,Sh3Ppc::CACHE_BYTES);
 #endif
