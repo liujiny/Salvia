@@ -50,6 +50,19 @@ prints `STATE 0cf251c3d512ddbb` with a byte-identical hash file, and
 and linked with the probe in place, which is what actually compiles this code
 path.
 
+## Console image
+
+Diagnostics flavor only, as the iteration rule requires. The image for this
+commit is `5c5e06500506bd1b9df22acace7160793d5b7ad1a118014368028a4fc8690341`,
+34,631,680 bytes, archived as
+`xex-archive/fbneo-20261009-0907-dispatch-probe-split-diag.xex`, deployed as
+`Distro360/fbneo.xex` / `fbneo-diag.xex` and kept as
+`Distro360/fbneo-dispatch-probe-split-diag.xex`. The matched `3336c491`
+baseline image is unchanged, so a console A/B can pair this image's
+`core_phase_ms` split against the baseline's arena/recycle counters in one run.
+The earlier `43611815...` build of the same source (same tag, before this commit
+landed) is an archived duplicate; the deployed image is the one above.
+
 ## Limits
 
 Each span includes its own `QueryPerformanceCounter` read (~30-50 ns), so a
