@@ -37,9 +37,22 @@
 #define SH3_PPC_TABLE_SIZE 131072
 #endif
 
+// Arena sector size. The code arena is a ring of sectors and a block never
+// straddles a sector boundary, so reusing a sector can be made safe by
+// invalidating exactly the block-table slots that were compiled into it — a
+// bounded cost — instead of discarding every compiled block in the cache.
+// 1 MiB keeps the alignment waste (at most MAX_WORDS per sector) under 1% and
+// the slot map that makes the invalidation cheap at TABLE_SIZE bytes.
+#ifndef SH3_PPC_SECTOR_BYTES
+#define SH3_PPC_SECTOR_BYTES (1024 * 1024)
+#endif
+
 namespace Sh3Ppc {
 enum { CACHE_BYTES = SH3_PPC_CACHE_BYTES, TABLE_SIZE = SH3_PPC_TABLE_SIZE, WAYS = 4, CACHE_SETS = TABLE_SIZE / WAYS,
-       MAX_INSNS = 32, MAX_WORDS = 4096, HOST_REGS = 6 };
+       CACHE_WORDS = CACHE_BYTES / 4, MAX_INSNS = 32, MAX_WORDS = 4096, HOST_REGS = 6 };
+// One sector, or the whole arena when a test override makes it smaller.
+enum { SECTOR_WORDS = (SH3_PPC_SECTOR_BYTES >= SH3_PPC_CACHE_BYTES) ? CACHE_WORDS : SH3_PPC_SECTOR_BYTES / 4,
+       SECTOR_COUNT = (CACHE_WORDS + SECTOR_WORDS - 1) / SECTOR_WORDS };
 // Host general registers used by the generated code: r3 is the state pointer,
 // r4 keeps the registered RAM window base for the whole block, r5..r10 are the
 // cached guest register slots, r11/r12 and r0 are the address/immediate
@@ -55,6 +68,11 @@ enum { G_SR = 16, G_MACL, G_MACH, G_PR, G_GBR };
 struct Lookup { UINT32 tag[WAYS]; unsigned next; };
 static Lookup *lookup;
 static Block *blocks;
+// Which arena sector each block-table slot was compiled into, or 0xFF when the
+// slot holds no generated code. Sectors are reused in order, so reusing one
+// only has to drop the slots that name it; without this map the cache would
+// have to scan every record's embedded entry pointer on each reuse.
+static UINT8 *slot_sector;
 typedef char PointerAbiMustBe32Bits[(sizeof(void*) == 4) ? 1 : -1];
 static UINT32 *code;
 static unsigned used;
@@ -811,14 +829,17 @@ static bool allocate()
  if (blocks) return true;
  blocks=(Block*)calloc(TABLE_SIZE,sizeof(Block));
  lookup=(Lookup*)calloc(CACHE_SETS,sizeof(Lookup));
+ slot_sector=(UINT8*)malloc(TABLE_SIZE);
+ if(slot_sector)memset(slot_sector,0xFF,TABLE_SIZE); // no slot has code yet
 #ifdef _XBOX
  code=xbox_code;
 #else
  code=(UINT32*)mmap(NULL,CACHE_BYTES,PROT_READ|PROT_WRITE|PROT_EXEC,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
  if(code==MAP_FAILED)code=NULL;
 #endif
- if(!blocks || !lookup || !code) {
+ if(!blocks || !lookup || !slot_sector || !code) {
   free(blocks); blocks=NULL; free(lookup); lookup=NULL;
+  free(slot_sector); slot_sector=NULL;
 #ifndef _XBOX
   if(code)munmap(code,CACHE_BYTES);
 #endif
@@ -830,12 +851,51 @@ static bool allocate()
  return true;
 }
 
+// Drop every block-table slot whose code lived in this sector. The slot keeps
+// its lookup tag until the next compile rewrites that record; a cleared record
+// is simply an entry the dispatcher has to compile again, which is what a
+// reused sector needs. The pass is over the slot map, not over the records, so
+// it is a 128 KiB scan rather than an 11 MiB one.
+static void arena_reuse_sector(unsigned sector)
+{
+ if(!slot_sector || !blocks || !lookup) return;
+ unsigned cleared=0;
+ for(unsigned i=0;i<TABLE_SIZE;i++) {
+  if(slot_sector[i]!=(UINT8)sector) continue;
+  slot_sector[i]=0xFF;
+  lookup[i/WAYS].tag[i%WAYS]=0;
+  memset(&blocks[i],0,sizeof(Block));
+  ++cleared;
+ }
+ if(cleared) {
+  ++sh3_drc_work.arena_evictions;
+  sh3_drc_work.arena_evicted_slots+=cleared;
+ }
+}
+
+// Called by the dispatcher for the table slot it just filled.
+static void arena_note_slot(unsigned slot,const Block &block)
+{
+ if(!slot_sector || !block.entry || slot>=TABLE_SIZE) return;
+ slot_sector[slot]=(UINT8)(((UINT32*)block.entry-code)/SECTOR_WORDS);
+}
+
 static void compile(Block &block, UINT32 pc, const UINT16 *source)
 {
- if(used+MAX_WORDS >= CACHE_BYTES/4) {
-  ++sh3_drc_work.arena_recycles;
-  memset(blocks,0,TABLE_SIZE*sizeof(Block));
-  memset(lookup,0,CACHE_SETS*sizeof(Lookup)); used=0;
+ // The arena is a ring of sectors and a block never straddles a sector
+ // boundary, so the slots recorded for a sector fully describe the code that
+ // has to be dropped before that sector's space can be handed out again. This
+ // replaces the old all-or-nothing overflow guard: a full cache is now reused
+ // one sector at a time, at a bounded cost, instead of discarding every
+ // compiled block and making the guest rebuild its whole working set through
+ // the interpreter.
+ unsigned sector=used/SECTOR_WORDS;
+ unsigned base=sector*SECTOR_WORDS, limit=CACHE_WORDS-base;
+ if(limit>SECTOR_WORDS)limit=SECTOR_WORDS;
+ if(used-base+MAX_WORDS>limit) {
+  sector=(sector+1)%SECTOR_COUNT;
+  arena_reuse_sector(sector);
+  used=sector*SECTOR_WORDS;
  }
  Compiler c(code+used,pc,source);
  int available=(int)((4096-((uintptr_t)source&4095))/2);
@@ -963,12 +1023,14 @@ static void sh3_drc_reset()
 {
  if(Sh3Ppc::blocks)memset(Sh3Ppc::blocks,0,Sh3Ppc::TABLE_SIZE*sizeof(Sh3Ppc::Block));
  if(Sh3Ppc::lookup)memset(Sh3Ppc::lookup,0,Sh3Ppc::CACHE_SETS*sizeof(Sh3Ppc::Lookup));
+ if(Sh3Ppc::slot_sector)memset(Sh3Ppc::slot_sector,0xFF,Sh3Ppc::TABLE_SIZE);
  Sh3Ppc::used=0;
 }
 static void sh3_drc_exit()
 {
  free(Sh3Ppc::blocks); Sh3Ppc::blocks=NULL;
  free(Sh3Ppc::lookup); Sh3Ppc::lookup=NULL;
+ free(Sh3Ppc::slot_sector); Sh3Ppc::slot_sector=NULL;
 #ifndef _XBOX
  if(Sh3Ppc::code)munmap(Sh3Ppc::code,Sh3Ppc::CACHE_BYTES);
 #endif

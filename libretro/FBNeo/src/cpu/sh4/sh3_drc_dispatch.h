@@ -69,6 +69,7 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   }
   if(rebuild) {
    compile(b,pc,source);
+   arena_note_slot(index*WAYS+way,b);
    if(Count) ++sh3_drc_work.rebuilds;
    set.tag[way]=pc;
   }

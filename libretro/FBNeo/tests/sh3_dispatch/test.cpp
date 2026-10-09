@@ -56,6 +56,10 @@ static void compile(Block& b,UINT32 pc,const UINT16* source) {
  b.cycles=UINT16(1+((*source>>8)&3)); b.check_read_map=(*source>>12)==10;
  b.entry=(*source>>12)==0?NULL:native;
 }
+// The production dispatcher tells the arena which sector a slot was compiled
+// into, so reusing a sector can drop exactly those slots. This fixture has no
+// generated code and no arena, so the note is a no-op.
+static void arena_note_slot(unsigned,const Block&) {}
 }
 // Preserved pre-change implementation, independent of the production template.
 static bool reference_dispatch() {

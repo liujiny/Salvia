@@ -4940,8 +4940,8 @@ void Sh3WorkReport(void (*emit)(const char*))
 		p.dispatch_calls,p.lookups,p.rebuilds,p.validation_spans,p.validation_words); emit(text);
 	sprintf(text,"drc_work_rebuild_causes conflict=%" SH3_WORK_COUNT " source=%" SH3_WORK_COUNT " read_map=%" SH3_WORK_COUNT,
 		p.rebuild_conflict,p.rebuild_source,p.rebuild_map); emit(text);
-	sprintf(text,"drc_work_arena bytes=%u words=%u recycles=%" SH3_WORK_COUNT " peak_words=%" SH3_WORK_COUNT " peak_bytes=%" SH3_WORK_COUNT,
-		(unsigned)Sh3Ppc::CACHE_BYTES,(unsigned)(Sh3Ppc::CACHE_BYTES/4),p.arena_recycles,p.arena_peak,p.arena_peak*4); emit(text);
+	sprintf(text,"drc_work_arena bytes=%u words=%u recycles=%" SH3_WORK_COUNT " evictions=%" SH3_WORK_COUNT " evicted_slots=%" SH3_WORK_COUNT " peak_words=%" SH3_WORK_COUNT " peak_bytes=%" SH3_WORK_COUNT,
+		(unsigned)Sh3Ppc::CACHE_BYTES,(unsigned)(Sh3Ppc::CACHE_BYTES/4),p.arena_recycles,p.arena_evictions,p.arena_evicted_slots,p.arena_peak,p.arena_peak*4); emit(text);
 	// Emitted words per compiled block by phase: where the generated code goes,
 	// independent of how often each block then runs.
 	sprintf(text,"drc_work_codegen blocks=%" SH3_WORK_COUNT " body=%" SH3_WORK_COUNT " memaddr=%" SH3_WORK_COUNT " memguard=%" SH3_WORK_COUNT " memaccess=%" SH3_WORK_COUNT " complete=%" SH3_WORK_COUNT " exit=%" SH3_WORK_COUNT,

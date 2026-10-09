@@ -23,6 +23,12 @@ struct Sh3DrcWorkProfile {
  // last report. Both are written on the compile path only, never from
  // generated code or the dispatched hot loop.
  Sh3WorkCount arena_recycles, arena_peak;
+ // The arena is a ring of sectors: entering a sector whose space is handed out
+ // again invalidates the block-table slots that held its previous code.
+ // `arena_evictions` counts those reuses that actually dropped slots and
+ // `arena_evicted_slots` how many records they cleared. Both are compile-path
+ // only, like the counters above.
+ Sh3WorkCount arena_evictions, arena_evicted_slots;
  Sh3WorkCount native_calls, native_cycles, interpreter_steps, interpreter_cycles;
  Sh3WorkCount movll_services, movll_service_cycles, movll_service_rejects;
  Sh3WorkCount device_services[2], device_service_cycles[2], device_fallbacks[2];
