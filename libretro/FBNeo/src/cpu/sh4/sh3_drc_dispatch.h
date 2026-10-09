@@ -99,6 +99,9 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    ++sh3_drc_work.native_calls;
    ++sh3_drc_work.snapshot_lengths[b.words<=33?b.words:33];
    ++sh3_drc_work.block_ends[slot_sector[index*WAYS+way]>>5];
+   // Guest stores this block will perform, weighted by its entry count. Only
+   // the sampled dispatch specialization reads the diagnostic array.
+   sh3_drc_work.block_stores+=slot_stores[index*WAYS+way];
   }
 #if SALVIA_CV1K_PROBE
   if(probeNow) probeStart=salvia_cv1k_tick();

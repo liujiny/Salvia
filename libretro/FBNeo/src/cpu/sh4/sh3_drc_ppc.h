@@ -79,6 +79,12 @@ static Block *blocks;
 // only has to drop the slots that name it; without this map the cache would
 // have to scan every record's embedded entry pointer on each reuse.
 static UINT8 *slot_sector;
+// How many guest stores the block in each slot emitted. A diagnostic array, not
+// part of the dispatch contract: the dispatcher reads it only in work-sampled
+// builds, and only to weigh the cost a store-side invalidation signal would add
+// to every generated store.
+static UINT8 *slot_stores;
+static unsigned sh3_block_stores;
 typedef char PointerAbiMustBe32Bits[(sizeof(void*) == 4) ? 1 : -1];
 static UINT32 *code;
 static unsigned used;
@@ -911,15 +917,17 @@ static bool allocate()
  lookup=(Lookup*)calloc(CACHE_SETS,sizeof(Lookup));
  slot_sector=(UINT8*)malloc(TABLE_SIZE);
  if(slot_sector)memset(slot_sector,0xFF,TABLE_SIZE); // no slot has code yet
+ slot_stores=(UINT8*)calloc(TABLE_SIZE,1);
 #ifdef _XBOX
  code=xbox_code;
 #else
  code=(UINT32*)mmap(NULL,CACHE_BYTES,PROT_READ|PROT_WRITE|PROT_EXEC,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
  if(code==MAP_FAILED)code=NULL;
 #endif
- if(!blocks || !lookup || !slot_sector || !code) {
+ if(!blocks || !lookup || !slot_sector || !slot_stores || !code) {
   free(blocks); blocks=NULL; free(lookup); lookup=NULL;
   free(slot_sector); slot_sector=NULL;
+  free(slot_stores); slot_stores=NULL;
 #ifndef _XBOX
   if(code)munmap(code,CACHE_BYTES);
 #endif
@@ -945,6 +953,7 @@ static void arena_reuse_sector(unsigned sector)
   // reason recorded by arena_note_slot().
   if((slot_sector[i]&0x1Fu)!=(UINT8)sector) continue;
   slot_sector[i]=0xFF;
+  if(slot_stores) slot_stores[i]=0;
   lookup[i/WAYS].tag[i%WAYS]=0;
   memset(&blocks[i],0,sizeof(Block));
   ++cleared;
@@ -960,6 +969,7 @@ static void arena_note_slot(unsigned slot,const Block &block)
 {
  if(!slot_sector || !block.entry || slot>=TABLE_SIZE) return;
  slot_sector[slot]=(UINT8)((((UINT32*)block.entry-code)/SECTOR_WORDS) | (sh3_block_end_reason<<5));
+ if(slot_stores) slot_stores[slot]=(UINT8)(sh3_block_stores>255?255:sh3_block_stores);
 }
 
 static void compile(Block &block, UINT32 pc, const UINT16 *source)
@@ -1040,6 +1050,7 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
  // useless native calls. Validate the opcode so later code changes work.
  if(!block.words)block.words=1;
  c.protect_code(block.words);
+ sh3_block_stores=(unsigned)c.write_check_count;
  memcpy(block.original,source,block.words*2);
  block.cycles=(UINT16)max_cycles; block.check_read_map=check_read;
  block.entry=count?(int (*)(Sh3PpcState*))(code+used):NULL;
@@ -1126,6 +1137,7 @@ static void sh3_drc_reset()
  if(Sh3Ppc::blocks)memset(Sh3Ppc::blocks,0,Sh3Ppc::TABLE_SIZE*sizeof(Sh3Ppc::Block));
  if(Sh3Ppc::lookup)memset(Sh3Ppc::lookup,0,Sh3Ppc::CACHE_SETS*sizeof(Sh3Ppc::Lookup));
  if(Sh3Ppc::slot_sector)memset(Sh3Ppc::slot_sector,0xFF,Sh3Ppc::TABLE_SIZE);
+ if(Sh3Ppc::slot_stores)memset(Sh3Ppc::slot_stores,0,Sh3Ppc::TABLE_SIZE);
  Sh3Ppc::used=0;
 }
 static void sh3_drc_exit()
@@ -1133,6 +1145,7 @@ static void sh3_drc_exit()
  free(Sh3Ppc::blocks); Sh3Ppc::blocks=NULL;
  free(Sh3Ppc::lookup); Sh3Ppc::lookup=NULL;
  free(Sh3Ppc::slot_sector); Sh3Ppc::slot_sector=NULL;
+ free(Sh3Ppc::slot_stores); Sh3Ppc::slot_stores=NULL;
 #ifndef _XBOX
  if(Sh3Ppc::code)munmap(Sh3Ppc::code,Sh3Ppc::CACHE_BYTES);
 #endif

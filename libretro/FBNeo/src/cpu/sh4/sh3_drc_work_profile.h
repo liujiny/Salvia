@@ -36,6 +36,11 @@ struct Sh3DrcWorkProfile {
  // `arena_evicted_slots` how many records they cleared. Both are compile-path
  // only, like the counters above.
  Sh3WorkCount arena_evictions, arena_evicted_slots;
+ // Guest stores the emitted blocks perform, weighted by how often each block
+ // ran. Every generated guest store registers one code-write guard, so the
+ // compile-time count is exact; the array that carries it per slot is a
+ // diagnostic and only sampled builds read it in the dispatch loop.
+ Sh3WorkCount block_stores;
  Sh3WorkCount native_calls, native_cycles, interpreter_steps, interpreter_cycles;
  Sh3WorkCount movll_services, movll_service_cycles, movll_service_rejects;
  Sh3WorkCount device_services[2], device_service_cycles[2], device_fallbacks[2];

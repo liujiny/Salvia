@@ -4948,6 +4948,12 @@ void Sh3WorkReport(void (*emit)(const char*))
 		p.block_ends[0],p.block_ends[1],p.block_ends[2],p.block_ends[3]+p.block_ends[6]+p.block_ends[7],p.block_ends[4],p.block_ends[5],p.block_ends[6],p.block_ends[7]); emit(text);
 	sprintf(text,"drc_work_arena bytes=%u words=%u recycles=%" SH3_WORK_COUNT " evictions=%" SH3_WORK_COUNT " evicted_slots=%" SH3_WORK_COUNT " peak_words=%" SH3_WORK_COUNT " peak_bytes=%" SH3_WORK_COUNT,
 		(unsigned)Sh3Ppc::CACHE_BYTES,(unsigned)(Sh3Ppc::CACHE_BYTES/4),p.arena_recycles,p.arena_evictions,p.arena_evicted_slots,p.arena_peak,p.arena_peak*4); emit(text);
+	// Guest stores the emitted blocks perform per sampled entry, summed over
+	// blocks that ran. This is the cost side of any per-store invalidation
+	// signal (a write stamp per store), so it is what decides whether a
+	// store-side epoch is affordable at all.
+	sprintf(text,"drc_work_stores per_entry=%u entries=%" SH3_WORK_COUNT " generated=%" SH3_WORK_COUNT,
+		p.native_calls?(unsigned)(p.block_stores/p.native_calls):0u,p.native_calls,p.block_stores); emit(text);
 	// Emitted words per compiled block by phase: where the generated code goes,
 	// independent of how often each block then runs.
 	sprintf(text,"drc_work_codegen blocks=%" SH3_WORK_COUNT " body=%" SH3_WORK_COUNT " memaddr=%" SH3_WORK_COUNT " memguard=%" SH3_WORK_COUNT " memaccess=%" SH3_WORK_COUNT " complete=%" SH3_WORK_COUNT " exit=%" SH3_WORK_COUNT,

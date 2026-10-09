@@ -35,6 +35,8 @@ static Lookup lookup[CACHE_SETS];
 // the arena keeps beside the table ("no slot has code yet"), so the fixture has
 // to carry the same array. Nothing here reuses sectors, so it stays 0xFF.
 static UINT8 slot_sector[TABLE_SIZE];
+// The same for the store-density diagnostic the sampled dispatcher reads.
+static UINT8 slot_stores[TABLE_SIZE];
 static bool failed;
 static void clear() { memset(block_storage,0,sizeof(block_storage)); memset(lookup,0,sizeof(lookup)); memset(slot_sector,0xFF,sizeof(slot_sector)); }
 // Model the production cold/warm/sticky-failure allocation contract, rather
