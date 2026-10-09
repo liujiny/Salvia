@@ -26,7 +26,13 @@
 // arena is a static array in .bss, and the Xenos compositor still has to find
 // room for its atlas, so the arena is pinned to the knee instead of the cap.
 #ifndef SH3_PPC_CACHE_BYTES
-#define SH3_PPC_CACHE_BYTES (20 * 1024 * 1024)
+// The fused blocks of the delayed-conditional fall-through grow the live code
+// by about 40% (host: 1.23M -> 1.79M arena words at 60 frames, 3.72M -> 5.24M
+// at 1800), so the working set reaches a 20 MiB arena inside one 3,500-frame
+// console window and the ring starts reusing 1 MiB sectors. 32 MiB is the size
+// the pre-ring sweep measured as the default; it keeps the same state inside
+// ~62% instead of 99.9% and delays the first reuse by about 1,000 frames.
+#define SH3_PPC_CACHE_BYTES (32 * 1024 * 1024)
 #endif
 
 // Number of block-table entries, four ways per set. The original 32768-entry
