@@ -4940,6 +4940,12 @@ void Sh3WorkReport(void (*emit)(const char*))
 		p.dispatch_calls,p.lookups,p.rebuilds,p.validation_spans,p.validation_words); emit(text);
 	sprintf(text,"drc_work_rebuild_causes conflict=%" SH3_WORK_COUNT " source=%" SH3_WORK_COUNT " read_map=%" SH3_WORK_COUNT,
 		p.rebuild_conflict,p.rebuild_source,p.rebuild_map); emit(text);
+	// Why the blocks that ran ended: window_out, jump_rel, jump_indirect,
+	// branch_delayed, self_loop, unsupported. Only window_out and jump_rel and
+	// branch_delayed have compile-time targets a fusion pass could continue
+	// into, so this is the sizing measurement for longer blocks.
+	sprintf(text,"drc_work_block_ends window_out=%" SH3_WORK_COUNT " jump_rel=%" SH3_WORK_COUNT " jump_indirect=%" SH3_WORK_COUNT " branch_delayed=%" SH3_WORK_COUNT " self_loop=%" SH3_WORK_COUNT " unsupported=%" SH3_WORK_COUNT " delayed_eligible=%" SH3_WORK_COUNT " delayed_ineligible=%" SH3_WORK_COUNT,
+		p.block_ends[0],p.block_ends[1],p.block_ends[2],p.block_ends[3]+p.block_ends[6]+p.block_ends[7],p.block_ends[4],p.block_ends[5],p.block_ends[6],p.block_ends[7]); emit(text);
 	sprintf(text,"drc_work_arena bytes=%u words=%u recycles=%" SH3_WORK_COUNT " evictions=%" SH3_WORK_COUNT " evicted_slots=%" SH3_WORK_COUNT " peak_words=%" SH3_WORK_COUNT " peak_bytes=%" SH3_WORK_COUNT,
 		(unsigned)Sh3Ppc::CACHE_BYTES,(unsigned)(Sh3Ppc::CACHE_BYTES/4),p.arena_recycles,p.arena_evictions,p.arena_evicted_slots,p.arena_peak,p.arena_peak*4); emit(text);
 	// Emitted words per compiled block by phase: where the generated code goes,

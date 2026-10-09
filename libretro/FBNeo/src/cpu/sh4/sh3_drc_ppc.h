@@ -145,6 +145,40 @@ struct CodeWriteCheck { UINT32 *compare; unsigned size; };
 enum { CAT_BODY=0, CAT_MEMADDR, CAT_MEMGUARD, CAT_MEMACCESS, CAT_COMPLETE, CAT_EXIT, CAT_COUNT };
 static unsigned long long sh3_gen_words[CAT_COUNT];
 static unsigned long long sh3_gen_blocks;
+// Why the block that is being compiled ended. Buckets 0..5 are the classes the
+// earlier histogram showed; 6 and 7 split the delayed conditionals by whether
+// the block could instead have continued through the delay slot into the
+// fall-through, which is what the emitter already does for non-delayed
+// conditionals: the delay instruction must compile, must not modify T (the
+// branch's condition is evaluated before the delay slot executes) and must not
+// be one of the memory forms that add guard exits.
+enum { END_WINDOW=0, END_JUMP_REL, END_JUMP_INDIRECT, END_BRANCH_DELAYED, END_SELF_LOOP, END_UNSUPPORTED,
+       END_DELAYED_ELIGIBLE, END_DELAYED_INELIGIBLE, END_REASON_COUNT };
+static unsigned sh3_block_end_reason;
+// Conservative "the delay slot cannot disturb the branch decision or add a
+// guard exit" predicate: register moves, immediates, extracts, multiplies,
+// PR/MACH/MACL/GBR transfers. Anything touching T (add/sub/logic/shift/negate/
+// cmp/div/dt), any memory access (guards) and the control transfers stay out.
+static bool delay_slot_eligible(UINT16 op)
+{
+ switch (op & 0xf00f) {
+  case 0x6000: case 0x6001: case 0x6002: case 0x6003: return true; // MOV/MOV.B/MOV.W/MOV.L Rm,Rn
+  case 0x6008: case 0x6009: case 0x600c: case 0x600d: case 0x600e: case 0x600f: return true; // SWAP/EXTU/EXTS
+  case 0x0007: return true; // MUL.L
+  case 0x0029: return true; // MOVT
+ }
+ switch (op) {
+  case 0x0009: return true; // NOP
+  case 0x0012: case 0x401e: return true; // STC/LDC GBR
+  case 0x000a: case 0x001a: case 0x002a: return true; // STS MACH/MACL/PR
+  case 0x400a: case 0x401a: case 0x402a: return true; // LDS MACH/MACL/PR
+ }
+ if ((op & 0xf000) == 0xe000) return true; // MOV #imm,Rn
+ if ((op & 0xf000) == 0x2000 && (op & 15) == 14) return true; // MULU.W Rm,Rn
+ if ((op & 0xf000) == 0x2000 && (op & 15) == 15) return true; // MULS.W Rm,Rn
+ if (op == 0x3005 || op == 0x300d) return true; // DMULU.L / DMULS.L
+ return false;
+}
 
 struct Compiler {
  UINT32 *start, *out;
@@ -861,7 +895,9 @@ static void arena_reuse_sector(unsigned sector)
  if(!slot_sector || !blocks || !lookup) return;
  unsigned cleared=0;
  for(unsigned i=0;i<TABLE_SIZE;i++) {
-  if(slot_sector[i]!=(UINT8)sector) continue;
+  // Only the low five bits are the sector; the top three carry the block-end
+  // reason recorded by arena_note_slot().
+  if((slot_sector[i]&0x1Fu)!=(UINT8)sector) continue;
   slot_sector[i]=0xFF;
   lookup[i/WAYS].tag[i%WAYS]=0;
   memset(&blocks[i],0,sizeof(Block));
@@ -877,7 +913,7 @@ static void arena_reuse_sector(unsigned sector)
 static void arena_note_slot(unsigned slot,const Block &block)
 {
  if(!slot_sector || !block.entry || slot>=TABLE_SIZE) return;
- slot_sector[slot]=(UINT8)(((UINT32*)block.entry-code)/SECTOR_WORDS);
+ slot_sector[slot]=(UINT8)((((UINT32*)block.entry-code)/SECTOR_WORDS) | (sh3_block_end_reason<<5));
 }
 
 static void compile(Block &block, UINT32 pc, const UINT16 *source)
@@ -904,23 +940,42 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
  if(available>MAX_INSNS)available=MAX_INSNS;
  int count=0, validate=0; bool check_read=false;
  for(;count<available;count++) {
-  if(c.exit_count>MAX_INSNS*3-3 || c.out-c.start+c.exit_count*32>MAX_WORDS-256)break; // reserve the largest instruction and exit
+  if(c.exit_count>MAX_INSNS*3-3 || c.out-c.start+c.exit_count*32>MAX_WORDS-256) { sh3_block_end_reason=END_WINDOW; break; } // reserve the largest instruction and exit
   UINT16 op=source[count];
   if((op&0xf0ff)==0x4010) {
    // DT reads the following opcode for the existing busy-loop hack. Do not
    // fold a handler read, or translate the hack itself. Include lookahead in
    // validation even when DT ends the block.
-   if(count+1>=available || MemMapR[(pc&AM)>>SH3_SHIFT]!=MemMapF[(pc&AM)>>SH3_SHIFT] || source[count+1]==0x8bfd)break;
+   if(count+1>=available || MemMapR[(pc&AM)>>SH3_SHIFT]!=MemMapF[(pc&AM)>>SH3_SHIFT] || source[count+1]==0x8bfd) { sh3_block_end_reason=END_WINDOW; break; }
    validate=count+2; check_read=true;
   }
   c.pc=pc+count*2;
   if(c.control(op,count+1<available ? source[count+1] : -1)) {
-   if(c.ended) { count+=c.folded_slot?2:1; break; }
+   if(c.ended) {
+    // Bucket the branch that ended the block. Branch targets that are
+    // PC-relative (BRA/BSR and the /S conditionals) are what a fusion pass
+    // could continue into; register-indirect transfers are not.
+    bool cond=(op&0xff00)==0x8900||(op&0xff00)==0x8b00||(op&0xff00)==0x8d00||(op&0xff00)==0x8f00;
+    bool indirect=(op&0xf0ff)==0x0023||(op&0xf0ff)==0x0003||(op&0xf0ff)==0x402b||(op&0xf0ff)==0x400b||op==0x000b;
+    if (cond) {
+     bool delayed=(op&0x400)!=0;
+     // A delayed conditional whose delay slot is usable could continue the
+     // fall-through in this block instead of ending it; record whether this
+     // one could have.
+     bool usable=delayed && count+1<available && delay_slot_eligible(source[count+1]);
+     sh3_block_end_reason = usable ? END_DELAYED_ELIGIBLE
+                          : (delayed ? END_DELAYED_INELIGIBLE : END_SELF_LOOP);
+    } else {
+     sh3_block_end_reason = indirect ? END_JUMP_INDIRECT : END_JUMP_REL;
+    }
+    count+=c.folded_slot?2:1; break;
+   }
    continue;
   }
-  if(!c.instruction(op))break;
+  if(!c.instruction(op)) { sh3_block_end_reason=END_UNSUPPORTED; break; }
   c.cycles++;
  }
+ if(count>=available) sh3_block_end_reason=END_WINDOW;
  // A taken conditional near the end can cost more than the fallthrough.
  // Reserve enough budget for every native path before entering the block.
  int max_cycles=c.cycles;

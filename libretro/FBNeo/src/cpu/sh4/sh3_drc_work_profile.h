@@ -18,6 +18,13 @@ struct Sh3DrcWorkProfile {
  // guest rewrote or re-uploaded the opcodes), `map` is a read-map change only.
  // Written on the compile path, never from generated code or the hot loop.
  Sh3WorkCount rebuild_conflict, rebuild_source, rebuild_map;
+ // Why the blocks that actually ran ended, counted per entry (work-sampled
+ // builds). In order: the instruction window ran out, a PC-relative jump
+ // (BRA/BSR), a register-indirect transfer, a delayed conditional, a
+ // self-loop conditional, an unsupported opcode, and the delayed conditionals
+ // split by whether their delay slot is one the emitter could continue
+ // through (T-safe, guard-free) or not.
+ Sh3WorkCount block_ends[8];
  // Code-arena pressure. `arena_recycles` counts full-arena resets caused by the
  // overflow guard; `arena_peak` is the highest word count reached since the
  // last report. Both are written on the compile path only, never from

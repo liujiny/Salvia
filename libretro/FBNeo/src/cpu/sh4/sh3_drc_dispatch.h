@@ -98,6 +98,7 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    before=m_sh4_icount;
    ++sh3_drc_work.native_calls;
    ++sh3_drc_work.snapshot_lengths[b.words<=33?b.words:33];
+   ++sh3_drc_work.block_ends[slot_sector[index*WAYS+way]>>5];
   }
 #if SALVIA_CV1K_PROBE
   if(probeNow) probeStart=salvia_cv1k_tick();
