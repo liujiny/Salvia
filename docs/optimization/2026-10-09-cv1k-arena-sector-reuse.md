@@ -100,8 +100,32 @@ the arena size a smooth knob again — a smaller arena now costs proportionally
 more reuses instead of triggering more catastrophic flushes — which is what the
 20 MiB knee was really about: `2026-10-07-cv1k-arena-knee.md` records that the
 Xenos compositor could not even build its fallback atlas with 32 MiB reserved.
-A size sweep with the ring is the next measurement, not something this round
-claims.
+
+## Arena size is now a smooth knob
+
+Same state, same 8,000 frames, the same build with `SH3_PPC_CACHE_BYTES`
+overridden (the block table stays at 131072 entries; every run reports the same
+`STATE 8f4eeb1794156f21` and the same per-frame hash file):
+
+| 8,000 frames | 20 MiB (default) | 16 MiB | 12 MiB | 20 MiB, flush build | 20 MiB, pre-shrink baseline |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| rebuilds | 50,402 | 65,990 | 97,816 | 61,115 | 92,245 |
+| rebuilds / frame | 6.3 | 8.2 | 12.2 | 7.6 | 11.5 |
+| sector reuses / slots dropped | 3 / 5,845 | 15 / 31,995 | 34 / 71,524 | - | - |
+| full resets (`recycles`) | 0 | 0 | 0 | 1 | 2 |
+| `peak_words` | 5,238,860 | 4,190,304 | 3,141,936 | 5,238,884 | 5,239,368 |
+
+Shrinking the arena now costs a proportional amount of extra churn instead of
+more flush storms: 4 MiB less arena is +15,588 rebuilds over 8,000 frames
+(+8.2 per frame, about 0.5% of a frame if a recompile is ~10 us), 8 MiB less is
++47,414 (+12.2 per frame, ~0.7%), and neither configuration performs a single
+full reset. Before the ring, `2026-10-07-cv1k-arena-size.md` measured a 16 MiB
+arena at 58,511 rebuilds against 43,214 for 20 MiB over 1,800 frames, and
+`2026-10-07-cv1k-arena-knee.md` records why the size was pushed up: the Xenos
+compositor could not build its fallback atlas with the larger reservation. That
+trade is now a smooth curve rather than a cliff, which is the practical result
+of this round for the console even though the churn reduction itself is small
+per frame.
 
 ## Validation limits
 
