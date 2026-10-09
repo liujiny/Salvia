@@ -97,6 +97,19 @@ static UINT8 *slot_sector;
 // to every generated store.
 static UINT8 *slot_stores;
 static unsigned sh3_block_stores;
+// Chain probe. A dispatcher chain validates every block as it enters it, so as
+// long as no guest store has run since the chain started, every block in the
+// chain is still valid and a successor could be entered without revalidating.
+// This flag is what a chain-scoped link would test: generated stores set it,
+// the dispatcher clears it once per chain call and counts how many entries ran
+// with it still clear. No stamps, no per-store index arithmetic: the address is
+// a literal because the object is static and lives as long as the process.
+#ifndef SALVIA_CV1K_CHAIN_PROBE
+#define SALVIA_CV1K_CHAIN_PROBE 0
+#endif
+#if SALVIA_CV1K_CHAIN_PROBE
+static UINT32 sh3_chain_dirty;
+#endif
 typedef char PointerAbiMustBe32Bits[(sizeof(void*) == 4) ? 1 : -1];
 static UINT32 *code;
 static unsigned used;
@@ -550,7 +563,18 @@ struct Compiler {
    if(!direct || constant_ram)address(base,index,disp,absolute);
    store(11, SO(ea));
   }
-  if (write) emit(d(size == 1 ? 38 : size == 2 ? 44 : 36, data, 12, 0));
+  if (write) {
+   emit(d(size == 1 ? 38 : size == 2 ? 44 : 36, data, 12, 0));
+#if SALVIA_CV1K_CHAIN_PROBE
+   // Tell the dispatcher this chain executed a store. Four words per store,
+   // and only r0/r12 are touched, which the earlier bisect showed is safe.
+   if (ram_base_registered()) {
+    imm(0, 1);
+    imm(12, (UINT32)(uintptr_t)&sh3_chain_dirty);
+    emit(d(38, 0, 12, 0)); // stb r0,0(r12)
+   }
+#endif
+  }
   else {
    // Every SH3 word load sign-extends, and lha is exactly that load, so the
    // halfword case needs one instruction instead of lhz plus extsh.

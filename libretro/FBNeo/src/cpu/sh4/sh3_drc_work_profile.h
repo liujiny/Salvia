@@ -41,6 +41,9 @@ struct Sh3DrcWorkProfile {
  // compile-time count is exact; the array that carries it per slot is a
  // diagnostic and only sampled builds read it in the dispatch loop.
  Sh3WorkCount block_stores;
+ // Chain probe: entries that ran while no guest store had executed since the
+ // chain call started (clean, i.e. linkable in principle) against the rest.
+ Sh3WorkCount chain_clean_entries, chain_dirty_entries;
  Sh3WorkCount native_calls, native_cycles, interpreter_steps, interpreter_cycles;
  Sh3WorkCount movll_services, movll_service_cycles, movll_service_rejects;
  Sh3WorkCount device_services[2], device_service_cycles[2], device_fallbacks[2];

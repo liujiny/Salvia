@@ -4954,6 +4954,13 @@ void Sh3WorkReport(void (*emit)(const char*))
 	// store-side epoch is affordable at all.
 	sprintf(text,"drc_work_stores per_entry=%u entries=%" SH3_WORK_COUNT " generated=%" SH3_WORK_COUNT,
 		p.native_calls?(unsigned)(p.block_stores/p.native_calls):0u,p.native_calls,p.block_stores); emit(text);
+#if SALVIA_CV1K_CHAIN_PROBE
+	// Chain probe: the share of entries that ran in a chain that had not yet
+	// executed a guest store. That share is the ceiling a chain-scoped link
+	// could skip revalidation for.
+	sprintf(text,"drc_work_chain clean=%" SH3_WORK_COUNT " dirty=%" SH3_WORK_COUNT,
+		p.chain_clean_entries,p.chain_dirty_entries); emit(text);
+#endif
 	// Emitted words per compiled block by phase: where the generated code goes,
 	// independent of how often each block then runs.
 	sprintf(text,"drc_work_codegen blocks=%" SH3_WORK_COUNT " body=%" SH3_WORK_COUNT " memaddr=%" SH3_WORK_COUNT " memguard=%" SH3_WORK_COUNT " memaccess=%" SH3_WORK_COUNT " complete=%" SH3_WORK_COUNT " exit=%" SH3_WORK_COUNT,

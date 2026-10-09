@@ -28,6 +28,10 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
  // Preserve allocate()'s failure precedence and cold initialization. On a
  // warm cache it only returns true, so avoid its out-of-line call here.
  if(Count) ++sh3_drc_work.dispatch_calls;
+#if SALVIA_CV1K_CHAIN_PROBE
+ // One chain starts here: nothing in it may be assumed valid yet.
+ sh3_chain_dirty=0;
+#endif
  if(m_sh4_icount<=0 || failed || (!blocks && !allocate())) {
   if(Count) { ++sh3_drc_work.exit_gate; sh3_drc_work.fallback.last_origin=SH3_FB_GATE; }
   return false;
@@ -68,6 +72,12 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    if(tag_hit) {
     ++sh3_drc_work.validation_spans;
     sh3_drc_work.validation_words+=b.words;
+#if SALVIA_CV1K_CHAIN_PROBE
+    // Could this entry have been linked? Only if no store has run since the
+    // chain started, which is exactly what a chain-scoped link would test.
+    if(sh3_chain_dirty) ++sh3_drc_work.chain_dirty_entries;
+    else ++sh3_drc_work.chain_clean_entries;
+#endif
    }
    if(!tag_hit) ++sh3_drc_work.rebuild_conflict;
    else if(!same) ++sh3_drc_work.rebuild_source;
