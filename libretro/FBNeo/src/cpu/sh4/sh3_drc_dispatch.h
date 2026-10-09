@@ -35,6 +35,16 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
  // Generated entries are leaf functions: they cannot release the cache or
  // replace its allocation. Keep the dispatcher stack alive across entries.
  do {
+#if SALVIA_CV1K_PROBE
+  // Three spans per sampled entry: the pre-entry work (fetch, lookup,
+  // validation, any recompile), the generated block call, and the post-entry
+  // work. Compared with the whole drc_dispatch phase they show how much of the
+  // dispatch path is instructions and how much is the unattributed remainder.
+  static unsigned probeTick=0;
+  const bool probeNow=((++probeTick&63u)==0);
+  unsigned long long probeT0=0,probeStart=0,probeEnd=0;
+  if(probeNow) probeT0=salvia_cv1k_tick();
+#endif
   UINT32 pc=m_pc, phys=pc&AM;
   const UINT8 *page=MemMapF[phys>>SH3_SHIFT];
   if((uintptr_t)page<SH3_MAXHANDLER || (phys&1)) {
@@ -90,23 +100,25 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    ++sh3_drc_work.snapshot_lengths[b.words<=33?b.words:33];
   }
 #if SALVIA_CV1K_PROBE
-  static unsigned probeTick=0;
-  const bool probeNow=((++probeTick&63u)==0);
-  unsigned long long probeStart=0;
   if(probeNow) probeStart=salvia_cv1k_tick();
 #endif
   const int completed=b.entry(&sh3_ppc_state);
 #if SALVIA_CV1K_PROBE
-  if(probeNow) {
-   const unsigned long long probeEnd=salvia_cv1k_tick();
-   if(probeStart && probeEnd) { salvia_cv1k_probe[6]+=probeEnd-probeStart; ++salvia_cv1k_probe[7]; }
-  }
+  if(probeNow) probeEnd=salvia_cv1k_tick();
 #endif
   if(Count) sh3_drc_work.native_cycles+=(unsigned)(before-m_sh4_icount);
   // A compiler-tagged idle/device MOV.L needs one real handler access, but
   // no opcode refetch or trip through the outer interpreter decoder.
   bool serviced=false;
   if((completed&3)==2) serviced=sh3_drc_service_movll<Count>((unsigned)completed>>2);
+#if SALVIA_CV1K_PROBE
+  if(probeNow) {
+   const unsigned long long probeT3=salvia_cv1k_tick();
+   if(probeT0 && probeStart) salvia_cv1k_probe[12]+=probeStart-probeT0;
+   if(probeStart && probeEnd) { salvia_cv1k_probe[6]+=probeEnd-probeStart; ++salvia_cv1k_probe[7]; }
+   if(probeEnd && probeT3) salvia_cv1k_probe[13]+=probeT3-probeEnd;
+  }
+#endif
   if(!completed || ((completed&3)==2 && !serviced)) {
    if(Count) { ++sh3_drc_work.exit_partial; sh3_drc_work.fallback.last_origin=SH3_FB_PARTIAL; }
    return false;

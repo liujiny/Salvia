@@ -100,16 +100,17 @@ void cv1k_review_report(void (*emit)(const char*))
         LARGE_INTEGER probeFrequency;
         if (QueryPerformanceFrequency(&probeFrequency) && probeFrequency.QuadPart > 0) {
             const double unit = 1000.0 / (double)probeFrequency.QuadPart;
-            sprintf(text, "core_phase_ms window=%u worker_busy=%.3f worker_jobs=%I64u blit_write=%.3f blit_calls=%I64u drc_dispatch=%.3f dispatch_calls=%I64u blk_entry=%.3f entry_samples=%I64u movll_service=%.3f service_samples=%I64u timers=%.3f timer_callbacks=%I64u",
+            sprintf(text, "core_phase_ms window=%u worker_busy=%.3f worker_jobs=%I64u blit_write=%.3f blit_calls=%I64u drc_dispatch=%.3f dispatch_calls=%I64u blk_entry=%.3f entry_samples=%I64u dispatch_pre=%.3f dispatch_post=%.3f movll_service=%.3f service_samples=%I64u timers=%.3f timer_callbacks=%I64u",
                 cv1k_review.frames,
                 salvia_cv1k_probe[0] * unit, (unsigned __int64)salvia_cv1k_probe[1],
                 salvia_cv1k_probe[2] * unit, (unsigned __int64)salvia_cv1k_probe[3],
                 salvia_cv1k_probe[4] * unit, (unsigned __int64)salvia_cv1k_probe[5],
                 salvia_cv1k_probe[6] * unit, (unsigned __int64)salvia_cv1k_probe[7],
+                salvia_cv1k_probe[12] * unit, salvia_cv1k_probe[13] * unit,
                 salvia_cv1k_probe[8] * unit, (unsigned __int64)salvia_cv1k_probe[9],
                 salvia_cv1k_probe[10] * unit, (unsigned __int64)salvia_cv1k_probe[11]);
             emit(text);
-            for (unsigned i = 0; i < 12; ++i) salvia_cv1k_probe[i] = 0;
+            for (unsigned i = 0; i < 16; ++i) salvia_cv1k_probe[i] = 0;
         }
     }
 #endif

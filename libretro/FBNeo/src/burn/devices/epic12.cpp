@@ -17,7 +17,7 @@ Redistributions may not be sold, nor may they be used in a commercial product or
 #if SALVIA_CV1K_PROBE
 #include <xtl.h>
 extern "C" {
-unsigned long long salvia_cv1k_probe[12];
+unsigned long long salvia_cv1k_probe[16];
 unsigned long long salvia_cv1k_tick(void)
 {
 	LARGE_INTEGER now;
