@@ -35,6 +35,18 @@
 #define SH3_PPC_CACHE_BYTES (32 * 1024 * 1024)
 #endif
 
+// How many instructions past a delayed conditional's delay slot the fused
+// fall-through may still absorb before the block ends. Absorbing the whole
+// straight-line run duplicates that run into every predecessor: the console
+// image measured +61% generated words, a 99.9% arena and +55-80%
+// budget-boundary interpreter steps for the -16.5% of entries the fusion
+// removed, and a worse tail (1 of 52 samples at 25.55 ms against 0 in the
+// baseline). This keeps the first few instructions, which is where the saved
+// entries are. 0 restores the pre-fusion behaviour.
+#ifndef SALVIA_CV1K_FUSE_CAP
+#define SALVIA_CV1K_FUSE_CAP 3
+#endif
+
 // Number of block-table entries, four ways per set. The original 32768-entry
 // table thrashing on set conflicts was measured as the dominant rebuild cause
 // on CV1000; the override lets host differential tests size it from identical
@@ -207,6 +219,9 @@ struct Compiler {
  BlockExit exits[MAX_INSNS*3];
  CodeWriteCheck write_checks[MAX_INSNS];
  bool ended, folded_slot, in_delay_slot;
+ // Fused fall-through budget: instructions still allowed to be absorbed after
+ // a delayed conditional, and whether a fusion is in progress at all.
+ bool fuse_active; int fuse_left;
  // Every guard exit and the block's own completion end with the same
  // "publish pc/ppc, charge the guest cycles, return to the dispatcher"
  // sequence. Emit it once per block instead of once per exit: each caller
@@ -218,7 +233,7 @@ struct Compiler {
  int tail_pc_jumps, tail_nopc_jumps;
 
  Compiler(UINT32 *dest, UINT32 address, const UINT16 *source)
-  : start(dest), out(dest), pc(address), block_pc(address), clock(0), cycles(0), exit_count(0), write_check_count(0), max_taken(0), ended(false), folded_slot(false), in_delay_slot(false), tail_pc_jumps(0), tail_nopc_jumps(0)
+  : start(dest), out(dest), pc(address), block_pc(address), clock(0), cycles(0), exit_count(0), write_check_count(0), max_taken(0), ended(false), folded_slot(false), in_delay_slot(false), fuse_active(false), fuse_left(0), tail_pc_jumps(0), tail_nopc_jumps(0)
  {
   source_begin = (UINT32)(uintptr_t)source;
   cat = CAT_BODY;
@@ -850,6 +865,9 @@ struct Compiler {
      cycles=branch_cycles+1;
     }
     patch(not_taken);
+    // Continue for at most SALVIA_CV1K_FUSE_CAP more instructions, starting
+    // with the delay instruction itself.
+    fuse_active=true; fuse_left=SALVIA_CV1K_FUSE_CAP;
     return true;
    }
    bool loop=target==block_pc && (!delayed || slot==0x0009);
@@ -996,6 +1014,11 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
  if(available>MAX_INSNS)available=MAX_INSNS;
  int count=0, validate=0; bool check_read=false;
  for(;count<available;count++) {
+  // Fused fall-through budget exhausted: end the block here, which is the
+  // ordinary sequential completion, so the dispatcher picks the run up again at
+  // this PC. Everything past the cap is compiled once as its own block instead
+  // of being duplicated into every predecessor.
+  if(c.fuse_active && c.fuse_left==0) { sh3_block_end_reason=END_WINDOW; break; }
   if(c.exit_count>MAX_INSNS*3-3 || c.out-c.start+c.exit_count*32>MAX_WORDS-256) { sh3_block_end_reason=END_WINDOW; break; } // reserve the largest instruction and exit
   UINT16 op=source[count];
   if((op&0xf0ff)==0x4010) {
@@ -1030,6 +1053,7 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
   }
   if(!c.instruction(op)) { sh3_block_end_reason=END_UNSUPPORTED; break; }
   c.cycles++;
+  if(c.fuse_active && c.fuse_left>0) --c.fuse_left;
  }
  if(count>=available) sh3_block_end_reason=END_WINDOW;
  // A taken conditional near the end can cost more than the fallthrough.
