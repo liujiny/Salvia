@@ -1043,7 +1043,7 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
   // this PC. Everything past the cap is compiled once as its own block instead
   // of being duplicated into every predecessor.
   if(c.fuse_active && c.fuse_left==0) { sh3_block_end_reason=END_WINDOW; break; }
-  if(c.exit_count>MAX_INSNS*3-3 || c.out-c.start+c.exit_count*32>MAX_WORDS-256) { sh3_block_end_reason=END_WINDOW; break; } // reserve the largest instruction and exit
+  if(c.exit_count>MAX_INSNS*3-3 || c.write_check_count>=MAX_INSNS-1 || c.out-c.start+c.exit_count*32>MAX_WORDS-256) { sh3_block_end_reason=END_WINDOW; break; } // reserve the largest instruction and exit
   UINT16 op=source[count];
   if((op&0xf0ff)==0x4010) {
    // DT reads the following opcode for the existing busy-loop hack. Do not
