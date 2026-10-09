@@ -37,14 +37,17 @@
 
 // How many instructions past a delayed conditional's delay slot the fused
 // fall-through may still absorb before the block ends. Absorbing the whole
-// straight-line run duplicates that run into every predecessor: the console
-// image measured +61% generated words, a 99.9% arena and +55-80%
-// budget-boundary interpreter steps for the -16.5% of entries the fusion
-// removed, and a worse tail (1 of 52 samples at 25.55 ms against 0 in the
-// baseline). This keeps the first few instructions, which is where the saved
-// entries are. 0 restores the pre-fusion behaviour.
+// straight-line run duplicates that run into every predecessor, which is what
+// the console A/B of 2026-10-09 saw as +61% generated words, a 99.9% arena,
+// +55-80% budget-boundary interpreter steps and a worse tail (1 of 52 samples
+// at 25.55 ms against 0). The cap of 3 was chosen against that *20 MiB* arena;
+// the arena is 32 MiB now and the emitted code is a third smaller, so the
+// sweep was re-run and uncapped absorption costs 63.6% of the arena over 1800
+// host frames instead of 99.9%, with the same STATE, the same per-frame hash
+// file and the same rebuild counts. The default follows that measurement; 0
+// restores the pre-fusion behaviour and 3 the previously capped one.
 #ifndef SALVIA_CV1K_FUSE_CAP
-#define SALVIA_CV1K_FUSE_CAP 3
+#define SALVIA_CV1K_FUSE_CAP 33
 #endif
 
 // Number of block-table entries, four ways per set. The original 32768-entry
