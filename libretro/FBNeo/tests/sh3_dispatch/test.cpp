@@ -31,8 +31,12 @@ struct Lookup { UINT32 tag[WAYS]; unsigned next; };
 static Block block_storage[TABLE_SIZE];
 static Block *blocks;
 static Lookup lookup[CACHE_SETS];
+// The production dispatcher counts a block's end reason out of the sector map
+// the arena keeps beside the table ("no slot has code yet"), so the fixture has
+// to carry the same array. Nothing here reuses sectors, so it stays 0xFF.
+static UINT8 slot_sector[TABLE_SIZE];
 static bool failed;
-static void clear() { memset(block_storage,0,sizeof(block_storage)); memset(lookup,0,sizeof(lookup)); }
+static void clear() { memset(block_storage,0,sizeof(block_storage)); memset(lookup,0,sizeof(lookup)); memset(slot_sector,0xFF,sizeof(slot_sector)); }
 // Model the production cold/warm/sticky-failure allocation contract, rather
 // than treating a permanently present array as a newly allocated cache.
 static bool allocate() {
