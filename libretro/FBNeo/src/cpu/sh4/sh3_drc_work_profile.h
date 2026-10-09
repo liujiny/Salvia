@@ -41,6 +41,14 @@ struct Sh3DrcWorkProfile {
  // compile-time count is exact; the array that carries it per slot is a
  // diagnostic and only sampled builds read it in the dispatch loop.
  Sh3WorkCount block_stores;
+ // Write-stamp cross-check, work-sampled entries only. `stamp_entries` counts
+ // the validations the check ran on, `stamp_clean` those whose block's two
+ // 64-byte lines had not been written since the dispatcher last cleared them
+ // (exactly the validations a clean stamp pair can remove), and `stamp_dirty`
+ // the rest. `stamp_missed` is the dangerous case: the stamps were clean while
+ // the snapshot comparison said the bytes had changed, which would mean a
+ // write path is not hooked. It must stay zero for the skip to be safe.
+ Sh3WorkCount stamp_entries, stamp_clean, stamp_dirty, stamp_missed;
  // Chain probe: entries that ran while no guest store had executed since the
  // chain call started (clean, i.e. linkable in principle) against the rest.
  Sh3WorkCount chain_clean_entries, chain_dirty_entries;

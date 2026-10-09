@@ -74,6 +74,10 @@ struct Sh3PpcState {
  // the 32-bit host pointer, and every registration or mapping change revokes
  // the code before this can go stale.
  UINT8 *ram_base;
+ // Host pointer to the write stamps (sh3_drc_ppc.h), another driver field the
+ // generated stores read through this structure. NULL unless the diagnostics
+ // build compiles the mechanism in.
+ UINT8 *code_stamp;
 };
 static Sh3PpcState sh3_ppc_state;
 // Driver-owned idle configuration, used by servicing and diagnostics. Never scanned
@@ -101,12 +105,20 @@ static void sh3_drc_reset();
 static void sh3_drc_exit();
 static void sh3_drc_invalidate_ram();
 static void sh3_drc_mapping_changed(UINT32 start, UINT32 end, INT32 type);
+#if SALVIA_CV1K_STAMP_PROBE
+// Write-stamp hook for the interpreter's three write primitives, which are the
+// only interpreted route into RAM (and the DMAC's and the cheat path's route).
+static void sh3_drc_stamp_mark(UINT32 addr);
+#endif
 #else
 static UINT32 m_r[16], m_pc, m_ppc, m_pr, m_sr, m_gbr;
 static UINT32 m_mach, m_macl, m_ea, m_delay;
 static INT32 m_sh4_icount, sh3_total_cycles;
 static void sh3_drc_reset() {}
 static void sh3_drc_exit() {}
+#if SALVIA_CV1K_STAMP_PROBE
+static void sh3_drc_stamp_mark(UINT32) {}
+#endif
 void Sh3SetDrc(INT32) {}
 void Sh3SetDrcReadMirror(UINT8*, UINT32, UINT32, INT32) {}
 void Sh3SetDrcIdleWatch(const UINT32*, const UINT32*) {}
@@ -1070,6 +1082,9 @@ static inline UINT32 RL(UINT32 A)
 
 static inline void WB(UINT32 A, UINT8 V)
 {
+#if SALVIA_CV1K_STAMP_PROBE
+	sh3_drc_stamp_mark(A);
+#endif
 	if (A < 0xe0000000) {
 		A &= AM;
 		WaitState(A, 1);
@@ -1088,6 +1103,9 @@ static inline void WB(UINT32 A, UINT8 V)
 
 static inline void WW(UINT32 A, UINT16 V)
 {
+#if SALVIA_CV1K_STAMP_PROBE
+	sh3_drc_stamp_mark(A);
+#endif
 	if (A < 0xe0000000) {
 		A &= AM;
 		WaitState(A, 1);
@@ -1106,6 +1124,9 @@ static inline void WW(UINT32 A, UINT16 V)
 
 static inline void WL(UINT32 A, UINT32 V)
 {
+#if SALVIA_CV1K_STAMP_PROBE
+	sh3_drc_stamp_mark(A);
+#endif
 	if (A < 0xe0000000) {
 		A &= AM;
 		WaitState(A, 1);
@@ -4744,6 +4765,11 @@ static inline void execute_one(const UINT16 opcode)
 #ifdef SH3_PPC_DRC
 template<bool Count> static bool sh3_drc_service_movll(unsigned opcode);
 #include "sh3_drc_ppc.h"
+#if SALVIA_CV1K_STAMP_PROBE
+// The interpreter's WB/WW/WL call this from far above, before the DRC headers
+// exist. It is the whole write-side hook set the stamps need.
+static void sh3_drc_stamp_mark(UINT32 addr) { Sh3Ppc::stamp_mark(addr); }
+#endif
 #endif
 
 #include "sh3_interpreter_hot.h"
@@ -4954,6 +4980,15 @@ void Sh3WorkReport(void (*emit)(const char*))
 	// store-side epoch is affordable at all.
 	sprintf(text,"drc_work_stores per_entry=%u entries=%" SH3_WORK_COUNT " generated=%" SH3_WORK_COUNT,
 		p.native_calls?(unsigned)(p.block_stores/p.native_calls):0u,p.native_calls,p.block_stores); emit(text);
+#if SALVIA_CV1K_STAMP_PROBE
+	// Write-stamp cross-check on the same sampled entries. `clean` is the share
+	// of validations whose block's two lines had not been written since the
+	// dispatcher last cleared them -- the share a stamp skip would remove --
+	// and `missed` is the count that must be zero before it may.
+	sprintf(text,"drc_work_stamp level=%d entries=%" SH3_WORK_COUNT " clean=%" SH3_WORK_COUNT " dirty=%" SH3_WORK_COUNT " missed=%" SH3_WORK_COUNT " lines=%u",
+		(int)SALVIA_CV1K_STAMP_PROBE,p.stamp_entries,p.stamp_clean,p.stamp_dirty,p.stamp_missed,
+		(unsigned)Sh3Ppc::STAMP_LINES); emit(text);
+#endif
 #if SALVIA_CV1K_CHAIN_PROBE
 	// Chain probe: the share of entries that ran in a chain that had not yet
 	// executed a guest store. That share is the ceiling a chain-scoped link

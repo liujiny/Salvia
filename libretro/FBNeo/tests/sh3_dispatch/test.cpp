@@ -10,7 +10,10 @@ typedef uint8_t UINT8;
 typedef uint16_t UINT16;
 typedef uint32_t UINT32;
 enum { AM=1023, SH3_SHIFT=8, SH3_PAGEM=255, SH3_MAXHANDLER=16 };
-struct Sh3PpcState { UINT32 pc, delay, r, total; int icount; };
+// `ram_base` is the driver field the generated code's RAM-window base is
+// mirrored into; this fixture registers no window, so it stays NULL and the
+// write-stamp contract below never holds.
+struct Sh3PpcState { UINT32 pc, delay, r, total; int icount; UINT8 *ram_base; };
 static Sh3PpcState sh3_ppc_state;
 #define m_pc sh3_ppc_state.pc
 #define m_delay sh3_ppc_state.delay
@@ -37,6 +40,16 @@ static Lookup lookup[CACHE_SETS];
 static UINT8 slot_sector[TABLE_SIZE];
 // The same for the store-density diagnostic the sampled dispatcher reads.
 static UINT8 slot_stores[TABLE_SIZE];
+// The write-stamp mechanism reads a registered RAM window and its stamp table.
+// This fixture has no generated stores and no window, so both stay empty and
+// the production helper reports "not clean", which leaves the dispatcher's
+// tag and snapshot checks doing exactly what they did before it existed.
+struct RamWindow { UINT8 *base; UINT32 start, span, mask, watch; int span_bits, backing_bits; };
+static RamWindow ram_window;
+// Mirrors the production stamp geometry in sh3_drc_ppc.h, which this fixture
+// does not include: one byte per 64-byte line of the window.
+enum { STAMP_SHIFT=6, STAMP_INDEX_BITS=23, STAMP_LINES=1u<<STAMP_INDEX_BITS };
+static UINT8 *code_stamp;
 static bool failed;
 static void clear() { memset(block_storage,0,sizeof(block_storage)); memset(lookup,0,sizeof(lookup)); memset(slot_sector,0xFF,sizeof(slot_sector)); }
 // Model the production cold/warm/sticky-failure allocation contract, rather

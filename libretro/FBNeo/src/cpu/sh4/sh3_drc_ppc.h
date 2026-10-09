@@ -97,6 +97,28 @@ static UINT8 *slot_sector;
 // to every generated store.
 static UINT8 *slot_stores;
 static unsigned sh3_block_stores;
+// Write stamps: one byte per 64-byte line of the registered RAM window,
+// indexed by the line's byte offset inside that window (so the external
+// aliases of CV1000's RAM, and the folded mirror of an 8 MiB backing in a
+// 16 MiB span, all land on the one line they share). 0 means "no store has
+// written this line since the dispatcher last proved the block that owns it
+// still matches its source", and that is what lets the dispatcher skip the
+// source comparison -- and, later, what can let a block jump straight into an
+// already validated successor. Every writer that can change compiled bytes
+// sets it: generated stores inline (five words, see Compiler::mark_store) and
+// the interpreter's WB/WW/WL through stamp_mark(), which is also the DMAC's
+// and the cheat path's write route. State loads, mapping changes and the
+// arena's sector reuse drop the records they affect and clear the table.
+#ifndef SALVIA_CV1K_STAMP_PROBE
+#define SALVIA_CV1K_STAMP_PROBE 0
+#endif
+#if SALVIA_CV1K_STAMP_PROBE
+// 23 index bits bound every value the masked rotate can produce, and cover the
+// largest window the driver can register (16 MiB = 2^18 lines) with room for
+// the folded addresses of writes that are not in the window at all.
+enum { STAMP_SHIFT = 6, STAMP_INDEX_BITS = 23, STAMP_LINES = 1u << STAMP_INDEX_BITS };
+static UINT8 *code_stamp;
+#endif
 // Chain probe. A dispatcher chain validates every block as it enters it, so as
 // long as no guest store has run since the chain started, every block in the
 // chain is still valid and a successor could be entered without revalidating.
@@ -458,6 +480,25 @@ struct Compiler {
   if (ram_base_registered()) add(rd, rd, RAM_BASE_REG);
   else { imm(0, (UINT32)(uintptr_t)ram_window.base); add(rd, rd, 0); }
  }
+#if SALVIA_CV1K_STAMP_PROBE
+ // r12 holds the host address this store is about to write -- in both the
+ // RAM-window path (window base plus offset) and the generic map path (page
+ // pointer plus page offset), and the aliases have already folded by the time
+ // it does. Mark the 64-byte guest line it lands on: the dispatcher looks up
+ // the same lines for the bytes a block was compiled from, so "clean" means no
+ // store has written them since it last validated that block. The mask keeps
+ // an address that is not in the registered window (a device page on the
+ // generic path) inside the table, where it only makes the dispatcher compare
+ // more often, never less. r0, r11 and r12 are all dead here: the effective
+ // address is published and the pre/post update reloads the base it needs.
+ void mark_store() {
+  sub(0, 12, RAM_BASE_REG);                                  // r0 = window offset
+  rotate(0, 0, 32 - STAMP_SHIFT, 32 - STAMP_INDEX_BITS, 31);  // r0 = line index
+  load(12, SO(code_stamp));
+  imm(11, 1);
+  emit(x(11, 12, 0, 215));                                   // stbx r11,r12,r0
+ }
+#endif
  bool memory(bool write, int size, int value, int base, int index, int disp,
              UINT32 absolute, bool ea, bool pre, bool post, unsigned service_opcode=0) {
   CatGuard catScope(*this, CAT_MEMADDR);
@@ -565,6 +606,13 @@ struct Compiler {
   }
   if (write) {
    emit(d(size == 1 ? 38 : size == 2 ? 44 : 36, data, 12, 0));
+#if SALVIA_CV1K_STAMP_PROBE
+   // Stamp the guest line just written. Only when the driver registered its RAM
+   // window: that registration is what makes the window offset this uses a
+   // guest line number, and the dispatcher checks the same condition before it
+   // trusts a clean stamp.
+   if (ram_base_registered()) mark_store();
+#endif
 #if SALVIA_CV1K_CHAIN_PROBE
    // Tell the dispatcher this chain executed a store. Four words per store,
    // and only r0/r12 are touched, which the earlier bisect showed is safe.
@@ -960,16 +1008,26 @@ static bool allocate()
  slot_sector=(UINT8*)malloc(TABLE_SIZE);
  if(slot_sector)memset(slot_sector,0xFF,TABLE_SIZE); // no slot has code yet
  slot_stores=(UINT8*)calloc(TABLE_SIZE,1);
+#if SALVIA_CV1K_STAMP_PROBE
+ code_stamp=(UINT8*)calloc(STAMP_LINES,1);
+#endif
 #ifdef _XBOX
  code=xbox_code;
 #else
  code=(UINT32*)mmap(NULL,CACHE_BYTES,PROT_READ|PROT_WRITE|PROT_EXEC,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
  if(code==MAP_FAILED)code=NULL;
 #endif
- if(!blocks || !lookup || !slot_sector || !slot_stores || !code) {
+ if(!blocks || !lookup || !slot_sector || !slot_stores || !code
+#if SALVIA_CV1K_STAMP_PROBE
+    || !code_stamp
+#endif
+    ) {
   free(blocks); blocks=NULL; free(lookup); lookup=NULL;
   free(slot_sector); slot_sector=NULL;
   free(slot_stores); slot_stores=NULL;
+#if SALVIA_CV1K_STAMP_PROBE
+  free(code_stamp); code_stamp=NULL;
+#endif
 #ifndef _XBOX
   if(code)munmap(code,CACHE_BYTES);
 #endif
@@ -978,8 +1036,25 @@ static bool allocate()
  used=0;
  sh3_ppc_state.read_map=MemMapR;
  sh3_ppc_state.write_map=MemMapW;
+#if SALVIA_CV1K_STAMP_PROBE
+ sh3_ppc_state.code_stamp=code_stamp;
+#endif
  return true;
 }
+
+#if SALVIA_CV1K_STAMP_PROBE
+// Every interpreted write that reaches RAM passes through WB/WW/WL, so this is
+// the only hook those three need; it also covers the DMAC, which writes through
+// them, and the cheat path, which routes to WB. The index is the window offset
+// of the write, computed exactly as the generated stores compute it, so both
+// paths set the same byte for the same guest line. An address outside the
+// window folds onto some line inside the table, which only costs the dispatcher
+// a comparison it did not have to make.
+static void stamp_mark(UINT32 addr)
+{
+ if(code_stamp) code_stamp[((((addr&AM)-ram_window.start)&ram_window.mask)>>STAMP_SHIFT)&((UINT32)STAMP_LINES-1)]=1;
+}
+#endif
 
 // Drop every block-table slot whose code lived in this sector. The slot keeps
 // its lookup tag until the next compile rewrites that record; a cleared record
@@ -1186,6 +1261,12 @@ static void sh3_drc_reset()
  if(Sh3Ppc::lookup)memset(Sh3Ppc::lookup,0,Sh3Ppc::CACHE_SETS*sizeof(Sh3Ppc::Lookup));
  if(Sh3Ppc::slot_sector)memset(Sh3Ppc::slot_sector,0xFF,Sh3Ppc::TABLE_SIZE);
  if(Sh3Ppc::slot_stores)memset(Sh3Ppc::slot_stores,0,Sh3Ppc::TABLE_SIZE);
+#if SALVIA_CV1K_STAMP_PROBE
+ // Every record is gone, so nothing can be skipped on a stamp; clearing the
+ // table here is the conservative direction and keeps a reloaded state from
+ // inheriting the stamps of the bytes it replaced.
+ if(Sh3Ppc::code_stamp)memset(Sh3Ppc::code_stamp,0,Sh3Ppc::STAMP_LINES);
+#endif
  Sh3Ppc::used=0;
 }
 static void sh3_drc_exit()
@@ -1194,6 +1275,10 @@ static void sh3_drc_exit()
  free(Sh3Ppc::lookup); Sh3Ppc::lookup=NULL;
  free(Sh3Ppc::slot_sector); Sh3Ppc::slot_sector=NULL;
  free(Sh3Ppc::slot_stores); Sh3Ppc::slot_stores=NULL;
+#if SALVIA_CV1K_STAMP_PROBE
+ free(Sh3Ppc::code_stamp); Sh3Ppc::code_stamp=NULL;
+ sh3_ppc_state.code_stamp=NULL;
+#endif
 #ifndef _XBOX
  if(Sh3Ppc::code)munmap(Sh3Ppc::code,Sh3Ppc::CACHE_BYTES);
 #endif

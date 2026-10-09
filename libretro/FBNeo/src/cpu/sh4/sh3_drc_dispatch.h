@@ -12,6 +12,49 @@
 #define SALVIA_CV1K_PROBE 0
 #endif
 
+#if SALVIA_CV1K_STAMP_PROBE
+// Write-stamp helpers (docs/optimization/2026-10-09-cv1k-write-stamps.md).
+// A clean stamp pair is only meaningful while the registered window is the one
+// the generated code stamps against, which is exactly the condition the
+// emitter uses to decide whether to stamp a store at all. Anything else -- no
+// window, a stale base pointer, a block whose bytes are not in the window --
+// reports "not clean" and keeps the ordinary comparison.
+static bool sh3_stamp_in_contract()
+{
+ return Sh3Ppc::code_stamp && Sh3Ppc::ram_window.base &&
+   sh3_ppc_state.ram_base==Sh3Ppc::ram_window.base;
+}
+// The two 64-byte guest lines these bytes occupy, by their offset inside the
+// window backing. A block is at most 33 halfwords, so a block can never span
+// more than two of them, and an aligned store can never cross one.
+static bool sh3_stamp_lines(const UINT16 *source, unsigned words,
+ unsigned &first, unsigned &last)
+{
+ if(!words || !sh3_stamp_in_contract()) return false;
+ const UINT32 off=(UINT32)((uintptr_t)(const UINT8*)source-(uintptr_t)Sh3Ppc::ram_window.base);
+ const UINT32 end=off+(UINT32)words*2-1;
+ if(off>Sh3Ppc::ram_window.mask || end>Sh3Ppc::ram_window.mask) return false;
+ first=off>>Sh3Ppc::STAMP_SHIFT;
+ last=end>>Sh3Ppc::STAMP_SHIFT;
+ return true;
+}
+static bool sh3_stamp_clean(const UINT16 *source, unsigned words)
+{
+ unsigned first=0,last=0;
+ if(!sh3_stamp_lines(source,words,first,last)) return false;
+ return Sh3Ppc::code_stamp[first]==0 && (first==last || Sh3Ppc::code_stamp[last]==0);
+}
+// Called when a validation has just proved these bytes still match the block's
+// snapshot: from here the lines are clean again until a store touches them.
+static void sh3_stamp_clear(const UINT16 *source, unsigned words)
+{
+ unsigned first=0,last=0;
+ if(!sh3_stamp_lines(source,words,first,last)) return;
+ Sh3Ppc::code_stamp[first]=0;
+ if(last!=first) Sh3Ppc::code_stamp[last]=0;
+}
+#endif
+
 // Keep the native loop in the caller: interpreter fallback should not pay a
 // second dispatcher stack frame. This does not inline/link generated PPC blocks.
 #if defined(_MSC_VER) && defined(_XBOX)
@@ -72,6 +115,23 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    if(tag_hit) {
     ++sh3_drc_work.validation_spans;
     sh3_drc_work.validation_words+=b.words;
+#if SALVIA_CV1K_STAMP_PROBE
+    // Write-stamp cross-check. This specialization compares anyway, so it is
+    // the audit of the skip below: `clean` is the share of validations a clean
+    // stamp pair would have removed, and `missed` counts the entries where the
+    // stamps said clean while the comparison said the bytes had changed --
+    // a write path that is not hooked, and the one result that makes the skip
+    // unsafe. It must stay zero.
+    const bool stamps_clean=sh3_stamp_clean(source,b.words);
+    ++sh3_drc_work.stamp_entries;
+    if(stamps_clean) {
+     ++sh3_drc_work.stamp_clean;
+     if(!same) ++sh3_drc_work.stamp_missed;
+    } else ++sh3_drc_work.stamp_dirty;
+    // The ordinary validation credits the stamps, exactly as it will when the
+    // hot path is allowed to rely on them.
+    if(same) sh3_stamp_clear(source,b.words);
+#endif
 #if SALVIA_CV1K_CHAIN_PROBE
     // Could this entry have been linked? Only if no store has run since the
     // chain started, which is exactly what a chain-scoped link would test.
@@ -84,8 +144,21 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    else if(!map_ok) ++sh3_drc_work.rebuild_map;
    rebuild=!tag_hit || !same || !map_ok;
   } else {
+#if SALVIA_CV1K_STAMP_PROBE >= 2
+   // Rely on the stamps: no store has written the lines this block's bytes
+   // occupy since the dispatcher last proved them equal to its snapshot, so
+   // the comparison cannot have changed its answer. Everything else -- the tag
+   // match, the fetch page, the source pointer, the read-map test -- is
+   // checked exactly as before, and a dirty pair still takes the comparison.
+   const bool tag_hit=(b.source==source && b.pc==pc);
+   const bool stamps_clean=tag_hit && sh3_stamp_clean(source,b.words);
+   const bool same=tag_hit && (stamps_clean || sh3_drc_source_equal(b.original,source,b.words));
+   if(same) sh3_stamp_clear(source,b.words);
+   rebuild=!same || (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page);
+#else
    rebuild=(b.source!=source || b.pc!=pc || !sh3_drc_source_equal(b.original,source,b.words) ||
      (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page));
+#endif
   }
   if(rebuild) {
    compile(b,pc,source);
