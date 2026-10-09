@@ -192,13 +192,50 @@ look.
 
 ## If it is A/B'd anyway
 
-Diagnostics builds, same state, no input, 3-4 pauses: the deployed
-`dispatch-probe-split` image against this change's diagnostics image. The signal
-to read is `core_phase_ms drc_dispatch` (`dispatch_pre`, `blk_entry`,
-`dispatch_post`), the work-sampled `native_calls` and rebuild counters, and
-`core_frame_ms cpu_io`. `dispatch_pre` is the number that should fall most; if
-it falls by much less than the 16% of entries this removes, the pre-entry span
-is not per-entry work on the console either and this whole lever is dead.
+A diagnostics pair was built, because this change moves the two halves of the
+dispatch phase in opposite directions and the probe split can therefore measure
+the per-entry coefficient that the rejected block-link A/B left unknown (its
+entry reduction was entangled with five store words per generated store).
+
+Both are `SALVIA_FBNEO_DIAGNOSTICS 1`, `SALVIA_CV1K_PROBE 1`, built by
+`salvia-tests/xex-build/build-xex.sh --baseline 3336c491 --paths
+/tmp/mirror-extra.txt` with the same nine mirrored paths, `--source-rev
+dd00ff88` (B, deployed as the primary flavor) and `--source-rev 958ad026
+--no-deploy` (A):
+
+| Image | Source | Bytes | SHA256 |
+| --- | --- | ---: | --- |
+| `Distro360/fbneo-head-base-diag.xex` (A) | `958ad026` (HEAD, no emitter change) | 34,631,680 | `f9e8c60a30478af14631f156136e1e94bce83ea608ce1bcc7d20f9dbf82a8fc8` |
+| `Distro360/fbneo.xex` = `fbneo-delayed-fallthrough-diag.xex` (B) | `dd00ff88` (this change) | 34,631,680 | `cf1f860b04a94db01b7cc9af37138a3c7ff0ae8e2586ef205f74405054012179` |
+
+Archives: `xex-archive/fbneo-20261009-1917-head-base-fallthrough-ab-diag.xex` and
+`xex-archive/fbneo-20261009-1914-delayed-fallthrough-diag.xex`. The runtime
+mirror now holds the A sources (A was built last), so rebuilding B needs
+`--source-rev dd00ff88`. No release flavor was compiled: the change is not
+accepted, and the AGENTS rule is one release compile at acceptance. The XEX
+container is encrypted, so this environment cannot verify the embedded PPC
+image; identity comes from the mirror log and from the build tag the log
+self-reports (`2026-10-08-cv1k-build-identity.md`).
+
+Protocol (the one used for the earlier probe-split pair): same save state, no
+input, `dips=00,07,00,00` (DIP B bit 2 enables the `drc_work_*` counters), two
+render cores, 3-4 pauses per image; the windows are then paired by cumulative
+frame number.
+
+What to read, in order:
+
+1. `native_calls` (work-sampled) should be ~16% lower in B, and
+   `drc_work_block_ends` should show the delayed-conditional bucket collapse.
+   If that does not happen, the image is not this change.
+2. `core_phase_ms drc_dispatch` -> `dispatch_pre`. This is the decisive number:
+   pre-entry was 7.09 ms/frame at 484 cycles per entry. If it falls roughly in
+   proportion to the entry count, the per-entry model is right and a
+   code-sharing link (calls and returns: 37% of entries) is worth writing. If it
+   barely moves, the pre-entry span is not per-entry work on this hardware and
+   the whole entry-reduction family is dead.
+3. `blk_entry` per entry should *rise* (the fused blocks are longer) and
+   `interpreter_steps` should rise ~50-80%. Those are the costs; the verdict is
+   `core_frame_ms total` / `cpu_io` at matched `worker_jobs`, not the counters.
 
 ## Revert
 
