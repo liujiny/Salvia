@@ -187,10 +187,6 @@ struct Compiler {
  unsigned long long cat_words[CAT_COUNT];
  Slot slots[HOST_REGS];
  int clock, cycles, exit_count, write_check_count;
- // Highest cycle cost any native path through this block reaches. An
- // out-of-line taken edge (below) can cost more than the fall-through that
- // follows it, and the dispatcher admits the block on its worst path.
- int max_taken;
  // A watched read may need separate general, service and mirror guards.
  BlockExit exits[MAX_INSNS*3];
  CodeWriteCheck write_checks[MAX_INSNS];
@@ -206,7 +202,7 @@ struct Compiler {
  int tail_pc_jumps, tail_nopc_jumps;
 
  Compiler(UINT32 *dest, UINT32 address, const UINT16 *source)
-  : start(dest), out(dest), pc(address), block_pc(address), clock(0), cycles(0), exit_count(0), write_check_count(0), max_taken(0), ended(false), folded_slot(false), in_delay_slot(false), tail_pc_jumps(0), tail_nopc_jumps(0)
+  : start(dest), out(dest), pc(address), block_pc(address), clock(0), cycles(0), exit_count(0), write_check_count(0), ended(false), folded_slot(false), in_delay_slot(false), tail_pc_jumps(0), tail_nopc_jumps(0)
  {
   source_begin = (UINT32)(uintptr_t)source;
   cat = CAT_BODY;
@@ -322,11 +318,7 @@ struct Compiler {
  // All guards for one memory operation share an exit before that operation.
  void guard(int bit, bool set, unsigned service_opcode=0) {
   CatGuard catScope(*this, CAT_MEMGUARD);
-  // A guard inside a delay slot publishes a pending slot instead of PC, so it
-  // can never share an exit with a guard for the same instruction compiled on
-  // a path that arrives there directly.
-  if (!exit_count || exits[exit_count-1].pc != pc || exits[exit_count-1].conditional ||
-      exits[exit_count-1].service_opcode!=service_opcode || exits[exit_count-1].delay_slot!=in_delay_slot) {
+  if (!exit_count || exits[exit_count-1].pc != pc || exits[exit_count-1].conditional || exits[exit_count-1].service_opcode!=service_opcode) {
    BlockExit &e = exits[exit_count++];
    e.count = 0; e.pc = pc; e.cycles = cycles;
    e.delay_slot = in_delay_slot;
@@ -808,38 +800,6 @@ struct Compiler {
     cycles++;
     return true;
    }
-   if (delayed && target!=block_pc) {
-    // A delayed conditional whose condition is false is a no-op: BFS/BTS only
-    // touch the pending slot and PC inside their taken branch, so the
-    // interpreter runs straight on at pc+2 with m_delay still zero. Continue
-    // that fall-through -- the delay instruction and everything after it -- in
-    // this block, exactly as the non-delayed case above does, and keep the
-    // taken edge out of line so the fall-through pays nothing for it beyond the
-    // jump that skips it. The taken edge costs one cycle more than the
-    // fall-through's single EAT; the out-of-line path still folds the delay
-    // instruction natively when the emitter can compile it (finish_delay adds
-    // that instruction's own cycle), and otherwise leaves the slot pending for
-    // the interpreter exactly as before.
-    UINT32 *not_taken=jump();
-    patch(taken);
-    constant(SO(pc),target); constant(SO(ea),target);
-    {
-     // The out-of-line path is entered with the register file as it stands at
-     // the branch, but compiling it drives the slot cache in ways the skipped
-     // fall-through must not inherit. Keep the branch-time cache for the
-     // continuation and publish the cost of the worst path.
-     Slot saved[HOST_REGS]; memcpy(saved,slots,sizeof(slots)); const int saved_clock=clock;
-     const int branch_cycles=cycles;
-     cycles=branch_cycles+2;
-     if (delay_instruction(slot)) finish_delay(false);
-     else { constant(SO(delay),pc+2); finish(pc+2,cycles,1,false); }
-     if(cycles>max_taken) max_taken=cycles;
-     memcpy(slots,saved,sizeof(slots)); clock=saved_clock;
-     cycles=branch_cycles+1;
-    }
-    patch(not_taken);
-    return true;
-   }
    bool loop=target==block_pc && (!delayed || slot==0x0009);
    folded_slot=loop && delayed;
    finish(pc+(folded_slot?4:2),cycles+(folded_slot?2:1),1);
@@ -1021,7 +981,6 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
  int max_cycles=c.cycles;
  for(int i=0;i<c.exit_count;i++)
   if(c.exits[i].cycles>max_cycles)max_cycles=c.exits[i].cycles;
- if(c.max_taken>max_cycles)max_cycles=c.max_taken;
  if(!c.ended)c.finish(pc+count*2,c.cycles,1);
  c.emit_exits();
  if(count) {

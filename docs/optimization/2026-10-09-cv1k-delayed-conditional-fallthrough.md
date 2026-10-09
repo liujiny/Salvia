@@ -155,7 +155,9 @@ Under the user's rule ("bring `recycles` down first, then ask for hardware") no
 console run is requested for this commit. The implementation is preserved at
 this commit's SHA so a diagnostics image can be built and A/B'd against the
 deployed `dispatch-probe-split` image without this change, if that is wanted.
-The follow-up commit reverts the emitter change and keeps this document.
+The follow-up commit reverts the emitter change and keeps this document; the
+implementation is `dd00ff88`, the revert is the commit that carries this line,
+so `git revert <revert>` restores it.
 
 ## Verification
 
