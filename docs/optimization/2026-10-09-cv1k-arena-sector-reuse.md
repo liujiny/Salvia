@@ -120,6 +120,19 @@ eight times flatter and proportional to new code; if the stall was really the
 dispatcher's cache footprint or the present path, this change does not address
 it. Distinguishing those needs the console, and the measurements here cannot.
 
+## Console image
+
+Only the diagnostics flavor was built, as the iteration rule requires. The
+image for this commit (`06a89f1c`) is
+`543eb7b9c642d90aff11c192e02aafee789832bb4f6c40f65a22b5c9db72aa3a`, 34,631,680
+bytes, archived as
+`xex-archive/fbneo-20261009-0842-codegen-shrink-ring-diag.xex`, deployed as
+`Distro360/fbneo.xex` / `fbneo-diag.xex`, and kept alongside as
+`Distro360/fbneo-codegen-shrink-ring-diag.xex`. The matched `3336c491` baseline
+image is unchanged, so the same pair covers an A/B when a console is available
+again. Pause reports now carry `drc_work_arena ... evictions=... evicted_slots=...`
+between `recycles` and `peak_words`.
+
 ## Revert
 
 Revert this commit: `sh3_drc_ppc.h`, `sh3_drc_dispatch.h`,
