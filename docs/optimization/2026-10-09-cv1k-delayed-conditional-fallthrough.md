@@ -130,34 +130,65 @@ run recorded for this state over the same length.
   small (2 sector reuses in 1800 frames), but this is the signal the arena work
   was built to watch, and it moves the wrong way.
 
-## Status: measured, not adopted
+## Console A/B: the change wins
 
-The change is correct and does what it set out to do (90.6% of the
-delayed-conditional block ends disappear, entries and validations fall 16%),
-but it fails this project's stated host gate for a console A/B: the 1800-frame
-arena, rebuild and generated-code numbers all move against it, and only the
-entry/validation side moves for it. The console prediction is genuinely
-two-sided:
+The host numbers above fail the gate this round had been using for *size*
+changes (arena headroom, rebuilds, generated words all move against it), so the
+emitter change was reverted and only the record kept. The console pair was
+built and run anyway, because the change moves the two halves of the dispatch
+phase in opposite directions and the probe split can therefore measure the
+per-entry coefficient on its own. It does, and it reverses the host-only
+verdict.
 
-- for: the avoided entry is worth the pre-entry span (484 of the 995 cycles per
-  entry). The only console A/B that measured an entry reduction without
-  changing per-entry work (`2026-10-08-cv1k-emitter-block-link.md`) saw -19.2%
-  entries, and its phase regression is fully explained by the five store words
-  per generated store that experiment added -- not by the link itself. This
-  change adds no store or per-entry instruction.
-- against: 41% more generated code behind a 1 MiB L2, 56% more budget-boundary
-  interpreter steps, and 8.4% more rebuilds. The same attribution says the
-  generated code is the second-largest phase, so a footprint change of this
-  size is not obviously free even though the earlier -31% words/block round
-  only moved frame time 1-3%.
+`ddpdfk`, same save state, no input, `dips=00,07,00,00`, `render_cores=2`, one
+long window per image (3,520 frames A / 3,524 frames B, 52 timing samples
+each). Workload is matched: `worker_jobs` 0.935/frame both, `timer_callbacks`
+36.06/frame both, workload-sampled `native_guest_cycles` 5,608,195 vs
+5,513,051.
 
-Under the user's rule ("bring `recycles` down first, then ask for hardware") no
-console run is requested for this commit. The implementation is preserved at
-this commit's SHA so a diagnostics image can be built and A/B'd against the
-deployed `dispatch-probe-split` image without this change, if that is wanted.
-The follow-up commit reverts the emitter change and keeps this document; the
-implementation is `dd00ff88`, the revert is the commit that carries this line,
-so `git revert <revert>` restores it.
+| Per frame | A `958ad026` | B `dd00ff88` | delta |
+| --- | ---: | ---: | ---: |
+| `core_frame_ms total` | 17.233 | 16.801 | **-2.5%** |
+| `core_frame_ms cpu_io` | 16.219 | 15.762 | **-2.8%** |
+| `core_phase_ms drc_dispatch` | 14.532 | 13.874 | **-4.5%** |
+| `dispatch_pre` (tick-corrected) | 7.19 | 6.66 | -7.4% |
+| `blk_entry` (tick-corrected) | 5.73 | 5.61 | -2.1% |
+| `dispatch_post` (tick-corrected) | 0.47 | 0.55 | +17% |
+| chain loop and remainder | 1.14 | 1.05 | -8% |
+| entries (`entry_samples`, 1-in-64, per frame) | 734.6 | 611.4 | -16.8% |
+| `dispatch_calls` per frame | 1,447.6 | 2,514.2 | +73.7% |
+| validations / validated words | 615,568 / 5.55M | 506,650 / 6.92M | -17.7% / +24.8% |
+| generated words / blocks | 3,757,880 / 32,115 | 6,051,213 / 36,144 | +61% / +12.5% |
+| arena `peak_words` | 3,837,816 (73.2%) | 5,239,092 (99.9%) | full |
+| `evictions` / `evicted_slots` | 0 / 0 | 4 / 5,633 | |
+| `interpreter_steps` | 13,082 | 21,781 | +66.5% |
+| `short_budget` / `boundary` exits | 5,183 / 4,317 | 7,468 / 10,736 | +44% / +149% |
+| `sampled_peak_ms` / frames >=25 ms | 24.08 / 0 of 52 | 25.55 / 1 of 52 | +6% |
+
+### The coefficients this buys
+
+- Per-entry pre-entry cost: 7.19 ms / 47,014 entries = 490 cycles in A (the
+  phase split measured 484), 6.66 ms / 39,133 = 545 cycles in B. The per-entry
+  cost went *up* because each surviving entry validates 24.8% more words.
+- Marginal value of a removed entry: -0.53 ms/frame for -7,881 entries/frame =
+  67 ns = **215 cycles per entry**, net of the extra validation bytes that come
+  with longer blocks. That is the number the entry-reduction family needs: any
+  mechanism that removes an entry for less than ~215 cycles of added work is a
+  win on this hardware, and a linked successor (a compare and a `bctr`, no
+  duplicated code, no store-side hook) is far below that.
+- The generated code span did **not** grow: -2.1% per frame for +61% generated
+  words and +18% per entry (blocks execute more guest instructions each). This
+  is the same weak size-to-time coupling the -31% words/block round measured,
+  now confirmed in the other direction; it is why the host-only size gate was
+  the wrong filter for this class of change.
+- Costs that are real but small: the arena loses its headroom (73.2% -> 99.9%,
+  first four sector evictions, +12.5% blocks compiled), `dispatch_calls` rise
+  73.7% (the chain breaks more often) and interpreted steps rise 66.5%. All of
+  that is inside the -4.5% phase and the -2.5% frame.
+
+Status: **adopted**. The emitter change is restored on `main` by the commit
+after the revert (`dd00ff88` is the implementation, `6aad7ef4` the revert, the
+restore is the commit that carries this section).
 
 ## Verification
 
@@ -190,7 +221,7 @@ dispatcher entries pays more than 46% more generated code costs on a 1 MiB L2,
 and whether the extra budget-boundary interpreter steps cost more than they
 look.
 
-## If it is A/B'd anyway
+## The console pair
 
 A diagnostics pair was built, because this change moves the two halves of the
 dispatch phase in opposite directions and the probe split can therefore measure
@@ -217,27 +248,23 @@ container is encrypted, so this environment cannot verify the embedded PPC
 image; identity comes from the mirror log and from the build tag the log
 self-reports (`2026-10-08-cv1k-build-identity.md`).
 
-Protocol (the one used for the earlier probe-split pair): same save state, no
-input, `dips=00,07,00,00` (DIP B bit 2 enables the `drc_work_*` counters), two
-render cores, 3-4 pauses per image; the windows are then paired by cumulative
-frame number.
+Protocol: same save state, no input, `dips=00,07,00,00` (DIP B bit 2 enables
+the `drc_work_*` counters), two render cores, one long window per image; the
+windows are then paired by cumulative frame number. The identity check that
+settled the images was the work-sampled entry count: 609,986 in A against
+498,788 in B, with `drc_work_block_ends` delayed-conditional bucket collapsed
+from 310,579 to 28,897, and `requested_words` up 24.8% exactly as the host
+harness predicted.
 
-What to read, in order:
-
-1. `native_calls` (work-sampled) should be ~16% lower in B, and
-   `drc_work_block_ends` should show the delayed-conditional bucket collapse.
-   If that does not happen, the image is not this change.
-2. `core_phase_ms drc_dispatch` -> `dispatch_pre`. This is the decisive number:
-   pre-entry was 7.09 ms/frame at 484 cycles per entry. If it falls roughly in
-   proportion to the entry count, the per-entry model is right and a
-   code-sharing link (calls and returns: 37% of entries) is worth writing. If it
-   barely moves, the pre-entry span is not per-entry work on this hardware and
-   the whole entry-reduction family is dead.
-3. `blk_entry` per entry should *rise* (the fused blocks are longer) and
-   `interpreter_steps` should rise ~50-80%. Those are the costs; the verdict is
-   `core_frame_ms total` / `cpu_io` at matched `worker_jobs`, not the counters.
+A release flavor is still not compiled: the AGENTS rule is one release compile
+at acceptance, and the acceptance decision needs the user's word on the frame
+result above. The diagnostics image that produced B is deployed as
+`Distro360/fbneo.xex`.
 
 ## Revert
 
-Revert this commit: it touches only `sh3_drc_ppc.h` (the delayed-conditional
-fall-through, `max_taken`, and the guard-exit coalescing key).
+Revert the restore commit: it re-applies `dd00ff88`, which touches only
+`sh3_drc_ppc.h` (the delayed-conditional fall-through, `max_taken`, and the
+guard-exit coalescing key). The history is deliberately three-step:
+`dd00ff88` implements it, `6aad7ef4` reverts it on host-only evidence, and the
+restore commit re-applies it on the console pair above.
