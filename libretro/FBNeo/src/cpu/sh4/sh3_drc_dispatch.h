@@ -63,19 +63,11 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   if(Count) {
    // Classify before compile() overwrites the record it is derived from.
    const bool tag_hit=(b.source==source && b.pc==pc);
-   // Cross-check the per-page code generation against the snapshot comparison:
-   // the generation says "no write reached this block's page since it was
-   // compiled", the snapshot comparison says "the bytes are unchanged". They
-   // must agree in the safe direction -- a generation match with a changed
-   // snapshot would be a missed invalidation and is counted separately.
-   const bool epoch_hit=tag_hit && b.code_gen==code_page_gen[phys>>SH3_SHIFT];
    const bool same=tag_hit && sh3_drc_source_equal(b.original,source,b.words);
    const bool map_ok=(!b.check_read_map || MemMapR[phys>>SH3_SHIFT]==page);
    if(tag_hit) {
     ++sh3_drc_work.validation_spans;
     sh3_drc_work.validation_words+=b.words;
-    if(!epoch_hit) ++sh3_drc_work.epoch_stale;
-    else if(!same) ++sh3_drc_work.epoch_missed;
    }
    if(!tag_hit) ++sh3_drc_work.rebuild_conflict;
    else if(!same) ++sh3_drc_work.rebuild_source;

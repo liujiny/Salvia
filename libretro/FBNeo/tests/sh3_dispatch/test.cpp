@@ -31,12 +31,6 @@ struct Lookup { UINT32 tag[WAYS]; unsigned next; };
 static Block block_storage[TABLE_SIZE];
 static Block *blocks;
 static Lookup lookup[CACHE_SETS];
-// The production dispatcher cross-checks a block's recorded code generation
-// against this page array. The fixture has no guest RAM and no emitter, so a
-// zeroed array means "the generation never changes", which is what its
-// synthetic records are compiled with.
-static UINT32 code_page_gen_storage[8192];
-static UINT32 *code_page_gen = code_page_gen_storage;
 static bool failed;
 static void clear() { memset(block_storage,0,sizeof(block_storage)); memset(lookup,0,sizeof(lookup)); }
 // Model the production cold/warm/sticky-failure allocation contract, rather

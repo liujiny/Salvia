@@ -10,20 +10,13 @@ struct Block {
  UINT16 words, cycles;
  bool check_read_map;
  UINT16 original[MAX_INSNS + 1];
- // Generation of the guest page this block was compiled from. A guest RAM
- // write bumps the generation of the page it lands on, so the dispatcher can
- // tell whether the bytes behind a record can still be valid without comparing
- // them: see code_page_gen in sh3_drc_ppc.h. Four bytes appended after the
- // snapshot, so every offset above is unchanged and the 32-bit record grows
- // from 84 to 88 bytes (the table from 11 MiB to 11.5 MiB).
- UINT32 code_gen;
 };
 
 // Keep frequently used metadata before the variable-length validated snapshot.
-// The host-only control-flow tests also include this declaration under their
-// native ABI.
+// The 32-bit Xbox/PPC record must retain its old allocation size. The host-only
+// control-flow tests also include this declaration under their native ABI.
 typedef char Block32BitSizeUnchanged[
- (sizeof(void*) != 4 || sizeof(Block) == 88) ? 1 : -1];
+ (sizeof(void*) != 4 || sizeof(Block) == 84) ? 1 : -1];
 typedef char Block32BitHotOffsets[
  (sizeof(void*) != 4 ||
   (offsetof(Block,pc) == 0 && offsetof(Block,source) == 4 &&

@@ -12,17 +12,12 @@ enum { MAX_INSNS=32 };
 #include "../../src/cpu/sh4/sh3_drc_block.h"
 }
 #include "../../src/cpu/sh4/sh3_drc_source_check.h"
-// The reference layout, kept independent of the production record so the
-// snapshot comparison can be checked against a second implementation. It gains
-// the same per-page code generation the production record gained after its
-// snapshot, which is the only change to that layout since this test was added.
 struct OldBlock {
  UINT32 pc;
  const UINT16 *source;
  UINT16 original[33], words, cycles;
  bool check_read_map;
  int (*entry)(Sh3PpcState*);
- UINT32 code_gen;
 };
 typedef char SameRecordSize[(sizeof(OldBlock)==sizeof(Sh3Ppc::Block))?1:-1];
 static int entry(Sh3PpcState *state) { return (int)++state->value; }

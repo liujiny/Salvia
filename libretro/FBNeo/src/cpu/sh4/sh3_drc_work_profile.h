@@ -18,14 +18,6 @@ struct Sh3DrcWorkProfile {
  // guest rewrote or re-uploaded the opcodes), `map` is a read-map change only.
  // Written on the compile path, never from generated code or the hot loop.
  Sh3WorkCount rebuild_conflict, rebuild_source, rebuild_map;
- // Code-generation cross-check, work-sampled builds only. `epoch_stale`
- // counts entries where the guest page holding the block was written since it
- // was compiled (so a generation check would recompile, whether or not the
- // bytes this block uses actually changed), and `epoch_missed` counts the
- // opposite and much worse case: the generation still matches while the source
- // snapshot does not, which would mean a write path is not hooked. The latter
- // must stay zero for the generation check to be safe on its own.
- Sh3WorkCount epoch_stale, epoch_missed;
  // Code-arena pressure. `arena_recycles` counts full-arena resets caused by the
  // overflow guard; `arena_peak` is the highest word count reached since the
  // last report. Both are written on the compile path only, never from
