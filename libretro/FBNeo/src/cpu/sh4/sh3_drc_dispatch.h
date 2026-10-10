@@ -87,6 +87,25 @@ static bool sh3_link_alive(const Sh3Ppc::LinkProbe &p)
 }
 #endif
 #if SALVIA_CV1K_SHADOW
+// Fetch a line of generated code. Nothing here validates anything: the
+// successor's code address comes out of the copy, which the dispatcher wrote
+// from a block it had just resolved, and a stale one only costs a fetch.
+static inline void sh3_code_touch(UINT32 address)
+{
+#if SALVIA_CV1K_SHADOW_TOUCH
+#ifdef _XBOX
+ Sh3Ppc::sh3_touch_line((const void*)(uintptr_t)address);
+ Sh3Ppc::sh3_touch_line((const void*)((uintptr_t)address+128));
+#else
+ // The host models no cache. It still has to consume the address so the load
+ // that produces it is not optimized away, or the host build would not be
+ // testing the path that feeds it.
+ volatile UINT32 sink=address; (void)sink;
+#endif
+#else
+ (void)address;
+#endif
+}
 // Fetch the copy that will answer the successor of this entry. The successor is
 // the last one this pc was seen to run into, which the dispatcher recorded on
 // the previous pass, so the fetch that would otherwise stall the next entry is
@@ -97,14 +116,12 @@ static inline void sh3_shadow_touch(const UINT32 pc)
 {
 #if SALVIA_CV1K_SHADOW_TOUCH
  const unsigned index=((pc>>1)^(pc>>11)^(pc>>21))&(Sh3Ppc::CACHE_SETS-1);
- const char *line=(const char*)Sh3Ppc::shadow+((size_t)index*sizeof(Sh3Ppc::Shadow));
 #ifdef _XBOX
- Sh3Ppc::sh3_touch_line(line);
+ Sh3Ppc::sh3_touch_line((const char*)Sh3Ppc::shadow+((size_t)index*sizeof(Sh3Ppc::Shadow)));
 #else
- // The host models no cache, so it only has to prove the address arithmetic
- // stays inside the table it is derived from.
- if((const char*)line<(const char*)Sh3Ppc::shadow ||
-    (const char*)line>=(const char*)Sh3Ppc::shadow+Sh3Ppc::CACHE_SETS*(int)sizeof(Sh3Ppc::Shadow)) abort();
+ // The mask keeps the index inside the table, so there is nothing to validate
+ // here: the host only has to consume the address.
+ volatile UINT32 sink=index; (void)sink;
 #endif
 #else
  (void)pc;
@@ -179,6 +196,11 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   int cycles;
   unsigned words, reason=0, stores=0;
 #if SALVIA_CV1K_SHADOW
+  // The entry the previous iteration resolved, so this one can record which
+  // code the block before it ran into -- the value the successor prefetch is
+  // aimed at. Reset with the chain: whatever ran before the loop returned to
+  // the outer interpreter is not a predecessor this chain links from.
+  unsigned sh_prev_index=0; bool sh_have_prev=false;
   // The shadow copy for this pc, if the dispatcher has one and it still
   // describes the bytes: its own tag and fetch page, a sector generation that
   // says the code it names is still resident, and the snapshot comparison --
@@ -424,7 +446,10 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   }
 #endif
 #if SALVIA_CV1K_SHADOW
-  if(shadow) sh3_shadow_touch(shadow[index].next_pc);
+  if(shadow) {
+   if(copy) sh3_code_touch(copy->next_entry);
+   sh3_shadow_touch(shadow[index].next_pc);
+  }
 #endif
   const int completed=entry(&sh3_ppc_state);
 #if SALVIA_CV1K_SHADOW
@@ -433,6 +458,14 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    // line is already in hand from the read above.
    if(Count && shadow[index].next_pc!=(UINT32)m_pc) ++sh3_drc_work.shadow_pred_miss;
    shadow[index].next_pc=(UINT32)m_pc;
+   // The code this entry ran is what the previous pc's block ran into last
+   // time, so that is where its successor prefetch will point.
+   if(sh_have_prev) {
+    if(Count && shadow[sh_prev_index].next_entry!=(UINT32)(uintptr_t)entry)
+     ++sh3_drc_work.shadow_code_changed;
+    shadow[sh_prev_index].next_entry=(UINT32)(uintptr_t)entry;
+   }
+   sh_prev_index=index; sh_have_prev=true;
   }
 #endif
 #if SALVIA_CV1K_PROBE

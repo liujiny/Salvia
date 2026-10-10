@@ -131,8 +131,16 @@ struct Shadow {
  // read only to prefetch the copy that will answer it, so a stale value costs
  // one fetch and nothing else -- the prefetch is a hint, not a validity test.
  UINT32 next_pc;
+ // The code that successor ran, last time this pc ran into it. Used only as the
+ // address of a dcbt, exactly like next_pc: the block call is the largest
+ // single piece of the dispatch phase on the console (7.43 ms of 12.21 per
+ // frame, 538 cycles per entry for about three 128-byte lines) and it is a
+ // streaming miss -- a block's code is fetched once per frame, so its reuse
+ // distance is a whole frame and no cache keeps it. A wrong value fetches a
+ // line nobody reads; the prefetch decides nothing.
+ UINT32 next_entry;
  UINT16 original[MAX_INSNS + 1];
- UINT8 pad[128 - 28 - (MAX_INSNS + 1) * 2];
+ UINT8 pad[128 - 32 - (MAX_INSNS + 1) * 2];
 };
 // The 32-bit record must be one console cache line; the host fixture builds
 // 64-bit and does not model that line.

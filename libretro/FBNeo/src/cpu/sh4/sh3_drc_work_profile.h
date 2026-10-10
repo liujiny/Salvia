@@ -104,6 +104,10 @@ struct Sh3DrcWorkProfile {
  // is aimed at) was not the one the block actually ran into. Diagnostic only:
  // a miss costs the fetch, never an answer.
  Sh3WorkCount shadow_pred_miss;
+ // How often the code address a copy predicted for its successor was not the
+ // one the next entry resolved. It changes only when a block is recompiled, so
+ // it is the prefetch's accuracy for the generated code; a miss costs a fetch.
+ Sh3WorkCount shadow_code_changed;
  // Requested snapshot lengths, not necessarily executed opcode counts.
  Sh3WorkCount snapshot_lengths[34];
  // High-byte opcode families actually sent to the interpreter in sampled frames.
