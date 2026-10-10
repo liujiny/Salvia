@@ -90,8 +90,18 @@ or above 25 ms.
 
 The pair for the A/B is the diagnostics flavor of this commit against the
 diagnostics flavor of its parent `c23c9876`, built with the same script and the
-same baseline. The parent differs only in this macro, so the two images isolate
-the cap.
+same baseline (`8c38d0bd`), so the two images differ only in this macro:
+
+| role | image | source | sha256 |
+| --- | --- | --- | --- |
+| baseline, cap 3 | `fbneo-ab-base-cap3-diag.xex` | `c23c9876` | `2067137741721a363492a01f796dfc275f75a3892c520b7378ec54b34db040e7` |
+| candidate, cap 33 | `fbneo-ab-cand-uncapped-diag.xex` | `2d78111e` | `bbebb82e040ab08e092dd40f0cd780ff4ea77c444055d57cc70cb1325d4c0047` |
+
+Archived as `xex-archive/fbneo-20261009-2341-fusion-cap3-ab-base-diag.xex` and
+`...-2344-fusion-uncapped-ab-diag.xex`. `Distro360/` keeps only those two plus
+the accepted release image; the `fbneo.xex` / `fbneo-diag.xex` copies the build
+script also writes are byte-identical to the candidate and were moved out, so
+the folder cannot be mistaken for a four-way comparison.
 
 ## Limits
 
