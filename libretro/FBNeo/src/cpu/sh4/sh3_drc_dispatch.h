@@ -57,6 +57,35 @@ static void sh3_stamp_clear(const UINT16 *source, unsigned words)
 
 // Keep the native loop in the caller: interpreter fallback should not pay a
 // second dispatcher stack frame. This does not inline/link generated PPC blocks.
+#if SALVIA_CV1K_LINK_PROBE >= 2
+// Gate probe for a block link (docs/optimization/2026-10-10-cv1k-link-gate.md).
+// Diagnostics: every counter below is only incremented, nothing here decides
+// what the dispatcher does.
+//
+// `immutable`: this entry's fetch page has no write mapping, so the only writer
+// left is the interpreter's store path, which the board routes to a region
+// handler. CV1000 maps its program ROM that way and that handler drops writes,
+// so guest code living in it cannot be changed by any store the emulator
+// executes -- the population a link can enter without asking a store-side
+// question at all. The snapshot comparison is the audit: if the bytes of an
+// immutable entry ever differ from the record, this test is wrong.
+static bool sh3_src_immutable(const UINT16 *source,UINT32 phys)
+{
+ if(MemMapW[phys>>SH3_SHIFT]!=NULL) return false;
+ if(!Sh3Ppc::ram_window.base) return true;
+ const UINT32 off=(UINT32)((uintptr_t)(const UINT8*)source-(uintptr_t)Sh3Ppc::ram_window.base);
+ return off>Sh3Ppc::ram_window.mask;
+}
+// A link table entry that predicts the successor of one block. `sector` is the
+// arena sector the target's code was compiled into and `slot` the block-table
+// record that named it, so a later pass can ask whether that code is still
+// resident -- what a sector-generation counter would answer in the real link.
+static bool sh3_link_alive(const Sh3Ppc::LinkProbe &p)
+{
+ return Sh3Ppc::slot_sector && p.slot<Sh3Ppc::TABLE_SIZE &&
+   Sh3Ppc::slot_sector[p.slot]!=0xFF && (Sh3Ppc::slot_sector[p.slot]&0x1Fu)==p.sector;
+}
+#endif
 #if defined(_MSC_VER) && defined(_XBOX)
 #define SH3_DISPATCH_INLINE __forceinline
 #elif defined(__GNUC__)
@@ -92,6 +121,14 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
  static bool link_prev_sequential=false;
  link_prev_sequential=false;
 #endif
+#if SALVIA_CV1K_LINK_PROBE >= 2
+ // The predecessor of the entry this iteration is about to resolve. A link can
+ // only be consulted for entries that follow another entry, so the state starts
+ // invalid at every chain call: whatever ran before the loop returned to the
+ // outer interpreter is not a predecessor this chain links from.
+ unsigned lp_prev_slot=0, lp_prev_index=0;
+ bool lp_prev_valid=false;
+#endif
  do {
 #if SALVIA_CV1K_PROBE
   // Three spans per sampled entry: the pre-entry work (fetch, lookup,
@@ -115,6 +152,66 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   Lookup &set=lookup[index];
   const unsigned way=sh3_drc_lookup4(set.tag,set.next,pc);
   Block &b=blocks[index*WAYS+way];
+#if SALVIA_CV1K_LINK_PROBE >= 2
+  const bool lp_immutable=Count && sh3_src_immutable(source,phys);
+  bool lp_rec_ok=false, lp_set_ok=false;
+   bool lp_sh_ok=false;
+  if(Count) {
+   const unsigned lp_slot=index*WAYS+way;
+   if(lp_immutable) ++sh3_drc_work.link2_rom_entries;
+   else ++sh3_drc_work.link2_ram_entries;
+   // Footprint of the layouts under consideration: the record array as it is
+   // (84 bytes), the hot half of a split record (16 bytes), and the guest bytes
+   // the validation reads.
+   lp_rec_line[((UINT32)lp_slot*84)>>6]=1;
+   lp_hot_line[((UINT32)lp_slot*LP_HOT_BYTES)>>6]=1;
+   // The guest bytes this entry's validation reads, keyed by their line inside
+   // the registered window (the same space the write stamps use): the window
+   // offset of the source pointer, which a record in the table always has.
+   if(Sh3Ppc::ram_window.base) {
+    const UINT32 lp_srcoff=(UINT32)((uintptr_t)source-(uintptr_t)Sh3Ppc::ram_window.base);
+    if(lp_srcoff<=Sh3Ppc::ram_window.mask)
+     lp_src_line[(lp_srcoff>>6)&(LP_SRC_LINES-1)]=1;
+   }
+   if(lp_prev_valid) {
+    const uintptr_t lp_page=(uintptr_t)page;
+    ++sh3_drc_work.link2_steps;
+    const LinkProbe &rec=lp_rec[lp_prev_slot];
+    const LinkProbe &setp=lp_set[lp_prev_index&LP_SET_MASK];
+    if(rec.pc==pc) {
+     ++sh3_drc_work.link2_rec_hit;
+     if(rec.page==lp_page) {
+      ++sh3_drc_work.link2_rec_page;
+      if(sh3_link_alive(rec)) {
+       lp_rec_ok=true;
+       ++sh3_drc_work.link2_rec_ok;
+       if(lp_immutable) ++sh3_drc_work.link2_rom_ok;
+      }
+     }
+    }
+    if(setp.pc==pc) {
+     ++sh3_drc_work.link2_set_hit;
+     if(setp.page==lp_page) {
+      ++sh3_drc_work.link2_set_page;
+      if(sh3_link_alive(setp)) {
+       lp_set_ok=true;
+       ++sh3_drc_work.link2_set_ok;
+       if(lp_immutable) ++sh3_drc_work.link2_set_rom_ok;
+      }
+     }
+    }
+    // The shadow model: it is read at the set index of the pc being entered and
+    // answers only if its own tag and page match and the code it names is still
+    // resident. Everything else about it -- the snapshot, the entry, the cycle
+    // cost -- is what the record held when it was last written.
+    const LinkProbe &sh=lp_shadow[index&LP_SET_MASK];
+    if(sh.pc==pc) {
+     ++sh3_drc_work.link2_sh_hit;
+     if(sh.page==lp_page && sh3_link_alive(sh)) lp_sh_ok=true;
+    }
+   }
+  }
+#endif
 #if SALVIA_CV1K_LINK_PROBE
   if(Count && b.source==source && b.pc==pc) {
    ++sh3_drc_work.link_entries;
@@ -139,6 +236,16 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    if(tag_hit) {
     ++sh3_drc_work.validation_spans;
     sh3_drc_work.validation_words+=b.words;
+#if SALVIA_CV1K_LINK_PROBE >= 2
+    // The shadow answers only if the bytes still match the snapshot it copied
+    // along with everything else, so this is the share of entries a shadow
+    // record could serve, and the counter next to it is the one hole that would
+    // make it unsafe.
+    if(lp_sh_ok) {
+     if(same) ++sh3_drc_work.link2_sh_ok;
+     else ++sh3_drc_work.link2_sh_stale;
+    }
+#endif
 #if SALVIA_CV1K_STAMP_PROBE
     // Write-stamp cross-check. This specialization compares anyway, so it is
     // the audit of the skip below: `clean` is the share of validations a clean
@@ -166,6 +273,16 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    if(!tag_hit) ++sh3_drc_work.rebuild_conflict;
    else if(!same) ++sh3_drc_work.rebuild_source;
    else if(!map_ok) ++sh3_drc_work.rebuild_map;
+#if SALVIA_CV1K_LINK_PROBE >= 2
+   // The two dangerous directions, on the same entries the counters above
+   // classify: a link would have entered a translation whose bytes this entry's
+   // comparison proves had changed, and the same for the immutable population.
+   // Both must stay zero; anything else is a hole in the link's validity rule.
+   if(!same) {
+    if(lp_rec_ok || lp_set_ok) ++sh3_drc_work.link2_stale;
+    if(lp_immutable) ++sh3_drc_work.link2_rom_changed;
+   }
+#endif
    rebuild=!tag_hit || !same || !map_ok;
   } else {
 #if SALVIA_CV1K_STAMP_PROBE >= 2
@@ -212,6 +329,32 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   }
 #if SALVIA_CV1K_PROBE
   if(probeNow) probeStart=salvia_cv1k_tick();
+#endif
+#if SALVIA_CV1K_LINK_PROBE >= 2
+  if(Count) {
+   // The successor of the block about to run is exactly the pc the next
+   // iteration resolves, so this is where a link learns. A record with no
+   // generated code has nothing to link into and records an impossible pc.
+   const unsigned lp_slot=index*WAYS+way;
+   const bool lp_ok=b.entry && slot_sector && slot_sector[lp_slot]!=0xFF;
+   const UINT32 lp_pc=lp_ok?pc:0xFFFFFFFFu;
+   const unsigned lp_sect=lp_ok?(unsigned)(slot_sector[lp_slot]&0x1Fu):0u;
+   lp_rec[lp_prev_slot].pc=lp_pc;
+   lp_rec[lp_prev_slot].page=(uintptr_t)page;
+   lp_rec[lp_prev_slot].slot=lp_slot;
+   lp_rec[lp_prev_slot].sector=lp_sect;
+   lp_set[lp_prev_index&LP_SET_MASK].pc=lp_pc;
+   lp_set[lp_prev_index&LP_SET_MASK].page=(uintptr_t)page;
+   lp_set[lp_prev_index&LP_SET_MASK].slot=lp_slot;
+   lp_set[lp_prev_index&LP_SET_MASK].sector=lp_sect;
+   // The shadow is keyed by the pc it describes, so it is written at the entry
+   // it belongs to, out of the record the dispatcher has just resolved.
+   lp_shadow[index&LP_SET_MASK].pc=pc;
+   lp_shadow[index&LP_SET_MASK].page=(uintptr_t)page;
+   lp_shadow[index&LP_SET_MASK].slot=lp_slot;
+   lp_shadow[index&LP_SET_MASK].sector=lp_sect;
+   lp_prev_slot=lp_slot; lp_prev_index=index; lp_prev_valid=true;
+  }
 #endif
   const int completed=b.entry(&sh3_ppc_state);
 #if SALVIA_CV1K_PROBE

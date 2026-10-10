@@ -97,6 +97,40 @@ static Block *blocks;
 // successor fast path would stop reading. Diagnostics only.
 static UINT8 lookup_touched[CACHE_SETS];
 #endif
+#if SALVIA_CV1K_LINK_PROBE >= 2
+// Gate probe for a block link (docs/optimization/2026-10-10-cv1k-link-gate.md).
+// Two tables model where a link would live -- in the predecessor's block-table
+// record, or in a compact table indexed by hash(pc) with collisions -- and a
+// third pair of bitmaps measures the cache footprint each record layout asks
+// for. Diagnostics only: no dispatcher decision reads any of this.
+struct LinkProbe {
+ UINT32 pc;
+ // The fetch page is a host pointer, so it is compared at pointer width: the
+ // host fixture builds 64-bit and the console 32-bit.
+ uintptr_t page;
+ unsigned slot, sector;
+};
+static LinkProbe lp_rec[TABLE_SIZE];
+static LinkProbe lp_set[CACHE_SETS];
+// The shadow-record model: the same table shape as lp_set but filled with the
+// entry that is being resolved rather than with the successor of an earlier
+// one, which is how a one-way copy of the record would behave.
+static LinkProbe lp_shadow[CACHE_SETS];
+// Every fill and every check below masks the set index with this, so a smaller
+// table behaves exactly like a smaller table would: same eviction, same
+// collisions. Sweeping it is what sizes the link table.
+#ifndef SALVIA_CV1K_LINK_MASK
+#define SALVIA_CV1K_LINK_MASK 32767u
+#endif
+enum { LP_SET_MASK = ((unsigned)SALVIA_CV1K_LINK_MASK < CACHE_SETS) ? (unsigned)SALVIA_CV1K_LINK_MASK : (unsigned)(CACHE_SETS-1) };
+// Distinct 64-byte lines touched, keyed by the line each layout would put the
+// record in. `HOT_BYTES` is the hot/snapshot split's hot part.
+enum { LP_HOT_BYTES = 16, LP_HOT_LINES = (TABLE_SIZE * LP_HOT_BYTES) / 64,
+       LP_REC_LINES = (TABLE_SIZE * 84 + 63) / 64, LP_SRC_LINES = 0x1000000 / 64 };
+static UINT8 lp_hot_line[LP_HOT_LINES];
+static UINT8 lp_rec_line[LP_REC_LINES];
+static UINT8 lp_src_line[LP_SRC_LINES];
+#endif
 // Which arena sector each block-table slot was compiled into, or 0xFF when the
 // slot holds no generated code. Sectors are reused in order, so reusing one
 // only has to drop the slots that name it; without this map the cache would
@@ -1280,6 +1314,16 @@ static void sh3_drc_reset()
 #endif
 #if SALVIA_CV1K_LINK_PROBE
  memset(&Sh3Ppc::lookup_touched[0],0,sizeof(Sh3Ppc::lookup_touched));
+#endif
+#if SALVIA_CV1K_LINK_PROBE >= 2
+ // Every record is gone, so every recorded link points at code the dispatcher
+ // has just abandoned; start the tables and the footprint bitmaps over.
+ memset(&Sh3Ppc::lp_rec[0],0,sizeof(Sh3Ppc::lp_rec));
+ memset(&Sh3Ppc::lp_set[0],0,sizeof(Sh3Ppc::lp_set));
+ memset(&Sh3Ppc::lp_shadow[0],0,sizeof(Sh3Ppc::lp_shadow));
+ memset(&Sh3Ppc::lp_hot_line[0],0,sizeof(Sh3Ppc::lp_hot_line));
+ memset(&Sh3Ppc::lp_rec_line[0],0,sizeof(Sh3Ppc::lp_rec_line));
+ memset(&Sh3Ppc::lp_src_line[0],0,sizeof(Sh3Ppc::lp_src_line));
 #endif
  Sh3Ppc::used=0;
 }

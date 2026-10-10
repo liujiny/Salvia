@@ -5008,6 +5008,33 @@ void Sh3WorkReport(void (*emit)(const char*))
 			(unsigned)Sh3Ppc::CACHE_SETS,touched,(unsigned)(Sh3Ppc::CACHE_SETS*sizeof(Sh3Ppc::Lookup)),(unsigned)(touched*sizeof(Sh3Ppc::Lookup))); emit(text);
 	}
 #endif
+#if SALVIA_CV1K_LINK_PROBE >= 2
+	// Gate probe for a block link. Every share is printed with the raw counts so
+	// the numbers can be re-derived from the log; `stale` and `changed` are the
+	// two counters that must be zero. The line counts are the footprint of each
+	// candidate record layout over the window, in bytes.
+	{
+		unsigned hot=0,rec=0,src=0;
+		for(unsigned i=0;i<(unsigned)Sh3Ppc::LP_HOT_LINES;++i) if(Sh3Ppc::lp_hot_line[i]) ++hot;
+		for(unsigned i=0;i<(unsigned)Sh3Ppc::LP_REC_LINES;++i) if(Sh3Ppc::lp_rec_line[i]) ++rec;
+		for(unsigned i=0;i<(unsigned)Sh3Ppc::LP_SRC_LINES;++i) if(Sh3Ppc::lp_src_line[i]) ++src;
+		sprintf(text,"drc_work_link2 steps=%" SH3_WORK_COUNT " rom=%" SH3_WORK_COUNT " ram=%" SH3_WORK_COUNT " rom_pct=%u set_mask=%u"
+			" rec_hit=%" SH3_WORK_COUNT " rec_page=%" SH3_WORK_COUNT " rec_ok=%" SH3_WORK_COUNT " rec_ok_pct=%u rom_ok=%" SH3_WORK_COUNT
+			" set_hit=%" SH3_WORK_COUNT " set_page=%" SH3_WORK_COUNT " set_ok=%" SH3_WORK_COUNT " set_ok_pct=%u set_rom_ok=%" SH3_WORK_COUNT
+			" stale=%" SH3_WORK_COUNT " changed=%" SH3_WORK_COUNT " sh_hit=%" SH3_WORK_COUNT " sh_ok=%" SH3_WORK_COUNT " sh_ok_pct=%u sh_stale=%" SH3_WORK_COUNT,
+			p.link2_steps,p.link2_rom_entries,p.link2_ram_entries,
+			(p.link2_rom_entries+p.link2_ram_entries)?(unsigned)(p.link2_rom_entries*100/(p.link2_rom_entries+p.link2_ram_entries)):0u,
+			(unsigned)Sh3Ppc::LP_SET_MASK,
+			p.link2_rec_hit,p.link2_rec_page,p.link2_rec_ok,p.link2_steps?(unsigned)(p.link2_rec_ok*100/p.link2_steps):0u,p.link2_rom_ok,
+			p.link2_set_hit,p.link2_set_page,p.link2_set_ok,p.link2_steps?(unsigned)(p.link2_set_ok*100/p.link2_steps):0u,p.link2_set_rom_ok,
+			p.link2_stale,p.link2_rom_changed,
+			p.link2_sh_hit,p.link2_sh_ok,(p.link2_rom_entries+p.link2_ram_entries)?(unsigned)(p.link2_sh_ok*100/(p.link2_rom_entries+p.link2_ram_entries)):0u,p.link2_sh_stale); emit(text);
+		sprintf(text,"drc_work_link2_footprint hot_lines=%u hot_bytes=%u rec_lines=%u rec_bytes=%u src_lines=%u src_bytes=%u"
+			" hot_bytes_max=%u rec_bytes_max=%u",
+			hot,(unsigned)(hot*64),rec,(unsigned)(rec*64),src,(unsigned)(src*64),
+			(unsigned)Sh3Ppc::LP_HOT_LINES*64,(unsigned)Sh3Ppc::LP_REC_LINES*64); emit(text);
+	}
+#endif
 	// Emitted words per compiled block by phase: where the generated code goes,
 	// independent of how often each block then runs.
 	sprintf(text,"drc_work_codegen blocks=%" SH3_WORK_COUNT " body=%" SH3_WORK_COUNT " memaddr=%" SH3_WORK_COUNT " memguard=%" SH3_WORK_COUNT " memaccess=%" SH3_WORK_COUNT " complete=%" SH3_WORK_COUNT " exit=%" SH3_WORK_COUNT,

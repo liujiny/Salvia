@@ -23,7 +23,7 @@ static bool sh3_drc_enabled, allocation_failure, recycle;
 static unsigned allocations, compilations, native_calls, interpreted, outer_calls;
 static unsigned events[16];
 static UINT16 ram[2][512];
-static UINT8 *MemMapF[4], *MemMapR[4];
+static UINT8 *MemMapF[4], *MemMapR[4], *MemMapW[4];
 static std::vector<UINT32> trace;
 static UINT32 rng;
 static UINT32 rnd() { rng^=rng<<13; rng^=rng>>17; rng^=rng<<5; return rng; }
@@ -56,6 +56,18 @@ static UINT8 lookup_touched[CACHE_SETS];
 // does not include: one byte per 64-byte line of the window.
 enum { STAMP_SHIFT=6, STAMP_INDEX_BITS=23, STAMP_LINES=1u<<STAMP_INDEX_BITS };
 static UINT8 *code_stamp;
+// The level-2 link gate probe reads the write map to classify a source as
+// immutable and keeps two prediction tables plus a shadow model beside the
+// record array. None of them decides anything here; they only have to exist.
+struct LinkProbe { UINT32 pc; uintptr_t page; unsigned slot, sector; };
+static LinkProbe lp_rec[TABLE_SIZE], lp_set[CACHE_SETS], lp_shadow[CACHE_SETS];
+enum { LP_HOT_BYTES=16, LP_HOT_LINES=(TABLE_SIZE*LP_HOT_BYTES)/64,
+       LP_REC_LINES=(TABLE_SIZE*sizeof(Block)+63)/64, LP_SRC_LINES=(AM+1)/64 };
+static UINT8 lp_hot_line[LP_HOT_LINES], lp_rec_line[LP_REC_LINES], lp_src_line[LP_SRC_LINES];
+#ifndef SALVIA_CV1K_LINK_MASK
+#define SALVIA_CV1K_LINK_MASK 32767u
+#endif
+enum { LP_SET_MASK=((unsigned)SALVIA_CV1K_LINK_MASK<CACHE_SETS)?(unsigned)SALVIA_CV1K_LINK_MASK:(unsigned)(CACHE_SETS-1) };
 static bool failed;
 static void clear() { memset(block_storage,0,sizeof(block_storage)); memset(lookup,0,sizeof(lookup)); memset(slot_sector,0xFF,sizeof(slot_sector)); }
 // Model the production cold/warm/sticky-failure allocation contract, rather

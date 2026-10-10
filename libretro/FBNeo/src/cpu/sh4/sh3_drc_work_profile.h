@@ -57,6 +57,37 @@ struct Sh3DrcWorkProfile {
  // workload reads (one 20-byte set per lookup): the footprint the fast path
  // would stop touching.
  Sh3WorkCount link_entries, link_sequential, lookup_sets, lookup_sets_touched;
+ // Block-link gate probe (SALVIA_CV1K_LINK_PROBE >= 2), work-sampled entries
+ // only. `link2_steps` are the entries that follow another entry inside the
+ // same chain call -- the position a link can serve at all. `link2_rom_entries`
+ // are those whose bytes live outside every writable mapping, so no store the
+ // emulator executes can change them (`link2_ram_entries` the rest).
+ // `link2_rec_*` model a link stored in the predecessor's block-table record,
+ // `link2_set_*` one in a compact table indexed by hash(predecessor pc), with
+ // collisions: `hit` is the prediction landing on the right pc, `page` that the
+ // fetch page still matches, `ok` that the recorded code is still resident in
+ // its arena sector. `link2_rom_ok`/`link2_set_rom_ok` are the entries that were
+ // both immutable and fully predicted -- the population that needs no
+ // store-side signal. `link2_stale` and `link2_rom_changed` are the dangerous
+ // directions (checks passed while the snapshot says the bytes changed) and
+ // must both stay zero.
+ Sh3WorkCount link2_steps, link2_rom_entries, link2_ram_entries;
+ Sh3WorkCount link2_rec_hit, link2_rec_page, link2_rec_ok, link2_rom_ok;
+ Sh3WorkCount link2_set_hit, link2_set_page, link2_set_ok, link2_set_rom_ok;
+ Sh3WorkCount link2_stale, link2_rom_changed;
+ // Shadow-record probe: a one-way copy of a block's record, indexed by the same
+ // set index and tagged with its pc, that the dispatcher could read instead of
+ // the record itself. It carries the snapshot too, so the checks it serves are
+ // the existing ones verbatim -- there is no store-side question to answer.
+ // `link2_sh_hit` is the share of entries the shadow holds, `link2_sh_ok` those
+ // whose bytes still match the shadow's snapshot (the share that would be
+ // served), and `link2_sh_stale` the dangerous direction, which must be zero.
+ Sh3WorkCount link2_sh_hit, link2_sh_ok, link2_sh_stale;
+ // Footprint probes: distinct 64-byte lines touched by this window's entries in
+ // the record array as it is today (84 bytes per record), in the record the
+ // hot/snapshot split would leave behind (16 bytes of hot fields), and in the
+ // guest source bytes. Reported as bytes at report time.
+ Sh3WorkCount link2_hot_lines, link2_rec_lines, link2_src_lines;
  // Chain probe: entries that ran while no guest store had executed since the
  // chain call started (clean, i.e. linkable in principle) against the rest.
  Sh3WorkCount chain_clean_entries, chain_dirty_entries;
