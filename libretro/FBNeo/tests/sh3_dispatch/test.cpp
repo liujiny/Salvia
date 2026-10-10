@@ -57,9 +57,8 @@ struct Shadow {
  UINT8 stores;
  UINT32 epoch;
  UINT32 next_pc;
- UINT32 next_entry;
  UINT16 original[MAX_INSNS + 1];
- UINT8 pad[128 - 32 - (MAX_INSNS + 1) * 2];
+ UINT8 pad[128 - 28 - (MAX_INSNS + 1) * 2];
 };
 // The 32-bit record must be one console cache line; the host fixture builds
 // 64-bit and does not model that line.

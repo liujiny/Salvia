@@ -4974,8 +4974,6 @@ void Sh3WorkReport(void (*emit)(const char*))
 			(unsigned)(Sh3Ppc::CACHE_SETS*(int)sizeof(Sh3Ppc::Shadow)),(unsigned)sizeof(Sh3Ppc::Shadow),
 			p.shadow_pred_miss,p.shadow_hits?(unsigned)(p.shadow_pred_miss*100/p.shadow_hits):0u,
 			(int)SALVIA_CV1K_SHADOW_TOUCH); emit(text);
-		sprintf(text,"drc_work_shadow_code changed=%" SH3_WORK_COUNT " changed_pct=%u",
-			p.shadow_code_changed,p.shadow_hits?(unsigned)(p.shadow_code_changed*100/p.shadow_hits):0u); emit(text);
 	}
 #endif
 	sprintf(text,"drc_work_rebuild_causes conflict=%" SH3_WORK_COUNT " source=%" SH3_WORK_COUNT " read_map=%" SH3_WORK_COUNT,
