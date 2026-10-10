@@ -106,6 +106,24 @@ static Block *blocks;
 #ifndef SALVIA_CV1K_SHADOW
 #define SALVIA_CV1K_SHADOW 1
 #endif
+// Guard-hoisting probe (docs/optimization/2026-10-10-cv1k-code-touch-console.md):
+// 1 counts, per block, what validating a guest base register's range once would
+// have saved against the per-access window/alias/alignment guards. It emits the
+// same code either way; nothing here decides anything at frame time.
+#ifndef SALVIA_CV1K_HOIST_PROBE
+#define SALVIA_CV1K_HOIST_PROBE 0
+#endif
+// Feasibility probe for the one instruction that could hide the generated
+// code's fetch: icbt, the instruction-cache block touch. PowerPC has no
+// data-cache touch that can warm the instruction cache (dcbt fills L1D, which
+// is why the code prefetch of 2026-10-10-cv1k-code-touch-console.md cost 2.5 ms
+// instead of saving them), and icbt is a later-ISA instruction whose presence
+// on the Xenon is undocumented: if it is not implemented it raises a program
+// exception, which the emulator cannot survive. 1 executes it once, on the
+// first allocation, so a single boot answers the question.
+#ifndef SALVIA_CV1K_ICBT_PROBE
+#define SALVIA_CV1K_ICBT_PROBE 1
+#endif
 // Whether the fast path also fetches the copy that will answer the successor.
 // The fetch is a hint and decides nothing, so this knob trades a few dispatch
 // instructions for a hidden miss rather than any behaviour.
@@ -139,6 +157,16 @@ struct Shadow {
 typedef char ShadowIsOneCacheLine[(sizeof(void*) != 4 || sizeof(Shadow) == 128) ? 1 : -1];
 static Shadow *shadow;
 #ifdef _XBOX
+#if SALVIA_CV1K_ICBT_PROBE
+// 0x7c001a16 = opcode 31, XO 22 with TH 0: icbt r0,r3. Sits next to the dcbt
+// helper because both are naked leaves taking the line address in r3.
+static __declspec(naked) void sh3_icbt_line(const void *line)
+{
+ __emit(0x7c001a16); // icbt r0,r3
+ __asm { blr }
+}
+static bool sh3_icbt_probe_done;
+#endif
 // dcbt r0,r3: the address is the first argument, which the 360's ABI passes in
 // r3, so a naked leaf is the whole prefetch. A hint that faults on nothing and
 // answers nothing; a wrong address would only fetch a line nobody reads.
@@ -321,6 +349,12 @@ struct CodeWriteCheck { UINT32 *compare; unsigned size; };
 enum { CAT_BODY=0, CAT_MEMADDR, CAT_MEMGUARD, CAT_MEMACCESS, CAT_COMPLETE, CAT_EXIT, CAT_COUNT };
 static unsigned long long sh3_gen_words[CAT_COUNT];
 static unsigned long long sh3_gen_blocks;
+#if SALVIA_CV1K_HOIST_PROBE
+// Guard-hoisting measurement over every compiled block: accesses whose guard a
+// per-register range would have covered (`hits`), range extensions that would
+// have needed one more guard (`extends`), and the words each side of that costs.
+static unsigned long long sh3_gen_hoist_hits, sh3_gen_hoist_extends, sh3_gen_hoist_saved, sh3_gen_hoist_spent;
+#endif
 // Why the block that is being compiled ended. Buckets 0..5 are the classes the
 // earlier histogram showed; 6 and 7 split the delayed conditionals by whether
 // the block could instead have continued through the delay slot into the
@@ -357,6 +391,14 @@ static bool delay_slot_eligible(UINT16 op)
 }
 
 struct Compiler {
+#if SALVIA_CV1K_HOIST_PROBE
+ // One validated range per guest base register: the displacements whose window,
+ // alias and alignment guards have already been emitted for this block, in the
+ // same alignment class. A guest register write drops it.
+ struct BaseRange { UINT32 lo, hi; int cls; bool valid; };
+ BaseRange base_range[16];
+ unsigned hoist_hits, hoist_extends, hoist_words_saved, hoist_words_spent;
+#endif
  UINT32 *start, *out;
  UINT32 pc, source_begin, block_pc;
  int cat;
@@ -390,6 +432,10 @@ struct Compiler {
   source_begin = (UINT32)(uintptr_t)source;
   cat = CAT_BODY;
   for (int i = 0; i < CAT_COUNT; i++) cat_words[i] = 0;
+#if SALVIA_CV1K_HOIST_PROBE
+  hoist_hits = hoist_extends = hoist_words_saved = hoist_words_spent = 0;
+  for (int i = 0; i < 16; i++) { base_range[i].valid = false; base_range[i].lo = base_range[i].hi = 0; base_range[i].cls = 0; }
+#endif
   for (int i = 0; i < HOST_REGS; i++) {
    slots[i].guest = -1; slots[i].age = 0;
    slots[i].locked = false;
@@ -462,7 +508,15 @@ struct Compiler {
   return found + FIRST_SLOT;
  }
  // Called right after the value is produced in the slot register.
- void dirty(int host) { store(host, reg_offset(slots[host - FIRST_SLOT].guest)); }
+ void dirty(int host) {
+#if SALVIA_CV1K_HOIST_PROBE
+  // A write to this guest register invalidates whatever its accesses were
+  // validated against. The emitter writes guest registers only here.
+  const int g = slots[host - FIRST_SLOT].guest;
+  if (g >= 0 && g < 16) base_range[g].valid = false;
+#endif
+  store(host, reg_offset(slots[host - FIRST_SLOT].guest));
+ }
  void charge(int count) {
   load(11, SO(total)); addi(11, 11, count); store(11, SO(total));
   load(11, SO(icount)); addi(11, 11, -count); store(11, SO(icount));
@@ -639,6 +693,25 @@ struct Compiler {
    // A compile-time-bound RAM operand needs no runtime translation at all.
    ram_address(12,(absolute-ram.start)&ram.mask);
   } else if (direct) {
+#if SALVIA_CV1K_HOIST_PROBE
+   // What a per-register range would cost and save. Six words is the pair of
+   // guards this block emits per access for the window/alias/alignment test; a
+   // range validated at its two extremes covers everything between them that
+   // has the same alignment, so those accesses need no guard at all.
+   if (base >= 0 && index < 0 && disp >= 0) {
+    const int cls = (size == 1) ? 1 : size;
+    if (size == 1 || ((UINT32)disp % (UINT32)size) == 0) {
+     BaseRange &r = base_range[base];
+     if (r.valid && r.cls == cls && (UINT32)disp >= r.lo && (UINT32)disp <= r.hi) {
+      ++hoist_hits; hoist_words_saved += 6;
+     } else {
+      ++hoist_extends; hoist_words_spent += 6;
+      if (!r.valid || r.cls != cls) { r.valid = true; r.cls = cls; r.lo = r.hi = (UINT32)disp; }
+      else { if ((UINT32)disp < r.lo) r.lo = (UINT32)disp; if ((UINT32)disp > r.hi) r.hi = (UINT32)disp; }
+     }
+    }
+   }
+#endif
    address(base,index,disp,absolute);
    // Match every external alias accepted by the interpreter, including
    // the uncached acxxxxxx addresses used heavily by CV1000. Internal
@@ -1160,6 +1233,14 @@ static bool allocate()
   code=NULL; failed=true; return false;
  }
  used=0;
+#if SALVIA_CV1K_ICBT_PROBE && defined(_XBOX)
+ // One icbt on a line of the code arena, executed once. If the Xenon does not
+ // implement it, this is where the run dies, before any frame is emulated.
+ if(!sh3_icbt_probe_done) {
+  sh3_icbt_probe_done=true;
+  sh3_icbt_line(code);
+ }
+#endif
  sh3_ppc_state.read_map=MemMapR;
  sh3_ppc_state.write_map=MemMapW;
 #if SALVIA_CV1K_STAMP_PROBE
@@ -1297,6 +1378,12 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
  if(count) {
   ++sh3_gen_blocks;
   for(int i=0;i<CAT_COUNT;i++)sh3_gen_words[i]+=c.cat_words[i];
+#if SALVIA_CV1K_HOIST_PROBE
+  sh3_gen_hoist_hits += c.hoist_hits;
+  sh3_gen_hoist_extends += c.hoist_extends;
+  sh3_gen_hoist_saved += c.hoist_words_saved;
+  sh3_gen_hoist_spent += c.hoist_words_spent;
+#endif
  }
  block.pc=pc; block.source=source;
  block.words=(UINT16)(validate>count?validate:count);

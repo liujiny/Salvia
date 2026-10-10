@@ -5053,6 +5053,21 @@ void Sh3WorkReport(void (*emit)(const char*))
 		Sh3Ppc::sh3_gen_blocks,Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_BODY],Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_MEMADDR],
 		Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_MEMGUARD],Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_MEMACCESS],
 		Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_COMPLETE],Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_EXIT]); emit(text);
+#if SALVIA_CV1K_ICBT_PROBE
+	// If this line is in the log, the icbt on the first allocation did not
+	// raise a program exception: the Xenon implements the instruction.
+	sprintf(text,"drc_work_probe icbt=1 executed_on_first_allocation=1"); emit(text);
+#endif
+#if SALVIA_CV1K_HOIST_PROBE
+	{
+		const unsigned long long hits=Sh3Ppc::sh3_gen_hoist_hits, ext=Sh3Ppc::sh3_gen_hoist_extends;
+		const unsigned long long blocks=Sh3Ppc::sh3_gen_blocks;
+		sprintf(text,"drc_work_hoist hits=%" SH3_WORK_COUNT " extends=%" SH3_WORK_COUNT " saved_words=%" SH3_WORK_COUNT " spent_words=%" SH3_WORK_COUNT " net_per_block=%d memaddr_per_block=%u",
+			hits,ext,Sh3Ppc::sh3_gen_hoist_saved,Sh3Ppc::sh3_gen_hoist_spent,
+			blocks?(int)((Sh3Ppc::sh3_gen_hoist_spent-Sh3Ppc::sh3_gen_hoist_saved)/blocks):0,
+			blocks?(unsigned)(Sh3Ppc::sh3_gen_words[Sh3Ppc::CAT_MEMADDR]/blocks):0u); emit(text);
+	}
+#endif
 	sprintf(text,"drc_work_execution native_calls=%" SH3_WORK_COUNT " native_guest_cycles=%" SH3_WORK_COUNT " interpreter_steps=%" SH3_WORK_COUNT " interpreter_guest_cycles=%" SH3_WORK_COUNT " not_host_time=1",
 		p.native_calls,p.native_cycles,p.interpreter_steps,p.interpreter_cycles); emit(text);
 	sprintf(text,"drc_work_exits gate=%" SH3_WORK_COUNT " fetch=%" SH3_WORK_COUNT " no_entry=%" SH3_WORK_COUNT " short_budget=%" SH3_WORK_COUNT " partial=%" SH3_WORK_COUNT " boundary=%" SH3_WORK_COUNT,

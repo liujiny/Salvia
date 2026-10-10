@@ -37,4 +37,10 @@
 #ifndef SALVIA_CV1K_LINK_MASK
 #define SALVIA_CV1K_LINK_MASK 32767u
 #endif
+// Guard-hoisting probe: counts what validating a guest base register's range
+// once, instead of repeating the window/alias/alignment guards on every access
+// off it, would have saved. Emits the same code either way.
+#ifndef SALVIA_CV1K_HOIST_PROBE
+#define SALVIA_CV1K_HOIST_PROBE 0
+#endif
 #endif
