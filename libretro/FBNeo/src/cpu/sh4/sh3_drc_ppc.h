@@ -90,6 +90,13 @@ enum { G_SR = 16, G_MACL, G_MACH, G_PR, G_GBR };
 struct Lookup { UINT32 tag[WAYS]; unsigned next; };
 static Lookup *lookup;
 static Block *blocks;
+#if SALVIA_CV1K_LINK_PROBE
+// One byte per lookup set, set by the dispatcher the first time a sampled
+// lookup reads that set. A set is 20 bytes, so the count of touched sets at
+// report time is the footprint the set array asks of the cache -- the lines a
+// successor fast path would stop reading. Diagnostics only.
+static UINT8 lookup_touched[CACHE_SETS];
+#endif
 // Which arena sector each block-table slot was compiled into, or 0xFF when the
 // slot holds no generated code. Sectors are reused in order, so reusing one
 // only has to drop the slots that name it; without this map the cache would
@@ -1270,6 +1277,9 @@ static void sh3_drc_reset()
  // table here is the conservative direction and keeps a reloaded state from
  // inheriting the stamps of the bytes it replaced.
  if(Sh3Ppc::code_stamp)memset(Sh3Ppc::code_stamp,0,Sh3Ppc::STAMP_LINES);
+#endif
+#if SALVIA_CV1K_LINK_PROBE
+ memset(&Sh3Ppc::lookup_touched[0],0,sizeof(Sh3Ppc::lookup_touched));
 #endif
  Sh3Ppc::used=0;
 }

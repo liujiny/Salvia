@@ -46,6 +46,12 @@ static UINT8 slot_stores[TABLE_SIZE];
 // tag and snapshot checks doing exactly what they did before it existed.
 struct RamWindow { UINT8 *base; UINT32 start, span, mask, watch; int span_bits, backing_bits; };
 static RamWindow ram_window;
+// The block-link sizing probe reads the end reason the compiler records in the
+// slot map and marks the set each sampled lookup reads. This fixture compiles
+// no blocks and runs no generated code, so END_WINDOW is the only reason it
+// needs and the marks are simply never set.
+enum { END_WINDOW=0 };
+static UINT8 lookup_touched[CACHE_SETS];
 // Mirrors the production stamp geometry in sh3_drc_ppc.h, which this fixture
 // does not include: one byte per 64-byte line of the window.
 enum { STAMP_SHIFT=6, STAMP_INDEX_BITS=23, STAMP_LINES=1u<<STAMP_INDEX_BITS };

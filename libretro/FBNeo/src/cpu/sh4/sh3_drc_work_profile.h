@@ -49,6 +49,14 @@ struct Sh3DrcWorkProfile {
  // the snapshot comparison said the bytes had changed, which would mean a
  // write path is not hooked. It must stay zero for the skip to be safe.
  Sh3WorkCount stamp_entries, stamp_clean, stamp_dirty, stamp_missed;
+ // Block-link sizing probe, work-sampled entries only. `link_entries` is the
+ // number of dispatcher entries observed, `link_sequential` those that directly
+ // follow a block which ended at its own sequential completion, i.e. exactly
+ // the population a successor fast path could enter without a lookup.
+ // `lookup_sets` and `lookup_sets_touched` report how much of the set array the
+ // workload reads (one 20-byte set per lookup): the footprint the fast path
+ // would stop touching.
+ Sh3WorkCount link_entries, link_sequential, lookup_sets, lookup_sets_touched;
  // Chain probe: entries that ran while no guest store had executed since the
  // chain call started (clean, i.e. linkable in principle) against the rest.
  Sh3WorkCount chain_clean_entries, chain_dirty_entries;

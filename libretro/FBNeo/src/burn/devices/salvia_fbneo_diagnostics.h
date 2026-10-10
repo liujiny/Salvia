@@ -18,4 +18,12 @@
 #if SALVIA_CV1K_STAMP_PROBE < 0 || SALVIA_CV1K_STAMP_PROBE > 2
 #error SALVIA_CV1K_STAMP_PROBE must be 0, 1 or 2
 #endif
+// Block-link sizing probe: 1 counts how many dispatcher entries are the
+// successor of a block that ended at its own sequential completion (the
+// population a successor fast path could serve) and how much of the lookup
+// table's set array the workload touches (the cache footprint that fast path
+// would avoid). Diagnostics only, no behaviour change.
+#ifndef SALVIA_CV1K_LINK_PROBE
+#define SALVIA_CV1K_LINK_PROBE 0
+#endif
 #endif

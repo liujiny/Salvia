@@ -81,6 +81,17 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
  }
  // Generated entries are leaf functions: they cannot release the cache or
  // replace its allocation. Keep the dispatcher stack alive across entries.
+#if SALVIA_CV1K_LINK_PROBE
+ // Per chain call: the entry before the current one, and whether it ended at
+ // its own sequential completion (the compiler records that reason in the top
+ // three bits of the slot map). A successor fast path could only serve the
+ // pair, so this counts exactly the population it could remove from the
+ // lookup path. Diagnostics; the sampled specialization owns these.
+ static unsigned link_prev_words=0;
+ static UINT32 link_prev_pc=0;
+ static bool link_prev_sequential=false;
+ link_prev_sequential=false;
+#endif
  do {
 #if SALVIA_CV1K_PROBE
   // Three spans per sampled entry: the pre-entry work (fetch, lookup,
@@ -104,6 +115,19 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   Lookup &set=lookup[index];
   const unsigned way=sh3_drc_lookup4(set.tag,set.next,pc);
   Block &b=blocks[index*WAYS+way];
+#if SALVIA_CV1K_LINK_PROBE
+  if(Count && b.source==source && b.pc==pc) {
+   ++sh3_drc_work.link_entries;
+   lookup_touched[index]=1;
+   if(link_prev_sequential && pc==link_prev_pc+2*(UINT32)link_prev_words)
+    ++sh3_drc_work.link_sequential;
+  }
+  // The next iteration's predecessor. Both fields are read before compile()
+  // can overwrite them on a miss.
+  link_prev_pc=pc; link_prev_words=b.words;
+  link_prev_sequential=(b.source==source && b.pc==pc) &&
+   (slot_sector[index*WAYS+way]>>5)==END_WINDOW;
+#endif
   // Recheck EVERY entry, including successors, aliases, DMA/cheat writes and
   // changed fetch/read mappings. No cached host entry bypasses these guards.
   bool rebuild;

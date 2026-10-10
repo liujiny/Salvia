@@ -4996,6 +4996,18 @@ void Sh3WorkReport(void (*emit)(const char*))
 	sprintf(text,"drc_work_chain clean=%" SH3_WORK_COUNT " dirty=%" SH3_WORK_COUNT,
 		p.chain_clean_entries,p.chain_dirty_entries); emit(text);
 #endif
+#if SALVIA_CV1K_LINK_PROBE
+	// Block-link sizing: the share of entries that follow a block ending at its
+	// own sequential completion (what a successor fast path could enter without
+	// a lookup), and the lookup-set footprint those entries read.
+	{
+		unsigned touched=0;
+		for(unsigned i=0;i<(unsigned)Sh3Ppc::CACHE_SETS;++i) if(Sh3Ppc::lookup_touched[i]) ++touched;
+		sprintf(text,"drc_work_link entries=%" SH3_WORK_COUNT " sequential=%" SH3_WORK_COUNT " sequential_pct=%u sets=%u sets_touched=%u sets_bytes=%u touched_bytes=%u",
+			p.link_entries,p.link_sequential,p.link_entries?(unsigned)(p.link_sequential*100/p.link_entries):0u,
+			(unsigned)Sh3Ppc::CACHE_SETS,touched,(unsigned)(Sh3Ppc::CACHE_SETS*sizeof(Sh3Ppc::Lookup)),(unsigned)(touched*sizeof(Sh3Ppc::Lookup))); emit(text);
+	}
+#endif
 	// Emitted words per compiled block by phase: where the generated code goes,
 	// independent of how often each block then runs.
 	sprintf(text,"drc_work_codegen blocks=%" SH3_WORK_COUNT " body=%" SH3_WORK_COUNT " memaddr=%" SH3_WORK_COUNT " memguard=%" SH3_WORK_COUNT " memaccess=%" SH3_WORK_COUNT " complete=%" SH3_WORK_COUNT " exit=%" SH3_WORK_COUNT,
