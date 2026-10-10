@@ -90,6 +90,68 @@ enum { G_SR = 16, G_MACL, G_MACH, G_PR, G_GBR };
 struct Lookup { UINT32 tag[WAYS]; unsigned next; };
 static Lookup *lookup;
 static Block *blocks;
+// Shadow dispatch record (docs/optimization/2026-10-10-cv1k-link-gate.md): one
+// copy of a block's record per set index, keyed there by the pc it describes.
+// The dispatcher writes it whenever it resolves a record the slow way and reads
+// it at the head of the next entry to the same pc, so the fast path makes the
+// same checks the slow path makes -- tag, fetch page, read map, snapshot
+// comparison -- against a table a fraction of the record's size. Carrying the
+// snapshot is what keeps this from needing a store-side signal: the copy never
+// claims the bytes are unchanged, it compares them.
+//
+// The one thing a copy cannot see for itself is the arena handing the code's
+// sector out again, which is the only way generated code is ever freed, so it
+// carries the sector's generation from the moment it was taken.
+// 0 disables the whole mechanism, fast path and bookkeeping.
+#ifndef SALVIA_CV1K_SHADOW
+#define SALVIA_CV1K_SHADOW 1
+#endif
+// Whether the fast path also fetches the copy that will answer the successor.
+// The fetch is a hint and decides nothing, so this knob trades a few dispatch
+// instructions for a hidden miss rather than any behaviour.
+#ifndef SALVIA_CV1K_SHADOW_TOUCH
+#define SALVIA_CV1K_SHADOW_TOUCH 1
+#endif
+#if SALVIA_CV1K_SHADOW
+// One entry per set index, padded to the console's 128-byte cache line: then a
+// whole copy is one line, one miss and one dcbt, where the record it replaces
+// costs two record lines plus the set line. The padding is not decoration --
+// every offset above it is inside the first line on purpose.
+struct Shadow {
+ UINT32 pc;
+ const UINT16 *source;
+ int (*entry)(Sh3PpcState*);
+ UINT16 words, cycles;
+ UINT8 check_read_map;
+ UINT8 sector;
+ UINT8 reason;
+ UINT8 stores;
+ UINT32 epoch;
+ // The successor this pc was last seen to run into. Written after the call,
+ // read only to prefetch the copy that will answer it, so a stale value costs
+ // one fetch and nothing else -- the prefetch is a hint, not a validity test.
+ UINT32 next_pc;
+ UINT16 original[MAX_INSNS + 1];
+ UINT8 pad[128 - 28 - (MAX_INSNS + 1) * 2];
+};
+// The 32-bit record must be one console cache line; the host fixture builds
+// 64-bit and does not model that line.
+typedef char ShadowIsOneCacheLine[(sizeof(void*) != 4 || sizeof(Shadow) == 128) ? 1 : -1];
+static Shadow *shadow;
+#ifdef _XBOX
+// dcbt r0,r3: the address is the first argument, which the 360's ABI passes in
+// r3, so a naked leaf is the whole prefetch. A hint that faults on nothing and
+// answers nothing; a wrong address would only fetch a line nobody reads.
+static __declspec(naked) void sh3_touch_line(const void *line)
+{
+ __emit(0x7c001a2c); // dcbt r0,r3
+ __asm { blr }
+}
+#endif
+// The generation of each arena sector: bumped every time the ring hands one
+// out again, which is what drops the records and the code that named it.
+static UINT32 sector_epoch[SECTOR_COUNT];
+#endif
 #if SALVIA_CV1K_LINK_PROBE
 // One byte per lookup set, set by the dispatcher the first time a sampled
 // lookup reads that set. A set is 20 bytes, so the count of touched sets at
@@ -181,6 +243,16 @@ typedef char PointerAbiMustBe32Bits[(sizeof(void*) == 4) ? 1 : -1];
 static UINT32 *code;
 static unsigned used;
 static bool failed;
+#if SALVIA_CV1K_SHADOW
+// The arena sector a compiled entry lives in. Entries always come out of the
+// arena, so this is exact there; the fold only keeps the host fixtures, which
+// hand the dispatcher synthetic entry pointers of their own, in range.
+static unsigned arena_sector_of(int (*entry)(Sh3PpcState*))
+{
+ return (unsigned)((((uintptr_t)entry - (uintptr_t)code) / sizeof(UINT32) / SECTOR_WORDS) &
+   (unsigned)(SECTOR_COUNT - 1));
+}
+#endif
 // Board-declared data RAM. Registration verifies every page, including the
 // optional read-handler mirror. Mapping/handler changes revoke this contract
 // and flush generated code before any embedded host pointer can be reused.
@@ -1053,6 +1125,9 @@ static bool allocate()
  slot_sector=(UINT8*)malloc(TABLE_SIZE);
  if(slot_sector)memset(slot_sector,0xFF,TABLE_SIZE); // no slot has code yet
  slot_stores=(UINT8*)calloc(TABLE_SIZE,1);
+#if SALVIA_CV1K_SHADOW
+ shadow=(Shadow*)calloc(CACHE_SETS,sizeof(Shadow));
+#endif
 #if SALVIA_CV1K_STAMP_PROBE
  code_stamp=(UINT8*)calloc(STAMP_LINES,1);
 #endif
@@ -1063,6 +1138,9 @@ static bool allocate()
  if(code==MAP_FAILED)code=NULL;
 #endif
  if(!blocks || !lookup || !slot_sector || !slot_stores || !code
+#if SALVIA_CV1K_SHADOW
+    || !shadow
+#endif
 #if SALVIA_CV1K_STAMP_PROBE
     || !code_stamp
 #endif
@@ -1070,6 +1148,9 @@ static bool allocate()
   free(blocks); blocks=NULL; free(lookup); lookup=NULL;
   free(slot_sector); slot_sector=NULL;
   free(slot_stores); slot_stores=NULL;
+#if SALVIA_CV1K_SHADOW
+  free(shadow); shadow=NULL;
+#endif
 #if SALVIA_CV1K_STAMP_PROBE
   free(code_stamp); code_stamp=NULL;
 #endif
@@ -1109,6 +1190,11 @@ static void stamp_mark(UINT32 addr)
 static void arena_reuse_sector(unsigned sector)
 {
  if(!slot_sector || !blocks || !lookup) return;
+ // Handing this sector out again is the only way generated code is freed, so
+ // every shadow record that named code in it stops answering from here.
+#if SALVIA_CV1K_SHADOW
+ if(sector < (unsigned)SECTOR_COUNT) ++sector_epoch[sector];
+#endif
  unsigned cleared=0;
  for(unsigned i=0;i<TABLE_SIZE;i++) {
   // Only the low five bits are the sector; the top three carry the block-end
@@ -1306,6 +1392,12 @@ static void sh3_drc_reset()
  if(Sh3Ppc::lookup)memset(Sh3Ppc::lookup,0,Sh3Ppc::CACHE_SETS*sizeof(Sh3Ppc::Lookup));
  if(Sh3Ppc::slot_sector)memset(Sh3Ppc::slot_sector,0xFF,Sh3Ppc::TABLE_SIZE);
  if(Sh3Ppc::slot_stores)memset(Sh3Ppc::slot_stores,0,Sh3Ppc::TABLE_SIZE);
+#if SALVIA_CV1K_SHADOW
+ // Every record is gone, so every copy of one is too, and the sector
+ // generations start over with the arena.
+ if(Sh3Ppc::shadow)memset(Sh3Ppc::shadow,0,Sh3Ppc::CACHE_SETS*sizeof(Sh3Ppc::Shadow));
+ memset(&Sh3Ppc::sector_epoch[0],0,sizeof(Sh3Ppc::sector_epoch));
+#endif
 #if SALVIA_CV1K_STAMP_PROBE
  // Every record is gone, so nothing can be skipped on a stamp; clearing the
  // table here is the conservative direction and keeps a reloaded state from
@@ -1333,6 +1425,9 @@ static void sh3_drc_exit()
  free(Sh3Ppc::lookup); Sh3Ppc::lookup=NULL;
  free(Sh3Ppc::slot_sector); Sh3Ppc::slot_sector=NULL;
  free(Sh3Ppc::slot_stores); Sh3Ppc::slot_stores=NULL;
+#if SALVIA_CV1K_SHADOW
+ free(Sh3Ppc::shadow); Sh3Ppc::shadow=NULL;
+#endif
 #if SALVIA_CV1K_STAMP_PROBE
  free(Sh3Ppc::code_stamp); Sh3Ppc::code_stamp=NULL;
  sh3_ppc_state.code_stamp=NULL;

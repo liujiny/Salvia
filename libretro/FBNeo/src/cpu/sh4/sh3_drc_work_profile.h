@@ -95,6 +95,15 @@ struct Sh3DrcWorkProfile {
  Sh3WorkCount movll_services, movll_service_cycles, movll_service_rejects;
  Sh3WorkCount device_services[2], device_service_cycles[2], device_fallbacks[2];
  Sh3WorkCount exit_gate, exit_fetch, exit_no_entry, exit_budget, exit_partial, exit_boundary;
+ // Entries the shadow dispatch record answered, i.e. the entries that skipped
+ // the set lookup and the record read because a copy of the record was already
+ // in hand (docs/optimization/2026-10-10-cv1k-link-gate.md). Every other entry
+ // took the record path and refreshed the copy.
+ Sh3WorkCount shadow_hits;
+ // How often the successor a copy predicted (its `next_pc`, which the prefetch
+ // is aimed at) was not the one the block actually ran into. Diagnostic only:
+ // a miss costs the fetch, never an answer.
+ Sh3WorkCount shadow_pred_miss;
  // Requested snapshot lengths, not necessarily executed opcode counts.
  Sh3WorkCount snapshot_lengths[34];
  // High-byte opcode families actually sent to the interpreter in sampled frames.

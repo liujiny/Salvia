@@ -86,6 +86,31 @@ static bool sh3_link_alive(const Sh3Ppc::LinkProbe &p)
    Sh3Ppc::slot_sector[p.slot]!=0xFF && (Sh3Ppc::slot_sector[p.slot]&0x1Fu)==p.sector;
 }
 #endif
+#if SALVIA_CV1K_SHADOW
+// Fetch the copy that will answer the successor of this entry. The successor is
+// the last one this pc was seen to run into, which the dispatcher recorded on
+// the previous pass, so the fetch that would otherwise stall the next entry is
+// issued a whole block execution early -- the only lead time long enough to
+// cover a miss to main memory. A mispredicted pc fetches a line nobody reads;
+// a prefetch decides nothing, so there is no way for it to be wrong.
+static inline void sh3_shadow_touch(const UINT32 pc)
+{
+#if SALVIA_CV1K_SHADOW_TOUCH
+ const unsigned index=((pc>>1)^(pc>>11)^(pc>>21))&(Sh3Ppc::CACHE_SETS-1);
+ const char *line=(const char*)Sh3Ppc::shadow+((size_t)index*sizeof(Sh3Ppc::Shadow));
+#ifdef _XBOX
+ Sh3Ppc::sh3_touch_line(line);
+#else
+ // The host models no cache, so it only has to prove the address arithmetic
+ // stays inside the table it is derived from.
+ if((const char*)line<(const char*)Sh3Ppc::shadow ||
+    (const char*)line>=(const char*)Sh3Ppc::shadow+Sh3Ppc::CACHE_SETS*(int)sizeof(Sh3Ppc::Shadow)) abort();
+#endif
+#else
+ (void)pc;
+#endif
+}
+#endif
 #if defined(_MSC_VER) && defined(_XBOX)
 #define SH3_DISPATCH_INLINE __forceinline
 #elif defined(__GNUC__)
@@ -146,9 +171,33 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    if(Count) { ++sh3_drc_work.exit_fetch; sh3_drc_work.fallback.last_origin=SH3_FB_FETCH; }
    return false;
   }
-  if(Count) ++sh3_drc_work.lookups;
   const UINT16 *source=(const UINT16*)(page+(phys&SH3_PAGEM));
   unsigned index=((pc>>1)^(pc>>11)^(pc>>21))&(CACHE_SETS-1);
+  // What the shared tail below needs, from whichever record answered: the
+  // shadow copy if it can serve this entry, the table record otherwise.
+  int (*entry)(Sh3PpcState*);
+  int cycles;
+  unsigned words, reason=0, stores=0;
+#if SALVIA_CV1K_SHADOW
+  // The shadow copy for this pc, if the dispatcher has one and it still
+  // describes the bytes: its own tag and fetch page, a sector generation that
+  // says the code it names is still resident, and the snapshot comparison --
+  // the same validation the record path makes, not a weaker one.
+  const Shadow *copy=NULL;
+  if(shadow) {
+   const Shadow &cand=shadow[index];
+   if(cand.pc==pc && cand.source==source && sector_epoch[cand.sector]==cand.epoch &&
+      sh3_drc_source_equal(cand.original,source,cand.words) &&
+      (!cand.check_read_map || MemMapR[phys>>SH3_SHIFT]==page)) copy=&cand;
+  }
+  if(copy) {
+   if(Count) ++sh3_drc_work.shadow_hits;
+   entry=copy->entry; cycles=copy->cycles; words=copy->words;
+   reason=copy->reason; stores=copy->stores;
+  } else
+#endif
+  {
+  if(Count) ++sh3_drc_work.lookups;
   Lookup &set=lookup[index];
   const unsigned way=sh3_drc_lookup4(set.tag,set.next,pc);
   Block &b=blocks[index*WAYS+way];
@@ -307,11 +356,29 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    if(Count) ++sh3_drc_work.rebuilds;
    set.tag[way]=pc;
   }
-  if(!b.entry) {
+  entry=b.entry; cycles=b.cycles; words=b.words;
+  reason=slot_sector?(unsigned)(slot_sector[index*WAYS+way]>>5):0u;
+  stores=slot_stores?slot_stores[index*WAYS+way]:0u;
+#if SALVIA_CV1K_SHADOW
+  if(shadow && b.entry) {
+   // The record now describes the bytes at this pc, so this is the moment to
+   // take the copy the next entry to this pc will read instead of it.
+   Shadow &dst=shadow[index];
+   dst.pc=b.pc; dst.source=b.source; dst.entry=b.entry;
+   dst.words=b.words; dst.cycles=b.cycles;
+   dst.check_read_map=b.check_read_map?1:0;
+   dst.sector=(UINT8)arena_sector_of(b.entry);
+   dst.epoch=sector_epoch[dst.sector];
+   dst.reason=(UINT8)reason; dst.stores=(UINT8)stores;
+   memcpy(dst.original,b.original,(unsigned)b.words*2);
+  }
+#endif
+  }
+  if(!entry) {
    if(Count) { ++sh3_drc_work.exit_no_entry; sh3_drc_work.fallback.last_origin=SH3_FB_NO_ENTRY; }
    return false;
   }
-  if(m_sh4_icount<b.cycles) {
+  if(m_sh4_icount<cycles) {
    if(Count) { ++sh3_drc_work.exit_budget; sh3_drc_work.fallback.last_origin=SH3_FB_BUDGET; }
    return false;
   }
@@ -321,11 +388,11 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   if(Count) {
    before=m_sh4_icount;
    ++sh3_drc_work.native_calls;
-   ++sh3_drc_work.snapshot_lengths[b.words<=33?b.words:33];
-   ++sh3_drc_work.block_ends[slot_sector[index*WAYS+way]>>5];
+   ++sh3_drc_work.snapshot_lengths[words<=33?words:33];
+   ++sh3_drc_work.block_ends[reason];
    // Guest stores this block will perform, weighted by its entry count. Only
    // the sampled dispatch specialization reads the diagnostic array.
-   sh3_drc_work.block_stores+=slot_stores[index*WAYS+way];
+   sh3_drc_work.block_stores+=stores;
   }
 #if SALVIA_CV1K_PROBE
   if(probeNow) probeStart=salvia_cv1k_tick();
@@ -356,7 +423,18 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    lp_prev_slot=lp_slot; lp_prev_index=index; lp_prev_valid=true;
   }
 #endif
-  const int completed=b.entry(&sh3_ppc_state);
+#if SALVIA_CV1K_SHADOW
+  if(shadow) sh3_shadow_touch(shadow[index].next_pc);
+#endif
+  const int completed=entry(&sh3_ppc_state);
+#if SALVIA_CV1K_SHADOW
+  if(shadow) {
+   // The pc the next entry resolves is this pc's observed successor, and the
+   // line is already in hand from the read above.
+   if(Count && shadow[index].next_pc!=(UINT32)m_pc) ++sh3_drc_work.shadow_pred_miss;
+   shadow[index].next_pc=(UINT32)m_pc;
+  }
+#endif
 #if SALVIA_CV1K_PROBE
   if(probeNow) probeEnd=salvia_cv1k_tick();
 #endif

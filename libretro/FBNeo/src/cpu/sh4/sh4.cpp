@@ -4964,6 +4964,18 @@ void Sh3WorkReport(void (*emit)(const char*))
 		p.frames,p.slices,p.cpu_off_slices,p.normal_mode_slices); emit(text);
 	sprintf(text,"drc_work_dispatch calls=%" SH3_WORK_COUNT " lookups=%" SH3_WORK_COUNT " rebuilds=%" SH3_WORK_COUNT " validation_spans=%" SH3_WORK_COUNT " requested_words=%" SH3_WORK_COUNT,
 		p.dispatch_calls,p.lookups,p.rebuilds,p.validation_spans,p.validation_words); emit(text);
+#if SALVIA_CV1K_SHADOW
+	// Shadow dispatch record: the entries that read the copy instead of the
+	// record. `lookups` above is then only the entries that did not.
+	{
+		const Sh3WorkCount entries=p.lookups+p.shadow_hits;
+		sprintf(text,"drc_work_shadow hits=%" SH3_WORK_COUNT " entries=%" SH3_WORK_COUNT " hits_pct=%u bytes=%u entry_bytes=%u pred_miss=%" SH3_WORK_COUNT " pred_miss_pct=%u touch=%d",
+			p.shadow_hits,entries,entries?(unsigned)(p.shadow_hits*100/entries):0u,
+			(unsigned)(Sh3Ppc::CACHE_SETS*(int)sizeof(Sh3Ppc::Shadow)),(unsigned)sizeof(Sh3Ppc::Shadow),
+			p.shadow_pred_miss,p.shadow_hits?(unsigned)(p.shadow_pred_miss*100/p.shadow_hits):0u,
+			(int)SALVIA_CV1K_SHADOW_TOUCH); emit(text);
+	}
+#endif
 	sprintf(text,"drc_work_rebuild_causes conflict=%" SH3_WORK_COUNT " source=%" SH3_WORK_COUNT " read_map=%" SH3_WORK_COUNT,
 		p.rebuild_conflict,p.rebuild_source,p.rebuild_map); emit(text);
 	// Why the blocks that ran ended: window_out, jump_rel, jump_indirect,
