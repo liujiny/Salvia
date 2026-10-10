@@ -1,46 +1,57 @@
-# CV1000: does the Xenon implement icbt? (one-boot feasibility probe)
+# CV1000: the Xenon does not implement icbt -- measured, route closed
 
-Baseline `11cd2f53`. `SALVIA_CV1K_ICBT_PROBE` is set to 1 **for this probe commit
-only** and must go back to 0 or away once the question is answered, whichever
-way it goes.
+Baseline `11cd2f53`. The probe commit `01d183d8` was built, run on the console
+and reverted here; its knob, helper and report line are gone.
 
-## The question
+## The question and the answer
 
-The console A/B of `2026-10-10-cv1k-code-touch-console.md` measured the
-generated code at 8.27 ms/frame -- 60% of the dispatch phase -- and showed that
-prefetching it with `dcbt` costs 2.5 ms/frame instead of saving it, because
-`dcbt` fills the **data** cache while the block's code is fetched through the
-**instruction** cache. Nothing else in the frame's dispatch is that large, and
-no other candidate on the table is worth more than about a millisecond.
+The generated code is 8.27 ms/frame, 60% of the dispatch phase, and
+`2026-10-10-cv1k-code-touch-console.md` showed that prefetching it with `dcbt`
+costs 2.5 ms/frame instead of saving them: `dcbt` fills the data cache, the
+block's code comes through the instruction cache, and the code lines pushed into
+L1D/L2 then compete with the guest RAM the block is about to touch. PowerPC has
+exactly one instruction that warms the instruction cache -- `icbt`, the
+instruction cache block touch -- and whether the Xenon implements it is not
+documented. If it does not, the core raises a program exception.
 
-PowerPC has exactly one instruction that warms the instruction cache:
-`icbt`, the instruction cache block touch (opcode 31, XO 22). It arrived after
-the ISA revision the Xenon is built on, and whether that core implements it is
-not documented anywhere the project has. If it is not implemented, the core
-raises a program exception, which this emulator has no handler for: the run
-dies. If it is, the code prefetch of the reverted commit becomes viable by
-swapping one instruction word, and it is worth 1-3 ms/frame.
+`fbneo-icbt-probe-diag.xex` (sha256 `d49e1d05811fa16c9a347e62d5399af753a88d57b073287739a9e9ef75d832f6`)
+executed one `icbt` -- `0x7c001a16` -- on a valid arena line, once, from the
+first `allocate()`, after the state load. The console answer: **fatal error
+immediately after loading the game.** The instruction is not implemented, and it
+takes the emulator down as designed rather than being silently ignored.
 
-## The probe
+## What this closes
 
-`sh3_icbt_line()` is a naked leaf -- `__emit(0x7c001a16)` (`icbt r0,r3`) then
-`blr` -- called exactly once, from the first `allocate()` (after the state load,
-so the emulator is otherwise fully running). `code` is a valid, mapped, aligned
-arena address. The knob is guarded to `_XBOX`, so host builds, `STATE` and the
-per-frame hash files are untouched by it (verified: `0cf251c3d512ddbb` and
-`c42fdb4870f4f997112d88ff6f74ee12` with the probe compiled in).
+There is no way to prefetch the generated code on this CPU, so its 8.27 ms/frame
+-- 60% of the dispatch phase, 538 cycles per entry for about three 128-byte
+lines, a code working set of 15.6 MiB walked once per frame against a 1 MiB L2
+-- cannot be attacked by moving the fetch earlier. It can only be attacked by
+executing fewer bytes per entry, and that was measured in the same round:
 
-## Reading the result
+- Address-guard hoisting to the base register: **worse**. 4,659 accesses could
+  reuse a validated range against 25,857 that would need a fresh guard, +14
+  words per block, because the ~3.4 hoistable accesses in a block almost always
+  use different base registers.
+- Merging the two guard branches with `crand`: **no words saved**. Both tests
+  still need their own rotate and compare; the merge trades the second branch
+  for the `crand`, which is a wash.
+- Budget refusals (`drc_work_exits short_budget`): 5,226 of 521,565 entries,
+  about 0.17 ms/frame. Not a lever either.
 
-- **A log appears** with a `drc_work_probe icbt=1 executed_on_first_allocation=1`
-  line: the instruction was accepted. The follow-up is to re-apply the reverted
-  code prefetch with `icbt` in place of `dcbt`.
-- **The emulator dies or resets at startup**, before any pause: the instruction
-  is not implemented, and the whole instruction-cache-prefetch route closes for
-  good. There is no third outcome worth planning for.
+## Where the accepted build stands
+
+The shadow dispatch record (`8bed73ba`) is this session's win and the tree's
+released content: pre-entry 7.21 -> 4.22 ms/frame, `cpu_io` -2.9 ms, the frame's
+work from over budget to 1.9 ms under it in its A/B window, `STATE` and the
+per-frame hash files identical at 60, 600 and 1800 frames, 846,026 PPC
+differential cases passing. Everything measured since is at or below the noise
+floor of a console round, so the remaining large gains are structural rather
+than local: the 13.87 ms of dispatch is 60% irreducible instruction fetch and
+35% pre-entry that is itself a forced miss because the code walk flushes the
+level the metadata lives in.
 
 ## Revert
 
-Revert this commit: `SALVIA_CV1K_ICBT_PROBE`, `sh3_icbt_line`,
-`sh3_icbt_probe_done` and the `allocate()` call in `sh3_drc_ppc.h`, the report
-line in `sh4.cpp`, and this document.
+Revert this commit to restore the probe commit's document; reverting the probe
+commit itself removed `SALVIA_CV1K_ICBT_PROBE`, `sh3_icbt_line`,
+`sh3_icbt_probe_done`, the `allocate()` call and the report line.
