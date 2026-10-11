@@ -148,6 +148,11 @@ same doubt now applies to `untile_mask` and `source_upload`, which are VMX and
 flat. The un-attributed `6.85 ms/frame` of command walk and construction is the
 term to measure next, before either copy is rewritten.
 
+**Taken up on the same day.** `2026-10-11-cv1k-blit-exec-split.md` puts
+`gfx_draw`, `gfx_upload`, `epic12_gpu_submit` and the refused-path rasterizer on
+the worker thread beside the whole-job span, so a console pause can say which of
+them holds that `6.85 ms` instead of leaving it as the residual.
+
 ## Verification
 
 Host, `/home/humor/salvia-tests/cv1k-ddpdfk-profile-20261007/`, built with
