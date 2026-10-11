@@ -120,6 +120,18 @@ void cv1k_review_report(void (*emit)(const char*))
                 salvia_cv1k_probe[16] * unit, (unsigned __int64)salvia_cv1k_probe[17],
                 (unsigned __int64)salvia_cv1k_probe[18]);
             emit(text);
+            // The job is one worker_busy number and the batch timers only
+            // cover the flush. These four split the rest: the two commands that
+            // carry work, the queue construction inside a draw, and the
+            // software rasterizer the queue refused. submit contains any flush
+            // it forces, so it overlaps the batch timers rather than adding.
+            sprintf(text, "blit_exec_ms window=%u draw=%.3f draw_calls=%I64u upload=%.3f upload_calls=%I64u submit=%.3f submit_calls=%I64u soft=%.3f soft_calls=%I64u",
+                cv1k_review.frames,
+                salvia_cv1k_probe[20] * unit, (unsigned __int64)salvia_cv1k_probe[21],
+                salvia_cv1k_probe[22] * unit, (unsigned __int64)salvia_cv1k_probe[23],
+                salvia_cv1k_probe[36] * unit, (unsigned __int64)salvia_cv1k_probe[37],
+                salvia_cv1k_probe[38] * unit, (unsigned __int64)salvia_cv1k_probe[39]);
+            emit(text);
             // The replay half is a mixture of batch sizes; the CPU path is
             // only cheaper than a Xenos batch below some size, and that size
             // is what the threshold should be set to.

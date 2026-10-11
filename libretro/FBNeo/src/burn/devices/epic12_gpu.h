@@ -194,6 +194,9 @@ static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHE
 // Return true only when the draw was queued, or is an original no-op.
 static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, int dmode, BLIT_PARAMS)
 {
+#if SALVIA_CV1K_PROBE
+	SalviaCv1kSpan submitSpan(36);
+#endif
 	if (!epic12_gpu_enabled) return false;
 	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4))) return false;
 	// Original rasterizers reject horizontal wrap before clipping.

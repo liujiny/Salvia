@@ -22,6 +22,15 @@
 // 32768 and 131072 pixels. The CPU replay is only cheaper than a Xenos batch
 // below some size, and that size is the split point the threshold should use,
 // so the buckets have to report the cost of each size rather than one average.
+// [20]/[21] gfx_draw ticks/calls and [22]/[23] gfx_upload ticks/calls split the
+// worker's command walk into the two commands that carry real work; whatever is
+// left of the job after both is the list walk, the clip command and the
+// end-of-list flush. [36]/[37] epic12_gpu_submit ticks/calls isolate the queue
+// construction (clip math, the two source-page passes, the flush decision) from
+// the rest of a draw command, and [38]/[39] time the software rasterizer that
+// gfx_draw falls into when the queue refuses a command, so a refused draw can
+// be told from an accepted one. A submit span contains any flush it forces, so
+// compare it against the batch timers rather than adding it to them.
 // The clock helper is defined beside the counters in epic12.cpp: the SH4 core
 // defines an opcode function named FLOAT, which the XDK's windef.h typedef
 // would collide with, so this header must not pull in <xtl.h>.
@@ -29,6 +38,19 @@ extern "C" {
 	extern unsigned long long salvia_cv1k_probe[40];
 	extern unsigned long long salvia_cv1k_tick(void);
 }
+
+// Accumulates one span into a probe slot pair on scope exit, so a function with
+// several early returns still measures exactly once. slot holds the ticks and
+// slot+1 counts the calls.
+struct SalviaCv1kSpan {
+	int slot;
+	unsigned long long start;
+	SalviaCv1kSpan(int s) : slot(s), start(salvia_cv1k_tick()) {}
+	~SalviaCv1kSpan() {
+		unsigned long long end = salvia_cv1k_tick();
+		if (start && end) { salvia_cv1k_probe[slot] += end - start; ++salvia_cv1k_probe[slot + 1]; }
+	}
+};
 #else
 #define SALVIA_CV1K_PROBE 0
 #endif

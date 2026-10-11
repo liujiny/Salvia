@@ -534,6 +534,9 @@ static void gfx_upload_shadow_copy(UINT32 *addr)
 
 static void gfx_upload(UINT32 *addr)
 {
+#if SALVIA_CV1K_PROBE
+	SalviaCv1kSpan uploadSpan(22);
+#endif
 	UINT32 x,y, dst_p,dst_x_start,dst_y_start, dimx,dimy;
 	UINT32 *dst;
 
@@ -783,6 +786,9 @@ static void gfx_draw_shadow_copy(UINT32 *addr)
 
 static void gfx_draw(UINT32 *addr)
 {
+#if SALVIA_CV1K_PROBE
+	SalviaCv1kSpan drawSpan(20);
+#endif
 	int x,y, dimx,dimy, flipx,flipy;//, src_p;
 	int trans,blend, s_mode, d_mode;
 	clr_t tint_clr;
@@ -855,6 +861,11 @@ static void gfx_draw(UINT32 *addr)
 #if defined(_XBOX) || defined(EPIC12_GPU_TEST)
 	if (epic12_gpu_submit(flipx,trans,blend,s_mode,d_mode,draw_params)) return;
 	epic12_gpu_cpu_draw(x,y,dimx,dimy,m_clip);
+#if SALVIA_CV1K_PROBE
+	// Reached only when the queue refused the command above. The span runs to
+	// the end of the function, so it times the software rasterizer alone.
+	SalviaCv1kSpan softDrawSpan(38);
+#endif
 #endif
 
 #if defined(_XBOX) || defined(FBNEO_RENDER_THREADS_TEST) || defined(EPIC12_BLIT_TEST)
