@@ -41,6 +41,10 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 	if (dst_y_start + y1 - 1 > clip->max_y) y1 = clip->max_y - dst_y_start + 1;
 	if (x1 <= x0 || y1 <= y0) return;
 	epic12_device_blit_delay += (y1 - y0) * (x1 - x0);
+	// Blit-path census: the exact integer blend draws this rectangle. A row is
+	// charged once here rather than per pixel so the probe stays out of the
+	// inner loop it is measuring.
+	EPIC12_BLIT_PATH_CHARGE((y1 - y0) * (x1 - x0));
 	const UINT8 *red = epic12_source_scale[tint_clr->r][s_alpha];
 	const UINT8 *green = epic12_source_scale[tint_clr->g][s_alpha];
 	const UINT8 *blue = epic12_source_scale[tint_clr->b][s_alpha];

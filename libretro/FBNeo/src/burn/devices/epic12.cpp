@@ -12,6 +12,7 @@ Redistributions may not be sold, nor may they be used in a commercial product or
 #include "epic12_thread.h"
 #include "rectangle.h"
 #include "salvia_cv1k_probe.h"
+#include "salvia_cv1k_blit_paths.h"
 #include <math.h> // floor()
 
 #if SALVIA_CV1K_PROBE
@@ -23,6 +24,14 @@ unsigned long long salvia_cv1k_tick(void)
 	LARGE_INTEGER now;
 	return QueryPerformanceCounter(&now) ? (unsigned long long)now.QuadPart : 0ull;
 }
+}
+#endif
+
+#if SALVIA_CV1K_BLIT_PATH_PROBE
+extern "C" {
+unsigned long long salvia_cv1k_blit_path_pixels[EPIC12_BLIT_PATH_COUNT];
+unsigned long long salvia_cv1k_blit_path_commands[EPIC12_BLIT_PATH_COUNT];
+int salvia_cv1k_blit_path_current = -1;
 }
 #endif
 

@@ -3,6 +3,8 @@
 #ifndef FBNEO_EPIC12_GPU_H
 #define FBNEO_EPIC12_GPU_H
 
+#include "salvia_cv1k_blit_paths.h"
+
 struct Epic12GpuCommand {
 	int sx, sy, x, y, w, h;
 	int flipx, flipy, transparent, blend, dmode, sa, da;
@@ -59,8 +61,33 @@ static bool epic12_gpu_intersects(int x, int y, int w, int h, const rectangle &r
 	return x <= r.max_x && x + w > r.min_x && y <= r.max_y && y + h > r.min_y;
 }
 
+#if SALVIA_CV1K_BLIT_PATH_PROBE
+// Which inner loop epic12_gpu_replay() will pick for this command. This mirrors
+// the dispatch below; EPIC12_BLIT_PATH_UNKNOWN is the census's own alarm that
+// the two have drifted apart.
+static unsigned epic12_blit_path_index(const Epic12GpuCommand &c)
+{
+	if (!c.blend && c.tint.r == 32 && c.tint.g == 32 && c.tint.b == 32)
+		return EPIC12_BLIT_PATH_SIMPLE_F0_TR0 + (c.flipx ? 2 : 0) + (c.transparent ? 1 : 0);
+	if (c.blend && c.dmode == 0)
+		return EPIC12_BLIT_PATH_FIXED_F0_TR0 + (c.flipx ? 2 : 0) + (c.transparent ? 1 : 0);
+	if (!c.blend) return EPIC12_BLIT_PATH_TINTED_PLAIN;
+	if (c.dmode == 1) return EPIC12_BLIT_PATH_BLEND_D1;
+	if (c.dmode == 4) return EPIC12_BLIT_PATH_BLEND_D4;
+	return EPIC12_BLIT_PATH_UNKNOWN;
+}
+#endif
+
 static void epic12_gpu_replay(const Epic12GpuCommand &c)
 {
+#if SALVIA_CV1K_BLIT_PATH_PROBE
+	// Charge the command to its loop before the clip maths runs: a command the
+	// source-wrap check then rejects still cost its dispatch, and it is part of
+	// the mixture. The pixels actually drawn are charged by the loop itself.
+	const unsigned path = epic12_blit_path_index(c);
+	salvia_cv1k_blit_path_current = (int)path;
+	++salvia_cv1k_blit_path_commands[path];
+#endif
 	rectangle clip(c.x, c.x + c.w - 1, c.y, c.y + c.h - 1);
 	// Normalized sources name their top-left, including after clipping.
 #define GPU_CPU_ARGS &clip,m_bitmaps,c.sx,c.sy,c.x,c.y,c.w,c.h,c.flipy,c.sa,c.da,&c.tint
@@ -130,6 +157,9 @@ static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHE
 		UINT64 delay = epic12_device_blit_delay;
 		for (int i = 0; i < epic12_gpu_count; ++i) epic12_gpu_replay(epic12_gpu_commands[i]);
 		epic12_device_blit_delay = delay;
+#if SALVIA_CV1K_BLIT_PATH_PROBE
+		salvia_cv1k_blit_path_current = -1;
+#endif
 	}
 #if SALVIA_CV1K_PROBE
 	if (probeStart) {

@@ -37,4 +37,13 @@
 #ifndef SALVIA_CV1K_LINK_MASK
 #define SALVIA_CV1K_LINK_MASK 32767u
 #endif
+// Blit-path census for the CV1000 blitter. The CPU rasterization a frame
+// spends its time in is a mixture of inner loops whose per-pixel cost differs
+// by an order of magnitude, so the single nanoseconds-per-pixel average the
+// phase probes report cannot say which loop is worth making faster. 1 counts
+// the pixels and the commands each loop actually receives. Counters only, no
+// behaviour change; the release value is the default here.
+#ifndef SALVIA_CV1K_BLIT_PATH_PROBE
+#define SALVIA_CV1K_BLIT_PATH_PROBE 0
+#endif
 #endif

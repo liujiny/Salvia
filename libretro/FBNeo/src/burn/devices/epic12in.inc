@@ -155,6 +155,10 @@ static const void FUNCNAME(BLIT_PARAMS)
 			bigblocks--;
 		}
 #endif
+		// Blit-path census: this row is about to draw (dimx-startx) pixels
+		// with this loop. Charged once per row, before the loop runs, so an
+		// early `continue` inside the pixel body cannot skew the count.
+		EPIC12_BLIT_PATH_CHARGE((dimx - startx));
 		while (bmp<end)
 		{
 			#include "epic12pixel.inc"
