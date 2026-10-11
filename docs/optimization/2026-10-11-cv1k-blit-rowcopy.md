@@ -39,24 +39,101 @@ single long run. The 3.98 ms is what that costs.
 `epic12_gpu_region.h` adds `epic12_gpu_copy_rows()` and the input upload calls
 it once per batch. Nothing else about the batch changes.
 
-- Both pitches are multiples of 16, so the alignment of every row is the same
-  and the split into head, 16-byte body and tail is decided once, outside the
-  row loop. The head aligns the **load**, which is the pair the readback path
-  already uses: `__lvx` plus either `__stvx` when the two rows share an
-  alignment or `__storeunalignedvector` when they do not.
+- The **store** leads the row loop and the load follows it. Every store is a
+  16-byte `__stvx_volatile` on a 16-byte boundary; the side allowed to be off is
+  the `__loadunalignedvector` read of the source. Both pitches are multiples of
+  16, so both sides keep their alignment down the rectangle and the split is
+  decided once, outside the row loop.
 - Each row asks for the row four rows ahead with `__dcbt`, one hint per 128
-  bytes of width. `dcbt` cannot fault and cannot change a value, so the hint
-  cannot alter the frame; it only tells the prefetcher about a line the same
-  copy will read a few microseconds later.
-- A pitch that is not a multiple of 16 would move the alignment from row to row,
-  so the split cannot be hoisted. That case falls back to a byte loop. No caller
-  has one.
+  bytes of width. The row four rows ahead is still a row of this same batch, so
+  every hint addresses a byte of the source rows being copied. `dcbt` cannot
+  fault and cannot change a value, so the hint cannot alter the frame; it only
+  tells the prefetcher about a line the same copy will read a few microseconds
+  later.
+- A destination that is not vector aligned, a source that is not even word
+  aligned, or a pitch that is not a multiple of 16 has no aligned-store form at
+  all. That case falls back to one `memcpy()` per row, which is exactly what the
+  caller did before this helper existed. No caller has one.
 - The rectangle is exact in both directions: bytes of a destination row beyond
   `width` are never read or written, and nothing is rounded out to a vector or
-  a cache line.
+  a cache line. A row that is not a whole number of vectors ends in plain bytes.
 
 The linear (untiled) atlas upload and the tiled readback are untouched; the
 readback is a different shape and already VMX.
+
+The first version of this helper did not look like that, and the console took it
+down. That is the next section.
+
+## The console took the first version down
+
+The image `blit-rowcopy c57ccde8 20261011-1506 diag` was handed off; on
+2026-10-11 the console answered by dropping back to the dashboard. Loading
+`mmpork.state` and continuing takes the console down with that image, while the
+`blit-crossover` base runs the same state. The copy is the only live difference
+between the two images -- the rest of that round (`e8406c35`, the per-loop pixel
+census) is compiled out of both -- so the crash is this helper.
+
+The first version hoisted the alignment split out of the row loop and then kept
+the unaligned half of the pair on the **store** side:
+
+```c
+const size_t align = (size_t)in & 15;   // low bits of the source byte address
+const size_t head = align ? 16 - align : 0;
+...
+const bool alignedStore = ((((size_t)out ^ (size_t)in) & 15) == 0);
+if (alignedStore) __stvx(value, out + x, 0);
+else __storeunalignedvector(value, out + x);
+```
+
+The destination is not VRAM. It is `lr.pBits`, the locked Xenos texture, which
+on Xenon is write-combined memory, and `epic12_gpu_tile.h` writes that same
+memory under a rule it states in its first lines: "all writes are aligned and
+sequential within each 32x32 block. Never read it or use unaligned stores." The
+source is `vram + min_y*8192 + min_x`, so its byte address is `4*min_x`: it is
+16-byte aligned only when `min_x` is a multiple of 4, while the locked texture
+row is aligned. A shared alignment was therefore the exception and an unaligned
+store the usual case.
+
+`epic12_gpu_untile.h` does use `__storeunalignedvector`, and that is the
+precedent the first version took: it is legal there because that copy writes the
+emulated VRAM, which is cached memory, and it is the pair the readback has
+always used. The precedent is for a cached destination, and this destination is
+not that one.
+
+The standalone suite could not have caught it, and that is worth stating
+plainly: its stub modelled `__storeunalignedvector` as a byte-exact store,
+because that is what the instruction does on cached memory, and the test then
+compared the copy against its own contract and passed. The copy and its test
+agreed on the wrong assumption. Nor can the host harness reach this code: the
+new copy is under `_XBOX`, and the harness builds the mock compositor, so no
+host run of any kind executes this path.
+
+## The fix: the store leads
+
+The split stays; which side is allowed to be off is inverted.
+
+```c
+const size_t body = (width >> 4) << 4;   // whole vectors of this row
+for (; x < body; x += 16)
+    __stvx_volatile(__loadunalignedvector((const unsigned int*)(in + x)), out + x, 0);
+for (; x < width; ++x) out[x] = in[x];   // the bytes that are not a vector
+```
+
+Every store now lands on a 16-byte boundary of the destination, the way
+`epic12_gpu_tile.h` writes that memory, and the side allowed to be off is the
+read of the source, which is cached VRAM. The helpers are the ones this path
+already used: `__stvx_volatile` from the atlas upload, `__loadunalignedvector`
+for the read. A rectangle whose destination is not vector aligned, or whose
+source is not word aligned, or whose pitch is not a multiple of 16, has no
+aligned-store form at all and falls back to the per-row `memcpy()` the caller
+used before -- the same code the base image runs, so it cannot be worse than the
+base there.
+
+The stub now asserts the rule instead of modelling the instruction: reaching
+`__storeunalignedvector` fails the test, every store must be 16-byte aligned and
+inside its destination row, and every load must be word aligned and inside its
+source row. That is the only part of this failure a host can express -- the
+rule, not the hardware.
 
 ## Verification
 
@@ -67,16 +144,28 @@ little-endian host and on the big-endian PowerPC build:
 python3 tests/epic12_gpu_region/run.py --toolchain-root <ppc-root> --output <out>
 ```
 
-Both runs: `PASS: 4044 rectangles; 10112328 exact bytes; 274216 aligned /
-325704 unaligned vector stores; 60800 prefetch hints, all inside the rectangle`.
-Every byte of the destination allocation is compared against the contract, so a
-write outside `[0,width)` of a row fails the test rather than being absorbed.
-That matters here: an earlier draft copied the alignment head without checking
+Both runs, with the fix:
+
+```
+PASS: 4044 rectangles; 10112328 exact bytes; 196769 vector stores, every one
+16-byte aligned and inside its row; 0 unaligned stores; 196769 unaligned vector
+loads; 20553 prefetch hints, all inside the rectangle; <endian>-endian
+```
+
+The cases are every width from 0 to 0x2100 including the vector boundaries and
+the two real rectangle sizes, every row count from 0 to 9, four source offsets
+(0, 4, 8, 12 -- what a VRAM word address can be, and the three that force the
+source through the unaligned load), eight pitch pairs including two whose pitch
+is not a multiple of 16 and must take the scalar fallback, and both shared and
+unshared source/destination alignment. Every byte of the destination
+allocation is compared against the contract, including the guard bytes outside
+the rectangle, so a write outside `[0,width)` of a row fails the test rather
+than being absorbed. An earlier draft copied the alignment head without checking
 it against `width`, so a row shorter than the head wrote up to 15 bytes past the
-end of the row. That case is now one of the 4,044. The prefetch loop runs
-through a stub that fails on any hint outside the rectangle, and the two
-production rectangles (2048x512 and 1024x240 of the same shape as the batch
-box) are included.
+end of the row; that case is one of the 4,044. The prefetch loop runs through a
+stub that fails on any hint outside the rectangle, and the rule checks above run
+in the same pass, so a version that keeps the rectangle exact while storing
+unaligned now fails outright.
 
 The other five suites are unchanged and still pass: `tests/sh3_ppc` (846,026
 cases), `tests/epic12_gpu`, `tests/epic12_blit`, `tests/epic12_gpu_untile`
@@ -87,23 +176,29 @@ The 60/600/1800-frame `STATE` hashes of the host harness (`0cf251c3d512ddbb`,
 `baabc4def027a8a3`, `dff81882efc1b24a`) still hold, but they are not evidence
 about this change: the new code is under `_XBOX`, and the host harness builds
 with `EPIC12_GPU_TEST`, so the host compiles the mock compositor and never
-reaches a texture lock. The host cannot measure or even execute this path. The
-compile of the console image is what proves the wiring, and the console is the
-judge of the timing.
+reaches a texture lock. The host cannot measure or even execute this path, and
+the crash above is the proof: the suite was green while the console went down.
+What the host proves is that the copy is byte-exact and that it obeys the store
+rule; the console is the judge of the rule and, after that, of the timing.
 
 ## Console protocol
 
-The candidate image is `blit-rowcopy c57ccde8 20261011-1506 diag`, 34,635,776
-bytes, sha256 `552211323e1355330cbcaf125254bff6c19a69a3d2ae4ca177a4f7e864b88eeb`,
-deployed as `Distro360/fbneo-diag.xex` and `Distro360/fbneo.xex` and archived at
-`salvia-tests/xex-archive/fbneo-20261011-1506-blit-rowcopy-diag.xex`. The base
-is `Distro360/fbneo-blit-crossover-diag.xex`
+The candidate is `blit-rowcopy-fix`, built from this commit; its size, sha256
+and archive path are named in the docs commit that follows this one. The base is
+the same `Distro360/fbneo-blit-crossover-diag.xex`
 (`b5dd53ba`, sha256 `429a5c246452f821da220fa845cf6b823749d62b24ad6d5d7377b5631ae7b4eb`),
-which is the image `Distro360/cv1000-gpu.log` came from.
+the image `Distro360/cv1000-gpu.log` came from and the image that runs this
+state.
 
-One image, one session, no input, the same state as the census, pausing three or
-four times against the image the census came from (`fbneo-blit-crossover-diag`,
-`b5dd53ba`). Pair the windows by the frame number the report prints.
+This round answers a question the last one could not: whether the console
+survives the load at all. Same state, no input:
+
+1. Load `mmpork.state` and keep playing. If the console goes back to the
+   dashboard again, the fix did not remove the cause: stop and report it rather
+   than spending pauses on timing. The base runs the same state, so a crash here
+   is the candidate, not the state.
+2. Then pause three or four times, as before, and pair the windows by the frame
+   number the report prints.
 
 - `batch_timing ... input_upload=<us>` is the number this change moves.
   `input_pixels` should be unchanged: the same bytes are copied, only faster.
@@ -115,5 +210,15 @@ four times against the image the census came from (`fbneo-blit-crossover-diag`,
 
 ## Revert
 
-Delete `epic12_gpu_region.h` and `tests/epic12_gpu_region/`; restore the
-per-row `memcpy()` loop in `epic12_gpu_xbox.h` and drop the include.
+Two options, depending on which part has to go:
+
+- The fix only: restore the previous body of `epic12_gpu_copy_rows()` -- the
+  alignment head, the aligned load and the unaligned store -- and the stub that
+  models `__storeunalignedvector` instead of failing on it. That produces the
+  image that crashed, so this is the record of the rejected version, not an
+  option to ship.
+- The whole experiment: delete `epic12_gpu_region.h` and
+  `tests/epic12_gpu_region/`, restore the per-row `memcpy()` loop in
+  `epic12_gpu_xbox.h` and drop the include. `git revert c57ccde8` alone is not
+  enough once the fix commits exist -- both have to go back -- and a Git revert
+  never updates the runtime tree or an XEX that was already built.

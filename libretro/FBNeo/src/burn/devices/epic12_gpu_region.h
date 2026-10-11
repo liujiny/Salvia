@@ -9,7 +9,18 @@
 // long run of bytes: it cannot know that the next source line is 32 KB away
 // and that the copy will never come back for the lines in between. This helper
 // does know, so it fetches the source row a few rows ahead while copying this
-// one, and copies the body 16 bytes at a time.
+// one.
+//
+// The destination is a locked texture, and on Xenon that is GPU write-combined
+// memory. epic12_gpu_tile.h writes the same memory and states the rule for it:
+// "all writes are aligned and sequential ... Never read it or use unaligned
+// stores." The first version of this helper kept the unaligned pair on the
+// store side -- legal, and in use, for the cached memory epic12_gpu_untile.h
+// writes -- and the console went back to the dashboard the moment a state
+// exercised that branch. So the store decides the shape of the loop here: a
+// store must land on a 16-byte boundary, the source is the side allowed to be
+// off, and anything with no aligned-store form falls back to memcpy() a row at
+// a time, which is what the caller did before this helper existed.
 //
 // The rectangle is exact in both directions: bytes of a destination row beyond
 // `width` are never read or written, and the copy rounds nothing out to a
@@ -17,13 +28,15 @@
 #ifndef FBNEO_EPIC12_GPU_REGION_H
 #define FBNEO_EPIC12_GPU_REGION_H
 #include <stddef.h>
+#include <string.h>
 
 #if defined(_XBOX)
 #include <ppcintrinsics.h>
 #include <vectorintrinsics.h>
 #define EPIC12_REGION_VECTOR 1
 #elif defined(EPIC12_GPU_REGION_VECTOR_TEST)
-// The standalone test supplies byte-accurate vector load/store intrinsics.
+// The standalone test supplies byte-accurate vector load/store intrinsics and
+// asserts the alignment and bounds rules the SDK intrinsics require.
 #define EPIC12_REGION_VECTOR 1
 #endif
 
@@ -38,17 +51,13 @@ static void epic12_gpu_copy_rows(void *destination, size_t dstPitch,
 	unsigned char *out = (unsigned char*)destination;
 	const unsigned char *in = (const unsigned char*)source;
 #if defined(EPIC12_REGION_VECTOR)
-	if (((dstPitch | srcPitch) & 15) == 0) {
-		// Both rows keep their byte alignment across the copy -- both pitches
-		// are multiples of 16 -- so the split is decided once, outside the row
-		// loop. The head aligns the load: an aligned load with an
-		// unaligned-safe store is the pair this transfer already uses for the
-		// readback, and it is the pair the SDK provides.
-		const size_t align = (size_t)in & 15;
-		const size_t head = align ? 16 - align : 0;
-		const size_t headBytes = head < width ? head : width;
-		const size_t bodyEnd = head < width ? head + (((width - head) >> 4) << 4) : width;
-		const bool alignedStore = ((((size_t)out ^ (size_t)in) & 15) == 0);
+	// Both pitches are multiples of 16, so both sides keep their alignment
+	// down the rectangle and the split is decided once, outside the row loop.
+	// A destination that is not vector aligned, or a source that is not even
+	// word aligned, has no aligned-store form at all.
+	if ((((size_t)out & 15) == 0) && (((size_t)in & 3) == 0) &&
+		(((dstPitch | srcPitch) & 15) == 0)) {
+		const size_t body = (width >> 4) << 4;
 		for (size_t y = 0; y < rows; ++y, out += dstPitch, in += srcPitch) {
 			if (y + EPIC12_REGION_PREFETCH_ROWS < rows) {
 				// dcbt is a hint: it cannot fault and cannot change a value.
@@ -56,23 +65,22 @@ static void epic12_gpu_copy_rows(void *destination, size_t dstPitch,
 				for (size_t x = 0; x < width; x += 128) __dcbt((int)x, ahead);
 			}
 			size_t x = 0;
-			// Never read or write a byte outside [0,width): a row shorter than
-			// the alignment head copies no head at all.
-			for (; x < headBytes; ++x) out[x] = in[x];
-			for (; x < bodyEnd; x += 16) {
-				const __vector4 value = __lvx(in + x, 0);
-				if (alignedStore) __stvx(value, out + x, 0);
-				else __storeunalignedvector(value, out + x);
-			}
+			// The store leads and the load follows it: 16 bytes written at a
+			// 16-byte boundary, 16 bytes read from anywhere, and the load
+			// covers exactly the bytes the store writes, so neither side ever
+			// leaves [0,width) of the row.
+			for (; x < body; x += 16)
+				__stvx_volatile(__loadunalignedvector((const unsigned int*)(in + x)), out + x, 0);
+			// A row that is not a whole number of vectors ends in plain bytes.
 			for (; x < width; ++x) out[x] = in[x];
 		}
 		return;
 	}
 #endif
-	// A pitch that is not a multiple of 16 would move the alignment from row to
-	// row, so the split above cannot be hoisted. No caller has one.
+	// No aligned-store form: the same copy, a row at a time, by the routine
+	// that handles its own alignment.
 	for (size_t y = 0; y < rows; ++y, out += dstPitch, in += srcPitch)
-		for (size_t x = 0; x < width; ++x) out[x] = in[x];
+		memcpy(out, in, width);
 }
 
 #undef EPIC12_REGION_VECTOR

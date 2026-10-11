@@ -5,37 +5,55 @@
 #include <string.h>
 
 // Execute the same vector branch on little-endian hosts and big-endian PPC.
-// The partial stores model the SDK's store-unaligned pair, whose instructions
-// are Xbox VMX128 extensions not provided by ordinary PowerPC emulators.
+//
+// The stubs do not only model the SDK intrinsics, they assert the rules those
+// intrinsics depend on. The destination is a locked texture, which is
+// write-combined memory on Xenon, and an unaligned vector store there is not a
+// rounding difference but the crash that took the console to the dashboard on
+// 2026-10-11 (see epic12_gpu_tile.h: "Never read it or use unaligned stores",
+// and docs/optimization/2026-10-11-cv1k-blit-rowcopy.md). So the unaligned
+// store stub fails the test if the copy ever reaches it, and every aligned
+// store is checked to sit on a 16-byte boundary inside the destination
+// rectangle.
 typedef unsigned int __vector4 __attribute__((vector_size(16)));
-static unsigned long alignedStores,unalignedStores,prefetches;
-static __vector4 __lvx(const void *p,int offset)
+
+static unsigned long cases,alignedStores,unalignedLoads,prefetches;
+static unsigned long outOfRangeLoads,outOfRangeStores,outOfRangePrefetches;
+// The rectangle being copied, so a stub can prove that a load or a store stays
+// inside it. Source and destination are checked separately.
+static const unsigned char *liveBase;
+static size_t liveBytes;
+static const unsigned char *liveOutBase;
+static size_t liveOutBytes;
+
+static __vector4 __loadunalignedvector(const unsigned int *p)
 {
-	const unsigned char *address=(const unsigned char*)p+offset;
-	assert(((uintptr_t)address&15)==0);
-	return *(const __vector4*)address;
+	const unsigned char *address=(const unsigned char*)p;
+	// The unaligned pair is defined for ordinary cached memory, and its address
+	// still has to be word aligned for the intrinsic.
+	assert(((uintptr_t)address&3)==0);
+	if(address<liveBase || address+16>liveBase+liveBytes) ++outOfRangeLoads;
+	++unalignedLoads;
+	__vector4 value;
+	memcpy(&value,address,16);
+	return value;
 }
-static void __stvx(__vector4 value,void *p,int offset)
+static void __stvx_volatile(__vector4 value,void *p,int offset)
 {
 	unsigned char *address=(unsigned char*)p+offset;
 	assert(((uintptr_t)address&15)==0);
+	if(address<liveOutBase || address+16>liveOutBase+liveOutBytes) ++outOfRangeStores;
 	*(__vector4*)address=value;
 	++alignedStores;
 }
 static void __storeunalignedvector(__vector4 value,void *p)
 {
-	unsigned char *address=(unsigned char*)p;
-	const unsigned char *bytes=(const unsigned char*)&value;
-	unsigned left=16-((uintptr_t)address&15);
-	memcpy(address,bytes,left);
-	memcpy(address+left,bytes+left,16-left);
-	++unalignedStores;
+	(void)value; (void)p;
+	fprintf(stderr,"FAIL case %lu: a vector store landed off a 16-byte boundary\n",cases);
+	abort();
 }
 // dcbt is only a hint. The stub records that the prefetch loop ran and that
 // every address it asked for is inside the rectangle being copied.
-static const unsigned char *liveBase;
-static size_t liveBytes;
-static unsigned long outOfRangePrefetches;
 static void region_dcbt(int offset,const void *base)
 {
 	const unsigned char *address=(const unsigned char*)base+offset;
@@ -58,7 +76,17 @@ static unsigned char pattern(size_t i)
 }
 
 static unsigned long long bytesCopied;
-static unsigned long cases;
+
+// malloc() is only guaranteed to be aligned for any fundamental type, so the
+// allocation is aligned by hand: a destination the copy can treat as vector
+// aligned is the case that matters.
+static unsigned char *allocAligned(size_t bytes,unsigned char **rawOut)
+{
+	unsigned char *raw=(unsigned char*)malloc(bytes+32);
+	assert(raw);
+	*rawOut=raw;
+	return raw+((16-((uintptr_t)raw&15))&15);
+}
 
 // Byte-exact oracle: every byte of the destination allocation is compared
 // against what the contract says, so a write outside [0,width) of a row, or a
@@ -72,15 +100,17 @@ static void run(int width,int rows,size_t srcPitch,size_t dstPitch,int srcOffset
 	const size_t dstRow=dstPitch;
 	const size_t srcBytes=(size_t)rows*srcPitch+(size_t)width+64;
 	const size_t dstBytes=(size_t)rows*dstRow+64;
-	unsigned char *srcAllocation=(unsigned char*)malloc(srcBytes);
-	unsigned char *dstAllocation=(unsigned char*)malloc(dstBytes);
-	assert(srcAllocation && dstAllocation);
+	unsigned char *srcRaw,*dstRaw;
+	unsigned char *srcAllocation=allocAligned(srcBytes,&srcRaw);
+	unsigned char *dstAllocation=allocAligned(dstBytes,&dstRaw);
 	for(size_t i=0;i<srcBytes;++i) srcAllocation[i]=pattern(i);
 	memset(dstAllocation,guard,dstBytes);
 	unsigned char *src=srcAllocation+srcOffset;
 	unsigned char *dst=dstAllocation+dstOffset;
 	liveBase=src;
 	liveBytes=rows?(size_t)(rows-1)*srcPitch+(size_t)width:0;
+	liveOutBase=dst;
+	liveOutBytes=rows?(size_t)(rows-1)*dstPitch+(size_t)width:0;
 	epic12_gpu_copy_rows(dst,dstPitch,src,srcPitch,(size_t)width,(size_t)rows);
 	for(size_t i=0;i<dstBytes;++i) {
 		const long relative=(long)i-(long)dstOffset;
@@ -103,7 +133,7 @@ static void run(int width,int rows,size_t srcPitch,size_t dstPitch,int srcOffset
 		}
 	}
 	bytesCopied+=(unsigned long long)width*rows;
-	free(srcAllocation); free(dstAllocation);
+	free(srcRaw); free(dstRaw);
 	++cases;
 }
 
@@ -115,6 +145,9 @@ int main()
 	const int rowsList[]={0,1,2,3,4,5,6,7,8,9,16,33};
 	const size_t pitches[][2]={{32768,2048},{32768,2048},{2048,32768},{256,512},{48,16},
 		{200,205},{2049,2048},{32768,240}};
+	// Every offset is a multiple of 4, which is what a VRAM word address can
+	// be; 4, 8 and 12 are the alignments that force the two sides apart and
+	// send the source through the unaligned load.
 	const int offsets[]={0,4,8,12};
 	// Every width against every row count at the real transfer shape, both
 	// when the two rows share an alignment and when they do not.
@@ -138,13 +171,16 @@ int main()
 	run(2048,512,32768,2048,12,4);
 	run(1024,240,32768,2048,4,0);
 	run(4,512,32768,2048,0,4);
-	if(!alignedStores || !unalignedStores) { fprintf(stderr,"FAIL: one store form never ran\n"); return 1; }
+	if(!alignedStores) { fprintf(stderr,"FAIL: no aligned vector store ran\n"); return 1; }
+	if(!unalignedLoads) { fprintf(stderr,"FAIL: no unaligned vector load ran\n"); return 1; }
 	if(!prefetches) { fprintf(stderr,"FAIL: no prefetch hints\n"); return 1; }
+	if(outOfRangeLoads) { fprintf(stderr,"FAIL: %lu vector loads outside the source rectangle\n",outOfRangeLoads); return 1; }
+	if(outOfRangeStores) { fprintf(stderr,"FAIL: %lu vector stores outside the destination rectangle\n",outOfRangeStores); return 1; }
 	if(outOfRangePrefetches) { fprintf(stderr,"FAIL: %lu prefetch hints outside the rectangle\n",outOfRangePrefetches); return 1; }
 	const unsigned endianProbe=1;
-	printf("PASS: %lu rectangles; %llu exact bytes; %lu aligned / %lu unaligned vector stores; "
-		"%lu prefetch hints, all inside the rectangle; %s-endian\n",
-		cases,bytesCopied,alignedStores,unalignedStores,prefetches,
+	printf("PASS: %lu rectangles; %llu exact bytes; %lu vector stores, every one 16-byte aligned and inside its row; "
+		"0 unaligned stores; %lu unaligned vector loads; %lu prefetch hints, all inside the rectangle; %s-endian\n",
+		cases,bytesCopied,alignedStores,unalignedLoads,prefetches,
 		*(const unsigned char*)&endianProbe?"little":"big");
 	return 0;
 }
