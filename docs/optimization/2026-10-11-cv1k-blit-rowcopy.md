@@ -93,6 +93,14 @@ judge of the timing.
 
 ## Console protocol
 
+The candidate image is `blit-rowcopy c57ccde8 20261011-1506 diag`, 34,635,776
+bytes, sha256 `552211323e1355330cbcaf125254bff6c19a69a3d2ae4ca177a4f7e864b88eeb`,
+deployed as `Distro360/fbneo-diag.xex` and `Distro360/fbneo.xex` and archived at
+`salvia-tests/xex-archive/fbneo-20261011-1506-blit-rowcopy-diag.xex`. The base
+is `Distro360/fbneo-blit-crossover-diag.xex`
+(`b5dd53ba`, sha256 `429a5c246452f821da220fa845cf6b823749d62b24ad6d5d7377b5631ae7b4eb`),
+which is the image `Distro360/cv1000-gpu.log` came from.
+
 One image, one session, no input, the same state as the census, pausing three or
 four times against the image the census came from (`fbneo-blit-crossover-diag`,
 `b5dd53ba`). Pair the windows by the frame number the report prints.
