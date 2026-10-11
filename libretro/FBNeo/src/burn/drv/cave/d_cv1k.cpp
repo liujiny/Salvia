@@ -120,7 +120,16 @@ void cv1k_review_report(void (*emit)(const char*))
                 salvia_cv1k_probe[16] * unit, (unsigned __int64)salvia_cv1k_probe[17],
                 (unsigned __int64)salvia_cv1k_probe[18]);
             emit(text);
-            for (unsigned i = 0; i < 24; ++i) salvia_cv1k_probe[i] = 0;
+            // The replay half is a mixture of batch sizes; the CPU path is
+            // only cheaper than a Xenos batch below some size, and that size
+            // is what the threshold should be set to.
+            sprintf(text, "replay_buckets lt8192=%.3f/%I64u/%I64u 8192_32768=%.3f/%I64u/%I64u 32768_131072=%.3f/%I64u/%I64u ge131072=%.3f/%I64u/%I64u",
+                salvia_cv1k_probe[24] * unit, (unsigned __int64)salvia_cv1k_probe[25], (unsigned __int64)salvia_cv1k_probe[26],
+                salvia_cv1k_probe[27] * unit, (unsigned __int64)salvia_cv1k_probe[28], (unsigned __int64)salvia_cv1k_probe[29],
+                salvia_cv1k_probe[30] * unit, (unsigned __int64)salvia_cv1k_probe[31], (unsigned __int64)salvia_cv1k_probe[32],
+                salvia_cv1k_probe[33] * unit, (unsigned __int64)salvia_cv1k_probe[34], (unsigned __int64)salvia_cv1k_probe[35]);
+            emit(text);
+            for (unsigned i = 0; i < 40; ++i) salvia_cv1k_probe[i] = 0;
         }
     }
 #endif
@@ -177,6 +186,10 @@ static struct BurnDIPInfo DefaultDIPList[]=
 	{0   , 0xfe, 0   ,    2, "GPU Blitter (Xbox 360)" },
 	{0x03, 0x01, 0x20, 0x00, "On" },
 	{0x03, 0x01, 0x20, 0x20, "Off" },
+
+	{0   , 0xfe, 0   ,    2, "GPU Blit Threshold" },
+	{0x03, 0x01, 0x80, 0x00, "8192 (default)" },
+	{0x03, 0x01, 0x80, 0x80, "All CPU" },
 #endif
 
 	{0   , 0xfe, 0   ,    2, "Thread Blitter"	},

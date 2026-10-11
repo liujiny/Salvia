@@ -18,11 +18,15 @@
 // the whole blitter job, but only the Xenos batches were sampled before this,
 // so the replay half of the job had no measurement at all. The first Xenos
 // batch of a session (shader compile and pixel self-test) is excluded.
+// [24..35] replay ticks/pixels/batches in four size buckets, split at 8192,
+// 32768 and 131072 pixels. The CPU replay is only cheaper than a Xenos batch
+// below some size, and that size is the split point the threshold should use,
+// so the buckets have to report the cost of each size rather than one average.
 // The clock helper is defined beside the counters in epic12.cpp: the SH4 core
 // defines an opcode function named FLOAT, which the XDK's windef.h typedef
 // would collide with, so this header must not pull in <xtl.h>.
 extern "C" {
-	extern unsigned long long salvia_cv1k_probe[24];
+	extern unsigned long long salvia_cv1k_probe[40];
 	extern unsigned long long salvia_cv1k_tick(void);
 }
 #else

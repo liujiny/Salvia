@@ -17,6 +17,21 @@ static unsigned epic12_gpu_source_count;
 static rectangle epic12_gpu_bounds;
 static bool epic12_gpu_enabled;
 
+// Batches below this many pixels are rasterized on the CPU instead of being
+// transferred to the Xenos. The split point was chosen against ddpdfk-like
+// traffic; epic12.cpp's gfx_exec() re-reads it from the DIPs each list so a
+// console A/B can move it without a rebuild.
+static unsigned epic12_gpu_threshold = 8192;
+static bool epic12_gpu_force_bringup = false;
+
+// Replay cost per batch size. The threshold is only worth moving if the CPU
+// path's marginal cost per pixel is below the Xenos path's fixed per-batch
+// cost, so the size of each replayed batch is the number that decides it.
+#define EPIC12_GPU_REPLAY_BUCKETS 4
+// One boundary per bucket except the first, so a bucket index is the count of
+// boundaries the batch has passed.
+static const unsigned epic12_gpu_replay_bucket_px[EPIC12_GPU_REPLAY_BUCKETS - 1] = { 8192, 32768, 131072 };
+
 enum Epic12GpuFlushReason {
 	EPIC12_GPU_FLUSH_END_LIST = 0,
 	EPIC12_GPU_FLUSH_SOURCE_PAGES,
@@ -96,7 +111,15 @@ static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHE
 	bool probeSteady=epic12_xenos_validated;
 	unsigned long long probeStart=salvia_cv1k_tick();
 #endif
-	if (epic12_gpu_pixels < 8192) {
+	// The compositor comes up on the first render call, and a live Xenos is
+	// what switches the core to the asynchronous present. Raising the
+	// threshold must therefore still bring it up once, or the comparison would
+	// move the present mode as well as the batches.
+	bool routeCpu = epic12_gpu_pixels < epic12_gpu_threshold;
+#ifdef _XBOX
+	if (routeCpu && epic12_gpu_force_bringup && !epic12_xenos_validated && !epic12_xenos_failed) routeCpu=false;
+#endif
+	if (routeCpu) {
 		++epic12_gpu_flush_small_cpu;
 	} else if (epic12_gpu_render(epic12_gpu_commands, epic12_gpu_count, epic12_gpu_bounds)) {
 		rendered=true;
@@ -121,6 +144,12 @@ static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHE
 			} else {
 				salvia_cv1k_probe[16]+=ticks; ++salvia_cv1k_probe[17];
 				salvia_cv1k_probe[18]+=epic12_gpu_pixels;
+				unsigned bucket=0;
+				while (bucket+1<EPIC12_GPU_REPLAY_BUCKETS &&
+				       epic12_gpu_pixels>=epic12_gpu_replay_bucket_px[bucket]) ++bucket;
+				salvia_cv1k_probe[24+bucket*3]+=ticks;
+				salvia_cv1k_probe[25+bucket*3]+=epic12_gpu_pixels;
+				++salvia_cv1k_probe[26+bucket*3];
 			}
 		}
 	}
