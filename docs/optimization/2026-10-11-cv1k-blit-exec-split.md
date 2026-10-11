@@ -48,6 +48,24 @@ refused path's rasterizer. What is left of the job after `draw` and `upload` is
 the command walk itself -- the list walk, the clip command and the end-of-list
 flush.
 
+Two of the spans also contain a flush, because each command ends by handing the
+queue to the CPU path:
+
+- `submit` contains any flush it forces -- source-page capacity, region, command
+  limit or source dependency -- and that flush is the Xenos batch and replay
+  work of the batch it closes.
+- `upload` contains the flush `epic12_gpu_cpu_write(..., FLUSH_CPU_UPLOAD)`
+  forces (`epic12.cpp:563`), for the same reason, so `upload` is not purely the
+  copy.
+- `soft` deliberately starts *after* `epic12_gpu_cpu_draw()`, so the CPU_DRAW
+  flush is inside `draw` and `soft` is the software rasterizer alone.
+
+The residual is therefore the list traversal, the clip command **and the
+end-of-list flush**, which is a real flush: `gfx_exec()` submits the last
+partial batch when the list ends. With about ten batches per frame, one of those
+ten flushes lands in the residual, so `job - draw - upload` is not "pure walk"
+and has to be read beside the batch count.
+
 The spans use a scope guard, `SalviaCv1kSpan`, that accumulates and counts on
 scope exit, so a function with several early returns is measured exactly once.
 It accumulates nothing when either tick read is zero, which is how the counter
@@ -122,6 +140,9 @@ Read the new line in the steady window and subtract:
   is the target, and a threshold change is cheaper than rewriting a pixel loop.
 - `draw_calls` against the window's command count says how often the queue
   refused; a small `draw_calls` with a large `soft` is the same statement.
+- `job - draw - upload` carries the end-of-list flush as well as the walk, so
+  compare it with the batches per frame (`gpu` batches / frames) before calling
+  all of it walk overhead.
 
 ## Limits
 
