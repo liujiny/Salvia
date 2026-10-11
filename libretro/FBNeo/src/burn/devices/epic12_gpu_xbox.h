@@ -7,6 +7,7 @@
 #include <d3dx9.h>
 #include <xgraphics.h>
 #include "epic12_gpu_untile.h"
+#include "epic12_gpu_region.h"
 #include "epic12_gpu_cache.h"
 #include "epic12_gpu_alpha.h"
 #include "epic12_gpu_tile.h"
@@ -585,7 +586,13 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 	}
 	int width=bounds.max_x-bounds.min_x+1, height=bounds.max_y-bounds.min_y+1;
 	if (FAILED(epic12_xenos_input->LockRect(0,&lr,NULL,0))) return false;
-	for (int y=0;y<height;++y) memcpy((BYTE*)lr.pBits+y*lr.Pitch,vram+(bounds.min_y+y)*8192+bounds.min_x,width*4);
+	// The bounding box of one batch, row by row. The source rows are 32 KB
+	// apart and the locked rows are lr.Pitch apart, so a memcpy() given one row
+	// cannot know where the next one is; epic12_gpu_region.h does, and fetches
+	// it ahead while it copies this one.
+	epic12_gpu_copy_rows(lr.pBits,(size_t)lr.Pitch,
+		vram+(size_t)bounds.min_y*8192+(size_t)bounds.min_x,
+		8192*sizeof(UINT32),(size_t)width*sizeof(UINT32),(size_t)height);
 	epic12_xenos_input->UnlockRect(0);
 	epic12_xenos_input_pixels+=width*height;
 	if(timing) QueryPerformanceCounter(&timing->stamp[4]);
