@@ -139,6 +139,15 @@ VMX-or-prefetched -- `input_upload` first of all, since it is a plain strided
 row copy -- are the larger term on the route this title actually plays. That is
 the next candidate.
 
+**Answered on 2026-10-11.** `input_upload` was taken up: the row copy in
+`2026-10-11-cv1k-blit-rowcopy.md` cut it from `0.415` to `0.284` ms/batch, a
+third, with the frame unchanged (`26.423` -> `26.794 ms` of `game_and_ui`,
+inside the spread of one build). So a ranking by ms/frame inside the job is not
+a ranking of the frame: `input_upload` was not what the frame waits on, and the
+same doubt now applies to `untile_mask` and `source_upload`, which are VMX and
+flat. The un-attributed `6.85 ms/frame` of command walk and construction is the
+term to measure next, before either copy is rewritten.
+
 ## Verification
 
 Host, `/home/humor/salvia-tests/cv1k-ddpdfk-profile-20261007/`, built with

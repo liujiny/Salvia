@@ -195,11 +195,15 @@ and, after that, of the timing.
 ## Console protocol
 
 The candidate is `Distro360/fbneo-blit-rowcopy-fix-diag.xex`, tagged
-`blit-rowcopy-fix 36763a39 20261011-1831 diag`, 34,635,776 bytes, sha256
+`blit-rowcopy-fix 36763a39 20261011-1827 diag`, 34,635,776 bytes, sha256
 `8b7823fd501cc639049f36bfd989ec6d8069e34b0739953182b64f3df97a66a4`, archived as
-`salvia-tests/xex-archive/fbneo-20261011-1831-blit-rowcopy-fix-diag.xex`. It is a
-diag image built against baseline `71e6cdda`, and it takes the place of the row
-copy image that crashed, `blit-rowcopy c57ccde8 20261011-1506 diag`, sha256
+`salvia-tests/xex-archive/fbneo-20261011-1831-blit-rowcopy-fix-diag.xex`. The tag
+string and the archive name carry two different minutes and both are expected:
+`xex-build/build-xex.sh` stamps the tag header with `date +%Y%m%d-%H%M` at the
+start of the build (18:27, the string the image prints) and names the archive the
+same way at the end (18:31, the string in the path above). It is a diag image
+built against baseline `71e6cdda`, and it takes the place of the row copy image
+that crashed, `blit-rowcopy c57ccde8 20261011-1506 diag`, sha256
 `552211323e1355330cbcaf125254bff6c19a69a3d2ae4ca177a4f7e864b88eeb` -- still in
 the archive, no longer deployed.
 
@@ -236,6 +240,125 @@ survives the load at all. Same state, no input:
   reverted: the row copy is not where the 3.98 ms is.
 - `worker_busy` and `worker_wait` are the acceptance numbers; a frame-rate
   change that does not move them is noise.
+
+## Console result
+
+Two logs, both in `Distro360/`: `cv1000-gpu.log` is the fixed candidate and
+`fbneo-blit-crossover.log` is the base. Their identity lines are the two built
+strings, and each one names the game, the length of its window, and the DIP
+bytes that window ran under:
+
+    CV1000 GPU: review build=blit-crossover b5dd53ba 20261011-1404 diag game=mmpork interval_frames=1238 samples=23 invalid=0 clock_hz=102400000 render_cores=2 dips=00,07,00,00 bpp=4 (batches=11860)
+    CV1000 GPU: review build=blit-rowcopy-fix 36763a39 20261011-1827 diag game=mmpork interval_frames=1447 samples=23 invalid=0 clock_hz=102400000 render_cores=2 dips=00,07,00,00 bpp=4 (batches=17517)
+
+### The console survived
+
+This is step 1 of the protocol and it passed. The candidate ran to `17,517`
+batches without leaving `mmpork`, and its `present_state` line reads
+`requested=1 active=1 failed=0 retained=1 sequence=3255 activations=1
+fallbacks=0 timeouts=0`. `fallback_origin` is zero on every reason,
+`fallback_60_access` is zero on every class, `work_count_skipped=0`, and no line
+in either log is an abort, an assert or a fatal. The image that fell to the
+dashboard is the only image here that ever did, and it is replaced. The row copy
+stays.
+
+### One window per log is a comparison window
+
+- The candidate's **first** window (`interval_frames=1565`) is the load
+  settling, not steady state: `limiter=3.093` where every later window reads
+  `0.001`, and `game_and_ui=13.151` because the limiter is still holding the
+  frame back. Its second window is the steady one.
+- The base's windows after the OSD visits run `dips=00,07,00,80` and
+  `00,07,00,a0` with `blit_flush_ms gpu=0.000` -- the All-CPU route. Those are
+  the control, not the pair.
+- The pair is base `1238` frames against candidate `1447` frames, both under
+  `dips=00,07,00,00`, both with the Xenos route live. They are not the same
+  frames, so this is a window-to-window comparison, which is why the error bar
+  below is the base's own spread.
+
+### The term moved
+
+| `ms/batch` | base | candidate | change |
+| --- | --- | --- | --- |
+| `input_upload`, async / later | **0.415** | **0.284** | **-0.131 (-32%)** |
+| `input_upload`, async / after-present | 0.690 | 0.343 | -0.347 (-50%) |
+| `upload`, `sampled_batch_cpu_ms` | 0.764 | 0.591 | -0.173 (-23%) |
+| `source_upload` | 0.355 | 0.348 | -0.007 |
+| `untile_mask` | 0.448 | 0.439 | -0.009 |
+| `submit` | 0.137 | 0.157 | +0.020 |
+| `readback_wait` | 0.176 | 0.187 | +0.011 |
+| `plan` | 0.063 | 0.060 | -0.003 |
+| `peak_total` | 5.128 | 5.050 | -0.078 |
+
+`input_upload` is the term this change exists to move, and it fell by a third.
+It also reproduces inside the candidate: the same line in the candidate's
+settling window reads `0.304`, so the new image's two windows agree with each
+other before they agree with the base. Nothing else in the table moved outside
+its own noise, and the four terms that are already VMX are flat, which is what a
+change confined to one scalar copy should look like.
+
+### The frame did not
+
+| | base | candidate | change |
+| --- | --- | --- | --- |
+| window | 1238 frames | 1447 frames | |
+| `game_and_ui` | 26.423 | 26.794 | +0.371 |
+| `sampled_active_loop` | 26.927 | 27.298 | +0.371 |
+| `present` | 0.503 | 0.503 | 0.000 |
+| `limiter` | 0.001 | 0.001 | 0.000 |
+| `worker_busy` / `worker_jobs` | 31325.779 / 1238 = **25.303** | 35207.277 / 1447 = **24.332** | -0.971 (-3.8%) |
+| `worker_wait` `avg_ms` | 13.475 | 6.721 | -6.754 |
+| `drc_dispatch` per frame | 13437.096 / 1238 = 10.855 | 15783.657 / 1447 = 10.908 | +0.053 |
+| `drc_work_arena peak_words` | 2460920 | 2479912 | +0.77% |
+| `recycles` | 0 | 0 | 0 |
+| `rebuilds` / `lookups` | 9 / 1119 | 22 / 3000 | 0.80% -> 0.73% |
+
+The error bar is what one unchanging build produces by itself, and this session
+supplies it. Across the base's own non-boot windows `game_and_ui` reads `26.423`,
+`21.658`, `25.952`, `24.820` and `27.039`, and `worker_busy`/`worker_jobs` reads
+`25.303`, `26.413`, `23.355`, `24.563`, `23.500` and `24.780`. The base-to-
+candidate difference is `+0.371 ms` on the frame and `-0.971 ms` on the busy
+time; the first is smaller than a `5.4 ms` spread and the second is smaller than
+a `3.1 ms` spread. Four of those base windows are the All-CPU route, with
+`blit_flush_ms gpu=0.000` and no Xenos batches at all, and they still read
+`21.658`, `25.952`, `24.820` and `27.039 ms`. The frame does not track which
+rasterizer is drawing, which is what the last two rounds concluded too, and it
+is why a cut of one third in one per-batch transfer cannot be read off the frame
+total.
+
+The one number that moved a long way is `worker_wait avg_ms`, `13.475` to
+`6.721`. That is the emulation thread's measured wait for the worker, so it says
+the worker's job got shorter -- which is what a faster copy should produce --
+but the frame stayed where it was, so the wait was not what was setting the
+frame. It is also the weakest statistic in the set: one random sample in 64,
+`15` samples in the base window against `31` in the candidate, averaged over
+windows of different lengths. It is a lead to chase, not a result to bank.
+
+### Verdict
+
+The protocol set two conditions: `input_upload` has to fall, and
+`worker_busy`/`worker_wait` are the acceptance numbers, with a frame change that
+does not move them being noise. The first condition passed by a wide margin and
+reproduces across both windows of the new image. The second did not: the frame
+is unchanged within the spread of one build, and the busy time moved the right
+way by less than that spread.
+
+So this is a **crash removal and a correctness fix, not a frame-rate win**. The
+old store path wrote the locked Xenos texture through unaligned 16-byte stores,
+which is a rule `epic12_gpu_tile.h` states in its first lines and which the
+console enforced by taking the machine down; that is worth keeping on its own
+terms, whatever it costs. The transfer also became a third cheaper, and that is
+worth keeping for the price of the batch. But `input_upload` at `3.98 ms/frame`
+was not on the frame's critical path, and the census ranking it first was a
+ranking of the terms inside the job, not of the frame. A job term only reaches
+the frame if the frame is waiting on the job, and here the frame sat at
+`26.4`-`27.3 ms` either way.
+
+That moves the next attempt to the term the census could not attribute at all:
+**the command walk and construction, `6.85 ms/frame` inside the job**, still
+unmeasured and still the largest. Measuring it is the next step, not rewriting
+another copy. The two copies that remain (`untile_mask` `4.30`, `source_upload`
+`3.40`) are already VMX, and they are already flat in the table above.
 
 ## Revert
 
