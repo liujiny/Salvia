@@ -108,6 +108,32 @@ Diagnostics flavor only, as the iteration rule requires:
 salvia-tests/xex-build/build-xex.sh --tag blitter-split --baseline c2ea0dc6 --flavor diag
 ```
 
+`6d8f2769`, 34,635,776 bytes, sha256
+`121762e6fc463ece632155ad2b89185e7ae4a7cb7195658c7c82d32abd0b3e22`, archived as
+`xex-archive/fbneo-20261011-1204-blitter-split-diag.xex`, kept as
+`Distro360/fbneo-blitter-split-diag.xex`. The runtime tree's `libretro.lib`
+contains the injected tag `blitter-split 6d8f2769 20261011-1200 diag`, so the
+pause report will name this image, and `epic12.cpp` and `d_cv1k.cpp` were both
+recompiled in this build (the mirror touched the `.cpp` files, not just the
+headers they include).
+
+The console A/B is this image against `Distro360/fbneo-mmpork-prof-diag.xex`
+(`c2ea0dc6`, sha256 `3fe36ba9b9cf3450f24ac8a74613b5690e577afa9091d58cda7ba9f4de44b328`),
+which is the image the `cv1000-gpu.log` above came from. Both are diagnostics
+flavors of the same source; the only difference is this probe.
+
+Protocol, `mmpork`, no input, pause three or four times:
+
+1. Run the baseline image and pause 3-4 times; the windows' `worker_busy`,
+   `worker_wait` and `core_frame_ms` are the reference.
+2. Run this image the same way. `blit_flush_ms` splits `worker_busy` into
+   `gpu` (Xenos batches) and `replay` (CPU replay of the small ones); the
+   remainder is command building and accounting.
+3. If `replay` dominates, the lever is the ~170 small batches per frame -- the
+   8192-pixel threshold or batching them up. If `gpu` dominates, the lever is
+   why the large batches flush at all (`flushes region` /
+   `flushes source_dependency`).
+
 ## Limits
 
 - Each accumulator includes its own `QueryPerformanceCounter` read (~30-50 ns),
@@ -117,6 +143,11 @@ salvia-tests/xex-build/build-xex.sh --tag blitter-split --baseline c2ea0dc6 --fl
   with commands queued. Command building and the queueing that never flushes are
   the `worker_busy - gpu - replay` remainder, which is why that remainder is
   printed next to them rather than assumed to be zero.
+- Every flush happens inside the call the worker job times (`run_blitter_cb` ->
+  `gfx_exec`), including the CPU-upload flushes, so both accumulators and
+  `worker_busy` describe the same call chain and the remainder cannot go
+  negative on a consistent run. A negative remainder would mean a flush ran
+  outside that call, which is itself a finding.
 - One game, one state, no input. The 8192-pixel split point moves with the
   title.
 
