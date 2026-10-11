@@ -121,13 +121,17 @@ for (; x < width; ++x) out[x] = in[x];   // the bytes that are not a vector
 
 Every store now lands on a 16-byte boundary of the destination, the way
 `epic12_gpu_tile.h` writes that memory, and the side allowed to be off is the
-read of the source, which is cached VRAM. The helpers are the ones this path
-already used: `__stvx_volatile` from the atlas upload, `__loadunalignedvector`
-for the read. A rectangle whose destination is not vector aligned, or whose
-source is not word aligned, or whose pitch is not a multiple of 16, has no
-aligned-store form at all and falls back to the per-row `memcpy()` the caller
-used before -- the same code the base image runs, so it cannot be worse than the
-base there.
+read of the source, which is cached VRAM. That is not a new shape for this
+emulator: the atlas upload in `epic12_gpu_tile.h` already loads a cached source
+with the unaligned pair and stores it with `__stvx_volatile`, under its own
+comment -- "Only the source may use the unaligned pair, and it must be cached" --
+and that path runs every frame in the base image. The read touches up to a
+vector window around the sixteen bytes it returns, exactly as the atlas upload's
+read does, and the source here is the whole VRAM buffer. A rectangle whose
+destination is not vector aligned, or whose source is not word aligned, or whose
+pitch is not a multiple of 16 has no aligned-store form at all and falls back to
+the per-row `memcpy()` the caller used before -- the same code the base image
+runs, so it cannot be worse than the base there.
 
 The stub now asserts the rule instead of modelling the instruction: reaching
 `__storeunalignedvector` fails the test, every store must be 16-byte aligned and
@@ -183,12 +187,30 @@ rule; the console is the judge of the rule and, after that, of the timing.
 
 ## Console protocol
 
-The candidate is `blit-rowcopy-fix`, built from this commit; its size, sha256
-and archive path are named in the docs commit that follows this one. The base is
-the same `Distro360/fbneo-blit-crossover-diag.xex`
+The candidate is `Distro360/fbneo-blit-rowcopy-fix-diag.xex`, tagged
+`blit-rowcopy-fix 36763a39 20261011-1831 diag`, 34,635,776 bytes, sha256
+`8b7823fd501cc639049f36bfd989ec6d8069e34b0739953182b64f3df97a66a4`, archived as
+`salvia-tests/xex-archive/fbneo-20261011-1831-blit-rowcopy-fix-diag.xex`. It is a
+diag image built against baseline `71e6cdda`, and it takes the place of the row
+copy image that crashed, `blit-rowcopy c57ccde8 20261011-1506 diag`, sha256
+`552211323e1355330cbcaf125254bff6c19a69a3d2ae4ca177a4f7e864b88eeb` -- still in
+the archive, no longer deployed.
+
+The container carries the fixed code, which is the thing a host cannot check:
+the mirrored `epic12_gpu_region.h` was written at 18:27:49, 4124 bytes, sha256
+`3caf0a9cf3d3ae0d9f76e131aede8ed2f66ce0367d699479e07fa45cb2e7f768`, the same hash
+as the repository's file; `epic12.obj` was rebuilt after it at 18:28:06,
+`libretro.lib` linked at 18:29:14 and the XEX was written at 18:31:26. The region
+suite was re-run for this commit and passed in both byte orders; the runs are in
+`salvia-tests/cv1k-blit-rowcopy-fix-20261011/{host,ppc}.log`. The evidence file
+for the build is `salvia-tests/xex-build/artifact-blit-rowcopy-fix.json`.
+
+The base is the same `Distro360/fbneo-blit-crossover-diag.xex`
 (`b5dd53ba`, sha256 `429a5c246452f821da220fa845cf6b823749d62b24ad6d5d7377b5631ae7b4eb`),
 the image `Distro360/cv1000-gpu.log` came from and the image that runs this
-state.
+state. The two images differ in exactly one live thing -- this helper -- because
+the probe commit between them (`e8406c35`, the per-loop pixel census) is compiled
+out of the diag flavor.
 
 This round answers a question the last one could not: whether the console
 survives the load at all. Same state, no input:
