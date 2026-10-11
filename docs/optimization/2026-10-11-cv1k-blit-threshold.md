@@ -130,6 +130,90 @@ state and the image are the same, the two sets pair up by frame number.
 - `worker_busy` and `worker_wait` are the acceptance numbers; `blit_flush_ms
   gpu` plus `replay` should reproduce them within the remainder.
 
+## Console result
+
+`Distro360/cv1000-gpu.log`: `mmpork`, no input, one session of seven windows
+that walk Dip D bit 7 (the split point) and bit 5 (the compositor) without
+changing the image or the state.
+
+| window | dips | frames | ms/job | `draw_sync` | `cpu_io` | frame total |
+| --- | --- | --- | --- | --- | --- | --- |
+| boot | `00,07,00,00` | 119 | 20.01 | 0.772 | 2.633 | 3.629 |
+| default | `00,07,00,00` | 1238 | 25.30 | 13.973 | 11.981 | 26.106 |
+| All CPU | `00,07,00,80` | 116 | 26.41 | -- | -- | -- |
+| All CPU | `00,07,00,80` | 459 | 23.36 | 12.396 | 8.864 | 21.390 |
+| All CPU | `00,07,00,80` | 411 | 24.56 | 11.015 | 14.541 | 25.686 |
+| All CPU + compositor off | `00,07,00,a0` | 556 | 23.50 | 12.784 | 11.408 | 24.324 |
+| All CPU | `00,07,00,80` | 243 | 24.78 | 14.976 | 11.665 | 26.770 |
+
+`ms/job` is `worker_busy / worker_jobs`; the 116-frame window prints no frame
+line because it sampled no frame, and the last window is the first one after
+the compositor was switched back on, so it is an all-CPU number like the two
+before it.
+
+**The split point is not a lever, and the console says so directly.** The
+worker job is 23.4-26.4 ms and `draw_sync` is 11.0-15.0 ms in every window:
+default, all-CPU and compositor-off are one number to within this title's
+window-to-window spread (the baseline windows in
+`2026-10-11-cv1k-blitter-split.md` spread 4.6 ms). Turning the Xenos off moves
+the pixels to the CPU replay and shortens the job by 1.8 ms; turning the
+compositor off moves them to the legacy blitter and shortens it by 1.8 ms as
+well. Three rasterizers, one cost.
+
+### The buckets say there is no crossover to look for
+
+Per-pixel marginal cost of the CPU replay, `ms / px` of each bucket, i.e. what
+the default route would pay for the batches it currently hands to the Xenos:
+
+| window | `<8192` | `8192-32768` | `32768-131072` | `>=131072` |
+| --- | --- | --- | --- | --- |
+| 1238 default | 25.9 | -- | -- | -- |
+| 459 All CPU | 27.5 | 24.1 | 23.7 | 28.4 |
+| 411 All CPU | 25.2 | 25.4 | 24.6 | 28.7 |
+| 243 All CPU | 25.7 | 26.9 | 26.7 | 28.7 |
+
+The marginal cost is flat from 8k to 180k pixels. The CPU replay has no
+per-batch fixed cost worth naming, so there is no batch size at which it stops
+being competitive with the Xenos path: the host estimate of a ~63k-pixel
+crossover came from the Xenos side's fixed cost, and this is the CPU side
+saying it has none. The Xenos side of the same session is 1.61 ms per batch
+(11850 batches, 645.5 M px, 15.42 ms per frame) and `batch_timing` splits that
+as upload 0.77, untile/mask 0.45, readback wait 0.18, submit 0.13, plan 0.06 --
+i.e. the Xenos route's serial cost is **data marshalling on the Xenon, not
+rasterization on the Xenos**, at 7.4 + 4.3 ms per frame. Replaying those same
+pixels on the CPU would cost 13.5-16.3 ms per frame, which is why the two
+routes measure the same and why the switch cannot buy the 1-2 ms the host
+predicted.
+
+### What the OSD's `CPU` number is
+
+The frontend's `CPU: n%` is `GetThreadTimes(GetCurrentThread())`, sampled once
+per frame in `Sync::sample_cpu_utilization()` (`src/io/sync.cpp`): the run time
+of the **emulation thread** over wall time, so every millisecond it spends
+blocked counts as idle. That thread is the one that spends the frame in
+`draw_sync`; the 23-26 ms of blitter work runs on the other thread and is
+invisible to the number.
+
+It is therefore a restatement of the split rather than a measurement of it:
+`cpu_io + prep + audio` is 9.0-14.5 ms of a 21.4-26.8 ms frame, so the gauge
+reads 40-55% -- and reads 40-55% whichever engine rasterizes, because the
+routing never touches the emulation thread's work or its wait. Four of Xenon's
+six hardware threads are idle in this title (emulation on core 0 thread 1, one
+blit worker on core 1, core 2 unused); that is the headroom the gauge is
+pointing at, and it is not a fault in the frame.
+
+### What this leaves
+
+The job is serial on one worker thread, the frame is `cpu_io + draw_sync`, and
+the job is the term to attack. In the default window it is 25.30 ms: 15.42 ms
+of Xenos marshalling, 3.03 ms of CPU replay for the small batches, 6.85 ms of
+command walk. The all-CPU window is 23.36 ms: 16.35 replay, 7.01 remainder. The
+candidates the numbers still support are (a) the Xenos marshalling -- 11.7 ms
+per frame of tile swizzle and untile/mask for 1.13 MB of source uploads at a
+78% atlas hit rate, a byte permute with an exactness test already in the tree,
+(b) the replay's 25.9 ns/px, and (c) the 6.9 ms remainder, which is still
+unmeasured inside the job.
+
 ## Limits
 
 - The buckets cover only flushes that reach `epic12_gpu_flush()` with commands
