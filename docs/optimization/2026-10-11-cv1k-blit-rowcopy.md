@@ -177,13 +177,20 @@ cases), `tests/epic12_gpu`, `tests/epic12_blit`, `tests/epic12_gpu_untile`
 Artifacts in `/home/humor/salvia-tests/cv1k-blit-census-20261011/`.
 
 The 60/600/1800-frame `STATE` hashes of the host harness (`0cf251c3d512ddbb`,
-`baabc4def027a8a3`, `dff81882efc1b24a`) still hold, but they are not evidence
-about this change: the new code is under `_XBOX`, and the host harness builds
-with `EPIC12_GPU_TEST`, so the host compiles the mock compositor and never
-reaches a texture lock. The host cannot measure or even execute this path, and
-the crash above is the proof: the suite was green while the console went down.
-What the host proves is that the copy is byte-exact and that it obeys the store
-rule; the console is the judge of the rule and, after that, of the timing.
+`baabc4def027a8a3`, `dff81882efc1b24a`) were re-run for this commit against the
+harness relinked from this tree (`ddpdfk`, `user-ddpdfk4-core.state`, DIP
+`07,00,00`, two render cores, no input): all three reproduce, and the per-frame
+video and audio hash files are byte-identical to the recorded ones
+(`c42fdb4870f4f997112d88ff6f74ee12`, `022b01ad0c0b543afd34a685e07173c5`,
+`3f7580a932f3a859ae847bf3f3fe830b`); their reports and hash files are in
+`salvia-tests/cv1k-blit-rowcopy-fix-20261011/ddpdfk/`. Those numbers are not
+evidence about this change, though: the new code is under `_XBOX`, and the host
+harness builds with `EPIC12_GPU_TEST`, so it compiles the mock compositor and
+never reaches a texture lock. The host cannot measure or even execute this path,
+and the crash above is the proof: the suite was green while the console went
+down. What the host proves is that the copy is byte-exact, that it obeys the
+store rule, and that nothing else moved; the console is the judge of the rule
+and, after that, of the timing.
 
 ## Console protocol
 
