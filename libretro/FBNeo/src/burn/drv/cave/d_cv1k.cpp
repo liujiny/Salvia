@@ -110,7 +110,17 @@ void cv1k_review_report(void (*emit)(const char*))
                 salvia_cv1k_probe[8] * unit, (unsigned __int64)salvia_cv1k_probe[9],
                 salvia_cv1k_probe[10] * unit, (unsigned __int64)salvia_cv1k_probe[11]);
             emit(text);
-            for (unsigned i = 0; i < 16; ++i) salvia_cv1k_probe[i] = 0;
+            // The blitter job is one worker_busy number; this splits it into
+            // the Xenos batches and the CPU replay of the small ones. The
+            // remainder is command building and bookkeeping.
+            sprintf(text, "blit_flush_ms window=%u gpu=%.3f gpu_batches=%I64u gpu_pixels=%I64u replay=%.3f replay_batches=%I64u replay_pixels=%I64u",
+                cv1k_review.frames,
+                salvia_cv1k_probe[14] * unit, (unsigned __int64)salvia_cv1k_probe[15],
+                (unsigned __int64)salvia_cv1k_probe[19],
+                salvia_cv1k_probe[16] * unit, (unsigned __int64)salvia_cv1k_probe[17],
+                (unsigned __int64)salvia_cv1k_probe[18]);
+            emit(text);
+            for (unsigned i = 0; i < 24; ++i) salvia_cv1k_probe[i] = 0;
         }
     }
 #endif

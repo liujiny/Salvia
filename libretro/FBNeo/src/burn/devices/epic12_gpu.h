@@ -88,6 +88,14 @@ static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHE
 	// Small batches cost more to transfer than to rasterize. Also retain an
 	// exact CPU replay if allocation, shader validation or readback fails.
 	bool rendered=false;
+#if SALVIA_CV1K_PROBE
+	// The blitter job is timed as one number by the worker. Split it by path
+	// so a window can weigh Xenos batches against CPU replay. The first batch
+	// of a session compiles shaders and runs the pixel self-test, so it is
+	// excluded until the compositor is validated.
+	bool probeSteady=epic12_xenos_validated;
+	unsigned long long probeStart=salvia_cv1k_tick();
+#endif
 	if (epic12_gpu_pixels < 8192) {
 		++epic12_gpu_flush_small_cpu;
 	} else if (epic12_gpu_render(epic12_gpu_commands, epic12_gpu_count, epic12_gpu_bounds)) {
@@ -100,6 +108,23 @@ static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHE
 		for (int i = 0; i < epic12_gpu_count; ++i) epic12_gpu_replay(epic12_gpu_commands[i]);
 		epic12_device_blit_delay = delay;
 	}
+#if SALVIA_CV1K_PROBE
+	if (probeStart) {
+		unsigned long long probeEnd=salvia_cv1k_tick();
+		if (probeEnd) {
+			unsigned long long ticks=probeEnd-probeStart;
+			if (rendered) {
+				if (probeSteady) {
+					salvia_cv1k_probe[14]+=ticks; ++salvia_cv1k_probe[15];
+					salvia_cv1k_probe[19]+=epic12_gpu_pixels;
+				}
+			} else {
+				salvia_cv1k_probe[16]+=ticks; ++salvia_cv1k_probe[17];
+				salvia_cv1k_probe[18]+=epic12_gpu_pixels;
+			}
+		}
+	}
+#endif
 	epic12_gpu_invalidate(epic12_gpu_bounds);
 	epic12_gpu_count = 0;
 	epic12_gpu_pixels = 0;

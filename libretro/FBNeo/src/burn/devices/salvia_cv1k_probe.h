@@ -13,11 +13,16 @@
 // [13] post-entry ticks (service dispatch, cycle accounting), both over the
 // same 1-in-64 sample as the block entry, so the three spans can be compared
 // with the whole drc_dispatch phase and the unattributed remainder shows up.
+// [14]/[15] Xenos-path ticks/batches and [19] their submitted pixels,
+// [16]/[17] CPU-replay ticks/batches and [18] their pixels. worker_busy times
+// the whole blitter job, but only the Xenos batches were sampled before this,
+// so the replay half of the job had no measurement at all. The first Xenos
+// batch of a session (shader compile and pixel self-test) is excluded.
 // The clock helper is defined beside the counters in epic12.cpp: the SH4 core
 // defines an opcode function named FLOAT, which the XDK's windef.h typedef
 // would collide with, so this header must not pull in <xtl.h>.
 extern "C" {
-	extern unsigned long long salvia_cv1k_probe[16];
+	extern unsigned long long salvia_cv1k_probe[24];
 	extern unsigned long long salvia_cv1k_tick(void);
 }
 #else
