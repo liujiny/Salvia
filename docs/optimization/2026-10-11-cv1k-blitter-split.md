@@ -134,6 +134,97 @@ Protocol, `mmpork`, no input, pause three or four times:
    why the large batches flush at all (`flushes region` /
    `flushes source_dependency`).
 
+## Console result
+
+`Distro360/blitter-split.log`: mmpork, no input, four pause windows of 206,
+1671, 1838 and 996 frames. The 206-frame window is the first one and is left
+out -- its Xenos half is 100 batches in 126.6 ms (1.27 ms per batch, i.e. the
+session's shader compile and the pixel self-test) and its replay half is 2
+batches.
+
+### Parity
+
+`6d8f2769` changes no behaviour, so this image and the `mmpork-prof` baseline
+have to measure the same thing, and they do: the worker job came out at 25.28 /
+25.49 / 25.87 ms against the baseline's 26.29 / 26.17 / 22.19 / 26.77 ms, and
+`worker_wait` at 12.19-13.27 ms against 13.51-14.78 ms. The baseline's own four
+windows spread over 4.6 ms, so a one-millisecond difference between the two
+images is the run rather than the probe. The A/B's value is that the split
+below can be attributed: the two images behave as one.
+
+| window | jobs | worker_busy ms | ms/job | worker_wait avg / peak | cpu_io | draw_sync | core_frame_ms |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1671 | 1671 | 42246.387 | 25.28 | 13.271 / 18.807 | 13.429 | 13.144 | 26.725 |
+| 1838 | 1836 | 46799.480 | 25.49 | 13.271 / 20.650 | 12.537 | 14.881 | 27.588 |
+| 996 | 996 | 25765.543 | 25.87 | 12.185 / 20.650 | 17.750 | 11.350 | 29.234 |
+| 1570 | 1570 | 41269.522 | 26.29 | 14.576 / 20.369 | 12.239 | 14.912 | 27.302 |
+| 945 | 945 | 24735.485 | 26.17 | 14.782 / 23.192 | 13.377 | 15.597 | 29.137 |
+| 552 | 516 | 11449.872 | 22.19 | 14.267 / 23.192 | 10.421 | 11.425 | 21.976 |
+| 723 | 723 | 19352.247 | 26.77 | 13.505 / 23.698 | 15.749 | 11.276 | 27.210 |
+
+The first three rows are `blitter-split`, the last four the `mmpork-prof`
+baseline.
+
+### Where the job goes
+
+| window | gpu ms | batches | pixels | replay ms | batches | pixels |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1671 | 25794.676 | 15464 | 887.22 M | 4997.066 | 231777 | 190.96 M |
+| 1838 | 24044.812 | 13863 | 814.77 M | 8665.128 | 420537 | 332.73 M |
+| 996 | 15353.389 | 12370 | 446.39 M | 2747.476 | 121740 | 97.51 M |
+
+Per frame, i.e. divided by the window's job count:
+
+| window | gpu ms | batches | px/batch | ms/batch | replay ms | batches | px/batch | us/batch | ns/px | remainder ms |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1671 | 15.44 | 9.25 | 57374 | 1.67 | 2.99 | 138.7 | 824 | 21.6 | 26.2 | 6.85 |
+| 1838 | 13.10 | 7.55 | 58773 | 1.74 | 4.72 | 229.1 | 791 | 20.6 | 26.1 | 7.67 |
+| 996 | 15.42 | 12.42 | 36085 | 1.24 | 2.76 | 122.2 | 801 | 22.6 | 28.2 | 7.69 |
+
+`remainder` is `worker_busy - gpu - replay`: the display-list walk and the
+command construction that never reaches `epic12_gpu_flush()`, with all three
+terms inside the same timed job.
+
+The Xenos cost per batch is confirmed independently by the `batch_timing` line
+of the same window (`position=later`, 235 samples):
+
+| lock | source_upload | plan | input_upload | submit | readback_wait | untile_mask | total |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0.001 | 0.375 | 0.074 | 0.406 | 0.176 | 0.190 | 0.416 | 1.638 ms |
+
+Two facts came out of this that change the plan:
+
+1. **The two paths are at the crossover.** CPU replay works out at 26 ns per
+   pixel of marginal cost (each replayed batch is 824 pixels, 21.6 us, and every
+   one of them also pays its own clock pair). A Xenos batch pays about 1.64 ms
+   before its first pixel, so it takes ~63k pixels to break even, and mmpork's
+   Xenos batches are 36-59k pixels. Neither path is obviously wrong for those
+   batches, which means the 8192-pixel threshold is not misrouting them: the
+   split point already sits near the crossover and moving it is worth 1-2 ms per
+   frame at most. What costs is the mixture -- 9.25 Xenos batches per frame at
+   1.67 ms each.
+2. **Only 18.4 of the 25.3 ms are the two raster paths.** The other 6.9 ms is
+   the walk and the command construction around them, over ~148 flushes per
+   frame. `region=134445` and `source_dependency=68526` are session totals and
+   account for ~121 of those 148, so the two named flush reasons are the shape
+   of the traffic rather than an anomaly.
+
+### Frame shape and the target
+
+The main thread's `cpu_io` (12.5-13.4 ms in the two long windows) runs
+concurrently with the worker job and then waits: the frame is `cpu_io +
+draw_sync`, 26.7-29.2 ms, i.e. 34-37 fps. A 16.67 ms frame can afford about
+3 ms of `draw_sync`, so the job has to come down to ~16 ms, which is ~9 ms out
+of the current 25.3, and the floor underneath it is `cpu_io` itself. That floor
+is not a constant: the 996-frame window ran `cpu_io` at 17.75 ms, so even a
+`draw_sync`-free frame would be a 55-60 fps frame there. The room is in the
+6.9 ms remainder and the 15.4 ms of Xenos batches, not in the 3.0 ms of replay.
+
+Health is clean in every window: `present_state fallbacks=0 timeouts=0`,
+`gpu_fallback=0`, `drc_work_arena recycles=0 evictions=0` with `peak_words`
+2.49-3.12 M against the ddpdfk baseline's 4.57 M, and `drc_work_dispatch
+rebuilds` 30-40. Nothing here is a fallback or a stall; it is work.
+
 ## Limits
 
 - Each accumulator includes its own `QueryPerformanceCounter` read (~30-50 ns),
