@@ -83,6 +83,34 @@ the one the host hashes have always come from, and the switch's own route is
 verified by construction rather than by hash because `mmpork`'s state does not
 boot to a picture on the host.
 
+## Console image
+
+Diagnostics flavor only, as the iteration rule requires:
+
+```
+salvia-tests/xex-build/build-xex.sh --tag blit-crossover --baseline 6d8f2769 --flavor diag
+```
+
+`b5dd53ba`, 34,635,776 bytes, sha256
+`429a5c246452f821da220fa845cf6b823749d62b24ad6d5d7377b5631ae7b4eb`, archived as
+`xex-archive/fbneo-20261011-1409-blit-crossover-diag.xex` and handed off as
+`Distro360/fbneo-blit-crossover-diag.xex`. That is one image rather than two
+because the two variants this round compares are two DIP settings of the same
+bytes, which is the point of moving the split point onto a switch.
+
+The build stamped `blit-crossover b5dd53ba 20261011-1404 diag` into
+`salvia_cv1k_buildtag.h`, so the pause report names this image, and the freshly
+built runtime `libretro.lib` contains both `replay_buckets` and `GPU Blit
+Threshold` -- which is the evidence that the new code was compiled rather than
+relinked from the previous objects. Both `.cpp` files were touched after the
+header edits for exactly that reason.
+
+`Distro360/` now holds only that image. The previous round's
+`fbneo-blitter-split-diag.xex` (the image the console result above came from),
+`fbneo-mmpork-prof-diag.xex` and the `fbneo.xex` / `fbneo-diag.xex` duplicates
+the build script writes moved to `xex-archive/distro360-20261011/`; nothing was
+deleted, so either can be restored if this image misbehaves on the console.
+
 ## Console protocol
 
 One image, one session, no input: pause three or four times with the default
