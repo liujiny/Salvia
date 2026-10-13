@@ -219,11 +219,28 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	rectangle dest(c.x,c.x+c.w-1,c.y,c.y+c.h-1);
 	// In-place copies depend on the original per-pixel write order.
 	if (epic12_gpu_intersects(c.sx,c.sy,c.w,c.h,dest)) return false;
-	unsigned newPages=0;
-	for (int py=c.sy/128;py<=(c.sy+c.h-1)/128;++py)
-		for (int px=c.sx/128;px<=(c.sx+c.w-1)/128;++px)
-			if (!epic12_gpu_source_pages[py*64+px]) ++newPages;
-	if (epic12_gpu_source_count+newPages>epic12_gpu_batch_page_capacity())
+	const int py0 = c.sy >> 7, py1 = (c.sy + c.h - 1) >> 7;
+	const int px0 = c.sx >> 7, px1 = (c.sx + c.w - 1) >> 7;
+	unsigned newPages = 0;
+	int newPageList[32];
+	if (py0 == py1 && px0 == px1) {
+		const int page = (py0 << 6) | px0;
+		if (!epic12_gpu_source_pages[page]) {
+			newPageList[0] = page;
+			newPages = 1;
+		}
+	} else {
+		for (int py = py0; py <= py1; ++py) {
+			const int row = py << 6;
+			for (int px = px0; px <= px1; ++px) {
+				const int page = row | px;
+				if (!epic12_gpu_source_pages[page]) {
+					newPageList[newPages++] = page;
+				}
+			}
+		}
+	}
+	if (epic12_gpu_source_count + newPages > epic12_gpu_batch_page_capacity())
 		epic12_gpu_flush(EPIC12_GPU_FLUSH_SOURCE_PAGES);
 	if (epic12_gpu_count) {
 		rectangle merged = epic12_gpu_bounds;
@@ -240,12 +257,30 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 		else
 			epic12_gpu_bounds = merged;
 	}
-	if (!epic12_gpu_count) epic12_gpu_bounds = dest;
-	for (int py=c.sy/128;py<=(c.sy+c.h-1)/128;++py)
-		for (int px=c.sx/128;px<=(c.sx+c.w-1)/128;++px) {
-			int page=py*64+px;
-			if (!epic12_gpu_source_pages[page]) { epic12_gpu_source_pages[page]=true; ++epic12_gpu_source_count; }
+	if (!epic12_gpu_count) {
+		epic12_gpu_bounds = dest;
+		if (py0 == py1 && px0 == px1) {
+			const int page = (py0 << 6) | px0;
+			epic12_gpu_source_pages[page] = true;
+			epic12_gpu_source_count = 1;
+		} else {
+			for (int py = py0; py <= py1; ++py) {
+				const int row = py << 6;
+				for (int px = px0; px <= px1; ++px) {
+					const int page = row | px;
+					if (!epic12_gpu_source_pages[page]) {
+						epic12_gpu_source_pages[page] = true;
+						++epic12_gpu_source_count;
+					}
+				}
+			}
 		}
+	} else {
+		for (unsigned i = 0; i < newPages; ++i) {
+			epic12_gpu_source_pages[newPageList[i]] = true;
+		}
+		epic12_gpu_source_count += newPages;
+	}
 	epic12_gpu_commands[epic12_gpu_count++] = c;
 	epic12_gpu_pixels += c.w * c.h;
 	epic12_device_blit_delay += c.w * c.h;
