@@ -113,7 +113,96 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 		}
 		UINT32 *out = m_bitmaps + (dst_y_start + y) * 0x2000 + dst_x_start + x0;
 		const UINT32 *in = gfx + (((src_y + yf * y) & 0x0fff) * 0x2000) + src_x + (FlipX ? -x0 : x0);
-		for (int x = x0; x < x1; x++, out++, in += FlipX ? -1 : 1) {
+		const bool same_row = (gfx == m_bitmaps) && (((src_y + yf * y) & 0x0fff) == (dst_y_start + y));
+		int x = x0;
+		if (!same_row && Transparent) {
+			for (; x + 1 < x1; x += 2) {
+				UINT32 pen0 = *in;
+				UINT32 pen1 = in[FlipX ? -1 : 1];
+				if (!((pen0 | pen1) & 0x20000000)) {
+					out += 2;
+					in += FlipX ? -2 : 2;
+					continue;
+				}
+				if ((pen0 & pen1) & 0x20000000) {
+					UINT32 s0 = red[(pen0 >> 19) & 31] |
+					           green[(pen0 >> 11) & 31] |
+					           blue[(pen0 >> 3) & 31];
+					UINT32 s1 = red[(pen1 >> 19) & 31] |
+					           green[(pen1 >> 11) & 31] |
+					           blue[(pen1 >> 3) & 31];
+					UINT32 d0 = out[0];
+					UINT32 d1 = out[1];
+					if (FullDestination) {
+						d0 &= 0x00f8f8f8;
+						d1 &= 0x00f8f8f8;
+					} else {
+						d0 = dred[(d0 >> 19) & 31] |
+						     dgreen[(d0 >> 11) & 31] |
+						     dblue[(d0 >> 3) & 31];
+						d1 = dred[(d1 >> 19) & 31] |
+						     dgreen[(d1 >> 11) & 31] |
+						     dblue[(d1 >> 3) & 31];
+					}
+					out[0] = epic12_packed_add(s0, d0) | 0x20000000;
+					out[1] = epic12_packed_add(s1, d1) | 0x20000000;
+				} else {
+					if (pen0 & 0x20000000) {
+						UINT32 s0 = red[(pen0 >> 19) & 31] |
+						           green[(pen0 >> 11) & 31] |
+						           blue[(pen0 >> 3) & 31];
+						UINT32 d0 = out[0];
+						if (FullDestination) d0 &= 0x00f8f8f8;
+						else d0 = dred[(d0 >> 19) & 31] |
+						         dgreen[(d0 >> 11) & 31] |
+						         dblue[(d0 >> 3) & 31];
+						out[0] = epic12_packed_add(s0, d0) | 0x20000000;
+					}
+					if (pen1 & 0x20000000) {
+						UINT32 s1 = red[(pen1 >> 19) & 31] |
+						           green[(pen1 >> 11) & 31] |
+						           blue[(pen1 >> 3) & 31];
+						UINT32 d1 = out[1];
+						if (FullDestination) d1 &= 0x00f8f8f8;
+						else d1 = dred[(d1 >> 19) & 31] |
+						         dgreen[(d1 >> 11) & 31] |
+						         dblue[(d1 >> 3) & 31];
+						out[1] = epic12_packed_add(s1, d1) | 0x20000000;
+					}
+				}
+				out += 2;
+				in += FlipX ? -2 : 2;
+			}
+		} else if (!same_row) {
+			for (; x + 1 < x1; x += 2) {
+				UINT32 pen0 = *in;
+				UINT32 pen1 = in[FlipX ? -1 : 1];
+				UINT32 s0 = red[(pen0 >> 19) & 31] |
+				           green[(pen0 >> 11) & 31] |
+				           blue[(pen0 >> 3) & 31];
+				UINT32 s1 = red[(pen1 >> 19) & 31] |
+				           green[(pen1 >> 11) & 31] |
+				           blue[(pen1 >> 3) & 31];
+				UINT32 d0 = out[0];
+				UINT32 d1 = out[1];
+				if (FullDestination) {
+					d0 &= 0x00f8f8f8;
+					d1 &= 0x00f8f8f8;
+				} else {
+					d0 = dred[(d0 >> 19) & 31] |
+					     dgreen[(d0 >> 11) & 31] |
+					     dblue[(d0 >> 3) & 31];
+					d1 = dred[(d1 >> 19) & 31] |
+					     dgreen[(d1 >> 11) & 31] |
+					     dblue[(d1 >> 3) & 31];
+				}
+				out[0] = epic12_packed_add(s0, d0) | (pen0 & 0x20000000);
+				out[1] = epic12_packed_add(s1, d1) | (pen1 & 0x20000000);
+				out += 2;
+				in += FlipX ? -2 : 2;
+			}
+		}
+		for (; x < x1; x++, out++, in += FlipX ? -1 : 1) {
 			UINT32 pen = *in;
 			if (Transparent && !(pen & 0x20000000)) continue;
 			UINT32 s = red[(pen >> 19) & 31] |
