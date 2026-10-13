@@ -70,6 +70,18 @@ All six test suites passed 100% on both host and PPC big-endian emulation:
 6. `libretro/FBNeo/tests/sh3_ppc/run.py`:
    - `PASS 846026 cases compiled 727804 fallback 118222`
 
+## Console image
+
+Diagnostics flavor only, as the iteration rule requires.
+Built with `build-xex.sh --tag blend-fixed-opt --baseline 2886a69f --flavor diag`:
+- Build tag: `blend-fixed-opt 46eb6d35 20261013-2226 diag`
+- Size: `34,635,776` bytes
+- SHA256: `6daa65e68544859d823770a28670a15d33b8002c760e0311133470b32aaa7a68`
+- Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261013-2239-blend-fixed-opt-diag.xex`
+- Deployed to `Distro360/`: exactly the A/B pair:
+  - Candidate: `Distro360/fbneo-blend-fixed-opt-diag.xex` (`6daa65e68544859d823770a28670a15d33b8002c760e0311133470b32aaa7a68`)
+  - Baseline: `Distro360/fbneo-blit-exec-split-diag.xex` (`d9c5397b4fc2be8873163fee6febbb7129ced06d4599ed24a8b02046d5aa3df4`)
+
 ## Limits
 
 - Console frame rate must be verified on Xbox 360 hardware with `Distro360/cv1000-gpu.log`.
@@ -78,3 +90,4 @@ All six test suites passed 100% on both host and PPC big-endian emulation:
 ## Revert
 
 Revert commit with `git revert <sha>` to restore original `epic12_fast_blit.h` and delete this document.
+
