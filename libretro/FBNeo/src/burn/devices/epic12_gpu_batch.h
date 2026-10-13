@@ -23,6 +23,17 @@ static bool epic12_gpu_feedback(const Epic12GpuCommand &c)
 		(epic12_gpu_dest_alpha(c) != 0 && epic12_gpu_dest_alpha(c) != 31));
 }
 
+// Blend classification helper for reorder lookahead: 0 = plain, 1 = additive, 2 = feedback.
+static inline int epic12_gpu_command_blend_type(const Epic12GpuCommand &c)
+{
+	if (!c.blend) return 0;
+	int dm = epic12_gpu_dest_mode(c);
+	int da = epic12_gpu_dest_alpha(c);
+	if (dm == 0 && da == 31) return 1;
+	if (dm != 0 || (da != 0 && da != 31)) return 2;
+	return 0;
+}
+
 // Source atlas contents are immutable for a batch. Two commands therefore
 // commute when their destination rectangles are disjoint, including all RGB
 // and alpha writes and destination-dependent blending. Pull the nearest safe
@@ -34,29 +45,32 @@ static bool epic12_gpu_feedback(const Epic12GpuCommand &c)
 static unsigned epic12_gpu_reorder(const Epic12GpuCommand *input, int count,
 	Epic12GpuCommand *output)
 {
-	if(input!=output) for(int i=0;i<count;++i) output[i]=input[i];
-	unsigned moved=0;
-	for(int pos=1;pos<count;++pos) {
-		const Epic12GpuCommand &previous=output[pos-1];
-		int want=epic12_gpu_feedback(previous)?2:(epic12_gpu_additive(previous)?1:0);
-		const Epic12GpuCommand &current=output[pos];
-		int currentType=epic12_gpu_feedback(current)?2:(epic12_gpu_additive(current)?1:0);
-		if(currentType==want) continue;
-		int limit=pos+8; if(limit>count) limit=count;
-		for(int candidate=pos+1;candidate<limit;++candidate) {
-			const Epic12GpuCommand &c=output[candidate];
-			int type=epic12_gpu_feedback(c)?2:(epic12_gpu_additive(c)?1:0);
-			if(type!=want) continue;
-			rectangle dest(c.x,c.x+c.w-1,c.y,c.y+c.h-1);
-			bool overlap=false;
-			for(int i=pos;i<candidate;++i) {
-				const Epic12GpuCommand &p=output[i];
-				if(epic12_gpu_intersects(p.x,p.y,p.w,p.h,dest)) {overlap=true;break;}
+	if (input != output) {
+		memcpy(output, input, count * sizeof(Epic12GpuCommand));
+	}
+	unsigned moved = 0;
+	for (int pos = 1; pos < count; ++pos) {
+		const Epic12GpuCommand &previous = output[pos - 1];
+		int want = epic12_gpu_command_blend_type(previous);
+		const Epic12GpuCommand &current = output[pos];
+		int currentType = epic12_gpu_command_blend_type(current);
+		if (currentType == want) continue;
+		int limit = pos + 8; if (limit > count) limit = count;
+		for (int candidate = pos + 1; candidate < limit; ++candidate) {
+			const Epic12GpuCommand &c = output[candidate];
+			int type = epic12_gpu_command_blend_type(c);
+			if (type != want) continue;
+			rectangle dest(c.x, c.x + c.w - 1, c.y, c.y + c.h - 1);
+			bool overlap = false;
+			for (int i = pos; i < candidate; ++i) {
+				const Epic12GpuCommand &p = output[i];
+				if (epic12_gpu_intersects(p.x, p.y, p.w, p.h, dest)) { overlap = true; break; }
 			}
-			if(overlap) continue;
-			Epic12GpuCommand saved=c;
-			for(int i=candidate;i>pos;--i) output[i]=output[i-1];
-			output[pos]=saved; ++moved;
+			if (overlap) continue;
+			Epic12GpuCommand saved = c;
+			memmove(&output[pos + 1], &output[pos], (candidate - pos) * sizeof(Epic12GpuCommand));
+			output[pos] = saved;
+			++moved;
 			break;
 		}
 	}
@@ -92,6 +106,7 @@ static int epic12_gpu_group_end(const Epic12GpuCommand *cmd, int first, int coun
 {
 	const Epic12GpuCommand &head = cmd[first];
 	bool feedback = epic12_gpu_feedback(head);
+	bool headAdditive = attributes ? epic12_gpu_additive(head) : false;
 	snapshot = epic12_gpu_resolve_rect(head, bounds);
 	unsigned area = epic12_gpu_rect_area(snapshot);
 	int end = first + 1;
@@ -100,7 +115,7 @@ static int epic12_gpu_group_end(const Epic12GpuCommand *cmd, int first, int coun
 		if (attributes) {
 			// Tint, alpha and transparency travel with each rectangle. Only
 			// hardware blend state and destination-read dependencies split it.
-			if (epic12_gpu_additive(head) != epic12_gpu_additive(c) ||
+			if (headAdditive != epic12_gpu_additive(c) ||
 				feedback != epic12_gpu_feedback(c)) break;
 		} else if (!epic12_gpu_same_state(head, c)) break;
 		if (!feedback) continue;
@@ -201,17 +216,20 @@ static int epic12_gpu_vertices(const Epic12GpuCommand &c, const rectangle &bound
 		epic12_gpu_dest_mode(c), epic12_gpu_dest_alpha(c));
 	for (int sy = c.sy; sy < c.sy + c.h;) {
 		int ey = ((sy >> 7) + 1) * 128; if (ey > c.sy + c.h) ey = c.sy + c.h;
+		int slot_row = (sy >> 7) * 64;
+		int dy = c.y + (c.flipy ? c.h - (ey - c.sy) : sy - c.sy) - bounds.min_y;
+		int h_span = ey - sy;
 		for (int sx = c.sx; sx < c.sx + c.w;) {
 			int ex = ((sx >> 7) + 1) * 128; if (ex > c.sx + c.w) ex = c.sx + c.w;
-			int slot = slots[(sy >> 7) * 64 + (sx >> 7)];
+			int slot = slots[slot_row + (sx >> 7)];
 			int u0 = (slot & 15) * 128 + (sx & 127), u1 = u0 + ex - sx;
-			int v0 = (slot >> 4) * 128 + (sy & 127), v1 = v0 + ey - sy;
+			int v0 = (slot >> 4) * 128 + (sy & 127), v1 = v0 + h_span;
 			int dx = c.x + (c.flipx ? c.w - (ex - c.sx) : sx - c.sx) - bounds.min_x;
-			int dy = c.y + (c.flipy ? c.h - (ey - c.sy) : sy - c.sy) - bounds.min_y;
+			int w_span = ex - sx;
 			Epic12GpuVertex v[3] = {
 				{(UINT16)dx, (UINT16)dy, (UINT16)(c.flipx ? u1 : u0), (UINT16)(c.flipy ? v1 : v0), tint, mode},
-				{(UINT16)(dx + ex - sx), (UINT16)dy, (UINT16)(c.flipx ? u0 : u1), (UINT16)(c.flipy ? v1 : v0), tint, mode},
-				{(UINT16)dx, (UINT16)(dy + ey - sy), (UINT16)(c.flipx ? u1 : u0), (UINT16)(c.flipy ? v0 : v1), tint, mode}};
+				{(UINT16)(dx + w_span), (UINT16)dy, (UINT16)(c.flipx ? u0 : u1), (UINT16)(c.flipy ? v1 : v0), tint, mode},
+				{(UINT16)dx, (UINT16)(dy + h_span), (UINT16)(c.flipx ? u1 : u0), (UINT16)(c.flipy ? v0 : v1), tint, mode}};
 			out[n++] = v[0]; out[n++] = v[1]; out[n++] = v[2];
 			sx = ex;
 		}
