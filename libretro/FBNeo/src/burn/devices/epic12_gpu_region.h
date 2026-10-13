@@ -69,6 +69,16 @@ static void epic12_gpu_copy_rows(void *destination, size_t dstPitch,
 			// 16-byte boundary, 16 bytes read from anywhere, and the load
 			// covers exactly the bytes the store writes, so neither side ever
 			// leaves [0,width) of the row.
+			for (; x + 63 < body; x += 64) {
+				__vector4 v0 = __loadunalignedvector((const unsigned int*)(in + x));
+				__vector4 v1 = __loadunalignedvector((const unsigned int*)(in + x + 16));
+				__vector4 v2 = __loadunalignedvector((const unsigned int*)(in + x + 32));
+				__vector4 v3 = __loadunalignedvector((const unsigned int*)(in + x + 48));
+				__stvx_volatile(v0, out + x, 0);
+				__stvx_volatile(v1, out + x + 16, 0);
+				__stvx_volatile(v2, out + x + 32, 0);
+				__stvx_volatile(v3, out + x + 48, 0);
+			}
 			for (; x < body; x += 16)
 				__stvx_volatile(__loadunalignedvector((const unsigned int*)(in + x)), out + x, 0);
 			// A row that is not a whole number of vectors ends in plain bytes.
