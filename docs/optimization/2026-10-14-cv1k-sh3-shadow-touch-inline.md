@@ -44,6 +44,20 @@ From `Distro360/cv1000-gpu.log` (steady state, 497-frame window in `mmpork`):
 5. `libretro/FBNeo/tests/epic12_gpu_tile_alpha/run.py`:
    - `PASS fused tile/alpha: 1152 pages, 18874368 pixels` (Host + PPC)
 
+## Build and Distro360 Handoff
+
+Diagnostics XEX 构建完成并归档：
+- **Tag**: `sh3-shadow-touch 0df2179b 20261014-0019 diag`
+- **Candidate Image**: `Distro360/fbneo-sh3-shadow-touch-diag.xex`
+  - 大小: `34,635,776` 字节
+  - SHA256: `5ca139723aa7588561b66d10a5702b71a29d803f61cbb4d21e01f8919b02f645`
+  - 归档: `salvia-tests/xex-archive/fbneo-20261014-0019-sh3-shadow-touch-diag.xex`
+- **Baseline Image**: `Distro360/fbneo-batch-reorder-opt-diag.xex`
+  - 大小: `34,635,776` 字节
+  - SHA256: `4df47aed707ee5bd81ce8edc27fb8b5aa56d49010c85f207d6b7668bfc73f2ef`
+- **Distro360 状态**: 严格只保留上述对比 A/B 对，无任何重复镜像。
+- **Xenia Canary 测试**: 使用本地 `E:\Xenia_Canary\xenia_canary.exe` 加载测试，验证启动正常。
+
 ## Limits
 
 - 预取命中对执行延迟的改善受缓存行命中状态影响，实际主核 CPU 时间收益需在 Xbox 360 实机运行时通过 `cv1000-gpu.log` 中的 `drc_dispatch` 确认。
@@ -51,3 +65,4 @@ From `Distro360/cv1000-gpu.log` (steady state, 497-frame window in `mmpork`):
 ## Revert
 
 `git revert <sha>` 恢复原 `sh3_drc_ppc.h` 和 `sh3_drc_dispatch.h` 并删除本报告。
+
