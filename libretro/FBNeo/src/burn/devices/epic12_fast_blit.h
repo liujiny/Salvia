@@ -4,15 +4,49 @@
 #ifndef FBNEO_EPIC12_FAST_BLIT_H
 #define FBNEO_EPIC12_FAST_BLIT_H
 
+#if defined(_XBOX)
+#include <ppcintrinsics.h>
+#elif !defined(__dcbt)
+#if defined(__powerpc__) && defined(__GNUC__)
+static inline void __dcbt_impl(int offset, const void *ptr) {
+	__asm__ volatile("dcbt %0, %1" : : "r"(offset), "r"(ptr) : "memory");
+}
+#define __dcbt(offset, ptr) __dcbt_impl(offset, ptr)
+#else
+#define __dcbt(offset, ptr) do { (void)(offset); (void)(ptr); } while(0)
+#endif
+#endif
+
 static UINT8 epic12_source_scale[64][32][32];
+static UINT32 epic12_source_scale_r[64][32][32];
+static UINT32 epic12_source_scale_g[64][32][32];
+static UINT32 epic12_source_scale_b[64][32][32];
+
+static UINT32 epic12_dest_scale_r[32][32];
+static UINT32 epic12_dest_scale_g[32][32];
+static UINT32 epic12_dest_scale_b[32][32];
 
 static void epic12_init_blend_tables()
 {
-	for (int tint = 0; tint < 64; tint++)
-		for (int alpha = 0; alpha < 32; alpha++)
-			for (int c = 0; c < 32; c++)
-				epic12_source_scale[tint][alpha][c] =
-					epic12_device_colrtable[epic12_device_colrtable[c][tint]][alpha];
+	for (int tint = 0; tint < 64; tint++) {
+		for (int alpha = 0; alpha < 32; alpha++) {
+			for (int c = 0; c < 32; c++) {
+				UINT8 v = epic12_device_colrtable[epic12_device_colrtable[c][tint]][alpha];
+				epic12_source_scale[tint][alpha][c] = v;
+				epic12_source_scale_r[tint][alpha][c] = (UINT32)v << 19;
+				epic12_source_scale_g[tint][alpha][c] = (UINT32)v << 11;
+				epic12_source_scale_b[tint][alpha][c] = (UINT32)v << 3;
+			}
+		}
+	}
+	for (int alpha = 0; alpha < 32; alpha++) {
+		for (int c = 0; c < 32; c++) {
+			UINT8 v = epic12_device_colrtable[alpha][c];
+			epic12_dest_scale_r[alpha][c] = (UINT32)v << 19;
+			epic12_dest_scale_g[alpha][c] = (UINT32)v << 11;
+			epic12_dest_scale_b[alpha][c] = (UINT32)v << 3;
+		}
+	}
 }
 
 static inline UINT32 epic12_packed_add(UINT32 s, UINT32 d)
@@ -45,23 +79,52 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 	// charged once here rather than per pixel so the probe stays out of the
 	// inner loop it is measuring.
 	EPIC12_BLIT_PATH_CHARGE((y1 - y0) * (x1 - x0));
-	const UINT8 *red = epic12_source_scale[tint_clr->r][s_alpha];
-	const UINT8 *green = epic12_source_scale[tint_clr->g][s_alpha];
-	const UINT8 *blue = epic12_source_scale[tint_clr->b][s_alpha];
-	const UINT8 *dest = epic12_device_colrtable[d_alpha];
+	const UINT32 *red = epic12_source_scale_r[tint_clr->r][s_alpha];
+	const UINT32 *green = epic12_source_scale_g[tint_clr->g][s_alpha];
+	const UINT32 *blue = epic12_source_scale_b[tint_clr->b][s_alpha];
+	const UINT32 *dred = epic12_dest_scale_r[d_alpha];
+	const UINT32 *dgreen = epic12_dest_scale_g[d_alpha];
+	const UINT32 *dblue = epic12_dest_scale_b[d_alpha];
+	const int width_bytes = (x1 - x0) * (int)sizeof(UINT32);
+
+	const UINT32 *first_in = gfx + (((src_y + yf * y0) & 0x0fff) * 0x2000) + src_x + (FlipX ? -x0 : x0);
+	const UINT32 *first_out = m_bitmaps + (dst_y_start + y0) * 0x2000 + dst_x_start + x0;
+	for (int b = 0; b < width_bytes; b += 128) {
+		__dcbt(FlipX ? -b : b, first_in);
+		__dcbt(b, first_out);
+	}
+	if (width_bytes > 0) {
+		__dcbt(FlipX ? -(width_bytes - 1) : (width_bytes - 1), first_in);
+		__dcbt(width_bytes - 1, first_out);
+	}
+
 	for (int y = y0; y < y1; y++) {
+		if (y + 1 < y1) {
+			const UINT32 *next_in = gfx + (((src_y + yf * (y + 1)) & 0x0fff) * 0x2000) + src_x + (FlipX ? -x0 : x0);
+			const UINT32 *next_out = m_bitmaps + (dst_y_start + y + 1) * 0x2000 + dst_x_start + x0;
+			for (int b = 0; b < width_bytes; b += 128) {
+				__dcbt(FlipX ? -b : b, next_in);
+				__dcbt(b, next_out);
+			}
+			if (width_bytes > 0) {
+				__dcbt(FlipX ? -(width_bytes - 1) : (width_bytes - 1), next_in);
+				__dcbt(width_bytes - 1, next_out);
+			}
+		}
 		UINT32 *out = m_bitmaps + (dst_y_start + y) * 0x2000 + dst_x_start + x0;
 		const UINT32 *in = gfx + (((src_y + yf * y) & 0x0fff) * 0x2000) + src_x + (FlipX ? -x0 : x0);
 		for (int x = x0; x < x1; x++, out++, in += FlipX ? -1 : 1) {
 			UINT32 pen = *in;
 			if (Transparent && !(pen & 0x20000000)) continue;
-			UINT32 s = (red[(pen >> 19) & 31] << 19) |
-			           (green[(pen >> 11) & 31] << 11) | (blue[(pen >> 3) & 31] << 3);
+			UINT32 s = red[(pen >> 19) & 31] |
+			           green[(pen >> 11) & 31] |
+			           blue[(pen >> 3) & 31];
 			UINT32 d = *out;
 			if (FullDestination) d &= 0x00f8f8f8;
-			else d = (dest[(d >> 19) & 31] << 19) |
-			         (dest[(d >> 11) & 31] << 11) | (dest[(d >> 3) & 31] << 3);
-			*out = epic12_packed_add(s, d) | (pen & 0x20000000);
+			else d = dred[(d >> 19) & 31] |
+			         dgreen[(d >> 11) & 31] |
+			         dblue[(d >> 3) & 31];
+			*out = epic12_packed_add(s, d) | (Transparent ? 0x20000000 : (pen & 0x20000000));
 		}
 	}
 }
