@@ -57,6 +57,20 @@ From `Distro360/cv1000-gpu.log` (steady state, 497-frame window in `mmpork`):
 6. `libretro/FBNeo/tests/sh3_dispatch/run_inline.py`:
    - `PASS 8 host suites in optimized and ASan/UBSan modes`
 
+## Build and Distro360 Handoff
+
+Diagnostics XEX 构建完成并归档：
+- **Tag**: `batch-reorder-opt da4921d0 20261014-0004 diag`
+- **Candidate Image**: `Distro360/fbneo-batch-reorder-opt-diag.xex`
+  - 大小: `34,635,776` 字节
+  - SHA256: `4df47aed707ee5bd81ce8edc27fb8b5aa56d49010c85f207d6b7668bfc73f2ef`
+  - 归档: `salvia-tests/xex-archive/fbneo-20261014-0004-batch-reorder-opt-diag.xex`
+- **Baseline Image**: `Distro360/fbneo-tile-alpha-group-diag.xex`
+  - 大小: `34,635,776` 字节
+  - SHA256: `30e41114e4e0023df775bd3f3622230c875eadf4fde37920edc373c0d83f72a4`
+- **Distro360 状态**: 严格只保留上述对比 A/B 对，无任何重复镜像。
+- **Xenia Canary 测试**: 使用本地 `E:\Xenia_Canary\xenia_canary.exe` 加载测试，验证启动正常。
+
 ## Limits
 
 - 真实命令移动与规划延迟增益需通过 Xbox 360 实机运行时确认。
@@ -65,3 +79,4 @@ From `Distro360/cv1000-gpu.log` (steady state, 497-frame window in `mmpork`):
 ## Revert
 
 `git revert <sha>` 恢复原 `epic12_gpu_batch.h` 并删除本报告。
+
