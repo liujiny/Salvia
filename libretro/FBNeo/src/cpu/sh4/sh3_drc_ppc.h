@@ -138,14 +138,16 @@ struct Shadow {
 // 64-bit and does not model that line.
 typedef char ShadowIsOneCacheLine[(sizeof(void*) != 4 || sizeof(Shadow) == 128) ? 1 : -1];
 static Shadow *shadow;
-#ifdef _XBOX
-// dcbt r0,r3: the address is the first argument, which the 360's ABI passes in
-// r3, so a naked leaf is the whole prefetch. A hint that faults on nothing and
-// answers nothing; a wrong address would only fetch a line nobody reads.
-static __declspec(naked) void sh3_touch_line(const void *line)
+#if defined(_XBOX)
+// dcbt r0,r3: inline prefetch using the XDK compiler intrinsic, avoiding naked function call/blr overhead.
+static inline void sh3_touch_line(const void *line)
 {
- __emit(0x7c001a2c); // dcbt r0,r3
- __asm { blr }
+ __dcbt(0, line);
+}
+#elif defined(__GNUC__) && (defined(__powerpc__) || defined(__ppc__))
+static inline void sh3_touch_line(const void *line)
+{
+ __asm__ volatile ("dcbt 0, %0" : : "r"(line));
 }
 #endif
 // The generation of each arena sector: bumped every time the ring hands one

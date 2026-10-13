@@ -98,7 +98,7 @@ static inline void sh3_shadow_touch(const UINT32 pc)
 #if SALVIA_CV1K_SHADOW_TOUCH
  const unsigned index=((pc>>1)^(pc>>11)^(pc>>21))&(Sh3Ppc::CACHE_SETS-1);
  const char *line=(const char*)Sh3Ppc::shadow+((size_t)index*sizeof(Sh3Ppc::Shadow));
-#ifdef _XBOX
+#if defined(_XBOX) || (defined(__GNUC__) && (defined(__powerpc__) || defined(__ppc__)))
  Sh3Ppc::sh3_touch_line(line);
 #else
  // The host models no cache, so it only has to prove the address arithmetic
