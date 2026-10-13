@@ -82,6 +82,25 @@ Built with `build-xex.sh --tag blend-fixed-opt --baseline 2886a69f --flavor diag
   - Candidate: `Distro360/fbneo-blend-fixed-opt-diag.xex` (`6daa65e68544859d823770a28670a15d33b8002c760e0311133470b32aaa7a68`)
   - Baseline: `Distro360/fbneo-blit-exec-split-diag.xex` (`d9c5397b4fc2be8873163fee6febbb7129ced06d4599ed24a8b02046d5aa3df4`)
 
+## Console Result
+
+Tested on Xbox 360 hardware (`Distro360/cv1000-gpu.log`, window 497 frames in `mmpork`):
+
+| 指标 | Baseline (`blit-exec-split` 618 帧) | Candidate (`blend-fixed-opt` 497 帧) | 变化 |
+| :--- | :--- | :--- | :--- |
+| `game_and_ui` | **27.300 ms** | **24.912 ms** | **-2.39 ms (-8.7%)** |
+| `sampled_active_loop` | 27.804 ms | 27.361 ms | -0.44 ms |
+| `limiter` (空闲帧预算) | 0.001 ms (跑满掉帧) | **0.909 ms** (恢复余量) | **+0.91 ms** |
+| `soft` 单次调用耗时 | **0.0671 ms** (67.1 µs) | **0.0515 ms** (51.5 µs) | **-23.3% 提速** |
+| `replay` 每帧耗时 | 5.31 ms / 帧 | 5.00 ms / 帧 | -0.31 ms / 帧 |
+| `worker_wait` 峰值等待 | 20.657 ms | 19.189 ms | -1.47 ms |
+| `drc_dispatch` (SH3) | 9.73 ms / 帧 | 9.10 ms / 帧 | -0.63 ms / 帧 |
+
+实机数据显示：
+1. 预移位查表与行预取使 `soft` 软件光栅化单次调用平均耗时从 67.1 µs 下降至 51.5 µs（**单次耗时降低 23.3%**）。
+2. 前端主循环核心耗时 `game_and_ui` 显著降低 **2.39 ms / 帧**（从 27.30 ms 降至 24.91 ms）。
+3. 帧率限制器 `limiter` 从 0.001 ms 上升到 0.909 ms，意味着部分帧已不再处于完全跑满的掉帧状态，留出了空闲缓冲时间。
+
 ## Limits
 
 - Console frame rate must be verified on Xbox 360 hardware with `Distro360/cv1000-gpu.log`.
