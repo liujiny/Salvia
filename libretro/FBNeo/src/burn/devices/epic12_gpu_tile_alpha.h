@@ -30,33 +30,44 @@ static EPIC12_TILE_ALPHA_INLINE void epic12_gpu_tile_alpha_strip(unsigned char* 
  alpha0=vector.half(v0,v2,v4,v6);alpha1=vector.half(v1,v3,v5,v7);
 }
 
+template<int First>
+static EPIC12_TILE_ALPHA_INLINE void epic12_gpu_tile_alpha_group(
+ unsigned char* &destination,const uint32_t* source,int pitch,
+ Epic12GpuAlphaPage& alpha,int pageY,int word,const Epic12GpuAlphaVector& vector,
+ int group)
+{
+ const int base_y = group * 8;
+ __vector4 summary;
+ for(int p = 0; p < 4; ++p) {
+  int y = base_y + p * 2;
+#if defined(_XBOX)
+  if(y + 2 < 32) { __dcbt(0, source + (y + 2) * pitch); __dcbt(0, source + (y + 3) * pitch); }
+#endif
+  const uint32_t* row0 = source + y * pitch;
+  const uint32_t* row1 = row0 + pitch;
+  __vector4 a0, a1, b0, b1;
+  epic12_gpu_tile_alpha_strip(destination, row0 + First, row1 + First, vector, a0, a1);
+  epic12_gpu_tile_alpha_strip(destination + 128, row0 + (First ^ 16), row1 + (First ^ 16), vector, b0, b1);
+  __vector4 mask0, mask1;
+  if(First) { mask0 = __vperm(b0, a0, vector.pack); mask1 = __vperm(b1, a1, vector.pack); }
+  else { mask0 = __vperm(a0, b0, vector.pack); mask1 = __vperm(a1, b1, vector.pack); }
+  __stvewx(mask0, &alpha.rows[pageY + y][word], 0);
+  __stvewx(mask1, &alpha.rows[pageY + y + 1][word], 0);
+  __vector4 pair = __vor(mask0, mask1);
+  if(p == 0) summary = pair;
+  else summary = __vor(summary, pair);
+  destination += 256;
+ }
+ __stvewx(summary, &alpha.groups[(pageY + base_y) / 8][word], 0);
+}
+
 static void epic12_gpu_tile_alpha_block(unsigned char* destination,const uint32_t* source,
  int pitch,Epic12GpuAlphaPage& alpha,int pageY,int word,const Epic12GpuAlphaVector& vector)
 {
- __vector4 summary=vector.bit29; // overwritten at the first pair of each group
- for(int y=0;y<32;y+=2) {
-#if defined(_XBOX)
-  if(y+2<32) {__dcbt(0,source+(y+2)*pitch);__dcbt(0,source+(y+3)*pitch);}
-#endif
-  // The tiled permutation swaps the two 16-pixel halves every eight rows.
-  int first=(y&8)?16:0;
-  const uint32_t* row0=source+y*pitch;const uint32_t* row1=row0+pitch;
-  __vector4 a0,a1,b0,b1;
-  epic12_gpu_tile_alpha_strip(destination,row0+first,row1+first,vector,a0,a1);
-  epic12_gpu_tile_alpha_strip(destination+128,row0+(first^16),row1+(first^16),vector,b0,b1);
-  __vector4 mask0,mask1;
-  if(first) {mask0=__vperm(b0,a0,vector.pack);mask1=__vperm(b1,a1,vector.pack);}
-  else {mask0=__vperm(a0,b0,vector.pack);mask1=__vperm(a1,b1,vector.pack);}
-  __stvewx(mask0,&alpha.rows[pageY+y][word],0);
-  __stvewx(mask1,&alpha.rows[pageY+y+1][word],0);
-  __vector4 pair=__vor(mask0,mask1);
-  // XDK materializes __vector4 ternary operands on the stack. Explicit
-  // assignments keep this accumulator in a vector register across pairs.
-  if(y&7)summary=__vor(summary,pair);
-  else summary=pair;
-  if((y&7)==6)__stvewx(summary,&alpha.groups[(pageY+y)/8][word],0);
-  destination+=256;
- }
+ epic12_gpu_tile_alpha_group<0>(destination, source, pitch, alpha, pageY, word, vector, 0);
+ epic12_gpu_tile_alpha_group<16>(destination, source, pitch, alpha, pageY, word, vector, 1);
+ epic12_gpu_tile_alpha_group<0>(destination, source, pitch, alpha, pageY, word, vector, 2);
+ epic12_gpu_tile_alpha_group<16>(destination, source, pitch, alpha, pageY, word, vector, 3);
 }
 
 // False means no writes occurred; the caller can use its existing two passes.
