@@ -46,6 +46,20 @@ From `Distro360/cv1000-gpu.log` (steady state, 497 frames in `mmpork`):
 5. `libretro/FBNeo/tests/epic12_gpu_cache/run.py`:
    - `PASS: 12000 batches; fingerprint=21d3a8b4487bb152`
 
+## Build and Distro360 Handoff
+
+Diagnostics XEX 构建完成并归档：
+- **Tag**: `blend-fixed-unroll 6413a862 20261013-2326 diag`
+- **Candidate Image**: `Distro360/fbneo-blend-fixed-unroll-diag.xex`
+  - 大小: `34,635,776` 字节
+  - SHA256: `2a7d6e87c3432d6672b102acad78d5f7b9cfaf2b176b65579980d2825ce632ee`
+  - 归档: `salvia-tests/xex-archive/fbneo-20261013-2326-blend-fixed-unroll-diag.xex`
+- **Baseline Image**: `Distro360/fbneo-blend-fixed-opt-diag.xex`
+  - 大小: `34,635,776` 字节
+  - SHA256: `6daa65e68544859d823770a28670a15d33b8002c760e0311133470b32aaa7a68`
+- **Distro360 状态**: 严格只保留上述对比 A/B 对，无任何重复镜像。
+- **Xenia Canary 测试**: 使用本地 `E:\Xenia_Canary\xenia_canary.exe` 加载测试，正常启动并成功初始化 D3D12/Xenos 图形与音视频子系统。
+
 ## Limits
 
 - 真实批次耗时需在 Xbox 360 实机通过 `Distro360/cv1000-gpu.log` 确认。
