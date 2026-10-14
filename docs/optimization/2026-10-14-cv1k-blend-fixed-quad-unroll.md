@@ -40,3 +40,17 @@ In [`epic12_fast_blit.h`](file:///home/humor/src/Salvia/libretro/FBNeo/src/burn/
   - `PASS 6291456 component cases on unified and fast/feedback shaders, including additive saturation`
   - `PASS 14400 commands, full VRAM and delay comparison`
   - `PASS cache 128/256 slots, reordering, snapshot lookahead, and alpha clipping`.
+- **Xenia Canary Benchmark Verification**:
+  - Booted and completed 60-frame benchmark run in 14s.
+  - All 5 GPU self-tests passed cleanly: fused VMX transfer, VMX alpha mask, tiled atlas layout, fused atlas/alpha, and pixel self-test.
+
+## Build Identity and Handoff
+
+Diagnostics XEX built via `build-xex.sh --tag blend-fixed-quad-unroll --baseline a668a637 --flavor diag`:
+- **Tag**: `blend-fixed-quad-unroll 6fe906e6 20261014-2025 diag`
+- **Deployed Binary**: `Distro360/fbneo.xex`
+  - Size: `34,668,544` bytes
+  - SHA256: `8f030b3ad1aa232adbe722555c1402f3a4d7f344b07f5d2c9925ece76856bf04`
+- **Archived Binary**: `salvia-tests/xex-archive/fbneo-20261014-2029-blend-fixed-quad-unroll-diag.xex`
+- **Source Commit**: `6fe906e6`
+
