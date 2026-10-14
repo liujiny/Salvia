@@ -468,6 +468,31 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	const int py0 = sy >> 7, py1 = (sy + h - 1) >> 7;
 	const int px0 = sx >> 7, px1 = (sx + w - 1) >> 7;
 
+	// Direct CPU blit for off-screen staging buffers (x >= 512):
+	// Cave CV1000 games use off-screen VRAM (Zones 1 & 2, x >= 768) as scratchpads
+	// to composite multi-part sprites with a few tiny draws (<8,192 px) before
+	// blitting them onto the visible display (x < 320).
+	// Queuing them in the GPU pipeline causes 512-px span overflow and false
+	// RAW cross-read hazards, fragmenting on-screen batches and causing tens
+	// of thousands of pipeline flushes.
+	// Executing them directly on CPU takes microseconds, keeps the on-screen
+	// GPU batches intact, and invalidates the cached source page for subsequent
+	// on-screen GPU draws.
+	if (x >= 512) {
+		for (int b = 0; b < EPIC12_GPU_BINS; ++b) {
+			if (epic12_gpu_count[b] && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
+				epic12_gpu_flush_bin(b, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
+			}
+		}
+		Epic12GpuCommand c;
+		c.sx = sx; c.sy = sy; c.x = x; c.y = y; c.w = w; c.h = h;
+		c.flipx = !!flipx; c.flipy = !!flipy; c.transparent = !!transparent;
+		c.blend = !!blend; c.dmode = dmode; c.sa = s_alpha; c.da = d_alpha; c.tint = *tint_clr;
+		epic12_gpu_replay(c);
+		epic12_gpu_invalidate(dest);
+		return true;
+	}
+
 	// Fast path: if incoming command fits into the newest active bin, append directly in FIFO order.
 	int last_active = -1;
 	for (int b = EPIC12_GPU_BINS - 1; b >= 0; --b) {
