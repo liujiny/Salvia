@@ -166,13 +166,13 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   if(probeNow) probeT0=salvia_cv1k_tick();
 #endif
   UINT32 pc=m_pc, phys=pc&AM;
+  unsigned index=((pc>>1)^(pc>>11)^(pc>>21))&(CACHE_SETS-1);
   const UINT8 *page=MemMapF[phys>>SH3_SHIFT];
   if((uintptr_t)page<SH3_MAXHANDLER || (phys&1)) {
    if(Count) { ++sh3_drc_work.exit_fetch; sh3_drc_work.fallback.last_origin=SH3_FB_FETCH; }
    return false;
   }
   const UINT16 *source=(const UINT16*)(page+(phys&SH3_PAGEM));
-  unsigned index=((pc>>1)^(pc>>11)^(pc>>21))&(CACHE_SETS-1);
   // What the shared tail below needs, from whichever record answered: the
   // shadow copy if it can serve this entry, the table record otherwise.
   int (*entry)(Sh3PpcState*);
