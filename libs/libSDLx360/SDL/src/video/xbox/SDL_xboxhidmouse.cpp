@@ -32,6 +32,7 @@
 
 #include <xtl.h>
 #include <stdint.h>
+#include <stdio.h>
 
 /* =====================================================================
    Contrato compartido con el plugin.
@@ -96,14 +97,22 @@ static int             g_hasExt = 0;   /* el plugin publica deltas por raton */
  * imposible un falso positivo. */
 static HidMouseShared* LocateShared(void)
 {
+	MEMORY_BASIC_INFORMATION mbi;
+	memset(&mbi, 0, sizeof(mbi));
+	DWORD vq = VirtualQuery((LPCVOID)HIDMOUSE_PLUGIN_BASE, &mbi, sizeof(mbi));
+	if (vq == 0 || mbi.State != MEM_COMMIT) {
+		return 0;
+	}
+
 	volatile const uint32_t* p = (const uint32_t*)HIDMOUSE_PLUGIN_BASE;
 	const uint32_t words = HIDMOUSE_SCAN_BYTES / 4u;
 	uint32_t i;
 
 	__try {
 		for (i = 0; i + 1u < words; ++i) {
-			if (p[i] == HIDMOUSE_SHARED_MAGIC && p[i + 1u] == HIDMOUSE_SHARED_VERSION)
+			if (p[i] == HIDMOUSE_SHARED_MAGIC && p[i + 1u] == HIDMOUSE_SHARED_VERSION) {
 				return (HidMouseShared*)(void*)&p[i];
+			}
 		}
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 		/* fin de la imagen mapeada sin encontrar la firma -> plugin no cargado */

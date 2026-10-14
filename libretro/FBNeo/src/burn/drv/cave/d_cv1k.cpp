@@ -768,7 +768,12 @@ static INT32 DrvFrame()
 		epic12_set_blitterdelay((delay) ? ((delay - 1) + 50) : 0, speedhack_burn);
 		epic12_set_blitterthreading(DrvDips[1] & 1);
 		Sh3SetTimerGranularity(DrvDips[1] & 2);
-		Sh3SetDrc(!(DrvDips[3] & 0x10));
+		extern int g_benchmark_target_frames;
+		if (g_benchmark_target_frames > 0) {
+			Sh3SetDrc(0);
+		} else {
+			Sh3SetDrc(!(DrvDips[3] & 0x10));
+		}
 
 		// test stuff for el_rika
 		epic12_set_blitter_clipping_margin(!(DrvDips[2] & 0x40));

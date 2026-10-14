@@ -1,4 +1,4 @@
-﻿//Evita errores al usar el min o max de windows.h al incluir el filtro "io/xbrz/xbrz.h"
+//Evita errores al usar el min o max de windows.h al incluir el filtro "io/xbrz/xbrz.h"
 #define NOMINMAX 
 
 #include <string>
@@ -728,7 +728,7 @@ bool extractAndLoadGame(std::string rompath, bool tmpDelete = true){
 		unzipped.romsize       = 0;
 	} else {
 		detectContainer(rompath, isM3U, container);
-		const bool noUncompress = gameMenu->getCfgLoader()->getCfgEmu()->no_uncompress || container;
+		const bool noUncompress = info.block_extract || (gameMenu->getCfgLoader()->getCfgEmu() && gameMenu->getCfgLoader()->getCfgEmu()->no_uncompress) || container;
 		if (noUncompress){
 			LOG_DEBUG("Loading rom directly %s", rompath.c_str());
 			progress_loader.reset();

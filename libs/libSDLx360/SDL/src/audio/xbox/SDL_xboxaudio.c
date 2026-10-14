@@ -80,6 +80,8 @@ static SDL_AudioDevice *Audio_CreateDevice(int devindex)
 {
 	HRESULT result;
 	SDL_AudioDevice *this;
+	char tr[128];
+	UINT32 devCount;
 
 	/* Load DirectX */
 	if ( XboxDX_Load() < 0 ) {
@@ -113,21 +115,29 @@ static SDL_AudioDevice *Audio_CreateDevice(int devindex)
 
 	this->free = Audio_DeleteDevice;
 
-	// XAudio2 mezcla en el core 1 - thread 2
-	result = XAudio2Create(&sound, 0, XboxThread5 );
+	// XAudio2 mezcla
+	result = XAudio2Create(&sound, 0, XAUDIO2_DEFAULT_PROCESSOR );
 	if ( result != S_OK ) {
 		return(0);
 	}
 
 	/* Create a master voice */
-
 	result = IXAudio2_CreateMasteringVoice(sound, &masterVoice, XAUDIO2_DEFAULT_CHANNELS, XAUDIO2_DEFAULT_SAMPLERATE, 0, 0, NULL );
+	if ( result != S_OK ) {
+		result = IXAudio2_CreateMasteringVoice(sound, &masterVoice, 2, 48000, 0, 0, NULL );
+	}
+	if ( result != S_OK || masterVoice == NULL ) {
+		sound = NULL;
+		g_sound = NULL;
+		masterVoice = NULL;
+		Audio_DeleteDevice(this);
+		free(this);
+		return 0;
+	}
 
 	g_sound = sound;
 
 	mixbuf = NULL;
-
-
 
 	return this;
 }
@@ -278,12 +288,12 @@ static int XboxDX_OpenAudio(_THIS, SDL_AudioSpec *spec)
     int nAudAllocSegLen = nAudSegLen << 2;
     int cbLoopLen = (nAudSegLen * nAudSegCount) << 2;
 	HRESULT hr;
-
 	WAVEFORMATEX waveformat;
-
 	mixbuf = NULL;
-
-
+	if (!sound || !masterVoice) {
+		SDL_SetError("XboxDX: audio device not available");
+		return -1;
+	}
 
 	/* Set basic WAVE format parameters */
 	memset(&waveformat, 0, sizeof(waveformat));
@@ -322,10 +332,8 @@ static int XboxDX_OpenAudio(_THIS, SDL_AudioSpec *spec)
 	/* Create the audio buffer to which we write (XAudio2 source voice) */
 	NUM_BUFFERS = 4;
 
-	pAudioBuffers = (BYTE *)malloc(spec->size*NUM_BUFFERS);
-
 	hr = IXAudio2_CreateSourceVoice(sound, &mixbuf, &waveformat,
-                                         XAUDIO2_VOICE_USEFILTER,
+                                         0,
                                          XAUDIO2_DEFAULT_FREQ_RATIO,
                                          NULL, NULL, NULL);
 

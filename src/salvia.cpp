@@ -41,6 +41,9 @@ static void salvia_review_frontend_report()
 }
 #endif
 
+static std::string g_benchmark_state;
+int g_benchmark_target_frames = 0;
+
 // Puente entre los eventos SDL del frontend y el callback de teclado que
 // el core ha registrado via RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK. La
 // direccion del callback es: CORE -> FRONTEND - el frontend lo INVOCA al
@@ -1644,6 +1647,7 @@ static int16_t g_midiMixBuf[MIDI_MIX_FRAMES * 2];
 static bool g_midiFastForwardCut = false;
 
 static void audioSubmit(const int16_t* data, std::size_t frames, bool blocking) {
+	if (!audio_opened || g_benchmark_target_frames > 0) return;
 	MidiSynth& midi = gameMenu->g_midi;
 
 	g_midiFastForwardCut = false;   /* llegando audio normal: rearmado */
@@ -1664,14 +1668,7 @@ static void audioSubmit(const int16_t* data, std::size_t frames, bool blocking) 
 }
 
 void retro_audio_sample(int16_t left, int16_t right) {
-	/* Ruta de muestra suelta: la usan pocos cores y entregan un frame por
-	 * llamada.  Se acumula un bloque antes de remuestrear por dos motivos:
-	 * llamar al resampler frame a frame haria que el coste fijo de la llamada
-	 * dominase (a 48 kHz son 48.000 llamadas por segundo), y ademas cada lote de
-	 * un solo frame apenas deja avanzar la posicion fraccionaria.
-	 *
-	 * El resto por debajo de un bloque se queda para la siguiente tanda: son
-	 * menos de 6 ms y evita tener que enganchar un flush al final del frame. */
+	if (!audio_opened || g_benchmark_target_frames > 0) return;
 	if (gameMenu->current_fast_forward && CfgLoader::configMain[cfg::fastForwardMult].valueInt > 10) return;
 
 	g_singleSampleBlock[g_singleSampleFrames * 2]     = left;
@@ -1689,6 +1686,7 @@ void retro_audio_sample(int16_t left, int16_t right) {
 
 // Callback para rafagas de muestras (el que usan casi todos los cores)
 std::size_t retro_audio_sample_batch(const int16_t * __restrict data, std::size_t frames) {
+	if (!audio_opened || g_benchmark_target_frames > 0) return frames;
 	if (gameMenu->current_fast_forward && CfgLoader::configMain[cfg::fastForwardMult].valueInt > 10)
 		return frames;
 	
@@ -2119,21 +2117,84 @@ bool loadGameAtStart(int argc, char *argv[]){
 	#ifdef _XBOX
 		DWORD dwLaunchDataSize = 0;    
 		DWORD dwStatus = XGetLaunchDataSize( &dwLaunchDataSize );
-		if( dwStatus == ERROR_SUCCESS ){
+		if( dwStatus == ERROR_SUCCESS && dwLaunchDataSize > 0 ){
 			BYTE* pLaunchData = new BYTE [ dwLaunchDataSize ];
 			dwStatus = XGetLaunchData( pLaunchData, dwLaunchDataSize );
 			romToLaunch = (char*)pLaunchData;
+			delete [] pLaunchData;
 			LOG_DEBUG("Parametros recibidos: %s\n", romToLaunch.c_str());
 			//If we come from an exception, don't launch anything
 			if (START_FROM_EXCEPTION.compare(romToLaunch) == 0){
 				LOG_DEBUG("Starting emulator from a previous exception");
 				g_start_from_exception = true;
-			} else {
+			} else if (!romToLaunch.empty()) {
 				ret = launchGame(romToLaunch) == 1;	
 			}
 		} else if (dwStatus == ERROR_NOT_FOUND) {
 			// El programa se lanzo normalmente (sin XSetLaunchData)
 			LOG_DEBUG("No se encontraron datos de lanzamiento.\n");
+		}
+		if (!ret) {
+			FILE* bf = fopen("game:\\salvia_benchmark.txt", "r");
+			if (!bf) bf = fopen("d:\\salvia_benchmark.txt", "r");
+			if (!bf) {
+				std::string ap = Constant::getAppDir() + "\\salvia_benchmark.txt";
+				bf = fopen(ap.c_str(), "r");
+			}
+			if (!bf) bf = fopen("salvia_benchmark.txt", "r");
+
+			FILE* dbg = fopen("game:\\salvia_bench_debug.log", "w");
+			if (!dbg) dbg = fopen("d:\\salvia_bench_debug.log", "w");
+			if (!dbg) dbg = fopen("salvia_bench_debug.log", "w");
+			if (dbg) {
+				fprintf(dbg, "bench check: bf=%p appdir=%s\n", bf, Constant::getAppDir().c_str());
+			}
+
+			if (bf) {
+				char line[256];
+				std::string bRom;
+				int bFrames = 1000;
+				while (fgets(line, sizeof(line), bf)) {
+					char* p = line + strlen(line) - 1;
+					while (p >= line && (*p == '\r' || *p == '\n' || *p == ' ' || *p == '\t')) { *p = '\0'; p--; }
+					if (strncmp(line, "rom=", 4) == 0) bRom = line + 4;
+					else if (strncmp(line, "state=", 6) == 0) g_benchmark_state = line + 6;
+					else if (strncmp(line, "frames=", 7) == 0) bFrames = atoi(line + 7);
+				}
+				fclose(bf);
+				if (!bRom.empty()) {
+					dirutil dutil;
+					if (!dutil.fileExists(bRom.c_str()) && strncmp(bRom.c_str(), "game:\\", 6) == 0) {
+						std::string alt = std::string("d:\\") + (bRom.c_str() + 6);
+						if (dutil.fileExists(alt.c_str())) bRom = alt;
+						else {
+							alt = Constant::getAppDir() + "\\" + (bRom.c_str() + 6);
+							if (dutil.fileExists(alt.c_str())) bRom = alt;
+						}
+					}
+					if (!g_benchmark_state.empty() && !dutil.fileExists(g_benchmark_state.c_str()) && strncmp(g_benchmark_state.c_str(), "game:\\", 6) == 0) {
+						std::string alt = std::string("d:\\") + (g_benchmark_state.c_str() + 6);
+						if (dutil.fileExists(alt.c_str())) g_benchmark_state = alt;
+						else {
+							alt = Constant::getAppDir() + "\\" + (g_benchmark_state.c_str() + 6);
+							if (dutil.fileExists(alt.c_str())) g_benchmark_state = alt;
+						}
+					}
+					g_benchmark_target_frames = bFrames > 0 ? bFrames : 1000;
+					romToLaunch = bRom;
+					if (dbg) {
+						fprintf(dbg, "launching: bRom=%s state=%s frames=%d\n",
+							bRom.c_str(), g_benchmark_state.c_str(), g_benchmark_target_frames);
+					}
+					LOG_INFO("Benchmark mode: rom=%s state=%s frames=%d\n",
+						bRom.c_str(), g_benchmark_state.c_str(), g_benchmark_target_frames);
+					ret = launchGame(bRom) == 1;
+					if (dbg) {
+						fprintf(dbg, "launchGame returned: %d\n", ret ? 1 : 0);
+					}
+				}
+			}
+			if (dbg) fclose(dbg);
 		}
 	#else 
 		if (argc > 1){
@@ -2382,13 +2443,35 @@ static void __declspec(noinline) runGameLoop() {
 
 			switch (gameMenu->getEmuStatus()){
 				case EMU_STARTED:
+				{
+					static bool s_bench_state_loaded = false;
+					if (g_benchmark_target_frames > 0 && !s_bench_state_loaded && !g_benchmark_state.empty()) {
+						s_bench_state_loaded = true;
+						loadStateFromPath(g_benchmark_state.c_str());
+					}
 					updateGame();
 					/* Despues de updateGame para quedar ENCIMA de los contadores de
 					 * FPS/memoria: el solape es un rect pequeno que sigue al raton y
 					 * los contadores se redibujan cada frame, asi que lo peor que
 					 * puede pasar es un parpadeo de un frame en ellos. */
 					gameMenu->drawLightgunCrosshair();
+					if (g_benchmark_target_frames > 0) {
+						static int s_bench_frames = 0;
+						s_bench_frames++;
+						if (s_bench_frames >= g_benchmark_target_frames) {
+							gameMenu->setEmuStatus(EMU_MENU_OVERLAY);
+							SDL_XBOX_FlushCoreGpuDiagnostics();
+							FILE *fdone = fopen("game:\\salvia_bench_done.txt", "w");
+							if (fdone) {
+								fprintf(fdone, "done frames=%d\n", s_bench_frames);
+								fclose(fdone);
+							}
+							SDL_Delay(500);
+							exit(0);
+						}
+					}
 					break;
+				}
 				case EMU_MENU:
 				case EMU_MENU_FILTER:
 				case EMU_MENU_IMAGE_VIEWER:

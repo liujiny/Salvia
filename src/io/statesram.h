@@ -15,6 +15,7 @@
 #endif
 #include <io/statefile.h>
 #include "../../libretro/FBNeo/src/burn/devices/salvia_fbneo_diagnostics.h"
+extern int g_benchmark_target_frames;
 
 const Uint32 INTERVAL_SRAM_SAVE = 60000;
 Uint32 lastSramSaved = 0;
@@ -106,7 +107,7 @@ struct SaveData {
 } g_saveQueue;
 
 static bool saveSystemBusy() {
-    if (!g_saveQueue.saveMutex || !g_saveQueue.running) return true;
+    if (!g_saveQueue.saveMutex || !g_saveQueue.running) return false;
     SDL_mutexP(g_saveQueue.saveMutex);
     bool busy = g_saveQueue.busy || g_saveQueue.action != SAVE_NONE ||
                 g_saveQueue.resultPending;
@@ -390,17 +391,17 @@ bool saveState() {
     return true;
 }
 
-bool loadState() {
+bool loadStateFromPath(const char* statePath) {
     pollSaveResult();
     cfg::t_cfg_props* cfg = gameMenu->getCfgLoader()->configMain;
-    if (cfg[cfg::enableAchievements].valueBool && cfg[cfg::hardcoreRA].valueBool) {
+    if (g_benchmark_target_frames <= 0 && cfg && cfg[cfg::enableAchievements].valueBool && cfg[cfg::hardcoreRA].valueBool) {
         gameMenu->showLangSystemMessage("msg.error.hardcore.loadstate", 3000);
         return false;
     }
     if (saveSystemBusy()) {
         stateError("A save is still in progress. Please wait."); return false;
     }
-    const std::string path = Constant::checkPath(getSlotPath(romPaths.savestate, g_currentSlot));
+    const std::string path = Constant::checkPath(statePath);
     size_t coreSize = retro_serialize_size();
     stateLog("load-start", coreSize, true);
     if (!coreSize) { stateError("The core does not support states."); return false; }
@@ -443,6 +444,10 @@ bool loadState() {
     free(raBuffer);
     stateLog("load-done", coreSize, ok);
     return ok;
+}
+
+bool loadState() {
+    return loadStateFromPath(getSlotPath(romPaths.savestate, g_currentSlot).c_str());
 }
 
 bool guardar_archivo_raw(const char* path, void* buffer, std::size_t size) {
