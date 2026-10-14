@@ -62,6 +62,11 @@ static unsigned epic12_gpu_diag_reg_count_buckets[5];
 static unsigned epic12_gpu_diag_small_cpu_buckets[5];
 static unsigned epic12_gpu_diag_reg_exceed_x;
 static unsigned epic12_gpu_diag_reg_exceed_y;
+static unsigned epic12_gpu_diag_reg_clip_fs;
+static unsigned epic12_gpu_diag_reg_clip_scr;
+static unsigned epic12_gpu_diag_reg_span[4];
+static int epic12_gpu_diag_reg_samples[5][6];
+static int epic12_gpu_diag_reg_sample_count;
 #endif
 
 static void epic12_gpu_diag_reset()
@@ -83,6 +88,10 @@ static void epic12_gpu_diag_reset()
 	memset(epic12_gpu_diag_small_cpu_buckets,0,sizeof(epic12_gpu_diag_small_cpu_buckets));
 	epic12_gpu_diag_reg_exceed_x=0;
 	epic12_gpu_diag_reg_exceed_y=0;
+	epic12_gpu_diag_reg_clip_fs=0;
+	epic12_gpu_diag_reg_clip_scr=0;
+	memset(epic12_gpu_diag_reg_span,0,sizeof(epic12_gpu_diag_reg_span));
+	epic12_gpu_diag_reg_sample_count=0;
 #endif
 }
 
@@ -301,7 +310,25 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 			epic12_gpu_flush(EPIC12_GPU_FLUSH_COMMAND_LIMIT);
 		else if (merged.max_x - merged.min_x >= 512 || merged.max_y - merged.min_y >= 512) {
 #if SALVIA_FBNEO_DIAGNOSTICS
-			if (merged.max_x - merged.min_x >= 512) ++epic12_gpu_diag_reg_exceed_x;
+			if (merged.max_x - merged.min_x >= 512) {
+				++epic12_gpu_diag_reg_exceed_x;
+				if (clip->max_x > 1000) ++epic12_gpu_diag_reg_clip_fs;
+				else ++epic12_gpu_diag_reg_clip_scr;
+				int span = merged.max_x - merged.min_x;
+				if (span < 1024) ++epic12_gpu_diag_reg_span[0];
+				else if (span < 2048) ++epic12_gpu_diag_reg_span[1];
+				else if (span < 4096) ++epic12_gpu_diag_reg_span[2];
+				else ++epic12_gpu_diag_reg_span[3];
+				if (epic12_gpu_diag_reg_sample_count < 5) {
+					int s = epic12_gpu_diag_reg_sample_count++;
+					epic12_gpu_diag_reg_samples[s][0] = epic12_gpu_bounds.min_x;
+					epic12_gpu_diag_reg_samples[s][1] = epic12_gpu_bounds.max_x;
+					epic12_gpu_diag_reg_samples[s][2] = dest.min_x;
+					epic12_gpu_diag_reg_samples[s][3] = dest.max_x;
+					epic12_gpu_diag_reg_samples[s][4] = clip->min_x;
+					epic12_gpu_diag_reg_samples[s][5] = clip->max_x;
+				}
+			}
 			if (merged.max_y - merged.min_y >= 512) ++epic12_gpu_diag_reg_exceed_y;
 			int rb = epic12_gpu_count == 1 ? 0 : (epic12_gpu_count <= 4 ? 1 : (epic12_gpu_count <= 16 ? 2 : (epic12_gpu_count <= 64 ? 3 : 4)));
 			++epic12_gpu_diag_reg_count_buckets[rb];

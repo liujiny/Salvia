@@ -254,6 +254,18 @@ static void epic12_xenos_report()
 		epic12_gpu_diag_reg_count_buckets[2], epic12_gpu_diag_reg_count_buckets[3],
 		epic12_gpu_diag_reg_count_buckets[4]);
 	epic12_xenos_log(message);
+	sprintf(message, "diag_reg_detail clip_fs=%u clip_scr=%u span_512_1k=%u 1k_2k=%u 2k_4k=%u ge4k=%u",
+		epic12_gpu_diag_reg_clip_fs, epic12_gpu_diag_reg_clip_scr,
+		epic12_gpu_diag_reg_span[0], epic12_gpu_diag_reg_span[1],
+		epic12_gpu_diag_reg_span[2], epic12_gpu_diag_reg_span[3]);
+	epic12_xenos_log(message);
+	for (int s = 0; s < epic12_gpu_diag_reg_sample_count; ++s) {
+		sprintf(message, "diag_reg_sample %d: bounds=[%d..%d] incoming=[%d..%d] clip=[%d..%d]",
+			s, epic12_gpu_diag_reg_samples[s][0], epic12_gpu_diag_reg_samples[s][1],
+			epic12_gpu_diag_reg_samples[s][2], epic12_gpu_diag_reg_samples[s][3],
+			epic12_gpu_diag_reg_samples[s][4], epic12_gpu_diag_reg_samples[s][5]);
+		epic12_xenos_log(message);
+	}
 	sprintf(message, "diag_small_cpu lt512=%u 512_2k=%u 2k_4k=%u 4k_8k=%u",
 		epic12_gpu_diag_small_cpu_buckets[0], epic12_gpu_diag_small_cpu_buckets[1],
 		epic12_gpu_diag_small_cpu_buckets[2], epic12_gpu_diag_small_cpu_buckets[3]);
