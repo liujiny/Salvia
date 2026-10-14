@@ -290,14 +290,6 @@ static inline bool epic12_gpu_commutes_with(int b, int x, int y, int w, int h, i
 				return false;
 		}
 	}
-	if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_source_bounds[b])) {
-		const int x2 = x + w, y2 = y + h;
-		for (int i = 0; i < epic12_gpu_count[b]; ++i) {
-			const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
-			if (c.sx < x2 && c.sx + c.w > x && c.sy < y2 && c.sy + c.h > y)
-				return false;
-		}
-	}
 	return true;
 }
 
