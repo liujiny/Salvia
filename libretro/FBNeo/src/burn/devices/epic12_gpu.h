@@ -56,9 +56,29 @@ static void epic12_gpu_diag_reset()
 	epic12_gpu_flush_render_fallback=0;
 }
 
-static bool epic12_gpu_intersects(int x, int y, int w, int h, const rectangle &r)
+static inline bool epic12_gpu_intersects(int x, int y, int w, int h, const rectangle &r)
 {
 	return x <= r.max_x && x + w > r.min_x && y <= r.max_y && y + h > r.min_y;
+}
+
+static inline void epic12_gpu_add_initial_pages(int px0, int px1, int py0, int py1)
+{
+	if (py0 == py1 && px0 == px1) {
+		const int page = (py0 << 6) | px0;
+		epic12_gpu_source_pages[page] = true;
+		epic12_gpu_source_count = 1;
+	} else {
+		for (int py = py0; py <= py1; ++py) {
+			const int row = py << 6;
+			for (int px = px0; px <= px1; ++px) {
+				const int page = row | px;
+				if (!epic12_gpu_source_pages[page]) {
+					epic12_gpu_source_pages[page] = true;
+					++epic12_gpu_source_count;
+				}
+			}
+		}
+	}
 }
 
 #if SALVIA_CV1K_BLIT_PATH_PROBE
@@ -221,27 +241,6 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	if (epic12_gpu_intersects(c.sx,c.sy,c.w,c.h,dest)) return false;
 	const int py0 = c.sy >> 7, py1 = (c.sy + c.h - 1) >> 7;
 	const int px0 = c.sx >> 7, px1 = (c.sx + c.w - 1) >> 7;
-	unsigned newPages = 0;
-	int newPageList[32];
-	if (py0 == py1 && px0 == px1) {
-		const int page = (py0 << 6) | px0;
-		if (!epic12_gpu_source_pages[page]) {
-			newPageList[0] = page;
-			newPages = 1;
-		}
-	} else {
-		for (int py = py0; py <= py1; ++py) {
-			const int row = py << 6;
-			for (int px = px0; px <= px1; ++px) {
-				const int page = row | px;
-				if (!epic12_gpu_source_pages[page]) {
-					newPageList[newPages++] = page;
-				}
-			}
-		}
-	}
-	if (epic12_gpu_source_count + newPages > epic12_gpu_batch_page_capacity())
-		epic12_gpu_flush(EPIC12_GPU_FLUSH_SOURCE_PAGES);
 	if (epic12_gpu_count) {
 		rectangle merged = epic12_gpu_bounds;
 		if (c.x < merged.min_x) merged.min_x = c.x;
@@ -259,27 +258,37 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	}
 	if (!epic12_gpu_count) {
 		epic12_gpu_bounds = dest;
+		epic12_gpu_add_initial_pages(px0, px1, py0, py1);
+	} else {
+		unsigned newPages = 0;
+		int newPageList[32];
 		if (py0 == py1 && px0 == px1) {
 			const int page = (py0 << 6) | px0;
-			epic12_gpu_source_pages[page] = true;
-			epic12_gpu_source_count = 1;
+			if (!epic12_gpu_source_pages[page]) {
+				newPageList[0] = page;
+				newPages = 1;
+			}
 		} else {
 			for (int py = py0; py <= py1; ++py) {
 				const int row = py << 6;
 				for (int px = px0; px <= px1; ++px) {
 					const int page = row | px;
 					if (!epic12_gpu_source_pages[page]) {
-						epic12_gpu_source_pages[page] = true;
-						++epic12_gpu_source_count;
+						newPageList[newPages++] = page;
 					}
 				}
 			}
 		}
-	} else {
-		for (unsigned i = 0; i < newPages; ++i) {
-			epic12_gpu_source_pages[newPageList[i]] = true;
+		if (epic12_gpu_source_count + newPages > epic12_gpu_batch_page_capacity()) {
+			epic12_gpu_flush(EPIC12_GPU_FLUSH_SOURCE_PAGES);
+			epic12_gpu_bounds = dest;
+			epic12_gpu_add_initial_pages(px0, px1, py0, py1);
+		} else {
+			for (unsigned i = 0; i < newPages; ++i) {
+				epic12_gpu_source_pages[newPageList[i]] = true;
+			}
+			epic12_gpu_source_count += newPages;
 		}
-		epic12_gpu_source_count += newPages;
 	}
 	epic12_gpu_commands[epic12_gpu_count++] = c;
 	epic12_gpu_pixels += c.w * c.h;
