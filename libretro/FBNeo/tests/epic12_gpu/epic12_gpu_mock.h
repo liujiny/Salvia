@@ -55,6 +55,12 @@ static void epic12_gpu_invalidate(const rectangle &r) {
 }
 static void epic12_gpu_reset() {
 	gpu_test_ensure_cache(); gpu_test_cache.clear(); gpu_test_clear_legacy(); ++gpu_test_cache_resets;
+	for (int b = 0; b < EPIC12_GPU_BINS; ++b) {
+		epic12_gpu_count[b] = 0;
+		epic12_gpu_pixels[b] = 0;
+		epic12_gpu_source_count[b] = 0;
+		memset(epic12_gpu_source_pages[b], 0, sizeof(epic12_gpu_source_pages[b]));
+	}
 }
 static void epic12_gpu_exit() {
 	printf("GPU MODEL batches=%u commands=%u pixels=%llu readback=%llu feedback=%llu\n",

@@ -11,13 +11,14 @@ struct Epic12GpuCommand {
 	clr_t tint;
 };
 
-static Epic12GpuCommand epic12_gpu_commands[2][1024];
-static int epic12_gpu_count[2];
-static unsigned epic12_gpu_pixels[2];
-static bool epic12_gpu_source_pages[2][2048];
-static unsigned epic12_gpu_source_count[2];
-static rectangle epic12_gpu_bounds[2];
-static rectangle epic12_gpu_source_bounds[2];
+#define EPIC12_GPU_BINS 4
+static Epic12GpuCommand epic12_gpu_commands[EPIC12_GPU_BINS][1024];
+static int epic12_gpu_count[EPIC12_GPU_BINS];
+static unsigned epic12_gpu_pixels[EPIC12_GPU_BINS];
+static bool epic12_gpu_source_pages[EPIC12_GPU_BINS][2048];
+static unsigned epic12_gpu_source_count[EPIC12_GPU_BINS];
+static rectangle epic12_gpu_bounds[EPIC12_GPU_BINS];
+static rectangle epic12_gpu_source_bounds[EPIC12_GPU_BINS];
 static bool epic12_gpu_enabled;
 
 // Batches below this many pixels are rasterized on the CPU instead of being
@@ -68,12 +69,7 @@ static unsigned epic12_gpu_diag_reg_clip_scr;
 static unsigned epic12_gpu_diag_reg_span[4];
 static int epic12_gpu_diag_reg_samples[5][6];
 static int epic12_gpu_diag_reg_sample_count;
-static unsigned epic12_gpu_diag_bin0_hits;
-static unsigned epic12_gpu_diag_bin1_hits;
-static unsigned epic12_gpu_diag_fit0_fails[4];
-static unsigned epic12_gpu_diag_commute1_fails;
-static unsigned epic12_gpu_diag_commute0_fails;
-static unsigned epic12_gpu_diag_fit1_fails[4];
+static unsigned epic12_gpu_diag_bin_hits[EPIC12_GPU_BINS];
 static unsigned epic12_gpu_diag_c_dest;
 static unsigned epic12_gpu_diag_c_raw;
 static int epic12_gpu_diag_cfail_samples[5][8];
@@ -103,12 +99,7 @@ static void epic12_gpu_diag_reset()
 	epic12_gpu_diag_reg_clip_scr=0;
 	memset(epic12_gpu_diag_reg_span,0,sizeof(epic12_gpu_diag_reg_span));
 	epic12_gpu_diag_reg_sample_count=0;
-	epic12_gpu_diag_bin0_hits=0;
-	epic12_gpu_diag_bin1_hits=0;
-	memset(epic12_gpu_diag_fit0_fails,0,sizeof(epic12_gpu_diag_fit0_fails));
-	epic12_gpu_diag_commute1_fails=0;
-	epic12_gpu_diag_commute0_fails=0;
-	memset(epic12_gpu_diag_fit1_fails,0,sizeof(epic12_gpu_diag_fit1_fails));
+	memset(epic12_gpu_diag_bin_hits,0,sizeof(epic12_gpu_diag_bin_hits));
 	epic12_gpu_diag_c_dest=0;
 	epic12_gpu_diag_c_raw=0;
 	epic12_gpu_diag_cfail_sample_count=0;
@@ -269,63 +260,73 @@ static void epic12_gpu_flush_bin(int b, Epic12GpuFlushReason reason = EPIC12_GPU
 static void epic12_gpu_retire_bin0(Epic12GpuFlushReason reason)
 {
 	epic12_gpu_flush_bin(0, reason);
-	if (epic12_gpu_count[1]) {
-		memcpy(epic12_gpu_commands[0], epic12_gpu_commands[1], epic12_gpu_count[1] * sizeof(Epic12GpuCommand));
-		epic12_gpu_count[0] = epic12_gpu_count[1];
-		epic12_gpu_pixels[0] = epic12_gpu_pixels[1];
-		epic12_gpu_bounds[0] = epic12_gpu_bounds[1];
-		epic12_gpu_source_bounds[0] = epic12_gpu_source_bounds[1];
-		epic12_gpu_source_count[0] = epic12_gpu_source_count[1];
-		memcpy(epic12_gpu_source_pages[0], epic12_gpu_source_pages[1], sizeof(epic12_gpu_source_pages[0]));
-		epic12_gpu_count[1] = 0;
-		epic12_gpu_pixels[1] = 0;
-		epic12_gpu_source_count[1] = 0;
-		memset(epic12_gpu_source_pages[1], 0, sizeof(epic12_gpu_source_pages[1]));
+	for (int b = 0; b < EPIC12_GPU_BINS - 1; ++b) {
+		if (epic12_gpu_count[b + 1]) {
+			memcpy(epic12_gpu_commands[b], epic12_gpu_commands[b + 1], epic12_gpu_count[b + 1] * sizeof(Epic12GpuCommand));
+			epic12_gpu_count[b] = epic12_gpu_count[b + 1];
+			epic12_gpu_pixels[b] = epic12_gpu_pixels[b + 1];
+			epic12_gpu_bounds[b] = epic12_gpu_bounds[b + 1];
+			epic12_gpu_source_bounds[b] = epic12_gpu_source_bounds[b + 1];
+			epic12_gpu_source_count[b] = epic12_gpu_source_count[b + 1];
+			memcpy(epic12_gpu_source_pages[b], epic12_gpu_source_pages[b + 1], sizeof(epic12_gpu_source_pages[b]));
+			epic12_gpu_count[b + 1] = 0;
+			epic12_gpu_pixels[b + 1] = 0;
+			epic12_gpu_source_count[b + 1] = 0;
+			memset(epic12_gpu_source_pages[b + 1], 0, sizeof(epic12_gpu_source_pages[b + 1]));
+		} else {
+			epic12_gpu_count[b] = 0;
+			epic12_gpu_pixels[b] = 0;
+			epic12_gpu_source_count[b] = 0;
+			memset(epic12_gpu_source_pages[b], 0, sizeof(epic12_gpu_source_pages[b]));
+		}
 	}
 }
 
 static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHER)
 {
-	epic12_gpu_flush_bin(0, reason);
-	epic12_gpu_flush_bin(1, reason);
+	for (int b = 0; b < EPIC12_GPU_BINS; ++b) {
+		epic12_gpu_flush_bin(b, reason);
+	}
 }
 
-static inline bool epic12_gpu_commutes_ahead_of_bin1(int x, int y, int w, int h, int sx, int sy)
+static inline bool epic12_gpu_commutes_ahead(int target_bin, int x, int y, int w, int h, int sx, int sy)
 {
-	if (!epic12_gpu_count[1]) return true;
-	// 1. WAW hazard: incoming dest intersects bin 1 dest
-	if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_bounds[1])) {
-		const int x2 = x + w, y2 = y + h;
-		for (int i = 0; i < epic12_gpu_count[1]; ++i) {
-			const Epic12GpuCommand &c = epic12_gpu_commands[1][i];
-			if (x < c.x + c.w && x2 > c.x && y < c.y + c.h && y2 > c.y) {
+	for (int b = target_bin + 1; b < EPIC12_GPU_BINS; ++b) {
+		if (!epic12_gpu_count[b]) continue;
+		// 1. WAW hazard: incoming dest intersects bin b dest
+		if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_bounds[b])) {
+			const int x2 = x + w, y2 = y + h;
+			for (int i = 0; i < epic12_gpu_count[b]; ++i) {
+				const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
+				if (x < c.x + c.w && x2 > c.x && y < c.y + c.h && y2 > c.y) {
 #if SALVIA_FBNEO_DIAGNOSTICS
-				++epic12_gpu_diag_c_dest;
+					++epic12_gpu_diag_c_dest;
 #endif
-				return false;
+					return false;
+				}
 			}
 		}
-	}
-	// 2. RAW hazard: incoming src intersects bin 1 dest
-	if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[1])) {
-		const int sx2 = sx + w, sy2 = sy + h;
-		for (int i = 0; i < epic12_gpu_count[1]; ++i) {
-			const Epic12GpuCommand &c = epic12_gpu_commands[1][i];
-			if (sx < c.x + c.w && sx2 > c.x && sy < c.y + c.h && sy2 > c.y) {
+		// 2. RAW hazard: incoming src intersects bin b dest
+		if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
+			const int sx2 = sx + w, sy2 = sy + h;
+			for (int i = 0; i < epic12_gpu_count[b]; ++i) {
+				const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
+				if (sx < c.x + c.w && sx2 > c.x && sy < c.y + c.h && sy2 > c.y) {
 #if SALVIA_FBNEO_DIAGNOSTICS
-				++epic12_gpu_diag_c_raw;
+					++epic12_gpu_diag_c_raw;
 #endif
-				return false;
+					return false;
+				}
 			}
 		}
-	}
-	// 3. WAR hazard: incoming dest intersects bin 1 src
-	if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_source_bounds[1])) {
-		const int x2 = x + w, y2 = y + h;
-		for (int i = 0; i < epic12_gpu_count[1]; ++i) {
-			const Epic12GpuCommand &c = epic12_gpu_commands[1][i];
-			if (x < c.sx + c.w && x2 > c.sx && y < c.sy + c.h && y2 > c.sy)
-				return false;
+		// 3. WAR hazard: incoming dest intersects bin b src
+		if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_source_bounds[b])) {
+			const int x2 = x + w, y2 = y + h;
+			for (int i = 0; i < epic12_gpu_count[b]; ++i) {
+				const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
+				if (x < c.sx + c.w && x2 > c.sx && y < c.sy + c.h && y2 > c.sy)
+					return false;
+			}
 		}
 	}
 	return true;
@@ -454,69 +455,28 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	}
 	const int py0 = sy >> 7, py1 = (sy + h - 1) >> 7;
 	const int px0 = sx >> 7, px1 = (sx + w - 1) >> 7;
-	unsigned np0 = 0, np1 = 0;
-	int npl0[32], npl1[32];
-	rectangle m0, m1;
-
-	// Case 1: Try bin 0
-	int fit0 = epic12_gpu_can_fit(0, dest, sx, sy, w, h, px0, px1, py0, py1, np0, npl0, m0);
-	if (fit0 == 0) {
-		if (epic12_gpu_commutes_ahead_of_bin1(x, y, w, h, sx, sy)) {
+	while (true) {
+		Epic12GpuFlushReason reason0 = EPIC12_GPU_FLUSH_REGION;
+		for (int b = 0; b < EPIC12_GPU_BINS; ++b) {
+			unsigned np = 0;
+			int npl[32];
+			rectangle m;
+			int fit = epic12_gpu_can_fit(b, dest, sx, sy, w, h, px0, px1, py0, py1, np, npl, m);
+			if (b == 0 && fit != 0) {
+				reason0 = (fit == 2) ? EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY :
+					((fit == 3) ? EPIC12_GPU_FLUSH_SOURCE_PAGES : EPIC12_GPU_FLUSH_REGION);
+			}
+			if (fit == 0 && epic12_gpu_commutes_ahead(b, x, y, w, h, sx, sy)) {
 #if SALVIA_FBNEO_DIAGNOSTICS
-			++epic12_gpu_diag_bin0_hits;
+				++epic12_gpu_diag_bin_hits[b];
 #endif
-			epic12_gpu_add_to_bin(0, m0, np0, npl0, px0, px1, py0, py1,
-				sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
-			return true;
+				epic12_gpu_add_to_bin(b, m, np, npl, px0, px1, py0, py1,
+					sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
+				return true;
+			}
 		}
-#if SALVIA_FBNEO_DIAGNOSTICS
-		else ++epic12_gpu_diag_commute1_fails;
-#endif
+		epic12_gpu_retire_bin0(reason0);
 	}
-#if SALVIA_FBNEO_DIAGNOSTICS
-	else ++epic12_gpu_diag_fit0_fails[fit0];
-#endif
-
-	// Case 2: Try bin 1 (bin 1 executes after bin 0, preserving program FIFO order)
-	int fit1 = epic12_gpu_can_fit(1, dest, sx, sy, w, h, px0, px1, py0, py1, np1, npl1, m1);
-	if (fit1 == 0) {
-#if SALVIA_FBNEO_DIAGNOSTICS
-		++epic12_gpu_diag_bin1_hits;
-#endif
-		epic12_gpu_add_to_bin(1, m1, np1, npl1, px0, px1, py0, py1,
-			sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
-		return true;
-	}
-#if SALVIA_FBNEO_DIAGNOSTICS
-	else ++epic12_gpu_diag_fit1_fails[fit1];
-#endif
-
-	// Case 3: Does not fit. Retire bin 0!
-	Epic12GpuFlushReason reason0 = (fit0 == 2) ? EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY :
-		((fit0 == 3) ? EPIC12_GPU_FLUSH_SOURCE_PAGES : EPIC12_GPU_FLUSH_REGION);
-	epic12_gpu_retire_bin0(reason0);
-
-	// Try again with the promoted bin 0
-	fit0 = epic12_gpu_can_fit(0, dest, sx, sy, w, h, px0, px1, py0, py1, np0, npl0, m0);
-	if (fit0 == 0 && epic12_gpu_commutes_ahead_of_bin1(x, y, w, h, sx, sy)) {
-		epic12_gpu_add_to_bin(0, m0, np0, npl0, px0, px1, py0, py1,
-			sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
-		return true;
-	}
-
-	fit1 = epic12_gpu_can_fit(1, dest, sx, sy, w, h, px0, px1, py0, py1, np1, npl1, m1);
-	if (fit1 == 0) {
-		epic12_gpu_add_to_bin(1, m1, np1, npl1, px0, px1, py0, py1,
-			sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
-		return true;
-	}
-
-	// Still doesn't fit, retire bin 0 again (both bins now empty)
-	epic12_gpu_retire_bin0(reason0);
-	fit0 = epic12_gpu_can_fit(0, dest, sx, sy, w, h, px0, px1, py0, py1, np0, npl0, m0);
-	epic12_gpu_add_to_bin(0, m0, np0, npl0, px0, px1, py0, py1,
-		sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
-	return true;
 }
 
 static void epic12_gpu_cpu_write(int x, int y, int w, int h,

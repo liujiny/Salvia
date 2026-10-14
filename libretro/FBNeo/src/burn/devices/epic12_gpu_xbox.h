@@ -266,11 +266,9 @@ static void epic12_xenos_report()
 			epic12_gpu_diag_reg_samples[s][4], epic12_gpu_diag_reg_samples[s][5]);
 		epic12_xenos_log(message);
 	}
-	sprintf(message, "diag_bins b0_hits=%u b1_hits=%u fit0_fail=[%u,%u,%u] c1_fail=%u c0_fail=%u fit1_fail=[%u,%u,%u]",
-		epic12_gpu_diag_bin0_hits, epic12_gpu_diag_bin1_hits,
-		epic12_gpu_diag_fit0_fails[1], epic12_gpu_diag_fit0_fails[2], epic12_gpu_diag_fit0_fails[3],
-		epic12_gpu_diag_commute1_fails, epic12_gpu_diag_commute0_fails,
-		epic12_gpu_diag_fit1_fails[1], epic12_gpu_diag_fit1_fails[2], epic12_gpu_diag_fit1_fails[3]);
+	sprintf(message, "diag_bins hits=[%u,%u,%u,%u]",
+		epic12_gpu_diag_bin_hits[0], epic12_gpu_diag_bin_hits[1],
+		epic12_gpu_diag_bin_hits[2], epic12_gpu_diag_bin_hits[3]);
 	epic12_xenos_log(message);
 	sprintf(message, "diag_cfail c_dest=%u c_raw=%u", epic12_gpu_diag_c_dest, epic12_gpu_diag_c_raw);
 	epic12_xenos_log(message);
@@ -364,6 +362,12 @@ static void epic12_gpu_invalidate(const rectangle &r)
 static void epic12_gpu_reset()
 {
 	epic12_xenos_cache.clear();
+	for (int b = 0; b < EPIC12_GPU_BINS; ++b) {
+		epic12_gpu_count[b] = 0;
+		epic12_gpu_pixels[b] = 0;
+		epic12_gpu_source_count[b] = 0;
+		memset(epic12_gpu_source_pages[b], 0, sizeof(epic12_gpu_source_pages[b]));
+	}
 }
 
 static void epic12_xenos_release()
