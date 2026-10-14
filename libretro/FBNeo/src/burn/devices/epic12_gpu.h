@@ -74,6 +74,10 @@ static unsigned epic12_gpu_diag_fit0_fails[4];
 static unsigned epic12_gpu_diag_commute1_fails;
 static unsigned epic12_gpu_diag_commute0_fails;
 static unsigned epic12_gpu_diag_fit1_fails[4];
+static unsigned epic12_gpu_diag_c_dest;
+static unsigned epic12_gpu_diag_c_raw;
+static int epic12_gpu_diag_cfail_samples[5][8];
+static int epic12_gpu_diag_cfail_sample_count;
 #endif
 
 static void epic12_gpu_diag_reset()
@@ -105,6 +109,9 @@ static void epic12_gpu_diag_reset()
 	epic12_gpu_diag_commute1_fails=0;
 	epic12_gpu_diag_commute0_fails=0;
 	memset(epic12_gpu_diag_fit1_fails,0,sizeof(epic12_gpu_diag_fit1_fails));
+	epic12_gpu_diag_c_dest=0;
+	epic12_gpu_diag_c_raw=0;
+	epic12_gpu_diag_cfail_sample_count=0;
 #endif
 }
 
@@ -290,16 +297,46 @@ static inline bool epic12_gpu_commutes_with(int b, int x, int y, int w, int h, i
 		const int x2 = x + w, y2 = y + h;
 		for (int i = 0; i < epic12_gpu_count[b]; ++i) {
 			const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
-			if (x < c.x + c.w && x2 > c.x && y < c.y + c.h && y2 > c.y)
+			if (x < c.x + c.w && x2 > c.x && y < c.y + c.h && y2 > c.y) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_gpu_diag_c_dest;
+				if (b == 0 && epic12_gpu_diag_cfail_sample_count < 5) {
+					int s = epic12_gpu_diag_cfail_sample_count++;
+					epic12_gpu_diag_cfail_samples[s][0] = epic12_gpu_bounds[0].min_x;
+					epic12_gpu_diag_cfail_samples[s][1] = epic12_gpu_bounds[0].max_x;
+					epic12_gpu_diag_cfail_samples[s][2] = x;
+					epic12_gpu_diag_cfail_samples[s][3] = x + w - 1;
+					epic12_gpu_diag_cfail_samples[s][4] = sx;
+					epic12_gpu_diag_cfail_samples[s][5] = sx + w - 1;
+					epic12_gpu_diag_cfail_samples[s][6] = 1;
+					epic12_gpu_diag_cfail_samples[s][7] = i;
+				}
+#endif
 				return false;
+			}
 		}
 	}
 	if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
 		const int sx2 = sx + w, sy2 = sy + h;
 		for (int i = 0; i < epic12_gpu_count[b]; ++i) {
 			const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
-			if (sx < c.x + c.w && sx2 > c.x && sy < c.y + c.h && sy2 > c.y)
+			if (sx < c.x + c.w && sx2 > c.x && sy < c.y + c.h && sy2 > c.y) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_gpu_diag_c_raw;
+				if (b == 0 && epic12_gpu_diag_cfail_sample_count < 5) {
+					int s = epic12_gpu_diag_cfail_sample_count++;
+					epic12_gpu_diag_cfail_samples[s][0] = epic12_gpu_bounds[0].min_x;
+					epic12_gpu_diag_cfail_samples[s][1] = epic12_gpu_bounds[0].max_x;
+					epic12_gpu_diag_cfail_samples[s][2] = x;
+					epic12_gpu_diag_cfail_samples[s][3] = x + w - 1;
+					epic12_gpu_diag_cfail_samples[s][4] = sx;
+					epic12_gpu_diag_cfail_samples[s][5] = sx + w - 1;
+					epic12_gpu_diag_cfail_samples[s][6] = 2;
+					epic12_gpu_diag_cfail_samples[s][7] = i;
+				}
+#endif
 				return false;
+			}
 		}
 	}
 	return true;

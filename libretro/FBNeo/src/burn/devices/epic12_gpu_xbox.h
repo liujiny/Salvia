@@ -272,6 +272,17 @@ static void epic12_xenos_report()
 		epic12_gpu_diag_commute1_fails, epic12_gpu_diag_commute0_fails,
 		epic12_gpu_diag_fit1_fails[1], epic12_gpu_diag_fit1_fails[2], epic12_gpu_diag_fit1_fails[3]);
 	epic12_xenos_log(message);
+	sprintf(message, "diag_cfail c_dest=%u c_raw=%u", epic12_gpu_diag_c_dest, epic12_gpu_diag_c_raw);
+	epic12_xenos_log(message);
+	for (int s = 0; s < epic12_gpu_diag_cfail_sample_count; ++s) {
+		sprintf(message, "diag_cfail_sample %d: b0=[%d..%d] in_dest=[%d..%d] in_src=[%d..%d] fail=%s c_idx=%d",
+			s, epic12_gpu_diag_cfail_samples[s][0], epic12_gpu_diag_cfail_samples[s][1],
+			epic12_gpu_diag_cfail_samples[s][2], epic12_gpu_diag_cfail_samples[s][3],
+			epic12_gpu_diag_cfail_samples[s][4], epic12_gpu_diag_cfail_samples[s][5],
+			epic12_gpu_diag_cfail_samples[s][6] == 1 ? "dest_overlap" : "raw_hazard",
+			epic12_gpu_diag_cfail_samples[s][7]);
+		epic12_xenos_log(message);
+	}
 	sprintf(message, "diag_small_cpu lt512=%u 512_2k=%u 2k_4k=%u 4k_8k=%u",
 		epic12_gpu_diag_small_cpu_buckets[0], epic12_gpu_diag_small_cpu_buckets[1],
 		epic12_gpu_diag_small_cpu_buckets[2], epic12_gpu_diag_small_cpu_buckets[3]);
