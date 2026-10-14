@@ -287,6 +287,14 @@ static void epic12_xenos_report()
 		epic12_gpu_diag_small_cpu_buckets[0], epic12_gpu_diag_small_cpu_buckets[1],
 		epic12_gpu_diag_small_cpu_buckets[2], epic12_gpu_diag_small_cpu_buckets[3]);
 	epic12_xenos_log(message);
+	for (int s = 0; s < epic12_gpu_diag_small_cpu_sample_count; ++s) {
+		sprintf(message, "diag_small_sample %d: bin=%d count=%d px=%d bounds=[%d..%d] reason=%d",
+			s, epic12_gpu_diag_small_cpu_samples[s][5],
+			epic12_gpu_diag_small_cpu_samples[s][0], epic12_gpu_diag_small_cpu_samples[s][1],
+			epic12_gpu_diag_small_cpu_samples[s][2], epic12_gpu_diag_small_cpu_samples[s][3],
+			epic12_gpu_diag_small_cpu_samples[s][4]);
+		epic12_xenos_log(message);
+	}
 	sprintf(message,"rejections blend=%u size=%u oob=%u sy=%u intersect=%u",
 		epic12_gpu_reject_blend,epic12_gpu_reject_size,epic12_gpu_reject_oob,
 		epic12_gpu_reject_sy,epic12_gpu_reject_intersect);

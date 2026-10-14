@@ -74,6 +74,8 @@ static unsigned epic12_gpu_diag_c_dest;
 static unsigned epic12_gpu_diag_c_raw;
 static int epic12_gpu_diag_cfail_samples[5][8];
 static int epic12_gpu_diag_cfail_sample_count;
+static int epic12_gpu_diag_small_cpu_samples[10][6];
+static int epic12_gpu_diag_small_cpu_sample_count;
 #endif
 
 static void epic12_gpu_diag_reset()
@@ -103,6 +105,7 @@ static void epic12_gpu_diag_reset()
 	epic12_gpu_diag_c_dest=0;
 	epic12_gpu_diag_c_raw=0;
 	epic12_gpu_diag_cfail_sample_count=0;
+	epic12_gpu_diag_small_cpu_sample_count=0;
 #endif
 }
 
@@ -213,6 +216,15 @@ static void epic12_gpu_flush_bin(int b, Epic12GpuFlushReason reason = EPIC12_GPU
 #if SALVIA_FBNEO_DIAGNOSTICS
 		int sb = epic12_gpu_pixels[b] < 512 ? 0 : (epic12_gpu_pixels[b] < 2048 ? 1 : (epic12_gpu_pixels[b] < 4096 ? 2 : (epic12_gpu_pixels[b] < 8192 ? 3 : 4)));
 		++epic12_gpu_diag_small_cpu_buckets[sb];
+		if (epic12_gpu_diag_small_cpu_sample_count < 10) {
+			int s = epic12_gpu_diag_small_cpu_sample_count++;
+			epic12_gpu_diag_small_cpu_samples[s][0] = epic12_gpu_count[b];
+			epic12_gpu_diag_small_cpu_samples[s][1] = epic12_gpu_pixels[b];
+			epic12_gpu_diag_small_cpu_samples[s][2] = epic12_gpu_bounds[b].min_x;
+			epic12_gpu_diag_small_cpu_samples[s][3] = epic12_gpu_bounds[b].max_x;
+			epic12_gpu_diag_small_cpu_samples[s][4] = (int)reason;
+			epic12_gpu_diag_small_cpu_samples[s][5] = b;
+		}
 #endif
 	} else if (epic12_gpu_render(epic12_gpu_commands[b], epic12_gpu_count[b], epic12_gpu_bounds[b])) {
 		rendered=true;
