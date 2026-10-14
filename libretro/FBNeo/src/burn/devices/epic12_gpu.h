@@ -11,12 +11,13 @@ struct Epic12GpuCommand {
 	clr_t tint;
 };
 
-static Epic12GpuCommand epic12_gpu_commands[1024];
-static int epic12_gpu_count;
-static unsigned epic12_gpu_pixels;
-static bool epic12_gpu_source_pages[2048];
-static unsigned epic12_gpu_source_count;
-static rectangle epic12_gpu_bounds;
+static Epic12GpuCommand epic12_gpu_commands[2][1024];
+static int epic12_gpu_count[2];
+static unsigned epic12_gpu_pixels[2];
+static bool epic12_gpu_source_pages[2][2048];
+static unsigned epic12_gpu_source_count[2];
+static rectangle epic12_gpu_bounds[2];
+static rectangle epic12_gpu_source_bounds[2];
 static bool epic12_gpu_enabled;
 
 // Batches below this many pixels are rasterized on the CPU instead of being
@@ -100,20 +101,20 @@ static inline bool epic12_gpu_intersects(int x, int y, int w, int h, const recta
 	return x <= r.max_x && x + w > r.min_x && y <= r.max_y && y + h > r.min_y;
 }
 
-static inline void epic12_gpu_add_initial_pages(int px0, int px1, int py0, int py1)
+static inline void epic12_gpu_add_initial_pages(int b, int px0, int px1, int py0, int py1)
 {
 	if (py0 == py1 && px0 == px1) {
 		const int page = (py0 << 6) | px0;
-		epic12_gpu_source_pages[page] = true;
-		epic12_gpu_source_count = 1;
+		epic12_gpu_source_pages[b][page] = true;
+		epic12_gpu_source_count[b] = 1;
 	} else {
 		for (int py = py0; py <= py1; ++py) {
 			const int row = py << 6;
 			for (int px = px0; px <= px1; ++px) {
 				const int page = row | px;
-				if (!epic12_gpu_source_pages[page]) {
-					epic12_gpu_source_pages[page] = true;
-					++epic12_gpu_source_count;
+				if (!epic12_gpu_source_pages[b][page]) {
+					epic12_gpu_source_pages[b][page] = true;
+					++epic12_gpu_source_count[b];
 				}
 			}
 		}
@@ -184,43 +185,33 @@ static void epic12_gpu_replay(const Epic12GpuCommand &c)
 #include "epic12_gpu_xbox.h"
 #endif
 
-static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHER)
+static void epic12_gpu_flush_bin(int b, Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHER)
 {
-	if (!epic12_gpu_count) return;
+	if (!epic12_gpu_count[b]) return;
 	++epic12_gpu_flush_reasons[reason];
-	// Small batches cost more to transfer than to rasterize. Also retain an
-	// exact CPU replay if allocation, shader validation or readback fails.
 	bool rendered=false;
 #if SALVIA_CV1K_PROBE
-	// The blitter job is timed as one number by the worker. Split it by path
-	// so a window can weigh Xenos batches against CPU replay. The first batch
-	// of a session compiles shaders and runs the pixel self-test, so it is
-	// excluded until the compositor is validated.
 	bool probeSteady=epic12_xenos_validated;
 	unsigned long long probeStart=salvia_cv1k_tick();
 #endif
-	// The compositor comes up on the first render call, and a live Xenos is
-	// what switches the core to the asynchronous present. Raising the
-	// threshold must therefore still bring it up once, or the comparison would
-	// move the present mode as well as the batches.
-	bool routeCpu = epic12_gpu_pixels < epic12_gpu_threshold;
+	bool routeCpu = epic12_gpu_pixels[b] < epic12_gpu_threshold;
 #ifdef _XBOX
 	if (routeCpu && epic12_gpu_force_bringup && !epic12_xenos_validated && !epic12_xenos_failed) routeCpu=false;
 #endif
 	if (routeCpu) {
 		++epic12_gpu_flush_small_cpu;
 #if SALVIA_FBNEO_DIAGNOSTICS
-		int sb = epic12_gpu_pixels < 512 ? 0 : (epic12_gpu_pixels < 2048 ? 1 : (epic12_gpu_pixels < 4096 ? 2 : (epic12_gpu_pixels < 8192 ? 3 : 4)));
+		int sb = epic12_gpu_pixels[b] < 512 ? 0 : (epic12_gpu_pixels[b] < 2048 ? 1 : (epic12_gpu_pixels[b] < 4096 ? 2 : (epic12_gpu_pixels[b] < 8192 ? 3 : 4)));
 		++epic12_gpu_diag_small_cpu_buckets[sb];
 #endif
-	} else if (epic12_gpu_render(epic12_gpu_commands, epic12_gpu_count, epic12_gpu_bounds)) {
+	} else if (epic12_gpu_render(epic12_gpu_commands[b], epic12_gpu_count[b], epic12_gpu_bounds[b])) {
 		rendered=true;
 	} else {
 		++epic12_gpu_flush_render_fallback;
 	}
 	if (!rendered) {
 		UINT64 delay = epic12_device_blit_delay;
-		for (int i = 0; i < epic12_gpu_count; ++i) epic12_gpu_replay(epic12_gpu_commands[i]);
+		for (int i = 0; i < epic12_gpu_count[b]; ++i) epic12_gpu_replay(epic12_gpu_commands[b][i]);
 		epic12_device_blit_delay = delay;
 #if SALVIA_CV1K_BLIT_PATH_PROBE
 		salvia_cv1k_blit_path_current = -1;
@@ -234,26 +225,159 @@ static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHE
 			if (rendered) {
 				if (probeSteady) {
 					salvia_cv1k_probe[14]+=ticks; ++salvia_cv1k_probe[15];
-					salvia_cv1k_probe[19]+=epic12_gpu_pixels;
+					salvia_cv1k_probe[19]+=epic12_gpu_pixels[b];
 				}
 			} else {
 				salvia_cv1k_probe[16]+=ticks; ++salvia_cv1k_probe[17];
-				salvia_cv1k_probe[18]+=epic12_gpu_pixels;
+				salvia_cv1k_probe[18]+=epic12_gpu_pixels[b];
 				unsigned bucket=0;
 				while (bucket+1<EPIC12_GPU_REPLAY_BUCKETS &&
-				       epic12_gpu_pixels>=epic12_gpu_replay_bucket_px[bucket]) ++bucket;
+				       epic12_gpu_pixels[b]>=epic12_gpu_replay_bucket_px[bucket]) ++bucket;
 				salvia_cv1k_probe[24+bucket*3]+=ticks;
-				salvia_cv1k_probe[25+bucket*3]+=epic12_gpu_pixels;
+				salvia_cv1k_probe[25+bucket*3]+=epic12_gpu_pixels[b];
 				++salvia_cv1k_probe[26+bucket*3];
 			}
 		}
 	}
 #endif
-	epic12_gpu_invalidate(epic12_gpu_bounds);
-	epic12_gpu_count = 0;
-	epic12_gpu_pixels = 0;
-	epic12_gpu_source_count = 0;
-	memset(epic12_gpu_source_pages,0,sizeof(epic12_gpu_source_pages));
+	epic12_gpu_invalidate(epic12_gpu_bounds[b]);
+	epic12_gpu_count[b] = 0;
+	epic12_gpu_pixels[b] = 0;
+	epic12_gpu_source_count[b] = 0;
+	memset(epic12_gpu_source_pages[b],0,sizeof(epic12_gpu_source_pages[b]));
+}
+
+static void epic12_gpu_retire_bin0(Epic12GpuFlushReason reason)
+{
+	epic12_gpu_flush_bin(0, reason);
+	if (epic12_gpu_count[1]) {
+		memcpy(epic12_gpu_commands[0], epic12_gpu_commands[1], epic12_gpu_count[1] * sizeof(Epic12GpuCommand));
+		epic12_gpu_count[0] = epic12_gpu_count[1];
+		epic12_gpu_pixels[0] = epic12_gpu_pixels[1];
+		epic12_gpu_bounds[0] = epic12_gpu_bounds[1];
+		epic12_gpu_source_bounds[0] = epic12_gpu_source_bounds[1];
+		epic12_gpu_source_count[0] = epic12_gpu_source_count[1];
+		memcpy(epic12_gpu_source_pages[0], epic12_gpu_source_pages[1], sizeof(epic12_gpu_source_pages[0]));
+		epic12_gpu_count[1] = 0;
+		epic12_gpu_pixels[1] = 0;
+		epic12_gpu_source_count[1] = 0;
+		memset(epic12_gpu_source_pages[1], 0, sizeof(epic12_gpu_source_pages[1]));
+	}
+}
+
+static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHER)
+{
+	epic12_gpu_flush_bin(0, reason);
+	epic12_gpu_flush_bin(1, reason);
+}
+
+static inline bool epic12_gpu_commutes_with(int b, int x, int y, int w, int h, int sx, int sy)
+{
+	if (!epic12_gpu_count[b]) return true;
+	if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_bounds[b])) {
+		const int x2 = x + w, y2 = y + h;
+		for (int i = 0; i < epic12_gpu_count[b]; ++i) {
+			const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
+			if (x < c.x + c.w && x2 > c.x && y < c.y + c.h && y2 > c.y)
+				return false;
+		}
+	}
+	if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
+		const int sx2 = sx + w, sy2 = sy + h;
+		for (int i = 0; i < epic12_gpu_count[b]; ++i) {
+			const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
+			if (sx < c.x + c.w && sx2 > c.x && sy < c.y + c.h && sy2 > c.y)
+				return false;
+		}
+	}
+	if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_source_bounds[b])) {
+		const int x2 = x + w, y2 = y + h;
+		for (int i = 0; i < epic12_gpu_count[b]; ++i) {
+			const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
+			if (c.sx < x2 && c.sx + c.w > x && c.sy < y2 && c.sy + c.h > y)
+				return false;
+		}
+	}
+	return true;
+}
+
+static int epic12_gpu_can_fit(int b, const rectangle &dest, int sx, int sy, int w, int h,
+	int px0, int px1, int py0, int py1, unsigned &newPages, int *newPageList, rectangle &merged)
+{
+	if (!epic12_gpu_count[b]) {
+		merged = dest;
+		newPages = 0;
+		return 0;
+	}
+	merged = epic12_gpu_bounds[b];
+	if (dest.min_x < merged.min_x) merged.min_x = dest.min_x;
+	if (dest.min_y < merged.min_y) merged.min_y = dest.min_y;
+	if (dest.max_x > merged.max_x) merged.max_x = dest.max_x;
+	if (dest.max_y > merged.max_y) merged.max_y = dest.max_y;
+
+	if (epic12_gpu_count[b] >= 1024) return 1;
+	if (merged.max_x - merged.min_x >= 512 || merged.max_y - merged.min_y >= 512)
+		return 1;
+
+	if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
+		const int sx2 = sx + w, sy2 = sy + h;
+		for (int i = 0; i < epic12_gpu_count[b]; ++i) {
+			const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
+			if (sx < c.x + c.w && sx2 > c.x && sy < c.y + c.h && sy2 > c.y)
+				return 2;
+		}
+	}
+
+	newPages = 0;
+	if (py0 == py1 && px0 == px1) {
+		const int page = (py0 << 6) | px0;
+		if (!epic12_gpu_source_pages[b][page]) {
+			newPageList[0] = page;
+			newPages = 1;
+		}
+	} else {
+		for (int py = py0; py <= py1; ++py) {
+			const int row = py << 6;
+			for (int px = px0; px <= px1; ++px) {
+				const int page = row | px;
+				if (!epic12_gpu_source_pages[b][page]) {
+					newPageList[newPages++] = page;
+				}
+			}
+		}
+	}
+	if (epic12_gpu_source_count[b] + newPages > epic12_gpu_batch_page_capacity())
+		return 3;
+
+	return 0;
+}
+
+static void epic12_gpu_add_to_bin(int b, const rectangle &merged, unsigned newPages, const int *newPageList,
+	int px0, int px1, int py0, int py1,
+	int sx, int sy, int x, int y, int w, int h, int flipx, int flipy, int transparent,
+	int blend, int dmode, int s_alpha, int d_alpha, const clr_t *tint_clr)
+{
+	if (!epic12_gpu_count[b]) {
+		epic12_gpu_bounds[b] = merged;
+		epic12_gpu_source_bounds[b] = rectangle(sx, sx + w - 1, sy, sy + h - 1);
+		epic12_gpu_add_initial_pages(b, px0, px1, py0, py1);
+	} else {
+		epic12_gpu_bounds[b] = merged;
+		if (sx < epic12_gpu_source_bounds[b].min_x) epic12_gpu_source_bounds[b].min_x = sx;
+		if (sy < epic12_gpu_source_bounds[b].min_y) epic12_gpu_source_bounds[b].min_y = sy;
+		if (sx + w - 1 > epic12_gpu_source_bounds[b].max_x) epic12_gpu_source_bounds[b].max_x = sx + w - 1;
+		if (sy + h - 1 > epic12_gpu_source_bounds[b].max_y) epic12_gpu_source_bounds[b].max_y = sy + h - 1;
+		for (unsigned i = 0; i < newPages; ++i)
+			epic12_gpu_source_pages[b][newPageList[i]] = true;
+		epic12_gpu_source_count[b] += newPages;
+	}
+	Epic12GpuCommand &cmd = epic12_gpu_commands[b][epic12_gpu_count[b]++];
+	cmd.sx = sx; cmd.sy = sy; cmd.x = x; cmd.y = y; cmd.w = w; cmd.h = h;
+	cmd.flipx = !!flipx; cmd.flipy = !!flipy; cmd.transparent = !!transparent;
+	cmd.blend = !!blend; cmd.dmode = dmode; cmd.sa = s_alpha; cmd.da = d_alpha; cmd.tint = *tint_clr;
+	const unsigned pixels = (unsigned)(w * h);
+	epic12_gpu_pixels[b] += pixels;
+	epic12_device_blit_delay += pixels;
 }
 
 // Return true only when the draw was queued, or is an original no-op.
@@ -300,108 +424,55 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	}
 	const int py0 = sy >> 7, py1 = (sy + h - 1) >> 7;
 	const int px0 = sx >> 7, px1 = (sx + w - 1) >> 7;
-	if (epic12_gpu_count) {
-		rectangle merged = epic12_gpu_bounds;
-		if (x < merged.min_x) merged.min_x = x;
-		if (y < merged.min_y) merged.min_y = y;
-		if (dest.max_x > merged.max_x) merged.max_x = dest.max_x;
-		if (dest.max_y > merged.max_y) merged.max_y = dest.max_y;
-		if (epic12_gpu_count == 1024)
-			epic12_gpu_flush(EPIC12_GPU_FLUSH_COMMAND_LIMIT);
-		else if (merged.max_x - merged.min_x >= 512 || merged.max_y - merged.min_y >= 512) {
-#if SALVIA_FBNEO_DIAGNOSTICS
-			if (merged.max_x - merged.min_x >= 512) {
-				++epic12_gpu_diag_reg_exceed_x;
-				if (clip->max_x > 1000) ++epic12_gpu_diag_reg_clip_fs;
-				else ++epic12_gpu_diag_reg_clip_scr;
-				int span = merged.max_x - merged.min_x;
-				if (span < 1024) ++epic12_gpu_diag_reg_span[0];
-				else if (span < 2048) ++epic12_gpu_diag_reg_span[1];
-				else if (span < 4096) ++epic12_gpu_diag_reg_span[2];
-				else ++epic12_gpu_diag_reg_span[3];
-				if (epic12_gpu_diag_reg_sample_count < 5) {
-					int s = epic12_gpu_diag_reg_sample_count++;
-					epic12_gpu_diag_reg_samples[s][0] = epic12_gpu_bounds.min_x;
-					epic12_gpu_diag_reg_samples[s][1] = epic12_gpu_bounds.max_x;
-					epic12_gpu_diag_reg_samples[s][2] = dest.min_x;
-					epic12_gpu_diag_reg_samples[s][3] = dest.max_x;
-					epic12_gpu_diag_reg_samples[s][4] = clip->min_x;
-					epic12_gpu_diag_reg_samples[s][5] = clip->max_x;
-				}
-			}
-			if (merged.max_y - merged.min_y >= 512) ++epic12_gpu_diag_reg_exceed_y;
-			int rb = epic12_gpu_count == 1 ? 0 : (epic12_gpu_count <= 4 ? 1 : (epic12_gpu_count <= 16 ? 2 : (epic12_gpu_count <= 64 ? 3 : 4)));
-			++epic12_gpu_diag_reg_count_buckets[rb];
-#endif
-			epic12_gpu_flush(EPIC12_GPU_FLUSH_REGION);
-		} else if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds)) {
-			bool real_dep = false;
-			const int sx2 = sx + w;
-			const int sy2 = sy + h;
-			for (int i = 0; i < epic12_gpu_count; ++i) {
-				const Epic12GpuCommand &c = epic12_gpu_commands[i];
-				if (sx < c.x + c.w && sx2 > c.x && sy < c.y + c.h && sy2 > c.y) {
-					real_dep = true;
-					break;
-				}
-			}
-			if (real_dep) {
-#if SALVIA_FBNEO_DIAGNOSTICS
-				++epic12_gpu_diag_dep_true;
-				int db = epic12_gpu_count == 1 ? 0 : (epic12_gpu_count <= 4 ? 1 : (epic12_gpu_count <= 16 ? 2 : (epic12_gpu_count <= 64 ? 3 : 4)));
-				++epic12_gpu_diag_dep_count_buckets[db];
-#endif
-				epic12_gpu_flush(EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
-			} else {
-#if SALVIA_FBNEO_DIAGNOSTICS
-				++epic12_gpu_diag_dep_false;
-#endif
-				epic12_gpu_bounds = merged;
-			}
-		} else
-			epic12_gpu_bounds = merged;
+	unsigned np0 = 0, np1 = 0;
+	int npl0[32], npl1[32];
+	rectangle m0, m1;
+
+	// Case 1: Try bin 0
+	int fit0 = epic12_gpu_can_fit(0, dest, sx, sy, w, h, px0, px1, py0, py1, np0, npl0, m0);
+	if (fit0 == 0 && epic12_gpu_commutes_with(1, x, y, w, h, sx, sy)) {
+		epic12_gpu_add_to_bin(0, m0, np0, npl0, px0, px1, py0, py1,
+			sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
+		return true;
 	}
-	if (!epic12_gpu_count) {
-		epic12_gpu_bounds = dest;
-		epic12_gpu_add_initial_pages(px0, px1, py0, py1);
-	} else {
-		unsigned newPages = 0;
-		int newPageList[32];
-		if (py0 == py1 && px0 == px1) {
-			const int page = (py0 << 6) | px0;
-			if (!epic12_gpu_source_pages[page]) {
-				newPageList[0] = page;
-				newPages = 1;
-			}
-		} else {
-			for (int py = py0; py <= py1; ++py) {
-				const int row = py << 6;
-				for (int px = px0; px <= px1; ++px) {
-					const int page = row | px;
-					if (!epic12_gpu_source_pages[page]) {
-						newPageList[newPages++] = page;
-					}
-				}
-			}
-		}
-		if (epic12_gpu_source_count + newPages > epic12_gpu_batch_page_capacity()) {
-			epic12_gpu_flush(EPIC12_GPU_FLUSH_SOURCE_PAGES);
-			epic12_gpu_bounds = dest;
-			epic12_gpu_add_initial_pages(px0, px1, py0, py1);
-		} else {
-			for (unsigned i = 0; i < newPages; ++i) {
-				epic12_gpu_source_pages[newPageList[i]] = true;
-			}
-			epic12_gpu_source_count += newPages;
+
+	// Case 2: Try bin 1
+	if (epic12_gpu_commutes_with(0, x, y, w, h, sx, sy)) {
+		int fit1 = epic12_gpu_can_fit(1, dest, sx, sy, w, h, px0, px1, py0, py1, np1, npl1, m1);
+		if (fit1 == 0) {
+			epic12_gpu_add_to_bin(1, m1, np1, npl1, px0, px1, py0, py1,
+				sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
+			return true;
 		}
 	}
-	Epic12GpuCommand &cmd = epic12_gpu_commands[epic12_gpu_count++];
-	cmd.sx = sx; cmd.sy = sy; cmd.x = x; cmd.y = y; cmd.w = w; cmd.h = h;
-	cmd.flipx = !!flipx; cmd.flipy = !!flipy; cmd.transparent = !!transparent;
-	cmd.blend = !!blend; cmd.dmode = dmode; cmd.sa = s_alpha; cmd.da = d_alpha; cmd.tint = *tint_clr;
-	const unsigned pixels = (unsigned)(w * h);
-	epic12_gpu_pixels += pixels;
-	epic12_device_blit_delay += pixels;
+
+	// Case 3: Does not fit or does not commute. Retire bin 0!
+	Epic12GpuFlushReason reason0 = (fit0 == 2) ? EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY :
+		((fit0 == 3) ? EPIC12_GPU_FLUSH_SOURCE_PAGES : EPIC12_GPU_FLUSH_REGION);
+	epic12_gpu_retire_bin0(reason0);
+
+	// Try again with the promoted bin 0
+	fit0 = epic12_gpu_can_fit(0, dest, sx, sy, w, h, px0, px1, py0, py1, np0, npl0, m0);
+	if (fit0 == 0 && epic12_gpu_commutes_with(1, x, y, w, h, sx, sy)) {
+		epic12_gpu_add_to_bin(0, m0, np0, npl0, px0, px1, py0, py1,
+			sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
+		return true;
+	}
+
+	if (epic12_gpu_commutes_with(0, x, y, w, h, sx, sy)) {
+		int fit1 = epic12_gpu_can_fit(1, dest, sx, sy, w, h, px0, px1, py0, py1, np1, npl1, m1);
+		if (fit1 == 0) {
+			epic12_gpu_add_to_bin(1, m1, np1, npl1, px0, px1, py0, py1,
+				sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
+			return true;
+		}
+	}
+
+	// Still doesn't fit, retire bin 0 again (both bins now empty)
+	epic12_gpu_retire_bin0(reason0);
+	fit0 = epic12_gpu_can_fit(0, dest, sx, sy, w, h, px0, px1, py0, py1, np0, npl0, m0);
+	epic12_gpu_add_to_bin(0, m0, np0, npl0, px0, px1, py0, py1,
+		sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
 	return true;
 }
 
