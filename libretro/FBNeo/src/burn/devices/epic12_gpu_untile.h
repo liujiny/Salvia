@@ -108,36 +108,70 @@ static void epic12_gpu_untile_mask(const void *tiled,unsigned int *vram,
 			const unsigned short *row_offsets=epic12_untile_offsets[y];
 #if defined(EPIC12_UNTILE_VECTOR)
 			const bool aligned=(((size_t)out)&15)==0;
-			int x=0;
-			if(aligned) {
-				for(;x+8<=tileWidth;x+=8) {
-					const unsigned int *in0=(const unsigned int*)(block+row_offsets[x>>2]);
-					const unsigned int *in1=(const unsigned int*)(block+row_offsets[(x>>2)+1]);
-					const __vector4 v0=__vand(__lvx(in0,0),mask);
-					const __vector4 v1=__vand(__lvx(in1,0),mask);
-					__stvx(v0,out+x,0);
-					__stvx(v1,out+x+4,0);
-				}
-				if(x+4<=tileWidth) {
-					const unsigned int *in=(const unsigned int*)(block+row_offsets[x>>2]);
-					const __vector4 value=__vand(__lvx(in,0),mask);
-					__stvx(value,out+x,0);
-					x+=4;
+			if(tileWidth==32) {
+				const __vector4 v0=__vand(__lvx((const unsigned int*)(block+row_offsets[0]),0),mask);
+				const __vector4 v1=__vand(__lvx((const unsigned int*)(block+row_offsets[1]),0),mask);
+				const __vector4 v2=__vand(__lvx((const unsigned int*)(block+row_offsets[2]),0),mask);
+				const __vector4 v3=__vand(__lvx((const unsigned int*)(block+row_offsets[3]),0),mask);
+				const __vector4 v4=__vand(__lvx((const unsigned int*)(block+row_offsets[4]),0),mask);
+				const __vector4 v5=__vand(__lvx((const unsigned int*)(block+row_offsets[5]),0),mask);
+				const __vector4 v6=__vand(__lvx((const unsigned int*)(block+row_offsets[6]),0),mask);
+				const __vector4 v7=__vand(__lvx((const unsigned int*)(block+row_offsets[7]),0),mask);
+				if(aligned) {
+					__stvx(v0,out,0);
+					__stvx(v1,out+4,0);
+					__stvx(v2,out+8,0);
+					__stvx(v3,out+12,0);
+					__stvx(v4,out+16,0);
+					__stvx(v5,out+20,0);
+					__stvx(v6,out+24,0);
+					__stvx(v7,out+28,0);
+				} else {
+					__storeunalignedvector(v0,out);
+					__storeunalignedvector(v1,out+4);
+					__storeunalignedvector(v2,out+8);
+					__storeunalignedvector(v3,out+12);
+					__storeunalignedvector(v4,out+16);
+					__storeunalignedvector(v5,out+20);
+					__storeunalignedvector(v6,out+24);
+					__storeunalignedvector(v7,out+28);
 				}
 			} else {
-				for(;x+8<=tileWidth;x+=8) {
-					const unsigned int *in0=(const unsigned int*)(block+row_offsets[x>>2]);
-					const unsigned int *in1=(const unsigned int*)(block+row_offsets[(x>>2)+1]);
-					const __vector4 v0=__vand(__lvx(in0,0),mask);
-					const __vector4 v1=__vand(__lvx(in1,0),mask);
-					__storeunalignedvector(v0,out+x);
-					__storeunalignedvector(v1,out+x+4);
+				int x=0;
+				if(aligned) {
+					for(;x+8<=tileWidth;x+=8) {
+						const unsigned int *in0=(const unsigned int*)(block+row_offsets[x>>2]);
+						const unsigned int *in1=(const unsigned int*)(block+row_offsets[(x>>2)+1]);
+						const __vector4 v0=__vand(__lvx(in0,0),mask);
+						const __vector4 v1=__vand(__lvx(in1,0),mask);
+						__stvx(v0,out+x,0);
+						__stvx(v1,out+x+4,0);
+					}
+					if(x+4<=tileWidth) {
+						const unsigned int *in=(const unsigned int*)(block+row_offsets[x>>2]);
+						const __vector4 value=__vand(__lvx(in,0),mask);
+						__stvx(value,out+x,0);
+						x+=4;
+					}
+				} else {
+					for(;x+8<=tileWidth;x+=8) {
+						const unsigned int *in0=(const unsigned int*)(block+row_offsets[x>>2]);
+						const unsigned int *in1=(const unsigned int*)(block+row_offsets[(x>>2)+1]);
+						const __vector4 v0=__vand(__lvx(in0,0),mask);
+						const __vector4 v1=__vand(__lvx(in1,0),mask);
+						__storeunalignedvector(v0,out+x);
+						__storeunalignedvector(v1,out+x+4);
+					}
+					if(x+4<=tileWidth) {
+						const unsigned int *in=(const unsigned int*)(block+row_offsets[x>>2]);
+						const __vector4 value=__vand(__lvx(in,0),mask);
+						__storeunalignedvector(value,out+x);
+						x+=4;
+					}
 				}
-				if(x+4<=tileWidth) {
+				if(x<tileWidth) {
 					const unsigned int *in=(const unsigned int*)(block+row_offsets[x>>2]);
-					const __vector4 value=__vand(__lvx(in,0),mask);
-					__storeunalignedvector(value,out+x);
-					x+=4;
+					for(int tail=0;x<tileWidth;++x,++tail) out[x]=in[tail]&0x20f8f8f8;
 				}
 			}
 #else
@@ -149,12 +183,11 @@ static void epic12_gpu_untile_mask(const void *tiled,unsigned int *vram,
 				out[x+2]=in[2]&0x20f8f8f8;
 				out[x+3]=in[3]&0x20f8f8f8;
 			}
-#endif
-			// Never round the output rectangle out to a vector/cache line.
 			if(x<tileWidth) {
 				const unsigned int *in=(const unsigned int*)(block+row_offsets[x>>2]);
 				for(int tail=0;x<tileWidth;++x,++tail) out[x]=in[tail]&0x20f8f8f8;
 			}
+#endif
 		}
 	}
 }
