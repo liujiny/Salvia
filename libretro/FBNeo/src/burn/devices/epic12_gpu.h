@@ -290,53 +290,42 @@ static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHE
 	epic12_gpu_flush_bin(1, reason);
 }
 
-static inline bool epic12_gpu_commutes_with(int b, int x, int y, int w, int h, int sx, int sy)
+static inline bool epic12_gpu_commutes_ahead_of_bin1(int x, int y, int w, int h, int sx, int sy)
 {
-	if (!epic12_gpu_count[b]) return true;
-	if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_bounds[b])) {
+	if (!epic12_gpu_count[1]) return true;
+	// 1. WAW hazard: incoming dest intersects bin 1 dest
+	if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_bounds[1])) {
 		const int x2 = x + w, y2 = y + h;
-		for (int i = 0; i < epic12_gpu_count[b]; ++i) {
-			const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
+		for (int i = 0; i < epic12_gpu_count[1]; ++i) {
+			const Epic12GpuCommand &c = epic12_gpu_commands[1][i];
 			if (x < c.x + c.w && x2 > c.x && y < c.y + c.h && y2 > c.y) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 				++epic12_gpu_diag_c_dest;
-				if (b == 0 && epic12_gpu_diag_cfail_sample_count < 5) {
-					int s = epic12_gpu_diag_cfail_sample_count++;
-					epic12_gpu_diag_cfail_samples[s][0] = epic12_gpu_bounds[0].min_x;
-					epic12_gpu_diag_cfail_samples[s][1] = epic12_gpu_bounds[0].max_x;
-					epic12_gpu_diag_cfail_samples[s][2] = x;
-					epic12_gpu_diag_cfail_samples[s][3] = x + w - 1;
-					epic12_gpu_diag_cfail_samples[s][4] = sx;
-					epic12_gpu_diag_cfail_samples[s][5] = sx + w - 1;
-					epic12_gpu_diag_cfail_samples[s][6] = 1;
-					epic12_gpu_diag_cfail_samples[s][7] = i;
-				}
 #endif
 				return false;
 			}
 		}
 	}
-	if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
+	// 2. RAW hazard: incoming src intersects bin 1 dest
+	if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[1])) {
 		const int sx2 = sx + w, sy2 = sy + h;
-		for (int i = 0; i < epic12_gpu_count[b]; ++i) {
-			const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
+		for (int i = 0; i < epic12_gpu_count[1]; ++i) {
+			const Epic12GpuCommand &c = epic12_gpu_commands[1][i];
 			if (sx < c.x + c.w && sx2 > c.x && sy < c.y + c.h && sy2 > c.y) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 				++epic12_gpu_diag_c_raw;
-				if (b == 0 && epic12_gpu_diag_cfail_sample_count < 5) {
-					int s = epic12_gpu_diag_cfail_sample_count++;
-					epic12_gpu_diag_cfail_samples[s][0] = epic12_gpu_bounds[0].min_x;
-					epic12_gpu_diag_cfail_samples[s][1] = epic12_gpu_bounds[0].max_x;
-					epic12_gpu_diag_cfail_samples[s][2] = x;
-					epic12_gpu_diag_cfail_samples[s][3] = x + w - 1;
-					epic12_gpu_diag_cfail_samples[s][4] = sx;
-					epic12_gpu_diag_cfail_samples[s][5] = sx + w - 1;
-					epic12_gpu_diag_cfail_samples[s][6] = 2;
-					epic12_gpu_diag_cfail_samples[s][7] = i;
-				}
 #endif
 				return false;
 			}
+		}
+	}
+	// 3. WAR hazard: incoming dest intersects bin 1 src
+	if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_source_bounds[1])) {
+		const int x2 = x + w, y2 = y + h;
+		for (int i = 0; i < epic12_gpu_count[1]; ++i) {
+			const Epic12GpuCommand &c = epic12_gpu_commands[1][i];
+			if (x < c.sx + c.w && x2 > c.sx && y < c.sy + c.h && y2 > c.sy)
+				return false;
 		}
 	}
 	return true;
@@ -472,7 +461,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	// Case 1: Try bin 0
 	int fit0 = epic12_gpu_can_fit(0, dest, sx, sy, w, h, px0, px1, py0, py1, np0, npl0, m0);
 	if (fit0 == 0) {
-		if (epic12_gpu_commutes_with(1, x, y, w, h, sx, sy)) {
+		if (epic12_gpu_commutes_ahead_of_bin1(x, y, w, h, sx, sy)) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 			++epic12_gpu_diag_bin0_hits;
 #endif
@@ -488,45 +477,38 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	else ++epic12_gpu_diag_fit0_fails[fit0];
 #endif
 
-	// Case 2: Try bin 1
-	if (epic12_gpu_commutes_with(0, x, y, w, h, sx, sy)) {
-		int fit1 = epic12_gpu_can_fit(1, dest, sx, sy, w, h, px0, px1, py0, py1, np1, npl1, m1);
-		if (fit1 == 0) {
+	// Case 2: Try bin 1 (bin 1 executes after bin 0, preserving program FIFO order)
+	int fit1 = epic12_gpu_can_fit(1, dest, sx, sy, w, h, px0, px1, py0, py1, np1, npl1, m1);
+	if (fit1 == 0) {
 #if SALVIA_FBNEO_DIAGNOSTICS
-			++epic12_gpu_diag_bin1_hits;
+		++epic12_gpu_diag_bin1_hits;
 #endif
-			epic12_gpu_add_to_bin(1, m1, np1, npl1, px0, px1, py0, py1,
-				sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
-			return true;
-		}
-#if SALVIA_FBNEO_DIAGNOSTICS
-		else ++epic12_gpu_diag_fit1_fails[fit1];
-#endif
+		epic12_gpu_add_to_bin(1, m1, np1, npl1, px0, px1, py0, py1,
+			sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
+		return true;
 	}
 #if SALVIA_FBNEO_DIAGNOSTICS
-	else ++epic12_gpu_diag_commute0_fails;
+	else ++epic12_gpu_diag_fit1_fails[fit1];
 #endif
 
-	// Case 3: Does not fit or does not commute. Retire bin 0!
+	// Case 3: Does not fit. Retire bin 0!
 	Epic12GpuFlushReason reason0 = (fit0 == 2) ? EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY :
 		((fit0 == 3) ? EPIC12_GPU_FLUSH_SOURCE_PAGES : EPIC12_GPU_FLUSH_REGION);
 	epic12_gpu_retire_bin0(reason0);
 
 	// Try again with the promoted bin 0
 	fit0 = epic12_gpu_can_fit(0, dest, sx, sy, w, h, px0, px1, py0, py1, np0, npl0, m0);
-	if (fit0 == 0 && epic12_gpu_commutes_with(1, x, y, w, h, sx, sy)) {
+	if (fit0 == 0 && epic12_gpu_commutes_ahead_of_bin1(x, y, w, h, sx, sy)) {
 		epic12_gpu_add_to_bin(0, m0, np0, npl0, px0, px1, py0, py1,
 			sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
 		return true;
 	}
 
-	if (epic12_gpu_commutes_with(0, x, y, w, h, sx, sy)) {
-		int fit1 = epic12_gpu_can_fit(1, dest, sx, sy, w, h, px0, px1, py0, py1, np1, npl1, m1);
-		if (fit1 == 0) {
-			epic12_gpu_add_to_bin(1, m1, np1, npl1, px0, px1, py0, py1,
-				sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
-			return true;
-		}
+	fit1 = epic12_gpu_can_fit(1, dest, sx, sy, w, h, px0, px1, py0, py1, np1, npl1, m1);
+	if (fit1 == 0) {
+		epic12_gpu_add_to_bin(1, m1, np1, npl1, px0, px1, py0, py1,
+			sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
+		return true;
 	}
 
 	// Still doesn't fit, retire bin 0 again (both bins now empty)
