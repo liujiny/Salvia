@@ -17,6 +17,32 @@ static inline void __dcbt_impl(int offset, const void *ptr) {
 #endif
 #endif
 
+static inline void epic12_prefetch_row(const void *ptr, int bytes)
+{
+	const char *p = (const char *)ptr;
+	const char *end = p + bytes - 1;
+	__dcbt(0, p);
+	if (((uintptr_t)p >> 7) != ((uintptr_t)end >> 7)) {
+		for (int b = 128; b < bytes; b += 128) {
+			__dcbt(b, p);
+		}
+		__dcbt(0, end);
+	}
+}
+
+static inline void epic12_prefetch_row_flip(const void *ptr, int bytes)
+{
+	const char *p = (const char *)ptr;
+	const char *end = p - (bytes - 1);
+	__dcbt(0, p);
+	if (((uintptr_t)p >> 7) != ((uintptr_t)end >> 7)) {
+		for (int b = 128; b < bytes; b += 128) {
+			__dcbt(-b, p);
+		}
+		__dcbt(0, end);
+	}
+}
+
 static UINT8 epic12_source_scale[64][32][32];
 static UINT32 epic12_source_scale_r[64][32][32];
 static UINT32 epic12_source_scale_g[64][32][32];
@@ -86,34 +112,29 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 	const UINT32 *dgreen = epic12_dest_scale_g[d_alpha];
 	const UINT32 *dblue = epic12_dest_scale_b[d_alpha];
 	const int width_bytes = (x1 - x0) * (int)sizeof(UINT32);
+	const int in_x_off = src_x + (FlipX ? -x0 : x0);
+	int cur_src_y = (src_y + yf * y0) & 0x0fff;
 
-	const UINT32 *first_in = gfx + (((src_y + yf * y0) & 0x0fff) * 0x2000) + src_x + (FlipX ? -x0 : x0);
-	const UINT32 *first_out = m_bitmaps + (dst_y_start + y0) * 0x2000 + dst_x_start + x0;
-	for (int b = 0; b < width_bytes; b += 128) {
-		__dcbt(FlipX ? -b : b, first_in);
-		__dcbt(b, first_out);
-	}
-	if (width_bytes > 0) {
-		__dcbt(FlipX ? -(width_bytes - 1) : (width_bytes - 1), first_in);
-		__dcbt(width_bytes - 1, first_out);
-	}
+	const UINT32 *cur_in = gfx + (cur_src_y << 13) + in_x_off;
+	UINT32 *cur_out = m_bitmaps + ((dst_y_start + y0) << 13) + dst_x_start + x0;
+
+	if (FlipX) epic12_prefetch_row_flip(cur_in, width_bytes);
+	else epic12_prefetch_row(cur_in, width_bytes);
+	epic12_prefetch_row(cur_out, width_bytes);
 
 	for (int y = y0; y < y1; y++) {
+		const UINT32 *in = cur_in;
+		UINT32 *out = cur_out;
+		const bool same_row = (gfx == m_bitmaps) && (cur_src_y == (dst_y_start + y));
+
 		if (y + 1 < y1) {
-			const UINT32 *next_in = gfx + (((src_y + yf * (y + 1)) & 0x0fff) * 0x2000) + src_x + (FlipX ? -x0 : x0);
-			const UINT32 *next_out = m_bitmaps + (dst_y_start + y + 1) * 0x2000 + dst_x_start + x0;
-			for (int b = 0; b < width_bytes; b += 128) {
-				__dcbt(FlipX ? -b : b, next_in);
-				__dcbt(b, next_out);
-			}
-			if (width_bytes > 0) {
-				__dcbt(FlipX ? -(width_bytes - 1) : (width_bytes - 1), next_in);
-				__dcbt(width_bytes - 1, next_out);
-			}
+			cur_src_y = (cur_src_y + yf) & 0x0fff;
+			cur_in = gfx + (cur_src_y << 13) + in_x_off;
+			cur_out += 0x2000;
+			if (FlipX) epic12_prefetch_row_flip(cur_in, width_bytes);
+			else epic12_prefetch_row(cur_in, width_bytes);
+			epic12_prefetch_row(cur_out, width_bytes);
 		}
-		UINT32 *out = m_bitmaps + (dst_y_start + y) * 0x2000 + dst_x_start + x0;
-		const UINT32 *in = gfx + (((src_y + yf * y) & 0x0fff) * 0x2000) + src_x + (FlipX ? -x0 : x0);
-		const bool same_row = (gfx == m_bitmaps) && (((src_y + yf * y) & 0x0fff) == (dst_y_start + y));
 		int x = x0;
 		if (!same_row && Transparent) {
 			for (; x + 1 < x1; x += 2) {
