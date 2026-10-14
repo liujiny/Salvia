@@ -2143,13 +2143,6 @@ bool loadGameAtStart(int argc, char *argv[]){
 			}
 			if (!bf) bf = fopen("salvia_benchmark.txt", "r");
 
-			FILE* dbg = fopen("game:\\salvia_bench_debug.log", "w");
-			if (!dbg) dbg = fopen("d:\\salvia_bench_debug.log", "w");
-			if (!dbg) dbg = fopen("salvia_bench_debug.log", "w");
-			if (dbg) {
-				fprintf(dbg, "bench check: bf=%p appdir=%s\n", bf, Constant::getAppDir().c_str());
-			}
-
 			if (bf) {
 				char line[256];
 				std::string bRom;
@@ -2182,19 +2175,11 @@ bool loadGameAtStart(int argc, char *argv[]){
 					}
 					g_benchmark_target_frames = bFrames > 0 ? bFrames : 1000;
 					romToLaunch = bRom;
-					if (dbg) {
-						fprintf(dbg, "launching: bRom=%s state=%s frames=%d\n",
-							bRom.c_str(), g_benchmark_state.c_str(), g_benchmark_target_frames);
-					}
 					LOG_INFO("Benchmark mode: rom=%s state=%s frames=%d\n",
 						bRom.c_str(), g_benchmark_state.c_str(), g_benchmark_target_frames);
 					ret = launchGame(bRom) == 1;
-					if (dbg) {
-						fprintf(dbg, "launchGame returned: %d\n", ret ? 1 : 0);
-					}
 				}
 			}
-			if (dbg) fclose(dbg);
 		}
 	#else 
 		if (argc > 1){
