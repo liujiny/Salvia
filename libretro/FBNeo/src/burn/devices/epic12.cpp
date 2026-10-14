@@ -501,6 +501,25 @@ static inline UINT16 COPY_NEXT_WORD(UINT32 *addr)
 
 static void gfx_upload_shadow_copy(UINT32 *addr)
 {
+	const UINT32 cur_addr = *addr;
+	const UINT32 ram_offset = cur_addr & m_main_rammask;
+	UINT32 dimx, dimy;
+
+	if (ram_offset + 16 <= (UINT32)m_main_rammask + 1)
+	{
+		const UINT16 *src = &m_ram16[ram_offset >> 1];
+		UINT16 *dst = &m_ram16_copy[ram_offset >> 1];
+		dimx = (src[6] & 0x1fff) + 1;
+		dimy = (src[7] & 0x0fff) + 1;
+		const UINT32 total_bytes = (8 + dimx * dimy) * 2;
+		if (ram_offset + total_bytes <= (UINT32)m_main_rammask + 1)
+		{
+			memcpy(dst, src, total_bytes);
+			*addr = cur_addr + total_bytes;
+			goto done_upload_copy;
+		}
+	}
+
 	COPY_NEXT_WORD(addr);
 	COPY_NEXT_WORD(addr);
 	COPY_NEXT_WORD(addr);
@@ -508,8 +527,8 @@ static void gfx_upload_shadow_copy(UINT32 *addr)
 	COPY_NEXT_WORD(addr);
 	COPY_NEXT_WORD(addr);
 
-	const UINT32 dimx = (COPY_NEXT_WORD(addr) & 0x1fff) + 1;
-	const UINT32 dimy = (COPY_NEXT_WORD(addr) & 0x0fff) + 1;
+	dimx = (COPY_NEXT_WORD(addr) & 0x1fff) + 1;
+	dimy = (COPY_NEXT_WORD(addr) & 0x0fff) + 1;
 
 	for (UINT32 y = 0; y < dimy; y++)
 	{
@@ -519,14 +538,12 @@ static void gfx_upload_shadow_copy(UINT32 *addr)
 		}
 	}
 
+done_upload_copy:
 	// Time spent on uploads is mostly due to Main RAM accesses.
 	// The Blitter will send BREQ requests to the SH-3, to access Main RAM
 	// and then write it to VRAM.
 	// The number of bytes to read are the sum of a 16b fixed header and the pixel
 	// data (2 byte per pixel). RAM accesses are 32bit, so divide by four for clocks.
-	//
-	// TODO: There's additional overhead to these request thats are not included. The BREQ
-	// assertion also puts CPU into WAIT, if it needs uncached RAM accesses.
 	int num_sram_clk = (16 + dimx * dimy * 2 ) / 4;
 	m_blit_delay_ns += num_sram_clk * EP1C_SRAM_CLK_NANOSEC;
 	m_blit_idle_op_bytes = 0;
@@ -537,47 +554,68 @@ static void gfx_upload(UINT32 *addr)
 #if SALVIA_CV1K_PROBE
 	SalviaCv1kSpan uploadSpan(22);
 #endif
-	UINT32 x,y, dst_p,dst_x_start,dst_y_start, dimx,dimy;
-	UINT32 *dst;
+	const UINT32 cur_addr = *addr;
+	const UINT32 ram_offset = cur_addr & m_main_rammask;
+	UINT32 dst_x_start, dst_y_start, dimx, dimy;
+	const UINT16 *src_pixels = NULL;
 
-	// 0x20000000
-	READ_NEXT_WORD(addr);
-	READ_NEXT_WORD(addr);
+	if (ram_offset + 16 <= (UINT32)m_main_rammask + 1)
+	{
+		const UINT16 *hdr = &m_ram16_copy[ram_offset >> 1];
+		dst_x_start = hdr[4] & 0x1fff;
+		dst_y_start = hdr[5] & 0x0fff;
+		dimx = (hdr[6] & 0x1fff) + 1;
+		dimy = (hdr[7] & 0x0fff) + 1;
+		const UINT32 total_bytes = (8 + dimx * dimy) * 2;
+		if (ram_offset + total_bytes <= (UINT32)m_main_rammask + 1)
+		{
+			src_pixels = &m_ram16_copy[(ram_offset >> 1) + 8];
+			*addr = cur_addr + total_bytes;
+		}
+	}
 
-	// 0x99999999
-	READ_NEXT_WORD(addr);
-	READ_NEXT_WORD(addr);
-
-	dst_x_start = READ_NEXT_WORD(addr);
-	dst_y_start = READ_NEXT_WORD(addr);
-
-	dst_p = 0;
-	dst_x_start &= 0x1fff;
-	dst_y_start &= 0x0fff;
-
-	dimx = (READ_NEXT_WORD(addr) & 0x1fff) + 1;
-	dimy = (READ_NEXT_WORD(addr) & 0x0fff) + 1;
-
+	if (!src_pixels)
+	{
+		READ_NEXT_WORD(addr);
+		READ_NEXT_WORD(addr);
+		READ_NEXT_WORD(addr);
+		READ_NEXT_WORD(addr);
+		dst_x_start = READ_NEXT_WORD(addr) & 0x1fff;
+		dst_y_start = READ_NEXT_WORD(addr) & 0x0fff;
+		dimx = (READ_NEXT_WORD(addr) & 0x1fff) + 1;
+		dimy = (READ_NEXT_WORD(addr) & 0x0fff) + 1;
+	}
 
 #if defined(_XBOX) || defined(EPIC12_GPU_TEST)
-	epic12_gpu_cpu_write(dst_x_start,dst_y_start,dimx,dimy,EPIC12_GPU_FLUSH_CPU_UPLOAD);
+	epic12_gpu_cpu_write(dst_x_start, dst_y_start, dimx, dimy, EPIC12_GPU_FLUSH_CPU_UPLOAD);
 #endif
-	//bprintf(0, _T("GFX COPY: DST %02X,%02X,%03X DIM %02X,%03X\n"), dst_p,dst_x_start,dst_y_start, dimx,dimy);
 
-	for (y = 0; y < dimy; y++)
+	UINT32 *dst_row = m_bitmaps + dst_y_start * 0x2000 + dst_x_start;
+
+	if (src_pixels)
 	{
-		//dst = &m_bitmaps->pix(dst_y_start + y, 0);
-		dst = m_bitmaps + (dst_y_start + y) * 0x2000;
-
-		dst += dst_x_start;
-
-		for (x = 0; x < dimx; x++)
+		for (UINT32 y = 0; y < dimy; y++)
 		{
-			UINT16 pendat = READ_NEXT_WORD(addr);
-			// real hw would upload the gfxword directly, but our VRAM is 32-bit, so convert it.
-			//dst[dst_x_start + x] = pendat;
-			*dst++ = ((pendat&0x8000)<<14) | ((pendat&0x7c00)<<9) | ((pendat&0x03e0)<<6) | ((pendat&0x001f)<<3);  // --t- ---- rrrr r--- gggg g--- bbbb b---  format
-			//dst[dst_x_start + x] = ((pendat&0x8000)<<14) | ((pendat&0x7c00)<<6) | ((pendat&0x03e0)<<3) | ((pendat&0x001f)<<0);  // --t- ---- ---r rrrr ---g gggg ---b bbbb  format
+			UINT32 *dst = dst_row;
+			for (UINT32 x = 0; x < dimx; x++)
+			{
+				const UINT32 pendat = *src_pixels++;
+				*dst++ = ((pendat & 0x8000) << 14) | ((pendat & 0x7c00) << 9) | ((pendat & 0x03e0) << 6) | ((pendat & 0x001f) << 3);
+			}
+			dst_row += 0x2000;
+		}
+	}
+	else
+	{
+		for (UINT32 y = 0; y < dimy; y++)
+		{
+			UINT32 *dst = dst_row;
+			for (UINT32 x = 0; x < dimx; x++)
+			{
+				const UINT16 pendat = READ_NEXT_WORD(addr);
+				*dst++ = ((pendat & 0x8000) << 14) | ((pendat & 0x7c00) << 9) | ((pendat & 0x03e0) << 6) | ((pendat & 0x001f) << 3);
+			}
+			dst_row += 0x2000;
 		}
 	}
 }
