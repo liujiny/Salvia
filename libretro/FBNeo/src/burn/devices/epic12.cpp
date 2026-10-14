@@ -745,7 +745,7 @@ inline UINT16 calculate_vram_accesses(UINT16 start_x, UINT16 start_y, UINT16 dim
 	return (UINT16)(calculate_vram_1d(start_x, dimx) * calculate_vram_1d(start_y, dimy));
 }
 
-static void gfx_draw_shadow_copy(UINT32 *addr)
+static inline void gfx_draw_shadow_copy(UINT32 *addr)
 {
 	const UINT32 cur_addr = *addr;
 	const UINT32 ram_offset = cur_addr & m_main_rammask;
@@ -842,7 +842,7 @@ static void gfx_draw_shadow_copy(UINT32 *addr)
 	m_blit_delay_ns += num_vram_clk * EP1C_VRAM_CLK_NANOSEC;
 }
 
-static void gfx_draw(UINT32 *addr)
+static inline void gfx_draw(UINT32 *addr)
 {
 #if SALVIA_CV1K_PROBE
 	SalviaCv1kSpan drawSpan(20);
@@ -1121,7 +1121,9 @@ static void gfx_create_shadow_copy()
 
 			case 0x1000:
 				addr -= 2;
-				gfx_draw_shadow_copy(&addr);
+				do {
+					gfx_draw_shadow_copy(&addr);
+				} while ((m_ram16[(addr & m_main_rammask) >> 1] & 0xf000) == 0x1000);
 				break;
 
 			default:
@@ -1178,7 +1180,9 @@ static void gfx_exec()
 
 			case 0x1000:
 				addr -= 2;
-				gfx_draw(&addr);
+				do {
+					gfx_draw(&addr);
+				} while ((m_ram16_copy[(addr & m_main_rammask) >> 1] & 0xf000) == 0x1000);
 				break;
 
 			default:
