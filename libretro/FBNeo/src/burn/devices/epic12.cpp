@@ -818,7 +818,6 @@ static void gfx_draw(UINT32 *addr)
 	int x,y, dimx,dimy, flipx,flipy;//, src_p;
 	int trans,blend, s_mode, d_mode;
 	clr_t tint_clr;
-	int tinted = 0;
 
 	UINT16 attr, alpha, src_x, src_y, dst_x_start, dst_y_start, w, h, tint_r, tint_gb;
 	const UINT32 cur_addr = *addr;
@@ -888,19 +887,10 @@ static void gfx_draw(UINT32 *addr)
 	// convert parameters to clr
 
 
-	tint_to_clr(tint_r & 0x00ff, (tint_gb >>  8) & 0xff, tint_gb & 0xff, &tint_clr);
-
-	/* interestingly this gets set to 0x20 for 'normal' not 0x1f */
-
-	if (tint_clr.r!=0x20)
-		tinted = 1;
-
-	if (tint_clr.g!=0x20)
-		tinted = 1;
-
-	if (tint_clr.b!=0x20)
-		tinted = 1;
-
+	tint_clr.r = (UINT8)((tint_r & 0x00ff) >> 2);
+	tint_clr.g = (UINT8)(((tint_gb >> 8) & 0xff) >> 2);
+	tint_clr.b = (UINT8)((tint_gb & 0xff) >> 2);
+	tint_clr.t = 0;
 
 	// surprisingly frequent, need to verify if it produces a worthwhile speedup tho.
 	if ((s_mode==0 && s_alpha==0x1f) && (d_mode==4 && d_alpha==0x1f))
@@ -923,6 +913,7 @@ static void gfx_draw(UINT32 *addr)
 	}
 #endif
 
+	const int tinted = (tint_clr.r != 0x20) | (tint_clr.g != 0x20) | (tint_clr.b != 0x20);
 	if (tinted)
 	{
 		if (!flipx)
