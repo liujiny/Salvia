@@ -227,31 +227,29 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	if (dst_x_start + x1 - 1 > clip->max_x) x1 = clip->max_x - dst_x_start + 1;
 	if (dst_y_start + y1 - 1 > clip->max_y) y1 = clip->max_y - dst_y_start + 1;
 	if (x1 <= x0 || y1 <= y0) return true;
-	Epic12GpuCommand c;
-	c.sx = src_x + (flipx ? dimx - x1 : x0);
-	c.sy = (src_y + (flipy ? dimy - y1 : y0)) & 4095;
-	c.x = dst_x_start + x0; c.y = dst_y_start + y0;
-	c.w = x1 - x0; c.h = y1 - y0;
-	c.flipx = !!flipx; c.flipy = !!flipy; c.transparent = !!transparent;
-	c.blend = !!blend; c.dmode = dmode; c.sa = s_alpha; c.da = d_alpha; c.tint = *tint_clr;
-	if (c.x < 0 || c.y < 0 || c.x + c.w > 8192 || c.y + c.h > 4096 ||
-		c.sy + c.h > 4096 || c.w > 512 || c.h > 512) return false;
-	rectangle dest(c.x,c.x+c.w-1,c.y,c.y+c.h-1);
+	const int w = x1 - x0, h = y1 - y0;
+	if (w > 512 || h > 512) return false;
+	const int x = dst_x_start + x0, y = dst_y_start + y0;
+	if (x < 0 || y < 0 || x + w > 8192 || y + h > 4096) return false;
+	const int sx = src_x + (flipx ? dimx - x1 : x0);
+	const int sy = (src_y + (flipy ? dimy - y1 : y0)) & 4095;
+	if (sy + h > 4096) return false;
+	const rectangle dest(x, x + w - 1, y, y + h - 1);
 	// In-place copies depend on the original per-pixel write order.
-	if (epic12_gpu_intersects(c.sx,c.sy,c.w,c.h,dest)) return false;
-	const int py0 = c.sy >> 7, py1 = (c.sy + c.h - 1) >> 7;
-	const int px0 = c.sx >> 7, px1 = (c.sx + c.w - 1) >> 7;
+	if (epic12_gpu_intersects(sx, sy, w, h, dest)) return false;
+	const int py0 = sy >> 7, py1 = (sy + h - 1) >> 7;
+	const int px0 = sx >> 7, px1 = (sx + w - 1) >> 7;
 	if (epic12_gpu_count) {
 		rectangle merged = epic12_gpu_bounds;
-		if (c.x < merged.min_x) merged.min_x = c.x;
-		if (c.y < merged.min_y) merged.min_y = c.y;
+		if (x < merged.min_x) merged.min_x = x;
+		if (y < merged.min_y) merged.min_y = y;
 		if (dest.max_x > merged.max_x) merged.max_x = dest.max_x;
 		if (dest.max_y > merged.max_y) merged.max_y = dest.max_y;
 		if (epic12_gpu_count == 1024)
 			epic12_gpu_flush(EPIC12_GPU_FLUSH_COMMAND_LIMIT);
 		else if (merged.max_x - merged.min_x >= 512 || merged.max_y - merged.min_y >= 512)
 			epic12_gpu_flush(EPIC12_GPU_FLUSH_REGION);
-		else if (epic12_gpu_intersects(c.sx,c.sy,c.w,c.h,epic12_gpu_bounds))
+		else if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds))
 			epic12_gpu_flush(EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
 		else
 			epic12_gpu_bounds = merged;
@@ -290,9 +288,13 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 			epic12_gpu_source_count += newPages;
 		}
 	}
-	epic12_gpu_commands[epic12_gpu_count++] = c;
-	epic12_gpu_pixels += c.w * c.h;
-	epic12_device_blit_delay += c.w * c.h;
+	Epic12GpuCommand &cmd = epic12_gpu_commands[epic12_gpu_count++];
+	cmd.sx = sx; cmd.sy = sy; cmd.x = x; cmd.y = y; cmd.w = w; cmd.h = h;
+	cmd.flipx = !!flipx; cmd.flipy = !!flipy; cmd.transparent = !!transparent;
+	cmd.blend = !!blend; cmd.dmode = dmode; cmd.sa = s_alpha; cmd.da = d_alpha; cmd.tint = *tint_clr;
+	const unsigned pixels = (unsigned)(w * h);
+	epic12_gpu_pixels += pixels;
+	epic12_device_blit_delay += pixels;
 	return true;
 }
 
