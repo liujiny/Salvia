@@ -715,16 +715,42 @@ inline UINT16 calculate_vram_accesses(UINT16 start_x, UINT16 start_y, UINT16 dim
 
 static void gfx_draw_shadow_copy(UINT32 *addr)
 {
-	COPY_NEXT_WORD(addr);
-	COPY_NEXT_WORD(addr);
-	UINT16 src_x_start = COPY_NEXT_WORD(addr);
-	UINT16 src_y_start = COPY_NEXT_WORD(addr);
-	UINT16 dst_x_start = COPY_NEXT_WORD(addr);
-	UINT16 dst_y_start = COPY_NEXT_WORD(addr);
-	UINT16 src_dimx = (COPY_NEXT_WORD(addr) & 0x1fff) + 1;
-	UINT16 src_dimy = (COPY_NEXT_WORD(addr) & 0x0fff) + 1;
-	COPY_NEXT_WORD(addr);
-	COPY_NEXT_WORD(addr);
+	const UINT32 cur_addr = *addr;
+	const UINT32 ram_offset = cur_addr & m_main_rammask;
+	UINT16 src_x_start, src_y_start, dst_x_start, dst_y_start;
+	UINT16 src_dimx, src_dimy;
+
+	if (ram_offset + 20 <= (UINT32)m_main_rammask + 1)
+	{
+		const UINT16 *src = &m_ram16[ram_offset >> 1];
+		UINT16 *dst = &m_ram16_copy[ram_offset >> 1];
+		dst[0] = src[0];
+		dst[1] = src[1];
+		dst[2] = src_x_start = src[2];
+		dst[3] = src_y_start = src[3];
+		dst[4] = dst_x_start = src[4];
+		dst[5] = dst_y_start = src[5];
+		dst[6] = src[6];
+		dst[7] = src[7];
+		dst[8] = src[8];
+		dst[9] = src[9];
+		src_dimx = (src[6] & 0x1fff) + 1;
+		src_dimy = (src[7] & 0x0fff) + 1;
+		*addr = cur_addr + 20;
+	}
+	else
+	{
+		COPY_NEXT_WORD(addr);
+		COPY_NEXT_WORD(addr);
+		src_x_start = COPY_NEXT_WORD(addr);
+		src_y_start = COPY_NEXT_WORD(addr);
+		dst_x_start = COPY_NEXT_WORD(addr);
+		dst_y_start = COPY_NEXT_WORD(addr);
+		src_dimx = (COPY_NEXT_WORD(addr) & 0x1fff) + 1;
+		src_dimy = (COPY_NEXT_WORD(addr) & 0x0fff) + 1;
+		COPY_NEXT_WORD(addr);
+		COPY_NEXT_WORD(addr);
+	}
 
 	// Calculate Blitter delay for the Draw operation.
 	// On real hardware, the Blitter will read operations into a FIFO queue
@@ -794,16 +820,38 @@ static void gfx_draw(UINT32 *addr)
 	clr_t tint_clr;
 	int tinted = 0;
 
-	UINT16 attr     =   READ_NEXT_WORD(addr);
-	UINT16 alpha    =   READ_NEXT_WORD(addr);
-	UINT16 src_x    =   READ_NEXT_WORD(addr);
-	UINT16 src_y    =   READ_NEXT_WORD(addr);
-	UINT16 dst_x_start  =   READ_NEXT_WORD(addr);
-	UINT16 dst_y_start  =   READ_NEXT_WORD(addr);
-	UINT16 w        =   READ_NEXT_WORD(addr);
-	UINT16 h        =   READ_NEXT_WORD(addr);
-	UINT16 tint_r   =   READ_NEXT_WORD(addr);
-	UINT16 tint_gb  =   READ_NEXT_WORD(addr);
+	UINT16 attr, alpha, src_x, src_y, dst_x_start, dst_y_start, w, h, tint_r, tint_gb;
+	const UINT32 cur_addr = *addr;
+	const UINT32 ram_offset = cur_addr & m_main_rammask;
+
+	if (ram_offset + 20 <= (UINT32)m_main_rammask + 1)
+	{
+		const UINT16 *p = &m_ram16_copy[ram_offset >> 1];
+		attr        = p[0];
+		alpha       = p[1];
+		src_x       = p[2];
+		src_y       = p[3];
+		dst_x_start = p[4];
+		dst_y_start = p[5];
+		w           = p[6];
+		h           = p[7];
+		tint_r      = p[8];
+		tint_gb     = p[9];
+		*addr = cur_addr + 20;
+	}
+	else
+	{
+		attr        = READ_NEXT_WORD(addr);
+		alpha       = READ_NEXT_WORD(addr);
+		src_x       = READ_NEXT_WORD(addr);
+		src_y       = READ_NEXT_WORD(addr);
+		dst_x_start = READ_NEXT_WORD(addr);
+		dst_y_start = READ_NEXT_WORD(addr);
+		w           = READ_NEXT_WORD(addr);
+		h           = READ_NEXT_WORD(addr);
+		tint_r      = READ_NEXT_WORD(addr);
+		tint_gb     = READ_NEXT_WORD(addr);
+	}
 
 	// 0: +alpha
 	// 1: +source
@@ -831,8 +879,8 @@ static void gfx_draw(UINT32 *addr)
 	src_y   =   src_y & 0x0fff;
 
 
-	x       =   (dst_x_start & 0x7fff) - (dst_x_start & 0x8000);
-	y       =   (dst_y_start & 0x7fff) - (dst_y_start & 0x8000);
+	x       =   (INT16)dst_x_start;
+	y       =   (INT16)dst_y_start;
 
 	dimx    =   (w & 0x1fff) + 1;
 	dimy    =   (h & 0x0fff) + 1;
