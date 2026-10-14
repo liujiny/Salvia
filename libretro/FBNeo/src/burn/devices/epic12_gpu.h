@@ -308,21 +308,29 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 #endif
 			epic12_gpu_flush(EPIC12_GPU_FLUSH_REGION);
 		} else if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds)) {
-#if SALVIA_FBNEO_DIAGNOSTICS
 			bool real_dep = false;
+			const int sx2 = sx + w;
+			const int sy2 = sy + h;
 			for (int i = 0; i < epic12_gpu_count; ++i) {
 				const Epic12GpuCommand &c = epic12_gpu_commands[i];
-				if (epic12_gpu_intersects(sx, sy, w, h, rectangle(c.x, c.x + c.w - 1, c.y, c.y + c.h - 1))) {
+				if (sx < c.x + c.w && sx2 > c.x && sy < c.y + c.h && sy2 > c.y) {
 					real_dep = true;
 					break;
 				}
 			}
-			if (real_dep) ++epic12_gpu_diag_dep_true;
-			else ++epic12_gpu_diag_dep_false;
-			int db = epic12_gpu_count == 1 ? 0 : (epic12_gpu_count <= 4 ? 1 : (epic12_gpu_count <= 16 ? 2 : (epic12_gpu_count <= 64 ? 3 : 4)));
-			++epic12_gpu_diag_dep_count_buckets[db];
+			if (real_dep) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_gpu_diag_dep_true;
+				int db = epic12_gpu_count == 1 ? 0 : (epic12_gpu_count <= 4 ? 1 : (epic12_gpu_count <= 16 ? 2 : (epic12_gpu_count <= 64 ? 3 : 4)));
+				++epic12_gpu_diag_dep_count_buckets[db];
 #endif
-			epic12_gpu_flush(EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
+				epic12_gpu_flush(EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
+			} else {
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_gpu_diag_dep_false;
+#endif
+				epic12_gpu_bounds = merged;
+			}
 		} else
 			epic12_gpu_bounds = merged;
 	}
