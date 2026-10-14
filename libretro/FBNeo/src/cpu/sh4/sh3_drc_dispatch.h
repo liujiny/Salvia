@@ -187,8 +187,8 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   if(shadow) {
    const Shadow &cand=shadow[index];
    if(cand.pc==pc && cand.source==source && sector_epoch[cand.sector]==cand.epoch &&
-      sh3_drc_source_equal(cand.original,source,cand.words) &&
-      (!cand.check_read_map || MemMapR[phys>>SH3_SHIFT]==page)) copy=&cand;
+      (!cand.check_read_map || MemMapR[phys>>SH3_SHIFT]==page) &&
+      sh3_drc_source_equal(cand.original,source,cand.words)) copy=&cand;
   }
   if(copy) {
    if(Count) ++sh3_drc_work.shadow_hits;
@@ -346,8 +346,8 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    if(same) sh3_stamp_clear(source,b.words);
    rebuild=!same || (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page);
 #else
-   rebuild=(b.source!=source || b.pc!=pc || !sh3_drc_source_equal(b.original,source,b.words) ||
-     (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page));
+   rebuild=(b.source!=source || b.pc!=pc || (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page) ||
+     !sh3_drc_source_equal(b.original,source,b.words));
 #endif
   }
   if(rebuild) {
