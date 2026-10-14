@@ -266,6 +266,12 @@ static void epic12_xenos_report()
 			epic12_gpu_diag_reg_samples[s][4], epic12_gpu_diag_reg_samples[s][5]);
 		epic12_xenos_log(message);
 	}
+	sprintf(message, "diag_bins b0_hits=%u b1_hits=%u fit0_fail=[%u,%u,%u] c1_fail=%u c0_fail=%u fit1_fail=[%u,%u,%u]",
+		epic12_gpu_diag_bin0_hits, epic12_gpu_diag_bin1_hits,
+		epic12_gpu_diag_fit0_fails[1], epic12_gpu_diag_fit0_fails[2], epic12_gpu_diag_fit0_fails[3],
+		epic12_gpu_diag_commute1_fails, epic12_gpu_diag_commute0_fails,
+		epic12_gpu_diag_fit1_fails[1], epic12_gpu_diag_fit1_fails[2], epic12_gpu_diag_fit1_fails[3]);
+	epic12_xenos_log(message);
 	sprintf(message, "diag_small_cpu lt512=%u 512_2k=%u 2k_4k=%u 4k_8k=%u",
 		epic12_gpu_diag_small_cpu_buckets[0], epic12_gpu_diag_small_cpu_buckets[1],
 		epic12_gpu_diag_small_cpu_buckets[2], epic12_gpu_diag_small_cpu_buckets[3]);
