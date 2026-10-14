@@ -11,7 +11,7 @@ struct Epic12GpuCommand {
 	clr_t tint;
 };
 
-#define EPIC12_GPU_BINS 4
+#define EPIC12_GPU_BINS 8
 static Epic12GpuCommand epic12_gpu_commands[EPIC12_GPU_BINS][1024];
 static int epic12_gpu_count[EPIC12_GPU_BINS];
 static unsigned epic12_gpu_pixels[EPIC12_GPU_BINS];
