@@ -240,6 +240,24 @@ static void epic12_xenos_report()
 		epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_OTHER],
 		epic12_gpu_flush_small_cpu,epic12_gpu_flush_render_fallback);
 	epic12_xenos_log(message);
+	sprintf(message, "diag_dep true=%u false=%u (%.1f%% false) c1=%u c2_4=%u c5_16=%u c17_64=%u c_gt64=%u",
+		epic12_gpu_diag_dep_true, epic12_gpu_diag_dep_false,
+		(epic12_gpu_diag_dep_true + epic12_gpu_diag_dep_false) ?
+			(100.0 * epic12_gpu_diag_dep_false / (epic12_gpu_diag_dep_true + epic12_gpu_diag_dep_false)) : 0.0,
+		epic12_gpu_diag_dep_count_buckets[0], epic12_gpu_diag_dep_count_buckets[1],
+		epic12_gpu_diag_dep_count_buckets[2], epic12_gpu_diag_dep_count_buckets[3],
+		epic12_gpu_diag_dep_count_buckets[4]);
+	epic12_xenos_log(message);
+	sprintf(message, "diag_reg exceed_x=%u exceed_y=%u c1=%u c2_4=%u c5_16=%u c17_64=%u c_gt64=%u",
+		epic12_gpu_diag_reg_exceed_x, epic12_gpu_diag_reg_exceed_y,
+		epic12_gpu_diag_reg_count_buckets[0], epic12_gpu_diag_reg_count_buckets[1],
+		epic12_gpu_diag_reg_count_buckets[2], epic12_gpu_diag_reg_count_buckets[3],
+		epic12_gpu_diag_reg_count_buckets[4]);
+	epic12_xenos_log(message);
+	sprintf(message, "diag_small_cpu lt512=%u 512_2k=%u 2k_4k=%u 4k_8k=%u",
+		epic12_gpu_diag_small_cpu_buckets[0], epic12_gpu_diag_small_cpu_buckets[1],
+		epic12_gpu_diag_small_cpu_buckets[2], epic12_gpu_diag_small_cpu_buckets[3]);
+	epic12_xenos_log(message);
 	sprintf(message,"rejections blend=%u size=%u oob=%u sy=%u intersect=%u",
 		epic12_gpu_reject_blend,epic12_gpu_reject_size,epic12_gpu_reject_oob,
 		epic12_gpu_reject_sy,epic12_gpu_reject_intersect);
