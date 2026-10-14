@@ -84,7 +84,7 @@ static inline UINT32 epic12_packed_add(UINT32 s, UINT32 d)
 	return (sum | (carry - (carry >> 5))) & 0x00f8f8f8;
 }
 
-template<bool FlipX, bool Transparent, bool FullDestination>
+template<bool FlipX, bool Transparent, bool FullDestination, bool FullSource>
 static void epic12_blend_fixed(BLIT_PARAMS)
 {
 	if (FlipX) src_x += dimx - 1;
@@ -146,12 +146,10 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 					continue;
 				}
 				if ((pen0 & pen1) & 0x20000000) {
-					UINT32 s0 = red[(pen0 >> 19) & 31] |
-					           green[(pen0 >> 11) & 31] |
-					           blue[(pen0 >> 3) & 31];
-					UINT32 s1 = red[(pen1 >> 19) & 31] |
-					           green[(pen1 >> 11) & 31] |
-					           blue[(pen1 >> 3) & 31];
+					UINT32 s0 = FullSource ? (pen0 & 0x00f8f8f8)
+					                       : (red[(pen0 >> 19) & 31] | green[(pen0 >> 11) & 31] | blue[(pen0 >> 3) & 31]);
+					UINT32 s1 = FullSource ? (pen1 & 0x00f8f8f8)
+					                       : (red[(pen1 >> 19) & 31] | green[(pen1 >> 11) & 31] | blue[(pen1 >> 3) & 31]);
 					UINT32 d0 = out[0];
 					UINT32 d1 = out[1];
 					if (FullDestination) {
@@ -169,9 +167,8 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 					out[1] = epic12_packed_add(s1, d1) | 0x20000000;
 				} else {
 					if (pen0 & 0x20000000) {
-						UINT32 s0 = red[(pen0 >> 19) & 31] |
-						           green[(pen0 >> 11) & 31] |
-						           blue[(pen0 >> 3) & 31];
+						UINT32 s0 = FullSource ? (pen0 & 0x00f8f8f8)
+						                       : (red[(pen0 >> 19) & 31] | green[(pen0 >> 11) & 31] | blue[(pen0 >> 3) & 31]);
 						UINT32 d0 = out[0];
 						if (FullDestination) d0 &= 0x00f8f8f8;
 						else d0 = dred[(d0 >> 19) & 31] |
@@ -180,9 +177,8 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 						out[0] = epic12_packed_add(s0, d0) | 0x20000000;
 					}
 					if (pen1 & 0x20000000) {
-						UINT32 s1 = red[(pen1 >> 19) & 31] |
-						           green[(pen1 >> 11) & 31] |
-						           blue[(pen1 >> 3) & 31];
+						UINT32 s1 = FullSource ? (pen1 & 0x00f8f8f8)
+						                       : (red[(pen1 >> 19) & 31] | green[(pen1 >> 11) & 31] | blue[(pen1 >> 3) & 31]);
 						UINT32 d1 = out[1];
 						if (FullDestination) d1 &= 0x00f8f8f8;
 						else d1 = dred[(d1 >> 19) & 31] |
@@ -198,12 +194,10 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 			for (; x + 1 < x1; x += 2) {
 				UINT32 pen0 = *in;
 				UINT32 pen1 = in[FlipX ? -1 : 1];
-				UINT32 s0 = red[(pen0 >> 19) & 31] |
-				           green[(pen0 >> 11) & 31] |
-				           blue[(pen0 >> 3) & 31];
-				UINT32 s1 = red[(pen1 >> 19) & 31] |
-				           green[(pen1 >> 11) & 31] |
-				           blue[(pen1 >> 3) & 31];
+				UINT32 s0 = FullSource ? (pen0 & 0x00f8f8f8)
+				                       : (red[(pen0 >> 19) & 31] | green[(pen0 >> 11) & 31] | blue[(pen0 >> 3) & 31]);
+				UINT32 s1 = FullSource ? (pen1 & 0x00f8f8f8)
+				                       : (red[(pen1 >> 19) & 31] | green[(pen1 >> 11) & 31] | blue[(pen1 >> 3) & 31]);
 				UINT32 d0 = out[0];
 				UINT32 d1 = out[1];
 				if (FullDestination) {
@@ -226,9 +220,8 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 		for (; x < x1; x++, out++, in += FlipX ? -1 : 1) {
 			UINT32 pen = *in;
 			if (Transparent && !(pen & 0x20000000)) continue;
-			UINT32 s = red[(pen >> 19) & 31] |
-			           green[(pen >> 11) & 31] |
-			           blue[(pen >> 3) & 31];
+			UINT32 s = FullSource ? (pen & 0x00f8f8f8)
+			                      : (red[(pen >> 19) & 31] | green[(pen >> 11) & 31] | blue[(pen >> 3) & 31]);
 			UINT32 d = *out;
 			if (FullDestination) d &= 0x00f8f8f8;
 			else d = dred[(d >> 19) & 31] |
@@ -241,13 +234,24 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 
 static void epic12_draw_fixed(int flipx, int transparent, BLIT_PARAMS)
 {
-#define EPIC12_FIXED_CALL(f,t,d) epic12_blend_fixed<f,t,d>(clip,gfx,src_x,src_y,dst_x_start,dst_y_start,dimx,dimy,flipy,s_alpha,d_alpha,tint_clr)
+	const bool full_source = (tint_clr->r == 32 && tint_clr->g == 32 && tint_clr->b == 32 && s_alpha == 31);
+#define EPIC12_FIXED_CALL(f,t,d,s) epic12_blend_fixed<f,t,d,s>(clip,gfx,src_x,src_y,dst_x_start,dst_y_start,dimx,dimy,flipy,s_alpha,d_alpha,tint_clr)
 	if (d_alpha == 31) {
-		if (flipx) { if (transparent) EPIC12_FIXED_CALL(true,true,true); else EPIC12_FIXED_CALL(true,false,true); }
-		else { if (transparent) EPIC12_FIXED_CALL(false,true,true); else EPIC12_FIXED_CALL(false,false,true); }
+		if (full_source) {
+			if (flipx) { if (transparent) EPIC12_FIXED_CALL(true,true,true,true); else EPIC12_FIXED_CALL(true,false,true,true); }
+			else { if (transparent) EPIC12_FIXED_CALL(false,true,true,true); else EPIC12_FIXED_CALL(false,false,true,true); }
+		} else {
+			if (flipx) { if (transparent) EPIC12_FIXED_CALL(true,true,true,false); else EPIC12_FIXED_CALL(true,false,true,false); }
+			else { if (transparent) EPIC12_FIXED_CALL(false,true,true,false); else EPIC12_FIXED_CALL(false,false,true,false); }
+		}
 	} else {
-		if (flipx) { if (transparent) EPIC12_FIXED_CALL(true,true,false); else EPIC12_FIXED_CALL(true,false,false); }
-		else { if (transparent) EPIC12_FIXED_CALL(false,true,false); else EPIC12_FIXED_CALL(false,false,false); }
+		if (full_source) {
+			if (flipx) { if (transparent) EPIC12_FIXED_CALL(true,true,false,true); else EPIC12_FIXED_CALL(true,false,false,true); }
+			else { if (transparent) EPIC12_FIXED_CALL(false,true,false,true); else EPIC12_FIXED_CALL(false,false,false,true); }
+		} else {
+			if (flipx) { if (transparent) EPIC12_FIXED_CALL(true,true,false,false); else EPIC12_FIXED_CALL(true,false,false,false); }
+			else { if (transparent) EPIC12_FIXED_CALL(false,true,false,false); else EPIC12_FIXED_CALL(false,false,false,false); }
+		}
 	}
 #undef EPIC12_FIXED_CALL
 }
