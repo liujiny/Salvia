@@ -240,6 +240,10 @@ static void epic12_xenos_report()
 		epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_OTHER],
 		epic12_gpu_flush_small_cpu,epic12_gpu_flush_render_fallback);
 	epic12_xenos_log(message);
+	sprintf(message,"rejections blend=%u size=%u oob=%u sy=%u intersect=%u",
+		epic12_gpu_reject_blend,epic12_gpu_reject_size,epic12_gpu_reject_oob,
+		epic12_gpu_reject_sy,epic12_gpu_reject_intersect);
+	epic12_xenos_log(message);
 	if (epic12_xenos_samples && QueryPerformanceFrequency(&frequency) && frequency.QuadPart > 0) {
 		double ms=1000.0/((double)frequency.QuadPart*epic12_xenos_samples);
 		sprintf(message,"sampled_batch_cpu_ms samples=%u lock=%.3f upload=%.3f alpha_plan=%.3f submit=%.3f readback_wait=%.3f untile_mask=%.3f peak_total=%.3f",

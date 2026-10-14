@@ -48,12 +48,22 @@ enum Epic12GpuFlushReason {
 static unsigned epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_REASON_COUNT];
 static unsigned epic12_gpu_flush_small_cpu;
 static unsigned epic12_gpu_flush_render_fallback;
+static unsigned epic12_gpu_reject_blend;
+static unsigned epic12_gpu_reject_size;
+static unsigned epic12_gpu_reject_oob;
+static unsigned epic12_gpu_reject_sy;
+static unsigned epic12_gpu_reject_intersect;
 
 static void epic12_gpu_diag_reset()
 {
 	memset(epic12_gpu_flush_reasons,0,sizeof(epic12_gpu_flush_reasons));
 	epic12_gpu_flush_small_cpu=0;
 	epic12_gpu_flush_render_fallback=0;
+	epic12_gpu_reject_blend=0;
+	epic12_gpu_reject_size=0;
+	epic12_gpu_reject_oob=0;
+	epic12_gpu_reject_sy=0;
+	epic12_gpu_reject_intersect=0;
 }
 
 static inline bool epic12_gpu_intersects(int x, int y, int w, int h, const rectangle &r)
@@ -218,7 +228,10 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	SalviaCv1kSpan submitSpan(36);
 #endif
 	if (!epic12_gpu_enabled) return false;
-	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4))) return false;
+	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4))) {
+		++epic12_gpu_reject_blend;
+		return false;
+	}
 	// Original rasterizers reject horizontal wrap before clipping.
 	if (src_x + dimx > 8192) return true;
 	int x0 = dst_x_start < clip->min_x ? clip->min_x - dst_x_start : 0;
@@ -228,15 +241,27 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	if (dst_y_start + y1 - 1 > clip->max_y) y1 = clip->max_y - dst_y_start + 1;
 	if (x1 <= x0 || y1 <= y0) return true;
 	const int w = x1 - x0, h = y1 - y0;
-	if (w > 512 || h > 512) return false;
+	if (w > 512 || h > 512) {
+		++epic12_gpu_reject_size;
+		return false;
+	}
 	const int x = dst_x_start + x0, y = dst_y_start + y0;
-	if (x < 0 || y < 0 || x + w > 8192 || y + h > 4096) return false;
+	if (x < 0 || y < 0 || x + w > 8192 || y + h > 4096) {
+		++epic12_gpu_reject_oob;
+		return false;
+	}
 	const int sx = src_x + (flipx ? dimx - x1 : x0);
 	const int sy = (src_y + (flipy ? dimy - y1 : y0)) & 4095;
-	if (sy + h > 4096) return false;
+	if (sy + h > 4096) {
+		++epic12_gpu_reject_sy;
+		return false;
+	}
 	const rectangle dest(x, x + w - 1, y, y + h - 1);
 	// In-place copies depend on the original per-pixel write order.
-	if (epic12_gpu_intersects(sx, sy, w, h, dest)) return false;
+	if (epic12_gpu_intersects(sx, sy, w, h, dest)) {
+		++epic12_gpu_reject_intersect;
+		return false;
+	}
 	const int py0 = sy >> 7, py1 = (sy + h - 1) >> 7;
 	const int px0 = sx >> 7, px1 = (sx + w - 1) >> 7;
 	if (epic12_gpu_count) {
