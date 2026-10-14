@@ -467,6 +467,29 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	}
 	const int py0 = sy >> 7, py1 = (sy + h - 1) >> 7;
 	const int px0 = sx >> 7, px1 = (sx + w - 1) >> 7;
+
+	// Fast path: if incoming command fits into the newest active bin, append directly in FIFO order.
+	int last_active = -1;
+	for (int b = EPIC12_GPU_BINS - 1; b >= 0; --b) {
+		if (epic12_gpu_count[b]) {
+			last_active = b;
+			break;
+		}
+	}
+	if (last_active >= 0) {
+		unsigned np = 0;
+		int npl[32];
+		rectangle m;
+		if (epic12_gpu_can_fit(last_active, dest, sx, sy, w, h, px0, px1, py0, py1, np, npl, m) == 0) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+			++epic12_gpu_diag_bin_hits[last_active];
+#endif
+			epic12_gpu_add_to_bin(last_active, m, np, npl, px0, px1, py0, py1,
+				sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
+			return true;
+		}
+	}
+
 	while (true) {
 		Epic12GpuFlushReason reason0 = EPIC12_GPU_FLUSH_REGION;
 		for (int b = 0; b < EPIC12_GPU_BINS; ++b) {
