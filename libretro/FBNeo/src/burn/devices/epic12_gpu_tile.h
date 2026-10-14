@@ -92,6 +92,28 @@ template<bool aligned> static void epic12_gpu_tile_block(unsigned char *destinat
 	}
 }
 
+static unsigned epic12_tile_slot_block_offset[256][16];
+static bool epic12_tile_slot_offsets_ready = false;
+
+static void epic12_gpu_tile_slot_init()
+{
+	if(epic12_tile_slot_offsets_ready) return;
+	for(unsigned slot=0;slot<256;++slot) {
+		unsigned ax=(slot&15)*128, ay=(slot>>4)*128;
+		for(unsigned by=0;by<4;++by) {
+			for(unsigned bx=0;bx<4;++bx) {
+				unsigned y=by*32, x=bx*32;
+#if defined(_XBOX)
+				epic12_tile_slot_block_offset[slot][(by<<2)|bx]=XGAddress2DTiledOffset(ax+x,ay+y,2048,4)*4;
+#else
+				epic12_tile_slot_block_offset[slot][(by<<2)|bx]=epic12_gpu_tile_address(ax+x,ay+y,2048);
+#endif
+			}
+		}
+	}
+	epic12_tile_slot_offsets_ready = true;
+}
+
 // sourcePage points at a 128x128 page's top-left pixel in ordinary cached RAM.
 // atlasTiled points at level zero of a tiled A8R8G8B8 texture of width 2048.
 // Use slots 0..127 for height 1024 or 0..255 for height 2048. The caller retains
@@ -100,18 +122,20 @@ static void epic12_gpu_tile_page(void *atlasTiled,const unsigned int *sourcePage
 	int slot,int sourcePitchWords=8192)
 {
 	epic12_gpu_tile_init(sourcePitchWords);
-	int ax=(slot&15)*128,ay=(slot>>4)*128;
+	epic12_gpu_tile_slot_init();
+	const unsigned *slotOffsets = epic12_tile_slot_block_offset[slot];
 	bool aligned=(((size_t)sourcePage&15)==0) && ((sourcePitchWords&3)==0);
-	for(int y=0;y<128;y+=32) for(int x=0;x<128;x+=32) {
-#if defined(_XBOX)
-		unsigned offset=XGAddress2DTiledOffset(ax+x,ay+y,2048,4)*4;
-#else
-		unsigned offset=epic12_gpu_tile_address(ax+x,ay+y,2048);
-#endif
-		unsigned char *destination=(unsigned char*)atlasTiled+offset;
-		const unsigned int *source=sourcePage+y*sourcePitchWords+x;
-		if(aligned) epic12_gpu_tile_block<true>(destination,source);
-		else epic12_gpu_tile_block<false>(destination,source);
+	for(int by=0;by<4;++by) {
+		int y = by * 32;
+		const unsigned int *srcRow = sourcePage + y * sourcePitchWords;
+		for(int bx=0;bx<4;++bx) {
+			int x = bx * 32;
+			unsigned offset = slotOffsets[(by << 2) | bx];
+			unsigned char *destination = (unsigned char*)atlasTiled + offset;
+			const unsigned int *source = srcRow + x;
+			if(aligned) epic12_gpu_tile_block<true>(destination,source);
+			else epic12_gpu_tile_block<false>(destination,source);
+		}
 	}
 }
 

@@ -78,15 +78,17 @@ static bool epic12_gpu_tile_alpha_page(void* atlasTiled,const uint32_t* source,i
     ((size_t)source&15) || (pitch&3))return false;
  Epic12GpuAlphaVector vector;
  alpha.invalidate_cache();
- int ax=(slot&15)*128,ay=(slot>>4)*128;
- for(int y=0;y<128;y+=32)for(int x=0;x<128;x+=32) {
-#if defined(_XBOX)
-  unsigned offset=XGAddress2DTiledOffset(ax+x,ay+y,2048,4)*4;
-#else
-  unsigned offset=epic12_gpu_tile_address(ax+x,ay+y,2048);
-#endif
-  epic12_gpu_tile_alpha_block((unsigned char*)atlasTiled+offset,source+y*pitch+x,
-   pitch,alpha,y,x/32,vector);
+ epic12_gpu_tile_slot_init();
+ const unsigned *slotOffsets = epic12_tile_slot_block_offset[slot];
+ for(int by=0;by<4;++by) {
+  int y = by * 32;
+  const uint32_t *srcRow = source + y * pitch;
+  for(int bx=0;bx<4;++bx) {
+   int x = bx * 32;
+   unsigned offset = slotOffsets[(by << 2) | bx];
+   epic12_gpu_tile_alpha_block((unsigned char*)atlasTiled+offset,srcRow+x,
+    pitch,alpha,y,bx,vector);
+  }
  }
 #if defined(EPIC12_GPU_ALPHA_PROFILE)
  epic12_gpu_alpha_stats.builtPixels+=128*128;
