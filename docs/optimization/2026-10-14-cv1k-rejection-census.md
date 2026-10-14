@@ -27,4 +27,27 @@ In [`epic12_gpu.h`](file:///home/humor/src/Salvia/libretro/FBNeo/src/burn/device
 ## Verification
 
 - `libretro/FBNeo/tests/epic12_gpu/run.py`: PASS all 6,291,456 component cases and 14,400 commands on PPC QEMU.
-- Xenia Canary benchmark to measure the census numbers.
+- **Xenia Canary Benchmark Census Results (60 frames in `mmpork`)**:
+  - `rejections blend=6380 size=0 oob=0 sy=0 intersect=0`
+  - Total rejections: 6,380 (106.3 / frame).
+  - **100% of rejections are caused by the `blend` check**:
+    `blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4))`
+  - Exactly 0 draws exceed 512x512 size (`size=0`).
+  - Exactly 0 draws are out-of-bounds (`oob=0`).
+  - Exactly 0 draws wrap vertically across the 4096 VRAM boundary (`sy=0`).
+  - Exactly 0 draws have self-intersecting in-place copies (`intersect=0`).
+
+### Implication for Optimization
+
+The entire 6.27 ms/frame CPU software blitting fallback and 30.4 flushes/frame are due exclusively to blend modes that the GPU compositor's submit filter currently declines: `smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4)`.
+
+## Build Identity and Handoff
+
+Diagnostics XEX built via `build-xex.sh --tag reject-census --baseline 76082236 --flavor diag`:
+- **Tag**: `reject-census e6a9de06 20261014-2106 diag`
+- **Deployed Binary**: `Distro360/fbneo.xex`
+  - Size: `34,668,544` bytes
+  - SHA256: `99900f2c5a3368e32894492d38f4067f042523301005cfbdd390701fcd08f90b`
+- **Archived Binary**: `salvia-tests/xex-archive/fbneo-20261014-2109-reject-census-diag.xex`
+- **Source Commit**: `e6a9de06`
+
