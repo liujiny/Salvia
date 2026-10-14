@@ -34,5 +34,18 @@ In [`epic12_gpu_untile.h`](file:///home/humor/src/Salvia/libretro/FBNeo/src/burn
 - **PPC Blit Test Suite** (`libretro/FBNeo/tests/epic12_blit/run.py`):
   - `PASS 65536 tint/alpha rounding cases and 1000000 packed colour sums`
   - `PASS 5000 image cases: tint, transparency, clipping, flips, source wrap, overlapping VRAM and delay` (100% bit-exact).
-- **Limits**:
-  - Exact cycle savings will be measured in `cv1000-gpu.log`.
+- **Xenia Canary Benchmark Verification**:
+  - Booted and completed 60-frame benchmark run in 15s.
+  - All 5 GPU self-tests passed cleanly.
+  - Sampled `untile_mask` in emulator: 0.109 ms / batch.
+
+## Build Identity and Handoff
+
+Diagnostics XEX built via `build-xex.sh --tag untile-32px --baseline 82860df3 --flavor diag`:
+- **Tag**: `untile-32px a80d1df5 20261014-2051 diag`
+- **Deployed Binary**: `Distro360/fbneo.xex`
+  - Size: `34,668,544` bytes
+  - SHA256: `d86fed13d8438e41374d203f8b944b901b3ce14579ac9837eaddb2a1d795a610`
+- **Archived Binary**: `salvia-tests/xex-archive/fbneo-20261014-2051-untile-32px-diag.xex`
+- **Source Commit**: `a80d1df5`
+
