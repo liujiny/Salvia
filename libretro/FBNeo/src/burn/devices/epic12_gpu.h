@@ -53,6 +53,7 @@ static unsigned epic12_gpu_reject_size;
 static unsigned epic12_gpu_reject_oob;
 static unsigned epic12_gpu_reject_sy;
 static unsigned epic12_gpu_reject_intersect;
+static unsigned epic12_gpu_reject_smode_dmode[8][8];
 
 static void epic12_gpu_diag_reset()
 {
@@ -64,6 +65,7 @@ static void epic12_gpu_diag_reset()
 	epic12_gpu_reject_oob=0;
 	epic12_gpu_reject_sy=0;
 	epic12_gpu_reject_intersect=0;
+	memset(epic12_gpu_reject_smode_dmode,0,sizeof(epic12_gpu_reject_smode_dmode));
 }
 
 static inline bool epic12_gpu_intersects(int x, int y, int w, int h, const rectangle &r)
@@ -230,6 +232,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	if (!epic12_gpu_enabled) return false;
 	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4))) {
 		++epic12_gpu_reject_blend;
+		++epic12_gpu_reject_smode_dmode[smode & 7][dmode & 7];
 		return false;
 	}
 	// Original rasterizers reject horizontal wrap before clipping.

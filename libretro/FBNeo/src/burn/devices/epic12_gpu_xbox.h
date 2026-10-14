@@ -244,6 +244,15 @@ static void epic12_xenos_report()
 		epic12_gpu_reject_blend,epic12_gpu_reject_size,epic12_gpu_reject_oob,
 		epic12_gpu_reject_sy,epic12_gpu_reject_intersect);
 	epic12_xenos_log(message);
+	for (int s = 0; s < 8; ++s) {
+		for (int d = 0; d < 8; ++d) {
+			if (epic12_gpu_reject_smode_dmode[s][d]) {
+				sprintf(message, "reject_mode smode=%d dmode=%d count=%u",
+					s, d, epic12_gpu_reject_smode_dmode[s][d]);
+				epic12_xenos_log(message);
+			}
+		}
+	}
 	if (epic12_xenos_samples && QueryPerformanceFrequency(&frequency) && frequency.QuadPart > 0) {
 		double ms=1000.0/((double)frequency.QuadPart*epic12_xenos_samples);
 		sprintf(message,"sampled_batch_cpu_ms samples=%u lock=%.3f upload=%.3f alpha_plan=%.3f submit=%.3f readback_wait=%.3f untile_mask=%.3f peak_total=%.3f",
