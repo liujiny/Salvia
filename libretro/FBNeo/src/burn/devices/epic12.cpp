@@ -694,23 +694,17 @@ static epic12_device_blitfunction epic12_device_f1_ti0_tr0_blit_funcs[] =
     but if the destination start coordinate is (x=10, y=10), each of the 32x32px chunks of source data will
     touch 4 rows of destination VRAM, leading to a total of 8 destination VRAM accesses.
 */
+static inline int calculate_vram_1d(UINT16 start, UINT16 dim)
+{
+	const int s = start & 31;
+	const int full_blocks = (dim - 1) >> 5;
+	const int rem = ((dim - 1) & 31) + 1;
+	return full_blocks * (s ? 2 : 1) + 1 + (s + rem > 32 ? 1 : 0);
+}
+
 inline UINT16 calculate_vram_accesses(UINT16 start_x, UINT16 start_y, UINT16 dimx, UINT16 dimy)
 {
-	int x_rows = 0;
-	int num_vram_rows = 0;
-	for (int x_pixels = dimx; x_pixels > 0; x_pixels -= 32)
-	{
-		x_rows++;
-		if (((start_x & 31) + MIN(32, x_pixels)) > 32)
-			x_rows++;  // Drawing across multiple horizontal VRAM row boundaries.
-	}
-	for (int y_pixels = dimy; y_pixels > 0; y_pixels -= 32)
-	{
-		num_vram_rows += x_rows;
-		if (((start_y & 31) + MIN(32, y_pixels)) > 32)
-			num_vram_rows += x_rows;  // Drawing across multiple vertical VRAM row boundaries.	
-	}
-	return num_vram_rows;
+	return (UINT16)(calculate_vram_1d(start_x, dimx) * calculate_vram_1d(start_y, dimy));
 }
 
 static void gfx_draw_shadow_copy(UINT32 *addr)
