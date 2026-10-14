@@ -140,6 +140,8 @@ static void epic12_gpu_replay(const Epic12GpuCommand &c)
 #define GPU_CPU_CASE(f,t) \
 	if (!c.blend) draw_sprite_f##f##_ti1_tr##t##_plain(GPU_CPU_ARGS); \
 	else if (c.dmode == 1) draw_sprite_f##f##_ti1_tr##t##_s0_d1(GPU_CPU_ARGS); \
+	else if (c.dmode == 7) draw_sprite_f##f##_ti1_tr##t##_s0_d7(GPU_CPU_ARGS); \
+	else if (c.dmode == 3) draw_sprite_f##f##_ti1_tr##t##_s0_d3(GPU_CPU_ARGS); \
 	else draw_sprite_f##f##_ti1_tr##t##_s0_d4(GPU_CPU_ARGS)
 	if (c.flipx) { if (c.transparent) { GPU_CPU_CASE(1,1); } else { GPU_CPU_CASE(1,0); } }
 	else { if (c.transparent) { GPU_CPU_CASE(0,1); } else { GPU_CPU_CASE(0,0); } }
@@ -230,7 +232,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	SalviaCv1kSpan submitSpan(36);
 #endif
 	if (!epic12_gpu_enabled) return false;
-	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4))) {
+	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4 && dmode != 7 && dmode != 3))) {
 		++epic12_gpu_reject_blend;
 		++epic12_gpu_reject_smode_dmode[smode & 7][dmode & 7];
 		return false;

@@ -4,11 +4,12 @@
 
 static int epic12_gpu_dest_mode(const Epic12GpuCommand &c)
 {
-	return c.dmode == 4 ? 0 : c.dmode;
+	return (c.dmode == 4 || c.dmode == 7 || c.dmode == 3) ? 0 : c.dmode;
 }
 
 static int epic12_gpu_dest_alpha(const Epic12GpuCommand &c)
 {
+	if (c.dmode == 7 || c.dmode == 3) return 31;
 	return c.dmode == 4 ? 31 - c.da : c.da;
 }
 

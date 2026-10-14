@@ -347,6 +347,21 @@ int main()
 			}
 		}
 	puts("PASS 6291456 component cases on unified and fast/feedback shaders, including additive saturation");
+	for(int t=0;t<64;++t) for(int sa=0;sa<32;++sa) for(int s=0;s<32;++s)
+		for(int d=0;d<32;++d) for(int m=0;m<2;++m) {
+			c.tint.r=c.tint.g=c.tint.b=t; c.sa=sa; c.da=(s+d+sa)&31; c.dmode=m==0?7:3;
+			unsigned tinted=clamp(s*t/31);
+			unsigned expected=clamp(tinted*sa/31+d);
+			UINT32 dst=d==31?255:d*8;
+			Epic12GpuCommand normalized=c;
+			normalized.dmode=epic12_gpu_dest_mode(c); normalized.da=epic12_gpu_dest_alpha(c);
+			bool feedback=epic12_gpu_feedback(normalized);
+			UINT32 specialized=gpu_test_pixel_specialized(s*8,feedback?dst:0xcdcdcdcd,dst,normalized,feedback);
+			if(((gpu_test_pixel(s*8,dst,c)&248)>>3)!=expected || ((specialized&248)>>3)!=expected) {
+				printf("FAIL additive dmode 7/3 shader arithmetic %d %d %d %d %d\n",t,sa,s,d,c.dmode);return 1;
+			}
+		}
+	puts("PASS 4194304 additive component cases on dmode 7 and 3");
 	c.blend=0;
 	for(int t=0;t<64;++t) for(int s=0;s<32;++s) for(int d=0;d<2;++d) {
 		c.tint.r=c.tint.g=c.tint.b=t; c.sa=0; // plain ignores source alpha

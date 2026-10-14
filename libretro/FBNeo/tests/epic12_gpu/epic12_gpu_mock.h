@@ -95,7 +95,7 @@ static UINT32 gpu_test_pixel(UINT32 raw, UINT32 dest, const Epic12GpuCommand &c)
 		unsigned byte=s*8;
 		if(c.blend) {
 			unsigned out=s*c.sa/31;
-			if(c.dmode!=0 || c.da!=31) {
+			if(!epic12_gpu_additive(c)) {
 				unsigned factor=c.dmode==4?31-c.da:(c.dmode==1?s:c.da);
 				out+=(((dest>>shift)&255)/8)*factor/31; if(out>31) out=31;
 			}
@@ -108,7 +108,7 @@ static UINT32 gpu_test_pixel(UINT32 raw, UINT32 dest, const Epic12GpuCommand &c)
 		float out=s;
 		if(c.blend) {
 			out=floorf(s*c.sa/31.0f+0.0001f);
-			if(c.dmode!=0 || c.da!=31) {
+			if(!epic12_gpu_additive(c)) {
 				float d=floorf((((dest>>shift)&255)/255.0f)*(255.0f/8.0f)+0.001f);
 				float factor=c.dmode==4?31-c.da:(c.dmode==1?s:c.da);
 				out+=floorf(d*factor/31.0f+0.0001f); if(out>31) out=31;
@@ -116,7 +116,7 @@ static UINT32 gpu_test_pixel(UINT32 raw, UINT32 dest, const Epic12GpuCommand &c)
 		}
 		unsigned byte=(unsigned)floorf((out*(8.0f/255.0f))*255.0f+0.5f);
 #endif
-		if(c.blend && c.dmode==0 && c.da==31) { byte+=(dest>>shift)&255; if(byte>255) byte=255; }
+		if(epic12_gpu_additive(c)) { byte+=(dest>>shift)&255; if(byte>255) byte=255; }
 		result|=byte<<shift;
 	}
 	return result;
