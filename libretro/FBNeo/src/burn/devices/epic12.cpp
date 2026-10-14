@@ -1158,9 +1158,6 @@ static void gfx_exec()
 		{
 			case 0x0000:
 			case 0xf000:
-#if defined(_XBOX) || defined(EPIC12_GPU_TEST)
-				epic12_gpu_flush(EPIC12_GPU_FLUSH_END_LIST);
-#endif
 				return;
 
 			case 0xc000:
@@ -1328,6 +1325,9 @@ void epic12_draw_screen(UINT8 &recalc_palette)
 	// The frame must be complete even with the legacy "Before Exec" DIP.
 	thready.notify_wait();
 #endif
+#if defined(_XBOX) || defined(EPIC12_GPU_TEST)
+	epic12_gpu_flush(EPIC12_GPU_FLUSH_END_LIST);
+#endif
 	INT32 scrollx = -m_gfx_scroll_x;
 	INT32 scrolly = -m_gfx_scroll_y;
 
@@ -1462,6 +1462,9 @@ void epic12_scan(INT32 nAction, INT32 *pnMin)
 	SCAN_VAR(m_blit_idle_op_bytes);
 
 	if (~nAction & ACB_RUNAHEAD) {
+#if defined(_XBOX) || defined(EPIC12_GPU_TEST)
+		if (~nAction & ACB_WRITE) epic12_gpu_flush(EPIC12_GPU_FLUSH_OTHER);
+#endif
 		ScanVar(m_bitmaps, m_gfx_size * 4, "epic12 vram");
 	}
 	thready.scan();
