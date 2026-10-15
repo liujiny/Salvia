@@ -89,9 +89,12 @@ struct Epic12GpuPageCache {
 	void invalidate(int x0,int y0,int x1,int y1)
 	{
 		if(x1<x0 || y1<y0) return;
+		int px0=x0>>7, px1=x1>>7;
+		int py0=y0>>7, py1=y1>>7;
 		for(int i=0;i<capacity;++i) if(pages[i]>=0) {
-			int x=(pages[i]&63)*128,y=(pages[i]>>6)*128;
-			if(x<=x1 && x+127>=x0 && y<=y1 && y+127>=y0) {
+			int p = pages[i];
+			int px = p & 63, py = p >> 6;
+			if(px >= px0 && px <= px1 && py >= py0 && py <= py1) {
 				pages[i]=-1; lastUse[i]=0; pinned[i]=false;
 			}
 		}

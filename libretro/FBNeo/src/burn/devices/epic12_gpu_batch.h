@@ -181,7 +181,7 @@ static int epic12_gpu_snapshot_end(const Epic12GpuCommand *cmd, int first,
 		if (next.max_x > merged.max_x) merged.max_x = next.max_x;
 		if (next.max_y > merged.max_y) merged.max_y = next.max_y;
 		unsigned nextArea = sumArea + epic12_gpu_rect_area(next);
-		if (epic12_gpu_rect_area(merged) * 4 > nextArea * 5) break;
+		if (epic12_gpu_rect_area(merged) > nextArea * 2) break;
 		snapshot = merged; sumArea = nextArea; coveredEnd = scan = end;
 	}
 	return coveredEnd;

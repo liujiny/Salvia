@@ -16,6 +16,7 @@ static Epic12GpuCommand epic12_gpu_commands[EPIC12_GPU_BINS][1024];
 static int epic12_gpu_count[EPIC12_GPU_BINS];
 static unsigned epic12_gpu_pixels[EPIC12_GPU_BINS];
 static bool epic12_gpu_source_pages[EPIC12_GPU_BINS][2048];
+static bool epic12_gpu_dest_pages[EPIC12_GPU_BINS][2048];
 static unsigned epic12_gpu_source_count[EPIC12_GPU_BINS];
 static rectangle epic12_gpu_bounds[EPIC12_GPU_BINS];
 static rectangle epic12_gpu_source_bounds[EPIC12_GPU_BINS];
@@ -267,6 +268,7 @@ static void epic12_gpu_flush_bin(int b, Epic12GpuFlushReason reason = EPIC12_GPU
 	epic12_gpu_pixels[b] = 0;
 	epic12_gpu_source_count[b] = 0;
 	memset(epic12_gpu_source_pages[b],0,sizeof(epic12_gpu_source_pages[b]));
+	memset(epic12_gpu_dest_pages[b],0,sizeof(epic12_gpu_dest_pages[b]));
 }
 
 static void epic12_gpu_retire_bin0(Epic12GpuFlushReason reason)
@@ -281,15 +283,18 @@ static void epic12_gpu_retire_bin0(Epic12GpuFlushReason reason)
 			epic12_gpu_source_bounds[b] = epic12_gpu_source_bounds[b + 1];
 			epic12_gpu_source_count[b] = epic12_gpu_source_count[b + 1];
 			memcpy(epic12_gpu_source_pages[b], epic12_gpu_source_pages[b + 1], sizeof(epic12_gpu_source_pages[b]));
+			memcpy(epic12_gpu_dest_pages[b], epic12_gpu_dest_pages[b + 1], sizeof(epic12_gpu_dest_pages[b]));
 			epic12_gpu_count[b + 1] = 0;
 			epic12_gpu_pixels[b + 1] = 0;
 			epic12_gpu_source_count[b + 1] = 0;
 			memset(epic12_gpu_source_pages[b + 1], 0, sizeof(epic12_gpu_source_pages[b + 1]));
+			memset(epic12_gpu_dest_pages[b + 1], 0, sizeof(epic12_gpu_dest_pages[b + 1]));
 		} else {
 			epic12_gpu_count[b] = 0;
 			epic12_gpu_pixels[b] = 0;
 			epic12_gpu_source_count[b] = 0;
 			memset(epic12_gpu_source_pages[b], 0, sizeof(epic12_gpu_source_pages[b]));
+			memset(epic12_gpu_dest_pages[b], 0, sizeof(epic12_gpu_dest_pages[b]));
 		}
 	}
 }
@@ -319,7 +324,17 @@ static inline bool epic12_gpu_commutes_ahead(int target_bin, int x, int y, int w
 			}
 		}
 		// 2. RAW hazard: incoming src intersects bin b dest
-		if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
+		bool page_overlap = false;
+		const int py0 = sy >> 7, py1 = (sy + h - 1) >> 7;
+		const int px0 = sx >> 7, px1 = (sx + w - 1) >> 7;
+		for (int py = py0; py <= py1; ++py) {
+			const int row = py << 6;
+			for (int px = px0; px <= px1; ++px) {
+				if (epic12_gpu_dest_pages[b][row | px]) { page_overlap = true; break; }
+			}
+			if (page_overlap) break;
+		}
+		if (page_overlap && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
 			const int sx2 = sx + w, sy2 = sy + h;
 			for (int i = 0; i < epic12_gpu_count[b]; ++i) {
 				const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
@@ -362,7 +377,18 @@ static int epic12_gpu_can_fit(int b, const rectangle &dest, int sx, int sy, int 
 	if (merged.max_x - merged.min_x >= 512 || merged.max_y - merged.min_y >= 512)
 		return 1;
 
-	if (epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
+	bool page_overlap = false;
+	for (int py = py0; py <= py1; ++py) {
+		const int row = py << 6;
+		for (int px = px0; px <= px1; ++px) {
+			if (epic12_gpu_dest_pages[b][row | px]) {
+				page_overlap = true;
+				break;
+			}
+		}
+		if (page_overlap) break;
+	}
+	if (page_overlap && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
 		const int sx2 = sx + w, sy2 = sy + h;
 		for (int i = 0; i < epic12_gpu_count[b]; ++i) {
 			const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
@@ -400,6 +426,14 @@ static void epic12_gpu_add_to_bin(int b, const rectangle &merged, unsigned newPa
 	int sx, int sy, int x, int y, int w, int h, int flipx, int flipy, int transparent,
 	int blend, int dmode, int s_alpha, int d_alpha, const clr_t *tint_clr)
 {
+	const int dpy0 = y >> 7, dpy1 = (y + h - 1) >> 7;
+	const int dpx0 = x >> 7, dpx1 = (x + w - 1) >> 7;
+	for (int dpy = dpy0; dpy <= dpy1; ++dpy) {
+		const int row = dpy << 6;
+		for (int dpx = dpx0; dpx <= dpx1; ++dpx) {
+			epic12_gpu_dest_pages[b][row | dpx] = true;
+		}
+	}
 	if (!epic12_gpu_count[b]) {
 		epic12_gpu_bounds[b] = merged;
 		epic12_gpu_source_bounds[b] = rectangle(sx, sx + w - 1, sy, sy + h - 1);
@@ -480,8 +514,18 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	// on-screen GPU draws.
 	if (x >= 512) {
 		for (int b = 0; b < EPIC12_GPU_BINS; ++b) {
-			if (epic12_gpu_count[b] && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
-				epic12_gpu_flush_bin(b, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
+			if (epic12_gpu_count[b]) {
+				bool page_overlap = false;
+				for (int py = py0; py <= py1; ++py) {
+					const int row = py << 6;
+					for (int px = px0; px <= px1; ++px) {
+						if (epic12_gpu_dest_pages[b][row | px]) { page_overlap = true; break; }
+					}
+					if (page_overlap) break;
+				}
+				if (page_overlap && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
+					epic12_gpu_flush_bin(b, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
+				}
 			}
 		}
 		Epic12GpuCommand c;
@@ -495,10 +539,10 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 
 	// Fast path: if incoming command fits into the newest active bin, append directly in FIFO order.
 	int last_active = -1;
-	for (int b = EPIC12_GPU_BINS - 1; b >= 0; --b) {
-		if (epic12_gpu_count[b]) {
-			last_active = b;
-			break;
+	if (epic12_gpu_count[0]) {
+		last_active = 0;
+		for (int b = 1; b < EPIC12_GPU_BINS; ++b) {
+			if (epic12_gpu_count[b]) last_active = b;
 		}
 	}
 	if (last_active >= 0) {

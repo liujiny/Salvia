@@ -60,6 +60,7 @@ static void epic12_gpu_reset() {
 		epic12_gpu_pixels[b] = 0;
 		epic12_gpu_source_count[b] = 0;
 		memset(epic12_gpu_source_pages[b], 0, sizeof(epic12_gpu_source_pages[b]));
+		memset(epic12_gpu_dest_pages[b], 0, sizeof(epic12_gpu_dest_pages[b]));
 	}
 }
 static void epic12_gpu_exit() {
