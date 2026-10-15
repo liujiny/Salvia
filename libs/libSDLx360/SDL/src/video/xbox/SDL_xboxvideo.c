@@ -580,7 +580,7 @@ void SDL_XBOX_GetCoreGpuRecoveryStats(unsigned stats[6])
 static void XBOX_Present(void)
 {
     if (g_xboxFlipCSInit) EnterCriticalSection(&g_xboxFlipCS);
-    XBOX_AsyncPresentFrame(&g_corePresent, &g_corePresentOps, NULL, g_vsync_enabled);
+    IDirect3DDevice9_Present(D3D_Device, NULL, NULL, NULL, NULL);
     if (g_xboxFlipCSInit) LeaveCriticalSection(&g_xboxFlipCS);
 }
 

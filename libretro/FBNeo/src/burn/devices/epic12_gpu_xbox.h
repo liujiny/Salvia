@@ -540,10 +540,10 @@ static bool epic12_xenos_create()
 	// synchronization/cache coherency; untile only the batch's output region.
 	hr=d->CreateTexture(512,512,1,0,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&epic12_xenos_result,NULL);
 	if (FAILED(hr)) return epic12_xenos_init_failed("result texture",hr);
-	// Present has completed under the shared lock. Borrow EDRAM base 0;
-	// SDL clears/redraws its backbuffer at its next Present. This avoids
-	// depending on spare EDRAM at higher output resolutions.
+	// Allocate offscreen render target above the 720p frontbuffer (tiles 0..719)
+	// to avoid EDRAM collision with live presentation scanout.
 	D3DSURFACE_PARAMETERS surface={0};
+	surface.Base = 1024;
 	hr=d->CreateRenderTarget(512,512,D3DFMT_A8R8G8B8,D3DMULTISAMPLE_NONE,0,FALSE,&epic12_xenos_target,&surface);
 	if (FAILED(hr)) return epic12_xenos_init_failed("render target",hr);
 	// Validate real VMX loads/stores and all 512x512 tile addresses once,
@@ -939,7 +939,7 @@ static bool epic12_gpu_render(const Epic12GpuCommand *cmd,int count,const rectan
 				"pixel self-test passed; GPU compositor active (uniform compatible)");
 		}
 		if(!epic12_xenos_failed) {
-            SDL_XBOX_SetCoreGpuAsync(1);
+            SDL_XBOX_SetCoreGpuAsync(0);
 			ok=epic12_xenos_run(m_bitmaps,cmd,count,bounds,timing);
 			if(ok) {
 				++epic12_xenos_batches; epic12_xenos_commands+=count;
