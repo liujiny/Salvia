@@ -465,8 +465,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 #endif
 	if (!epic12_gpu_enabled) return false;
 	const int norm_dm = (dmode == 4 || dmode == 7 || dmode == 3) ? 0 : dmode;
-	const int norm_da = (dmode == 7 || dmode == 3) ? 31 : (dmode == 4 ? 31 - d_alpha : d_alpha);
-	if (blend && (norm_dm != 0 || (norm_da != 0 && norm_da != 31))) {
+	if (blend && norm_dm != 0) {
 		return false;
 	}
 	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4 && dmode != 7 && dmode != 3))) {
@@ -612,11 +611,35 @@ static void epic12_gpu_cpu_draw(int x, int y, int w, int h, const rectangle &cli
 	int x1=x+w-1<clip.max_x?x+w-1:clip.max_x;
 	int y1=y+h-1<clip.max_y?y+h-1:clip.max_y;
 	if (x1<x0 || y1<y0) {
-		epic12_gpu_flush(EPIC12_GPU_FLUSH_CPU_DRAW);
 		return;
 	}
-	// cpu_write still resets the cache if the clipped rectangle is outside
-	// physical VRAM. Do not assume that every configured clip is in bounds.
-	epic12_gpu_cpu_write(x0,y0,x1-x0+1,y1-y0+1,EPIC12_GPU_FLUSH_CPU_DRAW);
+	const int dw = x1 - x0 + 1;
+	const int dh = y1 - y0 + 1;
+	const int py0 = y0 >> 7, py1 = y1 >> 7;
+	const int px0 = x0 >> 7, px1 = x1 >> 7;
+
+	for (int b = 0; b < EPIC12_GPU_BINS; ++b) {
+		if (!epic12_gpu_count[b]) continue;
+		bool conflict = false;
+		if (epic12_gpu_intersects(x0, y0, dw, dh, epic12_gpu_bounds[b])) {
+			conflict = true;
+		} else {
+			for (int py = py0; py <= py1; ++py) {
+				const int row = py << 6;
+				for (int px = px0; px <= px1; ++px) {
+					if (epic12_gpu_source_pages[b][row | px]) {
+						conflict = true;
+						break;
+					}
+				}
+				if (conflict) break;
+			}
+		}
+		if (conflict) {
+			epic12_gpu_flush_bin(b, EPIC12_GPU_FLUSH_CPU_DRAW);
+		}
+	}
+	rectangle r(x0, x1, y0, y1);
+	epic12_gpu_invalidate(r);
 }
 #endif
