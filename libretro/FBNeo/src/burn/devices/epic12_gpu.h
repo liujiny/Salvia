@@ -465,7 +465,8 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 #endif
 	if (!epic12_gpu_enabled) return false;
 	const int norm_dm = (dmode == 4 || dmode == 7 || dmode == 3) ? 0 : dmode;
-	if (blend && norm_dm != 0) {
+	const int norm_da = (dmode == 7 || dmode == 3) ? 31 : (dmode == 4 ? 31 - d_alpha : d_alpha);
+	if (blend && (norm_dm != 0 || (norm_da != 0 && norm_da != 31))) {
 		return false;
 	}
 	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4 && dmode != 7 && dmode != 3))) {
@@ -622,8 +623,16 @@ static void epic12_gpu_cpu_draw(int x, int y, int w, int h, const rectangle &cli
 		if (!epic12_gpu_count[b]) continue;
 		bool conflict = false;
 		if (epic12_gpu_intersects(x0, y0, dw, dh, epic12_gpu_bounds[b])) {
-			conflict = true;
-		} else {
+			const int x2 = x0 + dw, y2 = y0 + dh;
+			for (int i = 0; i < epic12_gpu_count[b]; ++i) {
+				const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
+				if (x0 < c.x + c.w && x2 > c.x && y0 < c.y + c.h && y2 > c.y) {
+					conflict = true;
+					break;
+				}
+			}
+		}
+		if (!conflict) {
 			for (int py = py0; py <= py1; ++py) {
 				const int row = py << 6;
 				for (int px = px0; px <= px1; ++px) {

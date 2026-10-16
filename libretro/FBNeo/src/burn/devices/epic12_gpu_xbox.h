@@ -734,18 +734,7 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 			++epic12_xenos_feedbacks;
 			epic12_xenos_feedback_pixels+=epic12_gpu_rect_area(snapshot);
 		}
-		int da_norm = epic12_gpu_dest_alpha(c);
-		if (!c.blend || da_norm == 0 || feedback) {
-			d->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-		} else if (da_norm == 31) {
-			d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-			d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
-		} else {
-			d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-			d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_BLENDFACTOR);
-			DWORD factor = (da_norm * 255 + 15) / 31;
-			d->SetRenderState(D3DRS_BLENDFACTOR, D3DCOLOR_RGBA(factor, factor, factor, factor));
-		}
+		d->SetRenderState(D3DRS_ALPHABLENDENABLE,epic12_gpu_additive(c));
 		if (!epic12_xenos_attributes) {
 			float constants[8]={(float)c.tint.r,(float)c.tint.g,(float)c.tint.b,(float)c.sa,
 				(float)c.transparent,(float)c.blend,(float)epic12_gpu_dest_mode(c),(float)epic12_gpu_dest_alpha(c)};
@@ -855,19 +844,10 @@ static bool epic12_xenos_selftest()
 		UINT32 *saved=m_bitmaps; UINT64 delay=epic12_device_blit_delay; m_bitmaps=scratch;
 		for(int i=0;i<224;++i) epic12_gpu_replay(commands[i]);
 		m_bitmaps=saved; epic12_device_blit_delay=delay;
-		for(int y=0;y<64 && ok;++y) for(int x=0;x<64;++x) {
-			UINT32 g = result[y*64+x], c = scratch[y*8192+x];
-			if (g != c) {
-				int da = abs((int)((g >> 24) & 0xff) - (int)((c >> 24) & 0xff));
-				int dr = abs((int)((g >> 16) & 0xff) - (int)((c >> 16) & 0xff));
-				int dg = abs((int)((g >> 8) & 0xff) - (int)((c >> 8) & 0xff));
-				int db = abs((int)(g & 0xff) - (int)(c & 0xff));
-				if (da > 0 || dr > 8 || dg > 8 || db > 8) {
-					char message[160];
-					sprintf(message,"self-test mismatch x=%d y=%d GPU=%08x CPU=%08x",x,y,g,c);
-					epic12_xenos_log(message); ok=false; break;
-				}
-			}
+		for(int y=0;y<64 && ok;++y) for(int x=0;x<64;++x) if(result[y*64+x]!=scratch[y*8192+x]) {
+			char message[160];
+			sprintf(message,"self-test mismatch x=%d y=%d GPU=%08x CPU=%08x",x,y,result[y*64+x],scratch[y*8192+x]);
+			epic12_xenos_log(message); ok=false; break;
 		}
 	}
 	free(scratch); epic12_gpu_reset();
