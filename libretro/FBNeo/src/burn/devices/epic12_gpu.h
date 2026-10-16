@@ -464,6 +464,9 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	SalviaCv1kSpan submitSpan(36);
 #endif
 	if (!epic12_gpu_enabled) return false;
+	if (blend && (dmode != 0 || (d_alpha != 0 && d_alpha != 31))) {
+		return false;
+	}
 	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4 && dmode != 7 && dmode != 3))) {
 		++epic12_gpu_reject_blend;
 		++epic12_gpu_reject_smode_dmode[smode & 7][dmode & 7];

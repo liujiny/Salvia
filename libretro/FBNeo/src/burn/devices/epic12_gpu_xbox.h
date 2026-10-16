@@ -592,12 +592,15 @@ static void epic12_xenos_draw(int vertices)
 
 static void epic12_xenos_resolve(int x,int y,int w,int h)
 {
-	// Resolve requires 8-pixel alignment. Keep source/destination origins
-	// equal so feedback can sample the same screen coordinates. In particular,
-	// don't copy the whole 512x512 surface for each small translucent sprite.
-	D3DRECT rect={x&~7,y&~7,(x+w+7)&~7,(y+h+7)&~7};
-	D3DPOINT point={rect.x1,rect.y1};
-	epic12_xenos_device->Resolve(D3DRESOLVE_RENDERTARGET0,&rect,epic12_xenos_result,&point,0,0,NULL,0,0,NULL);
+	// Resolve requires 8-pixel alignment and must never exceed the 512x512 render target.
+	int x1 = x & ~7; if (x1 < 0) x1 = 0; if (x1 > 512) x1 = 512;
+	int y1 = y & ~7; if (y1 < 0) y1 = 0; if (y1 > 512) y1 = 512;
+	int x2 = (x + w + 7) & ~7; if (x2 < 0) x2 = 0; if (x2 > 512) x2 = 512;
+	int y2 = (y + h + 7) & ~7; if (y2 < 0) y2 = 0; if (y2 > 512) y2 = 512;
+	if (x2 <= x1 || y2 <= y1) return;
+	D3DRECT rect = { x1, y1, x2, y2 };
+	D3DPOINT point = { x1, y1 };
+	epic12_xenos_device->Resolve(D3DRESOLVE_RENDERTARGET0, &rect, epic12_xenos_result, &point, 0, 0, NULL, 0, 0, NULL);
 }
 
 static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,const rectangle &originalBounds,
