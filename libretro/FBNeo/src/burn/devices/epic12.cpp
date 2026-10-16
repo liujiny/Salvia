@@ -1138,7 +1138,7 @@ static void gfx_exec()
 	epic12_gpu_enabled = dips && !(dips[3] & 0x20);
 	// Dip D bit 7 asks for the small-batch split point; raising it routes the
 	// mid-size batches that mmpork flushes to the CPU replay instead.
-	epic12_gpu_threshold = (dips && (dips[3] & 0x80)) ? (1u << 24) : 8192;
+	epic12_gpu_threshold = (dips && (dips[3] & 0x80)) ? (1u << 24) : 512;
 	epic12_gpu_force_bringup = dips && (dips[3] & 0x80);
 #ifdef _XBOX
 	if (!epic12_gpu_enabled) epic12_xenos_set_status(2);

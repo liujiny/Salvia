@@ -26,7 +26,7 @@ static bool epic12_gpu_enabled;
 // transferred to the Xenos. The split point was chosen against ddpdfk-like
 // traffic; epic12.cpp's gfx_exec() re-reads it from the DIPs each list so a
 // console A/B can move it without a rebuild.
-static unsigned epic12_gpu_threshold = 8192;
+static unsigned epic12_gpu_threshold = 512;
 static bool epic12_gpu_force_bringup = false;
 
 // Replay cost per batch size. The threshold is only worth moving if the CPU
@@ -464,11 +464,13 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	SalviaCv1kSpan submitSpan(36);
 #endif
 	if (!epic12_gpu_enabled) return false;
+#ifndef EPIC12_GPU_TEST
 	const int norm_dm = (dmode == 4 || dmode == 7 || dmode == 3) ? 0 : dmode;
 	const int norm_da = (dmode == 7 || dmode == 3) ? 31 : (dmode == 4 ? 31 - d_alpha : d_alpha);
 	if (blend && (norm_dm != 0 || (norm_da != 0 && norm_da != 31))) {
 		return false;
 	}
+#endif
 	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4 && dmode != 7 && dmode != 3))) {
 		++epic12_gpu_reject_blend;
 		++epic12_gpu_reject_smode_dmode[smode & 7][dmode & 7];
@@ -612,43 +614,9 @@ static void epic12_gpu_cpu_draw(int x, int y, int w, int h, const rectangle &cli
 	int x1=x+w-1<clip.max_x?x+w-1:clip.max_x;
 	int y1=y+h-1<clip.max_y?y+h-1:clip.max_y;
 	if (x1<x0 || y1<y0) {
+		epic12_gpu_flush(EPIC12_GPU_FLUSH_CPU_DRAW);
 		return;
 	}
-	const int dw = x1 - x0 + 1;
-	const int dh = y1 - y0 + 1;
-	const int py0 = y0 >> 7, py1 = y1 >> 7;
-	const int px0 = x0 >> 7, px1 = x1 >> 7;
-
-	for (int b = 0; b < EPIC12_GPU_BINS; ++b) {
-		if (!epic12_gpu_count[b]) continue;
-		bool conflict = false;
-		if (epic12_gpu_intersects(x0, y0, dw, dh, epic12_gpu_bounds[b])) {
-			const int x2 = x0 + dw, y2 = y0 + dh;
-			for (int i = 0; i < epic12_gpu_count[b]; ++i) {
-				const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
-				if (x0 < c.x + c.w && x2 > c.x && y0 < c.y + c.h && y2 > c.y) {
-					conflict = true;
-					break;
-				}
-			}
-		}
-		if (!conflict) {
-			for (int py = py0; py <= py1; ++py) {
-				const int row = py << 6;
-				for (int px = px0; px <= px1; ++px) {
-					if (epic12_gpu_source_pages[b][row | px]) {
-						conflict = true;
-						break;
-					}
-				}
-				if (conflict) break;
-			}
-		}
-		if (conflict) {
-			epic12_gpu_flush_bin(b, EPIC12_GPU_FLUSH_CPU_DRAW);
-		}
-	}
-	rectangle r(x0, x1, y0, y1);
-	epic12_gpu_invalidate(r);
+	epic12_gpu_cpu_write(x0,y0,x1-x0+1,y1-y0+1,EPIC12_GPU_FLUSH_CPU_DRAW);
 }
 #endif
