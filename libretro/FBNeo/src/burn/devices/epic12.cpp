@@ -929,6 +929,15 @@ static void gfx_draw(UINT32 *addr)
 		blend = 0;
 
 #if defined(_XBOX) || defined(EPIC12_GPU_TEST)
+	extern UINT32 nCurrentFrame;
+	if (nCurrentFrame == 30) {
+		FILE *df = fopen("game:\\draw_dump_frame30.txt", "a");
+		if (df) {
+			fprintf(df, "x=%d y=%d dimx=%d dimy=%d fx=%d tr=%d bl=%d sm=%d dm=%d sa=%d da=%d tint=(%d,%d,%d)\n",
+				x, y, dimx, dimy, flipx, trans, blend, s_mode, d_mode, s_alpha, d_alpha, tint_clr.r, tint_clr.g, tint_clr.b);
+			fclose(df);
+		}
+	}
 	if (epic12_gpu_submit(flipx,trans,blend,s_mode,d_mode,draw_params)) return;
 	epic12_gpu_cpu_draw(x,y,dimx,dimy,m_clip);
 #if SALVIA_CV1K_PROBE
