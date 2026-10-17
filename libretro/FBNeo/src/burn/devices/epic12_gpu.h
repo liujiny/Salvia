@@ -466,8 +466,10 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	if (!epic12_gpu_enabled) return false;
 #ifndef EPIC12_GPU_TEST
 	const int norm_dm = (dmode == 4 || dmode == 7 || dmode == 3) ? 0 : dmode;
-	const int norm_da = (dmode == 7 || dmode == 3) ? 31 : (dmode == 4 ? 31 - d_alpha : d_alpha);
-	if (blend && (norm_dm != 0 || (norm_da != 0 && norm_da != 31))) {
+	if (blend && norm_dm != 0) {
+		return false;
+	}
+	if (blend && ((dimy <= 4 && dimx >= 120) || (dimx <= 4 && dimy >= 120) || (dimx <= 32 && dimy >= 160) || (dimy <= 32 && dimx >= 160))) {
 		return false;
 	}
 #endif
