@@ -1,6 +1,6 @@
 # CV1000: Fix Dark Mask via Targeted Black Darkening Route & Restore GPU Acceleration
 
-Baseline `b13e77ed`. Iteration diagnostics image built with `SALVIA_FBNEO_DIAGNOSTICS 1`.
+Baseline `b13e77ed`. Commit `1b4cefd9`. Iteration diagnostics image built with `SALVIA_FBNEO_DIAGNOSTICS 1`.
 
 ## Why
 
