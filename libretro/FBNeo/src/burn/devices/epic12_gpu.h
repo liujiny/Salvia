@@ -616,7 +616,6 @@ static void epic12_gpu_cpu_draw(int x, int y, int w, int h, const rectangle &cli
 	int x1=x+w-1<clip.max_x?x+w-1:clip.max_x;
 	int y1=y+h-1<clip.max_y?y+h-1:clip.max_y;
 	if (x1<x0 || y1<y0) {
-		epic12_gpu_flush(EPIC12_GPU_FLUSH_CPU_DRAW);
 		return;
 	}
 	epic12_gpu_cpu_write(x0,y0,x1-x0+1,y1-y0+1,EPIC12_GPU_FLUSH_CPU_DRAW);

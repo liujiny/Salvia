@@ -20,19 +20,28 @@ static bool epic12_gpu_additive(const Epic12GpuCommand &c)
 
 static bool epic12_gpu_feedback(const Epic12GpuCommand &c)
 {
+#ifdef EPIC12_GPU_TEST
 	return c.blend && (epic12_gpu_dest_mode(c) != 0 ||
 		(epic12_gpu_dest_alpha(c) != 0 && epic12_gpu_dest_alpha(c) != 31));
+#else
+	return c.blend && epic12_gpu_dest_mode(c) != 0;
+#endif
 }
 
-// Blend classification helper for reorder lookahead: 0 = plain, 1 = additive, 2 = feedback.
-static inline int epic12_gpu_command_blend_type(const Epic12GpuCommand &c)
+static inline int epic12_gpu_blend_state(const Epic12GpuCommand &c)
 {
 	if (!c.blend) return 0;
-	int dm = epic12_gpu_dest_mode(c);
+	if (epic12_gpu_dest_mode(c) != 0) return 100;
 	int da = epic12_gpu_dest_alpha(c);
-	if (dm == 0 && da == 31) return 1;
-	if (dm != 0 || (da != 0 && da != 31)) return 2;
-	return 0;
+	if (da == 0) return 0;
+	if (da == 31) return 1;
+	return 2 + da;
+}
+
+// Blend classification helper for reorder lookahead: 0 = plain, 1 = additive, 2..32 = hw factor, 100 = feedback.
+static inline int epic12_gpu_command_blend_type(const Epic12GpuCommand &c)
+{
+	return epic12_gpu_blend_state(c);
 }
 
 // Source atlas contents are immutable for a batch. Two commands therefore
@@ -107,7 +116,7 @@ static int epic12_gpu_group_end(const Epic12GpuCommand *cmd, int first, int coun
 {
 	const Epic12GpuCommand &head = cmd[first];
 	bool feedback = epic12_gpu_feedback(head);
-	bool headAdditive = attributes ? epic12_gpu_additive(head) : false;
+	int headBlend = attributes ? epic12_gpu_blend_state(head) : 0;
 	snapshot = epic12_gpu_resolve_rect(head, bounds);
 	unsigned area = epic12_gpu_rect_area(snapshot);
 	int end = first + 1;
@@ -116,8 +125,7 @@ static int epic12_gpu_group_end(const Epic12GpuCommand *cmd, int first, int coun
 		if (attributes) {
 			// Tint, alpha and transparency travel with each rectangle. Only
 			// hardware blend state and destination-read dependencies split it.
-			if (headAdditive != epic12_gpu_additive(c) ||
-				feedback != epic12_gpu_feedback(c)) break;
+			if (headBlend != epic12_gpu_blend_state(c)) break;
 		} else if (!epic12_gpu_same_state(head, c)) break;
 		if (!feedback) continue;
 		if (end - first == 64) break;
