@@ -1,6 +1,6 @@
 # CV1000: Preserve Destination Alpha During Blending & Eliminate O(N) Command Scan
 
-Baseline `5e1d6a27`. Iteration diagnostics image built with `SALVIA_FBNEO_DIAGNOSTICS 1`.
+Baseline `5e1d6a27`. Commit `35cde267`. Iteration diagnostics image built with `SALVIA_FBNEO_DIAGNOSTICS 1`.
 
 ## Why
 
