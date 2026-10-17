@@ -312,12 +312,7 @@ static int epic12_gpu_can_fit(int b, const rectangle &dest, int sx, int sy, int 
 		if (page_overlap) break;
 	}
 	if (page_overlap && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
-		const int sx2 = sx + w, sy2 = sy + h;
-		for (int i = 0; i < epic12_gpu_count[b]; ++i) {
-			const Epic12GpuCommand &c = epic12_gpu_commands[b][i];
-			if (sx < c.x + c.w && sx2 > c.x && sy < c.y + c.h && sy2 > c.y)
-				return 2;
-		}
+		return 2;
 	}
 
 	newPages = 0;
@@ -390,6 +385,9 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 #ifndef EPIC12_GPU_TEST
 	const int norm_dm = (dmode == 4 || dmode == 7 || dmode == 3) ? 0 : dmode;
 	if (blend && norm_dm != 0 && !(norm_dm == 1 && s_alpha == 0)) {
+		return false;
+	}
+	if (blend && ((dimy <= 2 && dimx >= 120) || (dimx <= 2 && dimy >= 120))) {
 		return false;
 	}
 #endif
