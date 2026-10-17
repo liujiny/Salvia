@@ -43,7 +43,7 @@ static bool epic12_xenos_alpha_trim, epic12_xenos_snapshot_reuse, epic12_xenos_t
 static bool epic12_xenos_reorder;
 static UINT64 epic12_xenos_reordered;
 static Epic12GpuAlphaPage epic12_xenos_alpha[256];
-static Epic12GpuCommand epic12_xenos_cropped[1024];
+static Epic12GpuCommand epic12_xenos_cropped[4096];
 static UINT64 epic12_xenos_raster_commands, epic12_xenos_raster_pixels;
 
 // Randomly sample about one in 64 batches to avoid locking to the same

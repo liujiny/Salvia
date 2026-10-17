@@ -12,7 +12,7 @@ struct Epic12GpuCommand {
 };
 
 #define EPIC12_GPU_BINS 1
-static Epic12GpuCommand epic12_gpu_commands[EPIC12_GPU_BINS][1024];
+static Epic12GpuCommand epic12_gpu_commands[EPIC12_GPU_BINS][4096];
 static int epic12_gpu_count[EPIC12_GPU_BINS];
 static unsigned epic12_gpu_pixels[EPIC12_GPU_BINS];
 static bool epic12_gpu_source_pages[EPIC12_GPU_BINS][2048];
@@ -293,14 +293,14 @@ static int epic12_gpu_can_fit(int b, const rectangle &dest, int sx, int sy, int 
 	merged = epic12_gpu_bounds[b];
 	if (dest.min_x >= merged.min_x && dest.max_x <= merged.max_x &&
 	    dest.min_y >= merged.min_y && dest.max_y <= merged.max_y) {
-		if (epic12_gpu_count[b] >= 1024) return 1;
+		if (epic12_gpu_count[b] >= 4096) return 1;
 	} else {
 		if (dest.min_x < merged.min_x) merged.min_x = dest.min_x;
 		if (dest.min_y < merged.min_y) merged.min_y = dest.min_y;
 		if (dest.max_x > merged.max_x) merged.max_x = dest.max_x;
 		if (dest.max_y > merged.max_y) merged.max_y = dest.max_y;
 
-		if (epic12_gpu_count[b] >= 1024) return 1;
+		if (epic12_gpu_count[b] >= 4096) return 1;
 		if (merged.max_x - merged.min_x >= 512 || merged.max_y - merged.min_y >= 512)
 			return 1;
 	}
@@ -451,6 +451,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	// Keeping x < 768 ensures both on-screen double buffers remain fully on the GPU.
 	if (x >= 768) {
 		if (epic12_gpu_count[0]) {
+			// 1. RAW hazard: does this CPU blit read from a page that queued GPU commands wrote to?
 			bool page_overlap = false;
 			if (py0 == py1 && px0 == px1) {
 				page_overlap = epic12_gpu_dest_pages[0][(py0 << 6) | px0];
@@ -465,6 +466,22 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 			}
 			if (page_overlap && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[0])) {
 				epic12_gpu_flush_bin(0, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
+			}
+
+			// 2. WAR hazard: does this CPU blit write to a page that queued GPU commands sample from?
+			if (epic12_gpu_count[0]) {
+				const int dpy0 = y >> 7, dpy1 = (y + h - 1) >> 7;
+				const int dpx0 = x >> 7, dpx1 = (x + w - 1) >> 7;
+				bool war_overlap = false;
+				for (int py = dpy0; py <= dpy1 && !war_overlap; ++py) {
+					const int row = py << 6;
+					for (int px = dpx0; px <= dpx1; ++px) {
+						if (epic12_gpu_source_pages[0][row | px]) { war_overlap = true; break; }
+					}
+				}
+				if (war_overlap) {
+					epic12_gpu_flush_bin(0, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
+				}
 			}
 		}
 		Epic12GpuCommand c;
