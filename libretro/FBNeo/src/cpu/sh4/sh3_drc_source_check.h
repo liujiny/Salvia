@@ -16,6 +16,18 @@ static SH3_SOURCE_INLINE bool sh3_drc_source_equal(const UINT16 *expected,
  // Compare opcodes using bitwise XOR and OR. Keeping a group of four avoids
  // per-opcode loop overhead while evaluating 4 opcodes with a single conditional branch.
  // Bitwise OR cannot cancel non-zero differences; equality semantics remain 100% exact.
+ while(words>=8) {
+  unsigned diff = (unsigned)(expected[0] ^ actual[0])
+                | (unsigned)(expected[1] ^ actual[1])
+                | (unsigned)(expected[2] ^ actual[2])
+                | (unsigned)(expected[3] ^ actual[3])
+                | (unsigned)(expected[4] ^ actual[4])
+                | (unsigned)(expected[5] ^ actual[5])
+                | (unsigned)(expected[6] ^ actual[6])
+                | (unsigned)(expected[7] ^ actual[7]);
+  if(diff) return false;
+  expected+=8; actual+=8; words-=8;
+ }
  while(words>=4) {
   unsigned diff = (unsigned)(expected[0] ^ actual[0])
                 | (unsigned)(expected[1] ^ actual[1])
