@@ -745,24 +745,20 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 		int dm_norm = epic12_gpu_dest_mode(c);
 		if (!c.blend || (dm_norm == 0 && da_norm == 0) || feedback) {
 			d->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-			d->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
+		} else if (dm_norm == 1 && c.sa == 0) {
+			d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+			d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+			d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCCOLOR);
+		} else if (da_norm == 31) {
+			d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+			d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+			d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
 		} else {
-			d->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ONE);
-			if (dm_norm == 1 && c.sa == 0) {
-				d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-				d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
-				d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCCOLOR);
-			} else if (da_norm == 31) {
-				d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-				d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
-				d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
-			} else {
-				d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-				d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
-				d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_BLENDFACTOR);
-				DWORD factor = (da_norm * 255 + 15) / 31;
-				d->SetRenderState(D3DRS_BLENDFACTOR, D3DCOLOR_RGBA(factor, factor, factor, factor));
-			}
+			d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+			d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+			d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_BLENDFACTOR);
+			DWORD factor = (da_norm * 255 + 15) / 31;
+			d->SetRenderState(D3DRS_BLENDFACTOR, D3DCOLOR_RGBA(factor, factor, factor, factor));
 		}
 		if (!epic12_xenos_attributes) {
 			float constants[8]={(float)c.tint.r,(float)c.tint.g,(float)c.tint.b,(float)c.sa,

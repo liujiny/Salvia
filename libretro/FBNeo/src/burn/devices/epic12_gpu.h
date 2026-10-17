@@ -387,7 +387,8 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	if (blend && norm_dm != 0 && !(norm_dm == 1 && s_alpha == 0)) {
 		return false;
 	}
-	if (blend && ((dimy <= 2 && dimx >= 120) || (dimx <= 2 && dimy >= 120))) {
+	if (blend && ((dimy <= 2 && dimx >= 120) || (dimx <= 2 && dimy >= 120) ||
+	             (dmode == 4 && tint_clr->r == 0 && tint_clr->g == 0 && tint_clr->b == 0))) {
 		return false;
 	}
 #endif
