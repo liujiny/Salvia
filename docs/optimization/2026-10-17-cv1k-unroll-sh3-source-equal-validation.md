@@ -33,3 +33,8 @@ Baseline `93ae8d39`. Iteration diagnostics image built with `SALVIA_FBNEO_DIAGNO
    - `libretro/FBNeo/tests/sh3_dispatch/run_inline.py`: **100% PASS** (all 8 host suites, ASan/UBSan clean, 442,729 source equality cases).
    - `libretro/FBNeo/tests/sh3_ppc/run.py`: **100% PASS** (all 846,026 cases: 727,804 compiled, 118,222 fallback).
    - `libretro/FBNeo/tests/epic12_gpu/run.py`: **100% PASS** (all 14,400 commands, 10.4M component cases).
+
+2. **Artifacts**:
+   - Diagnostics XEX: `Distro360/fbneo.xex`
+     - SHA256: `051bb51f2903ffb07ecac06f9ceef4bf5f3058729c71db8d17db65dd513aae5a`
+   - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261017-1637-sh3-source-opt-diag.xex`
