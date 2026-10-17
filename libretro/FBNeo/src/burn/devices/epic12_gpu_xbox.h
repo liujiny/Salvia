@@ -149,12 +149,16 @@ static const char epic12_xenos_shader[] =
 " s=min(31.0,floor(s*tintAlpha.rgb/31.0+0.0001));\n"
 " float3 outc=s;\n"
 " if(mode.y>0.5) {\n"
-"  outc=floor(s*tintAlpha.a/31.0+0.0001);\n"
-"  if(mode.z>0.5 || (mode.w>0.5 && mode.w<30.5)) {\n"
-"   float3 d=floor(tex2D(destination,p.dst).rgb*(255.0/8.0)+0.001);\n"
-"   float3 factor=mode.w;\n"
-"   if(mode.z>0.5) factor=s; // mode 4 was normalized on the CPU\n"
-"   outc=min(31.0,outc+floor(d*factor/31.0+0.0001));\n"
+"  if(mode.z>0.5 && tintAlpha.a<0.5) {\n"
+"   outc=s;\n"
+"  } else {\n"
+"   outc=floor(s*tintAlpha.a/31.0+0.0001);\n"
+"   if(mode.z>0.5 || (mode.w>0.5 && mode.w<30.5)) {\n"
+"    float3 d=floor(tex2D(destination,p.dst).rgb*(255.0/8.0)+0.001);\n"
+"    float3 factor=mode.w;\n"
+"    if(mode.z>0.5) factor=s; // mode 4 was normalized on the CPU\n"
+"    outc=min(31.0,outc+floor(d*factor/31.0+0.0001));\n"
+"   }\n"
 "  }\n"
 " }\n"
 " return float4(outc*(8.0/255.0),raw.a);\n"
@@ -169,7 +173,10 @@ static const char epic12_xenos_shader[] =
 " float3 s=floor(raw.rgb*(255.0/8.0)+0.001);\n"
 " s=min(31.0,floor(s*tintAlpha.rgb/31.0+0.0001));\n"
 " float3 outc=s;\n"
-" if(mode.y>0.5) outc=floor(s*tintAlpha.a/31.0+0.0001);\n"
+" if(mode.y>0.5) {\n"
+"  if(mode.z>0.5) outc=s;\n"
+"  else outc=floor(s*tintAlpha.a/31.0+0.0001);\n"
+" }\n"
 " return float4(outc*(8.0/255.0),raw.a);\n"
 "}\n"
 "float4 shade_feedback(P p, float4 tintAlpha, float4 mode) {\n"
@@ -735,13 +742,20 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 			epic12_xenos_feedback_pixels+=epic12_gpu_rect_area(snapshot);
 		}
 		int da_norm = epic12_gpu_dest_alpha(c);
-		if (!c.blend || da_norm == 0 || feedback) {
+		int dm_norm = epic12_gpu_dest_mode(c);
+		if (!c.blend || (dm_norm == 0 && da_norm == 0) || feedback) {
 			d->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+		} else if (dm_norm == 1 && c.sa == 0) {
+			d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+			d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+			d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCCOLOR);
 		} else if (da_norm == 31) {
 			d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+			d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
 			d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
 		} else {
 			d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+			d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
 			d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_BLENDFACTOR);
 			DWORD factor = (da_norm * 255 + 15) / 31;
 			d->SetRenderState(D3DRS_BLENDFACTOR, D3DCOLOR_RGBA(factor, factor, factor, factor));

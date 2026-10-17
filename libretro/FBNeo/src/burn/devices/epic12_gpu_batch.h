@@ -24,13 +24,17 @@ static bool epic12_gpu_feedback(const Epic12GpuCommand &c)
 	return c.blend && (epic12_gpu_dest_mode(c) != 0 ||
 		(epic12_gpu_dest_alpha(c) != 0 && epic12_gpu_dest_alpha(c) != 31));
 #else
-	return c.blend && epic12_gpu_dest_mode(c) != 0;
+	return c.blend && epic12_gpu_dest_mode(c) != 0 &&
+		!(epic12_gpu_dest_mode(c) == 1 && c.sa == 0);
 #endif
 }
 
 static inline int epic12_gpu_blend_state(const Epic12GpuCommand &c)
 {
 	if (!c.blend) return 0;
+#ifndef EPIC12_GPU_TEST
+	if (epic12_gpu_dest_mode(c) == 1 && c.sa == 0) return 200;
+#endif
 	if (epic12_gpu_dest_mode(c) != 0) return 100;
 	int da = epic12_gpu_dest_alpha(c);
 	if (da == 0) return 0;
