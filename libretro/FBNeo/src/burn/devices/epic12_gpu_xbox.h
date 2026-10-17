@@ -558,7 +558,7 @@ static bool epic12_xenos_create()
 	epic12_xenos_fast_transfer=epic12_gpu_untile_selftest();
 	epic12_xenos_log(epic12_xenos_fast_transfer?
 		"fused VMX transfer self-test passed":"fused transfer unavailable; using SDK transfer");
-	epic12_xenos_alpha_trim=true; epic12_xenos_snapshot_reuse=true; epic12_xenos_reorder=true;
+	epic12_xenos_alpha_trim=true; epic12_xenos_snapshot_reuse=true; epic12_xenos_reorder=false;
 	bool alphaVector=epic12_gpu_alpha_vector_selftest();
 	epic12_xenos_log(alphaVector?"VMX alpha mask self-test passed":"VMX alpha mask unavailable; using scalar masks");
 	epic12_xenos_tiled=epic12_gpu_tile_selftest();
