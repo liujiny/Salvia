@@ -54,5 +54,5 @@ Baseline `9e4db1c2`. Iteration diagnostics image built with `SALVIA_FBNEO_DIAGNO
 
 3. **Artifacts**:
    - Diagnostics XEX: `Distro360/fbneo.xex`
-     - SHA256: `fb5b99dea75ccb34cd2a5dec9444a1fe8bba38fa2e9fe5c6fabe7a3059fb6b0f`
-   - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261017-1134-single-bin-fifo-diag.xex`
+     - SHA256: `d26721f222b2dc1b7be63980cccfc9e4fe1eea8bae4bab94035baecf4c90277f`
+   - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261017-1139-93d603a1-diag.xex`
