@@ -210,16 +210,18 @@ static int epic12_gpu_alpha_trim(Command& command,const Epic12GpuAlphaPage* alph
 {
     if(!command.transparent) return 1;
     EPIC12_ALPHA_COUNT(trimCommands,1);
-    if(!alpha || !slots || slotCount<1 || slotCount>256 || command.sx<0 || command.sy<0 ||
-        command.sx>=8192 || command.sy>=4096 || command.w<1 || command.h<1 ||
-        command.w>8192-command.sx || command.h>4096-command.sy ||
-        command.x<0 || command.y<0 || command.x>=8192 || command.y>=4096 ||
-        command.w>8192-command.x || command.h>4096-command.y) return -1;
+    if(!alpha || !slots || slotCount<1 || slotCount>256) return -10;
+    if(command.sx<0 || command.sx>=8192) return -11;
+    if(command.sy<0 || command.sy>=4352) return -12;
+    if(command.w<1 || command.w>8192-command.sx) return -13;
+    if(command.h<1 || command.h>4352-command.sy) return -14;
+    if(command.x<0 || command.x>=8192 || command.y<0 || command.y>=4096) return -15;
+    if(command.w>8192-command.x || command.h>4096-command.y) return -16;
     int endX=command.sx+command.w-1,endY=command.sy+command.h-1;
     int left=endX+1,top=endY+1,right=-1,bottom=-1;
     for(int py=command.sy>>7;py<=(endY>>7);++py) for(int px=command.sx>>7;px<=(endX>>7);++px) {
         int slot=slots[py*64+px];
-        if(slot<0 || slot>=slotCount) return -1;
+        if(slot<0 || slot>=slotCount) return -20;
         int pageX=px*128,pageY=py*128;
         int x0=command.sx>pageX?command.sx-pageX:0;
         int y0=command.sy>pageY?command.sy-pageY:0;
@@ -255,10 +257,10 @@ static int epic12_gpu_alpha_crop_batch(const Command* input,int count,Command* o
     for(int i=0;i<count;++i) {
         Command c=input[i];
         int result=epic12_gpu_alpha_trim(c,alpha,slots,slotCount);
-        if(result<0) return -1;
+        if(result<0) return result;
         if(!result) continue;
         if(c.x<0 || c.y<0 || c.w<1 || c.h<1 || c.x>=8192 || c.y>=4096 ||
-            c.w>8192-c.x || c.h>4096-c.y) return -1;
+            c.w>8192-c.x || c.h>4096-c.y) return -30;
         output[kept++]=c;
         if(c.x<left) left=c.x;
         if(c.y<top) top=c.y;

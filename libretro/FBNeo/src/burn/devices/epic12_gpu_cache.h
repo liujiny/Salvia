@@ -6,8 +6,12 @@
 #include <limits.h>
 #include <string.h>
 
+#ifndef EPIC12_VRAM_PAGES
+#define EPIC12_VRAM_PAGES 2176
+#endif
+
 struct Epic12GpuPageCache {
-	enum { MAX_SLOTS=256, VRAM_PAGES=2048 };
+	enum { MAX_SLOTS=256, VRAM_PAGES=EPIC12_VRAM_PAGES };
 	int capacity;
 	int pages[MAX_SLOTS];
 	unsigned lastUse[MAX_SLOTS],clock;

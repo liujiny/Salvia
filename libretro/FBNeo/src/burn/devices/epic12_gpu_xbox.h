@@ -247,6 +247,10 @@ static void epic12_xenos_report()
 		epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_OTHER],
 		epic12_gpu_flush_small_cpu,epic12_gpu_flush_render_fallback);
 	epic12_xenos_log(message);
+	sprintf(message, "diag_staging snapshots=%u pixels=%u | src_dep fit2=%u raw768=%u war768=%u",
+		epic12_gpu_diag_snapshot_count, epic12_gpu_diag_snapshot_pixels,
+		epic12_gpu_diag_fit2_count, epic12_gpu_diag_raw768_count, epic12_gpu_diag_war768_count);
+	epic12_xenos_log(message);
 	sprintf(message, "diag_dep true=%u false=%u (%.1f%% false) c1=%u c2_4=%u c5_16=%u c17_64=%u c_gt64=%u",
 		epic12_gpu_diag_dep_true, epic12_gpu_diag_dep_false,
 		(epic12_gpu_diag_dep_true + epic12_gpu_diag_dep_false) ?
@@ -300,6 +304,19 @@ static void epic12_xenos_report()
 			epic12_gpu_diag_small_cpu_samples[s][0], epic12_gpu_diag_small_cpu_samples[s][1],
 			epic12_gpu_diag_small_cpu_samples[s][2], epic12_gpu_diag_small_cpu_samples[s][3],
 			epic12_gpu_diag_small_cpu_samples[s][4]);
+		epic12_xenos_log(message);
+	}
+	for (int s = 0; s < epic12_gpu_diag_war_sample_count; ++s) {
+		sprintf(message, "diag_war_sample %d: CPU dst=(%d,%d,%d,%d) src=(%d,%d) | GPU src=(%d,%d) dst=(%d,%d) | slot=%d sc.src=(%d,%d) sc.tint=%d c.tint=%d sc.tr=%d c.tr=%d",
+			s, epic12_gpu_diag_war_samples[s][0], epic12_gpu_diag_war_samples[s][1],
+			epic12_gpu_diag_war_samples[s][2], epic12_gpu_diag_war_samples[s][3],
+			epic12_gpu_diag_war_samples[s][4], epic12_gpu_diag_war_samples[s][5],
+			epic12_gpu_diag_war_samples[s][6], epic12_gpu_diag_war_samples[s][7],
+			epic12_gpu_diag_war_samples[s][8], epic12_gpu_diag_war_samples[s][9],
+			epic12_gpu_diag_war_samples[s][16],
+			epic12_gpu_diag_war_samples[s][17], epic12_gpu_diag_war_samples[s][18],
+			epic12_gpu_diag_war_samples[s][19], epic12_gpu_diag_war_samples[s][20],
+			epic12_gpu_diag_war_samples[s][21], epic12_gpu_diag_war_samples[s][22]);
 		epic12_xenos_log(message);
 	}
 	sprintf(message,"rejections blend=%u size=%u oob=%u sy=%u intersect=%u",
@@ -386,6 +403,7 @@ static void epic12_gpu_reset()
 		memset(epic12_gpu_source_pages[b], 0, sizeof(epic12_gpu_source_pages[b]));
 		memset(epic12_gpu_dest_pages[b], 0, sizeof(epic12_gpu_dest_pages[b]));
 	}
+	epic12_gpu_snapshot_reset();
 }
 
 static void epic12_xenos_release()
@@ -614,25 +632,41 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 	Epic12GpuTiming *timing=NULL)
 {
 	D3DDevice *d=epic12_xenos_device;
-	bool needed[2048]={false};
-	int slots[2048];
+	bool needed[EPIC12_VRAM_PAGES]={false};
+	int slots[EPIC12_VRAM_PAGES];
 	int pages=0;
 	for (int i=0;i<count;++i) {
 		const Epic12GpuCommand &c=cmd[i];
 		for (int y=c.sy/128;y<=(c.sy+c.h-1)/128;++y)
 			for (int x=c.sx/128;x<=(c.sx+c.w-1)/128;++x) {
 				int p=y*64+x;
-				if (!needed[p]) { needed[p]=true; if (++pages>(int)epic12_gpu_batch_page_capacity()) return false; }
+				if (p < 0 || p >= EPIC12_VRAM_PAGES) {
+					char msg[128]; sprintf(msg, "fail: p oob %d cmd %d (%d,%d,%d,%d)", p, i, c.sx, c.sy, c.w, c.h);
+					epic12_xenos_log(msg); return false;
+				}
+				if (!needed[p]) {
+					needed[p]=true;
+					if (++pages>(int)epic12_gpu_batch_page_capacity()) {
+						char msg[128]; sprintf(msg, "fail: pages > %d", (int)epic12_gpu_batch_page_capacity());
+						epic12_xenos_log(msg); return false;
+					}
+				}
 			}
 	}
 	epic12_xenos_cache_hits+=epic12_xenos_cache.begin_batch(needed,slots);
 	D3DLOCKED_RECT lr;
 	bool locked=false;
-	for (int p=0;p<2048;++p) if (needed[p] && slots[p]<0) {
+	for (int p=0;p<EPIC12_VRAM_PAGES;++p) if (needed[p] && slots[p]<0) {
 		int next=epic12_xenos_cache.allocate(p);
-		if(next<0) { if(locked) epic12_xenos_atlas->UnlockRect(0); return false; }
+		if(next<0) {
+			if(locked) epic12_xenos_atlas->UnlockRect(0);
+			char msg[128]; sprintf(msg, "fail: alloc slot for p=%d", p);
+			epic12_xenos_log(msg); return false;
+		}
 		if (!locked) {
-			if (FAILED(epic12_xenos_atlas->LockRect(0,&lr,NULL,0))) return false;
+			if (FAILED(epic12_xenos_atlas->LockRect(0,&lr,NULL,0))) {
+				epic12_xenos_log("fail: atlas lock"); return false;
+			}
 			locked=true;
 		}
 		int sx=(p&63)*128, sy=(p>>6)*128;
@@ -655,7 +689,10 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 	if(epic12_xenos_alpha_trim) {
 		int cropped=epic12_gpu_alpha_crop_batch(cmd,count,epic12_xenos_cropped,
 			epic12_xenos_alpha,slots,epic12_xenos_cache.capacity,bounds);
-		if(cropped<0) return false;
+		if(cropped<0) {
+			char msg[128]; sprintf(msg, "fail: alpha crop cropped=%d", cropped);
+			epic12_xenos_log(msg); return false;
+		}
 		cmd=epic12_xenos_cropped; count=cropped;
 	}
 	if(epic12_xenos_attributes && epic12_xenos_reorder) {
@@ -670,7 +707,9 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 		return true;
 	}
 	int width=bounds.max_x-bounds.min_x+1, height=bounds.max_y-bounds.min_y+1;
-	if (FAILED(epic12_xenos_input->LockRect(0,&lr,NULL,0))) return false;
+	if (FAILED(epic12_xenos_input->LockRect(0,&lr,NULL,0))) {
+		epic12_xenos_log("fail: input lock"); return false;
+	}
 	// The bounding box of one batch, row by row. The source rows are 32 KB
 	// apart and the locked rows are lr.Pitch apart, so a memcpy() given one row
 	// cannot know where the next one is; epic12_gpu_region.h does, and fetches
@@ -782,7 +821,9 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 	if(oldTarget) oldTarget->Release(); if(oldDepth) oldDepth->Release();
 	RECT sourceRect={0,0,width,height}; POINT destPoint={bounds.min_x,bounds.min_y};
 	if(timing) QueryPerformanceCounter(&timing->stamp[5]);
-	if (FAILED(epic12_xenos_result->LockRect(0,&lr,&sourceRect,D3DLOCK_READONLY))) return false;
+	if (FAILED(epic12_xenos_result->LockRect(0,&lr,&sourceRect,D3DLOCK_READONLY))) {
+		epic12_xenos_log("fail: result lock"); return false;
+	}
 	if(timing) QueryPerformanceCounter(&timing->stamp[6]);
 	if(epic12_xenos_fast_transfer) {
 		epic12_gpu_untile_mask(lr.pBits,vram,bounds.min_x,bounds.min_y,width,height);
@@ -809,7 +850,7 @@ static bool epic12_xenos_selftest()
 	if (!scratch) return false;
 	// Exercise the final atlas row, including slots 254/255 on the large
 	// texture. Dummy tags are never sampled and are cleared after this test.
-	bool needed[2048]={false}; int slots[2048];
+	bool needed[EPIC12_VRAM_PAGES]={false}; int slots[EPIC12_VRAM_PAGES];
 	epic12_xenos_cache.clear(); epic12_xenos_cache.begin_batch(needed,slots);
 	for(int i=0;i<epic12_xenos_cache.capacity-2;++i) epic12_xenos_cache.allocate(128+i);
 	for(int y=0;y<128;++y) for(int x=0;x<256;++x)

@@ -370,7 +370,7 @@ void epic12_init(INT32 ram_size, UINT16 *ram, UINT8 *dippy)
 	dips = dippy;
 
 	m_gfx_size = 0x2000 * 0x1000;
-	m_bitmaps = (UINT32*)BurnMalloc (m_gfx_size * 4);
+	m_bitmaps = (UINT32*)BurnMalloc (0x2000 * 4352 * sizeof(UINT32));
 
 	m_clip.set(0, 0x2000-1, 0, 0x1000-1);
 

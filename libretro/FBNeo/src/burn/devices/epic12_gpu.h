@@ -12,11 +12,14 @@ struct Epic12GpuCommand {
 };
 
 #define EPIC12_GPU_BINS 1
+#define EPIC12_VRAM_PAGES 2176
+#define EPIC12_SNAPSHOT_Y 4096
+#define EPIC12_SNAPSHOT_MAX_Y 4352
 static Epic12GpuCommand epic12_gpu_commands[EPIC12_GPU_BINS][4096];
 static int epic12_gpu_count[EPIC12_GPU_BINS];
 static unsigned epic12_gpu_pixels[EPIC12_GPU_BINS];
-static bool epic12_gpu_source_pages[EPIC12_GPU_BINS][2048];
-static bool epic12_gpu_dest_pages[EPIC12_GPU_BINS][2048];
+static bool epic12_gpu_source_pages[EPIC12_GPU_BINS][EPIC12_VRAM_PAGES];
+static bool epic12_gpu_dest_pages[EPIC12_GPU_BINS][EPIC12_VRAM_PAGES];
 static unsigned epic12_gpu_source_count[EPIC12_GPU_BINS];
 static rectangle epic12_gpu_bounds[EPIC12_GPU_BINS];
 static rectangle epic12_gpu_source_bounds[EPIC12_GPU_BINS];
@@ -58,6 +61,13 @@ static unsigned epic12_gpu_reject_sy;
 static unsigned epic12_gpu_reject_intersect;
 static unsigned epic12_gpu_reject_smode_dmode[8][8];
 #if SALVIA_FBNEO_DIAGNOSTICS
+static unsigned epic12_gpu_diag_snapshot_count;
+static unsigned epic12_gpu_diag_snapshot_pixels;
+static unsigned epic12_gpu_diag_fit2_count;
+static unsigned epic12_gpu_diag_raw768_count;
+static unsigned epic12_gpu_diag_war768_count;
+static int epic12_gpu_diag_war_samples[10][24];
+static int epic12_gpu_diag_war_sample_count;
 static unsigned epic12_gpu_diag_dep_true;
 static unsigned epic12_gpu_diag_dep_false;
 static unsigned epic12_gpu_diag_dep_count_buckets[5];
@@ -91,6 +101,12 @@ static void epic12_gpu_diag_reset()
 	epic12_gpu_reject_intersect=0;
 	memset(epic12_gpu_reject_smode_dmode,0,sizeof(epic12_gpu_reject_smode_dmode));
 #if SALVIA_FBNEO_DIAGNOSTICS
+	epic12_gpu_diag_snapshot_count=0;
+	epic12_gpu_diag_snapshot_pixels=0;
+	epic12_gpu_diag_fit2_count=0;
+	epic12_gpu_diag_raw768_count=0;
+	epic12_gpu_diag_war768_count=0;
+	epic12_gpu_diag_war_sample_count=0;
 	epic12_gpu_diag_dep_true=0;
 	epic12_gpu_diag_dep_false=0;
 	memset(epic12_gpu_diag_dep_count_buckets,0,sizeof(epic12_gpu_diag_dep_count_buckets));
@@ -193,11 +209,53 @@ static void epic12_gpu_replay(const Epic12GpuCommand &c)
 
 #include "epic12_gpu_batch.h"
 
+static void epic12_gpu_snapshot_reset();
+
 #ifdef EPIC12_GPU_TEST
 #include "epic12_gpu_mock.h"
 #else
 #include "epic12_gpu_xbox.h"
 #endif
+
+static int s_snap_cur_x = 0;
+static int s_snap_cur_y = EPIC12_SNAPSHOT_Y;
+static int s_snap_row_h = 0;
+
+static void epic12_gpu_snapshot_reset()
+{
+	if (s_snap_cur_x > 0 || s_snap_cur_y > EPIC12_SNAPSHOT_Y) {
+		rectangle snap_r(0, 8191, EPIC12_SNAPSHOT_Y, EPIC12_SNAPSHOT_MAX_Y - 1);
+		epic12_gpu_invalidate(snap_r);
+	}
+	s_snap_cur_x = 0;
+	s_snap_cur_y = EPIC12_SNAPSHOT_Y;
+	s_snap_row_h = 0;
+}
+
+static inline bool epic12_gpu_snapshot_alloc(int w, int h, int &out_x, int &out_y)
+{
+	const int aligned_w = (w + 15) & ~15;
+	const int aligned_h = (h + 3) & ~3;
+
+	if (s_snap_cur_x + aligned_w > 8192) {
+		s_snap_cur_x = 0;
+		s_snap_cur_y += s_snap_row_h;
+		s_snap_row_h = 0;
+	}
+
+	if (s_snap_cur_y + aligned_h > EPIC12_SNAPSHOT_MAX_Y) {
+		return false;
+	}
+
+	out_x = s_snap_cur_x;
+	out_y = s_snap_cur_y;
+
+	s_snap_cur_x += aligned_w;
+	if (aligned_h > s_snap_row_h) {
+		s_snap_row_h = aligned_h;
+	}
+	return true;
+}
 
 static void epic12_gpu_flush_bin(int b, Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHER)
 {
@@ -264,6 +322,7 @@ static void epic12_gpu_flush_bin(int b, Epic12GpuFlushReason reason = EPIC12_GPU
 	}
 #endif
 	epic12_gpu_invalidate(epic12_gpu_bounds[b]);
+	epic12_gpu_snapshot_reset();
 	epic12_gpu_count[b] = 0;
 	epic12_gpu_pixels[b] = 0;
 	epic12_gpu_source_count[b] = 0;
@@ -441,53 +500,88 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 		++epic12_gpu_reject_intersect;
 		return false;
 	}
-	const int py0 = sy >> 7, py1 = (sy + h - 1) >> 7;
-	const int px0 = sx >> 7, px1 = (sx + w - 1) >> 7;
-
 	// Direct CPU blit for off-screen staging buffers (x >= 768):
 	// Cave CV1000 games use off-screen VRAM (Zones 1 & 2, x >= 768) as scratchpads
 	// to composite multi-part sprites with a few tiny draws (<8,192 px) before
 	// blitting them onto the visible display (Buffer 0: x < 320, Buffer 1: 384 <= x < 704).
 	// Keeping x < 768 ensures both on-screen double buffers remain fully on the GPU.
 	if (x >= 768) {
-		if (epic12_gpu_count[0]) {
-			// 1. RAW hazard: does this CPU blit read from a page that queued GPU commands wrote to?
-			bool page_overlap = false;
-			if (py0 == py1 && px0 == px1) {
-				page_overlap = epic12_gpu_dest_pages[0][(py0 << 6) | px0];
-			} else {
-				for (int py = py0; py <= py1; ++py) {
-					const int row = py << 6;
-					for (int px = px0; px <= px1; ++px) {
-						if (epic12_gpu_dest_pages[0][row | px]) { page_overlap = true; break; }
-					}
-					if (page_overlap) break;
-				}
-			}
-			if (page_overlap && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[0])) {
-				epic12_gpu_flush_bin(0, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
-			}
-
-			// 2. WAR hazard: does this CPU blit write to a page that queued GPU commands sample from?
-			if (epic12_gpu_count[0]) {
-				const int dpy0 = y >> 7, dpy1 = (y + h - 1) >> 7;
-				const int dpx0 = x >> 7, dpx1 = (x + w - 1) >> 7;
-				bool war_overlap = false;
-				for (int py = dpy0; py <= dpy1 && !war_overlap; ++py) {
-					const int row = py << 6;
-					for (int px = dpx0; px <= dpx1; ++px) {
-						if (epic12_gpu_source_pages[0][row | px]) { war_overlap = true; break; }
-					}
-				}
-				if (war_overlap) {
-					epic12_gpu_flush_bin(0, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
-				}
-			}
-		}
 		Epic12GpuCommand c;
 		c.sx = sx; c.sy = sy; c.x = x; c.y = y; c.w = w; c.h = h;
 		c.flipx = !!flipx; c.flipy = !!flipy; c.transparent = !!transparent;
 		c.blend = !!blend; c.dmode = dmode; c.sa = s_alpha; c.da = d_alpha; c.tint = *tint_clr;
+
+		// 16-slot staging cache: check if this destination rectangle was already written
+		// with the exact same source sprite and attributes. If identical, the VRAM pixels
+		// are unchanged: no CPU redraw, no atlas cache eviction, and no GPU flush needed.
+		static struct {
+			Epic12GpuCommand cmd;
+			bool valid;
+		} s_staging_cache[16];
+		static bool s_staging_init = false;
+		if (!s_staging_init) {
+			memset(s_staging_cache, 0, sizeof(s_staging_cache));
+			s_staging_init = true;
+		}
+
+		int slot = -1;
+		bool identical_overwrite = false;
+		for (int i = 0; i < 16; ++i) {
+			if (s_staging_cache[i].valid &&
+			    s_staging_cache[i].cmd.x == x && s_staging_cache[i].cmd.y == y &&
+			    s_staging_cache[i].cmd.w == w && s_staging_cache[i].cmd.h == h) {
+				slot = i;
+				const Epic12GpuCommand &sc = s_staging_cache[i].cmd;
+				if (sc.sx == sx && sc.sy == sy &&
+				    sc.flipx == c.flipx && sc.flipy == c.flipy &&
+				    sc.transparent == c.transparent && sc.blend == c.blend &&
+				    sc.dmode == c.dmode && sc.sa == c.sa && sc.da == c.da &&
+				    sc.tint.r == c.tint.r && sc.tint.g == c.tint.g && sc.tint.b == c.tint.b) {
+					identical_overwrite = true;
+				}
+				break;
+			}
+		}
+
+		if (identical_overwrite) {
+			return true;
+		}
+
+		// Fallback WAR check: in case any queued GPU command samples directly from
+		// this destination rectangle (e.g. if snapshot allocation had failed).
+		bool war_overlap = false;
+		if (epic12_gpu_count[0]) {
+			const int dpy0 = y >> 7, dpy1 = (y + h - 1) >> 7;
+			const int dpx0 = x >> 7, dpx1 = (x + w - 1) >> 7;
+			for (int py = dpy0; py <= dpy1 && !war_overlap; ++py) {
+				const int row = py << 6;
+				for (int px = dpx0; px <= dpx1; ++px) {
+					if (epic12_gpu_source_pages[0][row | px]) {
+						war_overlap = true;
+						break;
+					}
+				}
+			}
+		}
+		if (war_overlap) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+			++epic12_gpu_diag_war768_count;
+#endif
+			epic12_gpu_flush_bin(0, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
+		}
+
+		if (slot < 0) {
+			for (int i = 0; i < 16; ++i) {
+				if (!s_staging_cache[i].valid) { slot = i; break; }
+			}
+			if (slot < 0) {
+				static int s_staging_victim = 0;
+				slot = (s_staging_victim++) & 15;
+			}
+		}
+		s_staging_cache[slot].cmd = c;
+		s_staging_cache[slot].valid = true;
+
 		epic12_gpu_replay(c);
 		epic12_gpu_invalidate(dest);
 		return true;
@@ -496,19 +590,60 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	unsigned np = 0;
 	int npl[32];
 	rectangle m;
-	int fit = epic12_gpu_can_fit(0, dest, sx, sy, w, h, px0, px1, py0, py1, np, npl, m);
+	int draw_sx = sx;
+	int draw_sy = sy;
+	const bool is_staging = (sx >= 768 && sx < 1024 && sy < 4096);
+
+	if (is_staging) {
+		int snap_x, snap_y;
+		if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
+			draw_sx = snap_x;
+			draw_sy = snap_y;
+		}
+	}
+
+	int py0 = draw_sy >> 7, py1 = (draw_sy + h - 1) >> 7;
+	int px0 = draw_sx >> 7, px1 = (draw_sx + w - 1) >> 7;
+
+	int fit = epic12_gpu_can_fit(0, dest, draw_sx, draw_sy, w, h, px0, px1, py0, py1, np, npl, m);
 	if (fit != 0) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+		if (fit == 2) ++epic12_gpu_diag_fit2_count;
+#endif
 		Epic12GpuFlushReason reason0 = (fit == 2) ? EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY :
 			((fit == 3) ? EPIC12_GPU_FLUSH_SOURCE_PAGES : EPIC12_GPU_FLUSH_REGION);
 		epic12_gpu_retire_bin0(reason0);
-		fit = epic12_gpu_can_fit(0, dest, sx, sy, w, h, px0, px1, py0, py1, np, npl, m);
+		if (is_staging) {
+			int snap_x, snap_y;
+			if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
+				draw_sx = snap_x;
+				draw_sy = snap_y;
+			} else {
+				draw_sx = sx;
+				draw_sy = sy;
+			}
+			py0 = draw_sy >> 7; py1 = (draw_sy + h - 1) >> 7;
+			px0 = draw_sx >> 7; px1 = (draw_sx + w - 1) >> 7;
+		}
+		fit = epic12_gpu_can_fit(0, dest, draw_sx, draw_sy, w, h, px0, px1, py0, py1, np, npl, m);
 	}
 	if (fit == 0) {
+		if (is_staging && draw_sy >= EPIC12_SNAPSHOT_Y) {
+			for (int r = 0; r < h; ++r) {
+				memcpy(m_bitmaps + (draw_sy + r) * 8192 + draw_sx,
+				       m_bitmaps + ((sy + r) & 4095) * 8192 + sx,
+				       w * sizeof(UINT32));
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			++epic12_gpu_diag_snapshot_count;
+			epic12_gpu_diag_snapshot_pixels += w * h;
+#endif
+		}
 #if SALVIA_FBNEO_DIAGNOSTICS
 		++epic12_gpu_diag_bin_hits[0];
 #endif
 		epic12_gpu_add_to_bin(0, m, np, npl, px0, px1, py0, py1,
-			sx, sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
+			draw_sx, draw_sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
 		return true;
 	}
 	return false;
