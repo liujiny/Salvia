@@ -56,4 +56,6 @@ Baseline `802340b4`. Iteration diagnostics image built with `SALVIA_FBNEO_DIAGNO
    - Standalone simulation test: verified 100% bit-for-bit cycle and register equivalence across varied slice sizes (10 to 100,000 cycles).
 
 2. **Artifacts**:
-   - Pending XEX build and console testing.
+   - Diagnostics XEX: `Distro360/fbneo.xex`
+     - SHA256: `4aa2843d24d6a0e7a768a1595f73a00aa3f27b482cfb5be8c3619e61d837d5e7`
+   - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261017-1724-dt-loop-opt-diag.xex`
