@@ -845,7 +845,7 @@ static void gfx_draw_shadow_copy(UINT32 *addr)
 static void gfx_draw(UINT32 *addr)
 {
 #if SALVIA_CV1K_PROBE
-	SalviaCv1kSpan drawSpan(20);
+	SalviaCv1kSampledSpan<64> drawSpan(20);
 #endif
 	int x,y, dimx,dimy, flipx,flipy;//, src_p;
 	int trans,blend, s_mode, d_mode;

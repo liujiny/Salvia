@@ -51,6 +51,28 @@ struct SalviaCv1kSpan {
 		if (start && end) { salvia_cv1k_probe[slot] += end - start; ++salvia_cv1k_probe[slot + 1]; }
 	}
 };
+
+// Low-overhead sampled probe for high-frequency inner loops (e.g. per-sprite draw/submit).
+// Always counts exact total calls in slot+1. Samples elapsed time 1-in-N and scales by N.
+template<unsigned N = 64>
+struct SalviaCv1kSampledSpan {
+	int slot;
+	unsigned long long start;
+	SalviaCv1kSampledSpan(int s) : slot(s), start(0) {
+		unsigned long long count = ++salvia_cv1k_probe[slot + 1];
+		if ((count & (N - 1)) == 0) {
+			start = salvia_cv1k_tick();
+		}
+	}
+	~SalviaCv1kSampledSpan() {
+		if (start) {
+			unsigned long long end = salvia_cv1k_tick();
+			if (end) {
+				salvia_cv1k_probe[slot] += (end - start) * N;
+			}
+		}
+	}
+};
 #else
 #define SALVIA_CV1K_PROBE 0
 #endif

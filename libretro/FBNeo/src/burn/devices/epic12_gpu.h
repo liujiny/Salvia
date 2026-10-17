@@ -393,7 +393,7 @@ static void epic12_gpu_add_to_bin(int b, const rectangle &merged, unsigned newPa
 static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, int dmode, BLIT_PARAMS)
 {
 #if SALVIA_CV1K_PROBE
-	SalviaCv1kSpan submitSpan(36);
+	SalviaCv1kSampledSpan<64> submitSpan(36);
 #endif
 	if (!epic12_gpu_enabled) return false;
 #ifndef EPIC12_GPU_TEST
