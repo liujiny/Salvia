@@ -61,3 +61,8 @@ Baseline `438f977d`. Iteration diagnostics image built with `SALVIA_FBNEO_DIAGNO
    - In a 4,000-sprite frame: timer queries reduced from 16,000 to 250 calls.
    - Timer measurement stall reduced from ~28.8 ms down to ~0.45 ms (>28 ms reclaimed per peak frame).
    - Eliminates the primary cause of the 20 FPS instantaneous drop.
+
+3. **Artifacts**:
+   - Diagnostics XEX: `Distro360/fbneo.xex`
+     - SHA256: `7f5ac2ed614bd2fc269b7fd74b2b29729a9eddfb481e83e4d24ff0444df67aa9`
+   - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261017-1801-sample-probe-diag.xex`
