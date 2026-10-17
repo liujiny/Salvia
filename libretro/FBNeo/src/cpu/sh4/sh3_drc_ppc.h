@@ -1257,7 +1257,18 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
    // DT reads the following opcode for the existing busy-loop hack. Do not
    // fold a handler read, or translate the hack itself. Include lookahead in
    // validation even when DT ends the block.
-   if(count+1>=available || MemMapR[(pc&AM)>>SH3_SHIFT]!=MemMapF[(pc&AM)>>SH3_SHIFT] || source[count+1]==0x8bfd) { sh3_block_end_reason=END_WINDOW; break; }
+   bool busy_loop = (count+1<available) && (
+     source[count+1]==0x8bfd ||
+     (source[count+1]==0x8ffd && count+2<available && source[count+2]==0x0009) ||
+     (source[count+1]==0x8ffc && count+2<available && source[count+2]==0x0009));
+   if(count+1>=available || MemMapR[(pc&AM)>>SH3_SHIFT]!=MemMapF[(pc&AM)>>SH3_SHIFT] || busy_loop) {
+    int loop_words = (busy_loop && source[count+1] != 0x8bfd) ? 3 : 2;
+    if (count + loop_words > available) loop_words = available - count;
+    validate = count + loop_words;
+    check_read = true;
+    sh3_block_end_reason = END_WINDOW;
+    break;
+   }
    validate=count+2; check_read=true;
   }
   c.pc=pc+count*2;

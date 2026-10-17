@@ -1745,16 +1745,43 @@ static inline void DT(const UINT16 opcode)
 #if BUSY_LOOP_HACKS
 	{
 		UINT32 next_opcode = RW(m_ppc & AM);
-		/* DT   Rn
-		 * BF   $-2
-		 */
+		int step_cycles = 0;
 		if (next_opcode == 0x8bfd)
 		{
-			while (m_r[n] > 1 && m_sh4_icount > 4)
+			/* DT   Rn
+			 * BF   $-2
+			 */
+			step_cycles = 4;
+		}
+		else if (next_opcode == 0x8ffd && RW((m_ppc + 2) & AM) == 0x0009)
+		{
+			/* DT   Rn
+			 * BF/S $-3
+			 * NOP
+			 */
+			step_cycles = 4;
+		}
+		else if (next_opcode == 0x8ffc && RW((m_ppc + 2) & AM) == 0x0009 && m_pc >= 4 && RW((m_pc - 4) & AM) == 0x0009)
+		{
+			/* NOP
+			 * DT   Rn
+			 * BF/S $-4
+			 * NOP
+			 */
+			step_cycles = 5;
+		}
+
+		if (step_cycles > 0 && m_r[n] > 1 && m_sh4_icount > step_cycles)
+		{
+			UINT32 max_r = m_r[n] - 1;
+			UINT32 max_icount = (UINT32)(m_sh4_icount - 1) / (UINT32)step_cycles;
+			UINT32 count = (max_r < max_icount) ? max_r : max_icount;
+			if (count > 0)
 			{
-				m_r[n]--;
-				m_sh4_icount -= 4;   /* cycles for DT (1) and BF taken (3) */
-				sh3_total_cycles += 4;
+				m_r[n] -= count;
+				INT32 cycle_delta = (INT32)(count * (UINT32)step_cycles);
+				m_sh4_icount -= cycle_delta;
+				sh3_total_cycles += cycle_delta;
 			}
 		}
 	}

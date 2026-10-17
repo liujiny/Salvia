@@ -286,6 +286,14 @@ int main() {
   UINT16 *p=(UINT16*)(ram+0x100);p[0]=0x2131;p[1]=0x7001;p[2]=0x4410;p[3]=0xffff;
   m_r[1]=0x8c000106;m_r[3]=0x8bfd;m_r[4]=3;check();check();
  }
+ state(1);{
+  UINT16 *p=(UINT16*)(ram+0x100);p[0]=0x2131;p[1]=0x7001;p[2]=0x4410;p[3]=0xffff;p[4]=0x0009;
+  m_r[1]=0x8c000106;m_r[3]=0x8ffd;m_r[4]=3;check();check();
+ }
+ state(1);{
+  UINT16 *p=(UINT16*)(ram+0x100);p[0]=0x2131;p[1]=0x7001;p[2]=0x4410;p[3]=0xffff;p[4]=0x0009;
+  m_r[1]=0x8c000106;m_r[3]=0x8ffc;m_r[4]=3;check();check();
+ }
  printf("EDGE precise code-write ranges / aliases / DT lookahead PASS\n");
 
  // Repeat every translated opcode with the verified RAM window enabled.
