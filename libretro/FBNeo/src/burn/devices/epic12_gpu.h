@@ -291,25 +291,34 @@ static int epic12_gpu_can_fit(int b, const rectangle &dest, int sx, int sy, int 
 		return 0;
 	}
 	merged = epic12_gpu_bounds[b];
-	if (dest.min_x < merged.min_x) merged.min_x = dest.min_x;
-	if (dest.min_y < merged.min_y) merged.min_y = dest.min_y;
-	if (dest.max_x > merged.max_x) merged.max_x = dest.max_x;
-	if (dest.max_y > merged.max_y) merged.max_y = dest.max_y;
+	if (dest.min_x >= merged.min_x && dest.max_x <= merged.max_x &&
+	    dest.min_y >= merged.min_y && dest.max_y <= merged.max_y) {
+		if (epic12_gpu_count[b] >= 1024) return 1;
+	} else {
+		if (dest.min_x < merged.min_x) merged.min_x = dest.min_x;
+		if (dest.min_y < merged.min_y) merged.min_y = dest.min_y;
+		if (dest.max_x > merged.max_x) merged.max_x = dest.max_x;
+		if (dest.max_y > merged.max_y) merged.max_y = dest.max_y;
 
-	if (epic12_gpu_count[b] >= 1024) return 1;
-	if (merged.max_x - merged.min_x >= 512 || merged.max_y - merged.min_y >= 512)
-		return 1;
+		if (epic12_gpu_count[b] >= 1024) return 1;
+		if (merged.max_x - merged.min_x >= 512 || merged.max_y - merged.min_y >= 512)
+			return 1;
+	}
 
 	bool page_overlap = false;
-	for (int py = py0; py <= py1; ++py) {
-		const int row = py << 6;
-		for (int px = px0; px <= px1; ++px) {
-			if (epic12_gpu_dest_pages[b][row | px]) {
-				page_overlap = true;
-				break;
+	if (py0 == py1 && px0 == px1) {
+		page_overlap = epic12_gpu_dest_pages[b][(py0 << 6) | px0];
+	} else {
+		for (int py = py0; py <= py1; ++py) {
+			const int row = py << 6;
+			for (int px = px0; px <= px1; ++px) {
+				if (epic12_gpu_dest_pages[b][row | px]) {
+					page_overlap = true;
+					break;
+				}
 			}
+			if (page_overlap) break;
 		}
-		if (page_overlap) break;
 	}
 	if (page_overlap && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
 		return 2;
@@ -346,10 +355,14 @@ static void epic12_gpu_add_to_bin(int b, const rectangle &merged, unsigned newPa
 {
 	const int dpy0 = y >> 7, dpy1 = (y + h - 1) >> 7;
 	const int dpx0 = x >> 7, dpx1 = (x + w - 1) >> 7;
-	for (int dpy = dpy0; dpy <= dpy1; ++dpy) {
-		const int row = dpy << 6;
-		for (int dpx = dpx0; dpx <= dpx1; ++dpx) {
-			epic12_gpu_dest_pages[b][row | dpx] = true;
+	if (dpy0 == dpy1 && dpx0 == dpx1) {
+		epic12_gpu_dest_pages[b][(dpy0 << 6) | dpx0] = true;
+	} else {
+		for (int dpy = dpy0; dpy <= dpy1; ++dpy) {
+			const int row = dpy << 6;
+			for (int dpx = dpx0; dpx <= dpx1; ++dpx) {
+				epic12_gpu_dest_pages[b][row | dpx] = true;
+			}
 		}
 	}
 	if (!epic12_gpu_count[b]) {
@@ -362,8 +375,9 @@ static void epic12_gpu_add_to_bin(int b, const rectangle &merged, unsigned newPa
 		if (sy < epic12_gpu_source_bounds[b].min_y) epic12_gpu_source_bounds[b].min_y = sy;
 		if (sx + w - 1 > epic12_gpu_source_bounds[b].max_x) epic12_gpu_source_bounds[b].max_x = sx + w - 1;
 		if (sy + h - 1 > epic12_gpu_source_bounds[b].max_y) epic12_gpu_source_bounds[b].max_y = sy + h - 1;
-		for (unsigned i = 0; i < newPages; ++i)
+		for (unsigned i = 0; i < newPages; ++i) {
 			epic12_gpu_source_pages[b][newPageList[i]] = true;
+		}
 		epic12_gpu_source_count[b] += newPages;
 	}
 	Epic12GpuCommand &cmd = epic12_gpu_commands[b][epic12_gpu_count[b]++];
@@ -426,30 +440,27 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	const int py0 = sy >> 7, py1 = (sy + h - 1) >> 7;
 	const int px0 = sx >> 7, px1 = (sx + w - 1) >> 7;
 
-	// Direct CPU blit for off-screen staging buffers (x >= 512):
+	// Direct CPU blit for off-screen staging buffers (x >= 768):
 	// Cave CV1000 games use off-screen VRAM (Zones 1 & 2, x >= 768) as scratchpads
 	// to composite multi-part sprites with a few tiny draws (<8,192 px) before
-	// blitting them onto the visible display (x < 320).
-	// Queuing them in the GPU pipeline causes 512-px span overflow and false
-	// RAW cross-read hazards, fragmenting on-screen batches and causing tens
-	// of thousands of pipeline flushes.
-	// Executing them directly on CPU takes microseconds, keeps the on-screen
-	// GPU batches intact, and invalidates the cached source page for subsequent
-	// on-screen GPU draws.
-	if (x >= 512) {
-		for (int b = 0; b < EPIC12_GPU_BINS; ++b) {
-			if (epic12_gpu_count[b]) {
-				bool page_overlap = false;
+	// blitting them onto the visible display (Buffer 0: x < 320, Buffer 1: 384 <= x < 704).
+	// Keeping x < 768 ensures both on-screen double buffers remain fully on the GPU.
+	if (x >= 768) {
+		if (epic12_gpu_count[0]) {
+			bool page_overlap = false;
+			if (py0 == py1 && px0 == px1) {
+				page_overlap = epic12_gpu_dest_pages[0][(py0 << 6) | px0];
+			} else {
 				for (int py = py0; py <= py1; ++py) {
 					const int row = py << 6;
 					for (int px = px0; px <= px1; ++px) {
-						if (epic12_gpu_dest_pages[b][row | px]) { page_overlap = true; break; }
+						if (epic12_gpu_dest_pages[0][row | px]) { page_overlap = true; break; }
 					}
 					if (page_overlap) break;
 				}
-				if (page_overlap && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
-					epic12_gpu_flush_bin(b, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
-				}
+			}
+			if (page_overlap && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[0])) {
+				epic12_gpu_flush_bin(0, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
 			}
 		}
 		Epic12GpuCommand c;
