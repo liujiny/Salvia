@@ -401,6 +401,10 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	if (blend && norm_dm != 0 && !(norm_dm == 1 && s_alpha == 0)) {
 		return false;
 	}
+	if (blend && ((dimy <= 2 && dimx >= 120) || (dimx <= 2 && dimy >= 120) ||
+	             (dmode == 4 && tint_clr->r == 0 && tint_clr->g == 0 && tint_clr->b == 0))) {
+		return false;
+	}
 #endif
 	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4 && dmode != 7 && dmode != 3))) {
 		++epic12_gpu_reject_blend;
@@ -496,13 +500,38 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 static void epic12_gpu_cpu_write(int x, int y, int w, int h,
 	Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHER)
 {
-	epic12_gpu_flush(reason);
 	// Conservative invalidation also handles a wrapped source/large upload.
 	// The upload loop can spill across a VRAM row; a geometric rectangle
 	// alone would miss the beginning of the next row in that case.
 	if (x < 0 || y < 0 || x+w > 8192 || y+h > 4096) {
+		epic12_gpu_flush(reason);
 		epic12_gpu_reset();
 		return;
+	}
+	if (reason == EPIC12_GPU_FLUSH_CPU_UPLOAD) {
+		bool conflict = false;
+		if (epic12_gpu_count[0]) {
+			if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_bounds[0])) {
+				conflict = true;
+			} else {
+				const int py0 = y >> 7, py1 = (y + h - 1) >> 7;
+				const int px0 = x >> 7, px1 = (x + w - 1) >> 7;
+				for (int py = py0; py <= py1 && !conflict; ++py) {
+					const int row = py << 6;
+					for (int px = px0; px <= px1; ++px) {
+						if (epic12_gpu_source_pages[0][row | px]) {
+							conflict = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+		if (conflict) {
+			epic12_gpu_flush(reason);
+		}
+	} else {
+		epic12_gpu_flush(reason);
 	}
 	rectangle r(x,x+w-1,y,y+h-1);
 	epic12_gpu_invalidate(r);
