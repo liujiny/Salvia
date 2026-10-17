@@ -113,7 +113,7 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 	const UINT32 *dblue = epic12_dest_scale_b[d_alpha];
 	const int width_bytes = (x1 - x0) * (int)sizeof(UINT32);
 	const int in_x_off = src_x + (FlipX ? -x0 : x0);
-	int cur_src_y = (src_y + yf * y0) & 0x0fff;
+	int cur_src_y = (src_y >= 4096) ? (src_y + yf * y0) : ((src_y + yf * y0) & 0x0fff);
 
 	const UINT32 *cur_in = gfx + (cur_src_y << 13) + in_x_off;
 	UINT32 *cur_out = m_bitmaps + ((dst_y_start + y0) << 13) + dst_x_start + x0;
@@ -128,7 +128,7 @@ static void epic12_blend_fixed(BLIT_PARAMS)
 		const bool same_row = (gfx == m_bitmaps) && (cur_src_y == (dst_y_start + y));
 
 		if (y + 1 < y1) {
-			cur_src_y = (cur_src_y + yf) & 0x0fff;
+			cur_src_y = (src_y >= 4096) ? (cur_src_y + yf) : ((cur_src_y + yf) & 0x0fff);
 			cur_in = gfx + (cur_src_y << 13) + in_x_off;
 			cur_out += 0x2000;
 			if (FlipX) epic12_prefetch_row_flip(cur_in, width_bytes);

@@ -54,6 +54,8 @@ static void epic12_gpu_invalidate(const rectangle &r) {
 	gpu_test_cache.invalidate(r.min_x,r.min_y,r.max_x,r.max_y);
 }
 static void epic12_gpu_reset() {
+	epic12_gpu_snapshot_reset();
+	epic12_gpu_staging_reset();
 	gpu_test_ensure_cache(); gpu_test_cache.clear(); gpu_test_clear_legacy(); ++gpu_test_cache_resets;
 	for (int b = 0; b < EPIC12_GPU_BINS; ++b) {
 		epic12_gpu_count[b] = 0;
@@ -173,7 +175,7 @@ static bool epic12_gpu_render(const Epic12GpuCommand *cmd,int count,const rectan
 	rectangle r=originalBounds;
 	if(gpu_test_fail) return false;
 	gpu_test_ensure_cache();
-	int slots[2048]; bool needed[2048]={false}; unsigned pageCount=0;
+	int slots[Epic12GpuPageCache::VRAM_PAGES]; bool needed[Epic12GpuPageCache::VRAM_PAGES]={false}; unsigned pageCount=0;
 	for(int i=0;i<count;++i) {
 		const Epic12GpuCommand &c=cmd[i];
 		for(int y=c.sy/128;y<=(c.sy+c.h-1)/128;++y)
@@ -188,12 +190,12 @@ static bool epic12_gpu_render(const Epic12GpuCommand *cmd,int count,const rectan
 	// not represent without splitting, so reset the shadow and count its source
 	// pages as uploads instead of aborting the correctness model.
 	if(pageCount<=128) {
-		bool oldPinned[128]={false},oldResident[2048]={false};
+		bool oldPinned[128]={false},oldResident[Epic12GpuPageCache::VRAM_PAGES]={false};
 		for(int slot=0;slot<128;++slot) {
 			int page=gpu_test_legacy_pages[slot];
 			if(page>=0 && needed[page]) { oldPinned[slot]=true; oldResident[page]=true; }
 		}
-		for(int page=0,next=0;page<2048;++page) if(needed[page] && !oldResident[page]) {
+		for(int page=0,next=0;page<Epic12GpuPageCache::VRAM_PAGES;++page) if(needed[page] && !oldResident[page]) {
 			while(next<128 && oldPinned[next]) ++next;
 			if(next>=128) {puts("FAIL legacy shadow capacity"); abort();}
 			gpu_test_legacy_pages[next]=page; oldPinned[next]=true; ++gpu_test_legacy_uploads;
@@ -203,7 +205,7 @@ static bool epic12_gpu_render(const Epic12GpuCommand *cmd,int count,const rectan
 		gpu_test_legacy_uploads+=pageCount;
 	}
 	gpu_test_cache_hits+=gpu_test_cache.begin_batch(needed,slots);
-	for(int page=0;page<2048;++page) if(needed[page] && slots[page]<0) {
+	for(int page=0;page<Epic12GpuPageCache::VRAM_PAGES;++page) if(needed[page] && slots[page]<0) {
 		int slot=gpu_test_cache.allocate(page);
 		if(slot<0) {puts("FAIL GPU cache allocation"); abort();}
 		slots[page]=slot;

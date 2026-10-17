@@ -278,7 +278,10 @@ static bool clipped_cpu_invalidation(UINT32 *ref, UINT32 *got, const UINT32 *ini
 					touched[(y/128)*64+x/128]=true;
 			for(int base=0;base<2048;base+=capacity) {
 				gpu_test_cache.clear();
-				for(int i=0;i<capacity;++i) gpu_test_cache.pages[i]=base+i;
+				for(int i=0;i<capacity;++i) {
+					gpu_test_cache.pages[i]=base+i;
+					gpu_test_cache.pageToSlot[base+i]=(short)i;
+				}
 				UINT64 resets=gpu_test_cache_resets;
 				epic12_gpu_cpu_draw(c[0],c[1],c[2],c[3],clip);
 				if(gpu_test_cache_resets!=resets) return false;
@@ -372,7 +375,8 @@ int main()
 		}
 	}
 	puts("PASS 4096 plain shader cases independent of alpha and destination");
-	const unsigned words=8192*4096;
+	const unsigned words=8192*(4096+256);
+	const unsigned vram_words=8192*4096;
 	UINT32 *initial=(UINT32*)calloc(words,4),*ref=(UINT32*)malloc(words*4),*got=(UINT32*)malloc(words*4);
 	if(!initial||!ref||!got)return 2;
 	// Distinct opaque/transparent colors in active atlas, viewport and wrap rows.
@@ -416,8 +420,8 @@ int main()
 			if(!pass) refdelay=epic12_device_blit_delay;
 			else if(refdelay!=epic12_device_blit_delay) { printf("FAIL delay test %d\n",test);return 3; }
 		}
-		if(memcmp(ref,got,words*4)) {
-			for(unsigned p=0;p<words;++p) if(ref[p]!=got[p]) {printf("FAIL batch test %d xy %u,%u ref=%08x got=%08x\n",test,p%8192,p/8192,ref[p],got[p]);break;}
+		if(memcmp(ref,got,vram_words*4)) {
+			for(unsigned p=0;p<vram_words;++p) if(ref[p]!=got[p]) {printf("FAIL batch test %d xy %u,%u ref=%08x got=%08x\n",test,p%8192,p/8192,ref[p],got[p]);break;}
 			return 4;
 		}
 	}
@@ -450,7 +454,7 @@ int main()
 		}
 		epic12_gpu_flush();
 	}
-	if(memcmp(ref,got,words*4)) {puts("FAIL merged draws/snapshots/atlas geometry");return 9;}
+	if(memcmp(ref,got,vram_words*4)) {puts("FAIL merged draws/snapshots/atlas geometry");return 9;}
 	rectangle target(0,511,0,511),snapshot;
 	Epic12GpuCommand pair[2]={sequence[16],sequence[17]};
 	pair[1].x=pair[0].x+16; // overlap must break snapshot sharing
@@ -484,7 +488,7 @@ int main()
 		epic12_gpu_flush();
 		if(pass) {
 			draws[pass-1]=gpu_test_draws-beforeDraws;
-			if(memcmp(ref,got,words*4)) {printf("FAIL mixed attributes path %d\n",pass);return 14;}
+			if(memcmp(ref,got,vram_words*4)) {printf("FAIL mixed attributes path %d\n",pass);return 14;}
 		}
 	}
 	if(draws[1]>=draws[0] || draws[1]!=draws[2]) {puts("FAIL attribute draw reduction or shader split changed submissions");return 15;}

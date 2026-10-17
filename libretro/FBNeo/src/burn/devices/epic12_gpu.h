@@ -66,6 +66,12 @@ static unsigned epic12_gpu_diag_snapshot_pixels;
 static unsigned epic12_gpu_diag_fit2_count;
 static unsigned epic12_gpu_diag_raw768_count;
 static unsigned epic12_gpu_diag_war768_count;
+static unsigned epic12_gpu_diag_submit_clip;
+static unsigned epic12_gpu_diag_submit_staging_ident;
+static unsigned epic12_gpu_diag_submit_staging_replay;
+static unsigned epic12_gpu_diag_submit_onscreen;
+static int epic12_gpu_diag_stag_samples[10][8];
+static int epic12_gpu_diag_stag_sample_count;
 static int epic12_gpu_diag_war_samples[10][24];
 static int epic12_gpu_diag_war_sample_count;
 static unsigned epic12_gpu_diag_dep_true;
@@ -106,6 +112,11 @@ static void epic12_gpu_diag_reset()
 	epic12_gpu_diag_fit2_count=0;
 	epic12_gpu_diag_raw768_count=0;
 	epic12_gpu_diag_war768_count=0;
+	epic12_gpu_diag_submit_clip=0;
+	epic12_gpu_diag_submit_staging_ident=0;
+	epic12_gpu_diag_submit_staging_replay=0;
+	epic12_gpu_diag_submit_onscreen=0;
+	epic12_gpu_diag_stag_sample_count=0;
 	epic12_gpu_diag_war_sample_count=0;
 	epic12_gpu_diag_dep_true=0;
 	epic12_gpu_diag_dep_false=0;
@@ -210,6 +221,7 @@ static void epic12_gpu_replay(const Epic12GpuCommand &c)
 #include "epic12_gpu_batch.h"
 
 static void epic12_gpu_snapshot_reset();
+static void epic12_gpu_staging_reset();
 
 #ifdef EPIC12_GPU_TEST
 #include "epic12_gpu_mock.h"
@@ -220,6 +232,12 @@ static void epic12_gpu_snapshot_reset();
 static int s_snap_cur_x = 0;
 static int s_snap_cur_y = EPIC12_SNAPSHOT_Y;
 static int s_snap_row_h = 0;
+static bool epic12_gpu_staging_pages[EPIC12_VRAM_PAGES];
+
+static inline void epic12_gpu_staging_reset()
+{
+	memset(epic12_gpu_staging_pages, 0, sizeof(epic12_gpu_staging_pages));
+}
 
 static void epic12_gpu_snapshot_reset()
 {
@@ -477,7 +495,12 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	int x1 = dimx, y1 = dimy;
 	if (dst_x_start + x1 - 1 > clip->max_x) x1 = clip->max_x - dst_x_start + 1;
 	if (dst_y_start + y1 - 1 > clip->max_y) y1 = clip->max_y - dst_y_start + 1;
-	if (x1 <= x0 || y1 <= y0) return true;
+	if (x1 <= x0 || y1 <= y0) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+		++epic12_gpu_diag_submit_clip;
+#endif
+		return true;
+	}
 	const int w = x1 - x0, h = y1 - y0;
 	if (w > 512 || h > 512) {
 		++epic12_gpu_reject_size;
@@ -506,59 +529,29 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	// blitting them onto the visible display (Buffer 0: x < 320, Buffer 1: 384 <= x < 704).
 	// Keeping x < 768 ensures both on-screen double buffers remain fully on the GPU.
 	if (x >= 768) {
-		Epic12GpuCommand c;
-		c.sx = sx; c.sy = sy; c.x = x; c.y = y; c.w = w; c.h = h;
-		c.flipx = !!flipx; c.flipy = !!flipy; c.transparent = !!transparent;
-		c.blend = !!blend; c.dmode = dmode; c.sa = s_alpha; c.da = d_alpha; c.tint = *tint_clr;
-
-		// 16-slot staging cache: check if this destination rectangle was already written
-		// with the exact same source sprite and attributes. If identical, the VRAM pixels
-		// are unchanged: no CPU redraw, no atlas cache eviction, and no GPU flush needed.
-		static struct {
-			Epic12GpuCommand cmd;
-			bool valid;
-		} s_staging_cache[16];
-		static bool s_staging_init = false;
-		if (!s_staging_init) {
-			memset(s_staging_cache, 0, sizeof(s_staging_cache));
-			s_staging_init = true;
-		}
-
-		int slot = -1;
-		bool identical_overwrite = false;
-		for (int i = 0; i < 16; ++i) {
-			if (s_staging_cache[i].valid &&
-			    s_staging_cache[i].cmd.x == x && s_staging_cache[i].cmd.y == y &&
-			    s_staging_cache[i].cmd.w == w && s_staging_cache[i].cmd.h == h) {
-				slot = i;
-				const Epic12GpuCommand &sc = s_staging_cache[i].cmd;
-				if (sc.sx == sx && sc.sy == sy &&
-				    sc.flipx == c.flipx && sc.flipy == c.flipy &&
-				    sc.transparent == c.transparent && sc.blend == c.blend &&
-				    sc.dmode == c.dmode && sc.sa == c.sa && sc.da == c.da &&
-				    sc.tint.r == c.tint.r && sc.tint.g == c.tint.g && sc.tint.b == c.tint.b) {
-					identical_overwrite = true;
-				}
-				break;
+		const int dpy0 = y >> 7, dpy1 = (y + h - 1) >> 7;
+		const int dpx0 = x >> 7, dpx1 = (x + w - 1) >> 7;
+		for (int py = dpy0; py <= dpy1; ++py) {
+			const int row = py << 6;
+			for (int px = dpx0; px <= dpx1; ++px) {
+				epic12_gpu_staging_pages[row | px] = true;
 			}
-		}
-
-		if (identical_overwrite) {
-			return true;
 		}
 
 		// Fallback WAR check: in case any queued GPU command samples directly from
 		// this destination rectangle (e.g. if snapshot allocation had failed).
 		bool war_overlap = false;
 		if (epic12_gpu_count[0]) {
-			const int dpy0 = y >> 7, dpy1 = (y + h - 1) >> 7;
-			const int dpx0 = x >> 7, dpx1 = (x + w - 1) >> 7;
-			for (int py = dpy0; py <= dpy1 && !war_overlap; ++py) {
-				const int row = py << 6;
-				for (int px = dpx0; px <= dpx1; ++px) {
-					if (epic12_gpu_source_pages[0][row | px]) {
-						war_overlap = true;
-						break;
+			if (dpy0 == dpy1 && dpx0 == dpx1) {
+				war_overlap = epic12_gpu_source_pages[0][(dpy0 << 6) | dpx0];
+			} else {
+				for (int py = dpy0; py <= dpy1 && !war_overlap; ++py) {
+					const int row = py << 6;
+					for (int px = dpx0; px <= dpx1; ++px) {
+						if (epic12_gpu_source_pages[0][row | px]) {
+							war_overlap = true;
+							break;
+						}
 					}
 				}
 			}
@@ -570,29 +563,64 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 			epic12_gpu_flush_bin(0, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
 		}
 
-		if (slot < 0) {
-			for (int i = 0; i < 16; ++i) {
-				if (!s_staging_cache[i].valid) { slot = i; break; }
+		// Fast path for non-blended, un-tinted copy to staging scratchpad
+		// (e.g. Cave CV1000 1-pixel scanline slices for rotated sprites & sound bubbles)
+		if (!blend && !flipx && !flipy && tint_clr->r == 32 && tint_clr->g == 32 && tint_clr->b == 32) {
+			for (int r = 0; r < h; ++r) {
+				UINT32 *d = m_bitmaps + (y + r) * 8192 + x;
+				const UINT32 *s = m_bitmaps + ((sy + r) & 4095) * 8192 + sx;
+				if (transparent) {
+					for (int col = 0; col < w; ++col) {
+						UINT32 p = s[col];
+						if (p & 0x20000000) d[col] = p;
+					}
+				} else {
+					memcpy(d, s, w * sizeof(UINT32));
+				}
 			}
-			if (slot < 0) {
-				static int s_staging_victim = 0;
-				slot = (s_staging_victim++) & 15;
-			}
+			epic12_device_blit_delay += (unsigned)(w * h);
+			epic12_gpu_invalidate(dest);
+#if SALVIA_FBNEO_DIAGNOSTICS
+			++epic12_gpu_diag_submit_staging_replay;
+#endif
+			return true;
 		}
-		s_staging_cache[slot].cmd = c;
-		s_staging_cache[slot].valid = true;
 
+		// General fallback for complex off-screen staging blits
+		Epic12GpuCommand c;
+		c.sx = sx; c.sy = sy; c.x = x; c.y = y; c.w = w; c.h = h;
+		c.flipx = !!flipx; c.flipy = !!flipy; c.transparent = !!transparent;
+		c.blend = !!blend; c.dmode = dmode; c.sa = s_alpha; c.da = d_alpha; c.tint = *tint_clr;
+#if SALVIA_FBNEO_DIAGNOSTICS
+		++epic12_gpu_diag_submit_staging_replay;
+#endif
 		epic12_gpu_replay(c);
 		epic12_gpu_invalidate(dest);
 		return true;
 	}
 
+#if SALVIA_FBNEO_DIAGNOSTICS
+	++epic12_gpu_diag_submit_onscreen;
+#endif
 	unsigned np = 0;
 	int npl[32];
 	rectangle m;
 	int draw_sx = sx;
 	int draw_sy = sy;
-	const bool is_staging = (sx >= 768 && sx < 1024 && sy < 4096);
+	bool is_staging = false;
+	if (sx >= 768 && sy < 4096) {
+		const int spx0 = sx >> 7, spx1 = (sx + w - 1) >> 7;
+		const int spy0 = sy >> 7, spy1 = (sy + h - 1) >> 7;
+		for (int py = spy0; py <= spy1 && !is_staging; ++py) {
+			const int row = py << 6;
+			for (int px = spx0; px <= spx1; ++px) {
+				if (epic12_gpu_staging_pages[row | px]) {
+					is_staging = true;
+					break;
+				}
+			}
+		}
+	}
 
 	if (is_staging) {
 		int snap_x, snap_y;
@@ -684,6 +712,16 @@ static void epic12_gpu_cpu_write(int x, int y, int w, int h,
 		}
 	} else {
 		epic12_gpu_flush(reason);
+	}
+	if (x >= 768) {
+		const int dpy0 = y >> 7, dpy1 = (y + h - 1) >> 7;
+		const int dpx0 = x >> 7, dpx1 = (x + w - 1) >> 7;
+		for (int py = dpy0; py <= dpy1; ++py) {
+			const int row = py << 6;
+			for (int px = dpx0; px <= dpx1; ++px) {
+				epic12_gpu_staging_pages[row | px] = true;
+			}
+		}
 	}
 	rectangle r(x,x+w-1,y,y+h-1);
 	epic12_gpu_invalidate(r);

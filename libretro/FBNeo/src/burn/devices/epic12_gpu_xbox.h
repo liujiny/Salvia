@@ -251,6 +251,18 @@ static void epic12_xenos_report()
 		epic12_gpu_diag_snapshot_count, epic12_gpu_diag_snapshot_pixels,
 		epic12_gpu_diag_fit2_count, epic12_gpu_diag_raw768_count, epic12_gpu_diag_war768_count);
 	epic12_xenos_log(message);
+	sprintf(message, "diag_blits clip=%u stag_ident=%u stag_replay=%u onscreen=%u",
+		epic12_gpu_diag_submit_clip, epic12_gpu_diag_submit_staging_ident,
+		epic12_gpu_diag_submit_staging_replay, epic12_gpu_diag_submit_onscreen);
+	epic12_xenos_log(message);
+	for (int s = 0; s < epic12_gpu_diag_stag_sample_count; ++s) {
+		sprintf(message, "diag_stag_sample %d: dst=(%d,%d,%d,%d) src=(%d,%d) bl=%d dm=%d",
+			s, epic12_gpu_diag_stag_samples[s][0], epic12_gpu_diag_stag_samples[s][1],
+			epic12_gpu_diag_stag_samples[s][2], epic12_gpu_diag_stag_samples[s][3],
+			epic12_gpu_diag_stag_samples[s][4], epic12_gpu_diag_stag_samples[s][5],
+			epic12_gpu_diag_stag_samples[s][6], epic12_gpu_diag_stag_samples[s][7]);
+		epic12_xenos_log(message);
+	}
 	sprintf(message, "diag_dep true=%u false=%u (%.1f%% false) c1=%u c2_4=%u c5_16=%u c17_64=%u c_gt64=%u",
 		epic12_gpu_diag_dep_true, epic12_gpu_diag_dep_false,
 		(epic12_gpu_diag_dep_true + epic12_gpu_diag_dep_false) ?
@@ -404,6 +416,7 @@ static void epic12_gpu_reset()
 		memset(epic12_gpu_dest_pages[b], 0, sizeof(epic12_gpu_dest_pages[b]));
 	}
 	epic12_gpu_snapshot_reset();
+	epic12_gpu_staging_reset();
 }
 
 static void epic12_xenos_release()

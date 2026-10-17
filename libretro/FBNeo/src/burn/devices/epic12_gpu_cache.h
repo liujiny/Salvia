@@ -16,6 +16,7 @@ struct Epic12GpuPageCache {
 	int pages[MAX_SLOTS];
 	unsigned lastUse[MAX_SLOTS],clock;
 	bool pinned[MAX_SLOTS];
+	short pageToSlot[VRAM_PAGES];
 
 	Epic12GpuPageCache() : capacity(128) { clear(); }
 
@@ -24,6 +25,7 @@ struct Epic12GpuPageCache {
 		for(int i=0;i<MAX_SLOTS;++i) {
 			pages[i]=-1; lastUse[i]=0; pinned[i]=false;
 		}
+		for(int p=0;p<VRAM_PAGES;++p) pageToSlot[p]=-1;
 		clock=0;
 	}
 
@@ -73,18 +75,21 @@ struct Epic12GpuPageCache {
 	int allocate(int page)
 	{
 		if(page<0 || page>=VRAM_PAGES) return -1;
+		if(pageToSlot[page]>=0) {
+			int s=pageToSlot[page];
+			pinned[s]=true; lastUse[s]=clock; return s;
+		}
 		int empty=-1,oldest=-1;
 		for(int i=0;i<capacity;++i) {
-			if(pages[i]==page) {
-				pinned[i]=true; lastUse[i]=clock; return i;
-			}
 			if(pinned[i]) continue;
 			if(pages[i]<0) { if(empty<0) empty=i; }
 			else if(oldest<0 || lastUse[i]<lastUse[oldest]) oldest=i;
 		}
 		int slot=empty>=0?empty:oldest;
 		if(slot<0) return -1;
+		if(pages[slot]>=0) pageToSlot[pages[slot]]=-1;
 		pages[slot]=page; pinned[slot]=true; lastUse[slot]=clock;
+		pageToSlot[page]=(short)slot;
 		return slot;
 	}
 
@@ -95,11 +100,30 @@ struct Epic12GpuPageCache {
 		if(x1<x0 || y1<y0) return;
 		int px0=x0>>7, px1=x1>>7;
 		int py0=y0>>7, py1=y1>>7;
-		for(int i=0;i<capacity;++i) if(pages[i]>=0) {
-			int p = pages[i];
-			int px = p & 63, py = p >> 6;
-			if(px >= px0 && px <= px1 && py >= py0 && py <= py1) {
-				pages[i]=-1; lastUse[i]=0; pinned[i]=false;
+		if(px0<0) px0=0; if(px1>63) px1=63;
+		if(py0<0) py0=0; if(py1>33) py1=33;
+		int count=(px1-px0+1)*(py1-py0+1);
+		if(count<=16) {
+			for(int py=py0;py<=py1;++py) {
+				int row=py<<6;
+				for(int px=px0;px<=px1;++px) {
+					int p=row|px;
+					if(p<VRAM_PAGES) {
+						int s=pageToSlot[p];
+						if(s>=0) {
+							pageToSlot[p]=-1;
+							pages[s]=-1; lastUse[s]=0; pinned[s]=false;
+						}
+					}
+				}
+			}
+		} else {
+			for(int i=0;i<capacity;++i) if(pages[i]>=0) {
+				int p = pages[i];
+				int px = p & 63, py = p >> 6;
+				if(px >= px0 && px <= px1 && py >= py0 && py <= py1) {
+					pageToSlot[p]=-1; pages[i]=-1; lastUse[i]=0; pinned[i]=false;
+				}
 			}
 		}
 	}
