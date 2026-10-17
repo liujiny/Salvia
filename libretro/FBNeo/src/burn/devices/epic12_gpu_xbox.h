@@ -256,11 +256,14 @@ static void epic12_xenos_report()
 		epic12_gpu_diag_submit_staging_replay, epic12_gpu_diag_submit_onscreen);
 	epic12_xenos_log(message);
 	for (int s = 0; s < epic12_gpu_diag_stag_sample_count; ++s) {
-		sprintf(message, "diag_stag_sample %d: dst=(%d,%d,%d,%d) src=(%d,%d) bl=%d dm=%d",
+		sprintf(message, "diag_stag_sample %d: dst=(%d,%d,%d,%d) src=(%d,%d) fl=0x%04x tint=(%d,%d,%d)",
 			s, epic12_gpu_diag_stag_samples[s][0], epic12_gpu_diag_stag_samples[s][1],
 			epic12_gpu_diag_stag_samples[s][2], epic12_gpu_diag_stag_samples[s][3],
 			epic12_gpu_diag_stag_samples[s][4], epic12_gpu_diag_stag_samples[s][5],
-			epic12_gpu_diag_stag_samples[s][6], epic12_gpu_diag_stag_samples[s][7]);
+			epic12_gpu_diag_stag_samples[s][6],
+			(epic12_gpu_diag_stag_samples[s][7] >> 16) & 0xff,
+			(epic12_gpu_diag_stag_samples[s][7] >> 8) & 0xff,
+			epic12_gpu_diag_stag_samples[s][7] & 0xff);
 		epic12_xenos_log(message);
 	}
 	sprintf(message, "diag_dep true=%u false=%u (%.1f%% false) c1=%u c2_4=%u c5_16=%u c17_64=%u c_gt64=%u",

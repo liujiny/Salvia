@@ -22,7 +22,7 @@ struct Reference {
 	unsigned begin(const bool *needed,int *slots)
 	{
 		++serial; unsigned hits=0;
-		for(int i=0;i<2048;++i) slots[i]=-1;
+		for(int i=0;i<Epic12GpuPageCache::VRAM_PAGES;++i) slots[i]=-1;
 		for(int i=0;i<capacity;++i) {
 			pending[i]=page[i]>=0 && needed[page[i]];
 			if(pending[i]) {slots[page[i]]=i;age[i]=serial;++hits;}
@@ -31,7 +31,7 @@ struct Reference {
 	}
 	int allocate(int p)
 	{
-		if(p<0 || p>=2048) return -1;
+		if(p<0 || p>=Epic12GpuPageCache::VRAM_PAGES) return -1;
 		for(int i=0;i<capacity;++i) if(page[i]==p) {pending[i]=true;age[i]=serial;return i;}
 		int chosen=-1;
 		for(int i=0;i<capacity;++i) if(!pending[i] && page[i]<0) {chosen=i;break;}
@@ -49,8 +49,8 @@ struct Reference {
 	}
 };
 
-static bool needed[2048];
-static int actualSlots[2048],expectedSlots[2048];
+static bool needed[Epic12GpuPageCache::VRAM_PAGES];
+static int actualSlots[Epic12GpuPageCache::VRAM_PAGES],expectedSlots[Epic12GpuPageCache::VRAM_PAGES];
 static unsigned batches,allocations,evictions,wraps;
 static uint64_t fingerprint=1469598103934665603ULL;
 
