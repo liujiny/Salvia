@@ -645,6 +645,14 @@ static inline void epic12_staging_rasterize_row(UINT32 *d, const UINT32 *s, int 
 						UINT64 *d64 = (UINT64*)d;
 						d64[0] = s64[0]; d64[1] = s64[1]; d64[2] = s64[2]; d64[3] = s64[3];
 						d64[4] = s64[4]; d64[5] = s64[5]; d64[6] = s64[6]; d64[7] = s64[7];
+					} else if (w == 8) {
+						const UINT64 *s64 = (const UINT64*)s;
+						UINT64 *d64 = (UINT64*)d;
+						d64[0] = s64[0]; d64[1] = s64[1]; d64[2] = s64[2]; d64[3] = s64[3];
+					} else if (w == 4) {
+						const UINT64 *s64 = (const UINT64*)s;
+						UINT64 *d64 = (UINT64*)d;
+						d64[0] = s64[0]; d64[1] = s64[1];
 					} else {
 						const UINT64 *s64 = (const UINT64*)s;
 						UINT64 *d64 = (UINT64*)d;
@@ -680,6 +688,112 @@ static inline void epic12_staging_rasterize_row(UINT32 *d, const UINT32 *s, int 
 				}
 			}
 		}
+	}
+}
+
+static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_row, int dimx, int dimy, int s_step,
+	int flipx, int transparent, bool is_identity_tint,
+	const UINT32 *lut_r, const UINT32 *lut_g, const UINT32 *lut_b)
+{
+	if (!transparent && is_identity_tint && !flipx) {
+		if ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0) {
+			if (dimx == 8) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					d64[0] = s64[0]; d64[1] = s64[1]; d64[2] = s64[2]; d64[3] = s64[3];
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
+			if (dimx == 16) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					d64[0] = s64[0]; d64[1] = s64[1]; d64[2] = s64[2]; d64[3] = s64[3];
+					d64[4] = s64[4]; d64[5] = s64[5]; d64[6] = s64[6]; d64[7] = s64[7];
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
+			if (dimx == 4) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					d64[0] = s64[0]; d64[1] = s64[1];
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
+			const int count64 = dimx >> 1;
+			const bool odd = (dimx & 1) != 0;
+			for (int r = 0; r < dimy; ++r) {
+				const UINT64 *s64 = (const UINT64*)s_row;
+				UINT64 *d64 = (UINT64*)d_row;
+				for (int col = 0; col < count64; ++col) d64[col] = s64[col];
+				if (odd) d_row[dimx - 1] = s_row[dimx - 1];
+				d_row += 8192;
+				s_row += s_step;
+			}
+			return;
+		}
+		for (int r = 0; r < dimy; ++r) {
+			for (int col = 0; col < dimx; ++col) d_row[col] = s_row[col];
+			d_row += 8192;
+			s_row += s_step;
+		}
+		return;
+	}
+
+	if (transparent && is_identity_tint && !flipx && dimx == 8) {
+		for (int r = 0; r < dimy; ++r) {
+			UINT32 p0 = s_row[0], p1 = s_row[1], p2 = s_row[2], p3 = s_row[3];
+			UINT32 any_p0 = (p0 | p1 | p2 | p3) & 0x20000000;
+			if (any_p0) {
+				UINT32 all_p0 = (p0 & p1 & p2 & p3) & 0x20000000;
+				if (all_p0) {
+					d_row[0] = p0; d_row[1] = p1; d_row[2] = p2; d_row[3] = p3;
+				} else {
+					INT32 m0 = ((INT32)p0 << 2) >> 31;
+					INT32 m1 = ((INT32)p1 << 2) >> 31;
+					INT32 m2 = ((INT32)p2 << 2) >> 31;
+					INT32 m3 = ((INT32)p3 << 2) >> 31;
+					d_row[0] = (p0 & m0) | (d_row[0] & ~m0);
+					d_row[1] = (p1 & m1) | (d_row[1] & ~m1);
+					d_row[2] = (p2 & m2) | (d_row[2] & ~m2);
+					d_row[3] = (p3 & m3) | (d_row[3] & ~m3);
+				}
+			}
+			UINT32 p4 = s_row[4], p5 = s_row[5], p6 = s_row[6], p7 = s_row[7];
+			UINT32 any_p1 = (p4 | p5 | p6 | p7) & 0x20000000;
+			if (any_p1) {
+				UINT32 all_p1 = (p4 & p5 & p6 & p7) & 0x20000000;
+				if (all_p1) {
+					d_row[4] = p4; d_row[5] = p5; d_row[6] = p6; d_row[7] = p7;
+				} else {
+					INT32 m4 = ((INT32)p4 << 2) >> 31;
+					INT32 m5 = ((INT32)p5 << 2) >> 31;
+					INT32 m6 = ((INT32)p6 << 2) >> 31;
+					INT32 m7 = ((INT32)p7 << 2) >> 31;
+					d_row[4] = (p4 & m4) | (d_row[4] & ~m4);
+					d_row[5] = (p5 & m5) | (d_row[5] & ~m5);
+					d_row[6] = (p6 & m6) | (d_row[6] & ~m6);
+					d_row[7] = (p7 & m7) | (d_row[7] & ~m7);
+				}
+			}
+			d_row += 8192;
+			s_row += s_step;
+		}
+		return;
+	}
+
+	for (int r = 0; r < dimy; ++r) {
+		epic12_staging_rasterize_row(d_row, s_row, dimx, flipx, transparent, is_identity_tint, lut_r, lut_g, lut_b);
+		d_row += 8192;
+		s_row += s_step;
 	}
 }
 
@@ -757,14 +871,13 @@ static inline bool epic12_gpu_staging_blit(int x, int y, int sx, int sy, int w, 
 	const UINT32 *lut_g = epic12_gpu_tint_g_lut[tint_g_idx & 63];
 	const UINT32 *lut_b = epic12_gpu_tint_b_lut[tint_b_idx & 63];
 
-	for (int r = 0; r < h; ++r) {
-		const int cur_y = flipy ? (h - 1 - r) : r;
-		UINT32 *d = m_bitmaps + ((size_t)(y + r)) * 8192 + x;
-		const int s_x_start = flipx ? (sx + w - 1) : sx;
-		const UINT32 *s = m_bitmaps + ((size_t)((sy + cur_y) & 4095)) * 8192 + s_x_start;
+	const int cur_y_start = flipy ? (h - 1) : 0;
+	const int s_step = flipy ? -8192 : 8192;
+	UINT32 *d = m_bitmaps + ((size_t)y) * 8192 + x;
+	const int s_x_start = flipx ? (sx + w - 1) : sx;
+	const UINT32 *s = m_bitmaps + ((size_t)((sy + cur_y_start) & 4095)) * 8192 + s_x_start;
 
-		epic12_staging_rasterize_row(d, s, w, flipx, transparent, is_identity_tint, lut_r, lut_g, lut_b);
-	}
+	epic12_staging_rasterize_blit(d, s, w, h, s_step, flipx, transparent, is_identity_tint, lut_r, lut_g, lut_b);
 	epic12_device_blit_delay += (unsigned)(w * h);
 #if SALVIA_FBNEO_DIAGNOSTICS
 	++epic12_gpu_diag_submit_staging_ident;
@@ -899,11 +1012,7 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 		const int s_step = flipy ? -8192 : 8192;
 		const UINT32 *s_row = m_bitmaps + ((size_t)(s_y_start & 4095)) * 8192 + s_x_start;
 
-		for (int r = 0; r < dimy; ++r) {
-			epic12_staging_rasterize_row(d_row, s_row, dimx, flipx, trans, is_identity_tint, lut_r, lut_g, lut_b);
-			d_row += 8192;
-			s_row += s_step;
-		}
+		epic12_staging_rasterize_blit(d_row, s_row, dimx, dimy, s_step, flipx, trans, is_identity_tint, lut_r, lut_g, lut_b);
 
 		epic12_device_blit_delay += (unsigned)(dimx * dimy);
 #if SALVIA_FBNEO_DIAGNOSTICS
