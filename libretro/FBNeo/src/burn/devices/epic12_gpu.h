@@ -423,7 +423,7 @@ static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHE
 }
 
 
-static int epic12_gpu_can_fit(int b, const rectangle &dest, int sx, int sy, int w, int h,
+static inline int epic12_gpu_can_fit(int b, const rectangle &dest, int sx, int sy, int w, int h,
 	int px0, int px1, int py0, int py1, unsigned &newPages, int *newPageList, rectangle &merged)
 {
 	if (!epic12_gpu_count[b]) {
@@ -447,22 +447,25 @@ static int epic12_gpu_can_fit(int b, const rectangle &dest, int sx, int sy, int 
 	}
 
 	bool page_overlap = false;
-	if (py0 == py1 && px0 == px1) {
-		page_overlap = epic12_gpu_dest_pages[b][(py0 << 6) | px0];
-	} else {
-		for (int py = py0; py <= py1; ++py) {
-			const int row = py << 6;
-			for (int px = px0; px <= px1; ++px) {
-				if (epic12_gpu_dest_pages[b][row | px]) {
-					page_overlap = true;
-					break;
+	if (py0 < 4) {
+		if (py0 == py1 && px0 == px1) {
+			page_overlap = epic12_gpu_dest_pages[b][(py0 << 6) | px0];
+		} else {
+			const int max_py = py1 < 3 ? py1 : 3;
+			for (int py = py0; py <= max_py; ++py) {
+				const int row = py << 6;
+				for (int px = px0; px <= px1; ++px) {
+					if (epic12_gpu_dest_pages[b][row | px]) {
+						page_overlap = true;
+						break;
+					}
 				}
+				if (page_overlap) break;
 			}
-			if (page_overlap) break;
 		}
-	}
-	if (page_overlap && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
-		return 2;
+		if (page_overlap && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[b])) {
+			return 2;
+		}
 	}
 
 	newPages = 0;
@@ -489,7 +492,7 @@ static int epic12_gpu_can_fit(int b, const rectangle &dest, int sx, int sy, int 
 	return 0;
 }
 
-static void epic12_gpu_add_to_bin(int b, const rectangle &merged, unsigned newPages, const int *newPageList,
+static inline void epic12_gpu_add_to_bin(int b, const rectangle &merged, unsigned newPages, const int *newPageList,
 	int px0, int px1, int py0, int py1,
 	int sx, int sy, int x, int y, int w, int h, int flipx, int flipy, int transparent,
 	int blend, int dmode, int s_alpha, int d_alpha, const clr_t *tint_clr)
@@ -571,21 +574,16 @@ static inline void epic12_staging_rasterize_row(UINT32 *d, const UINT32 *s, int 
 							d[col + 2] = p2;
 							d[col + 3] = p3;
 						} else {
-							INT32 m0 = ((INT32)p0 << 2) >> 31;
-							INT32 m1 = ((INT32)p1 << 2) >> 31;
-							INT32 m2 = ((INT32)p2 << 2) >> 31;
-							INT32 m3 = ((INT32)p3 << 2) >> 31;
-							d[col + 0] = (p0 & m0) | (d[col + 0] & ~m0);
-							d[col + 1] = (p1 & m1) | (d[col + 1] & ~m1);
-							d[col + 2] = (p2 & m2) | (d[col + 2] & ~m2);
-							d[col + 3] = (p3 & m3) | (d[col + 3] & ~m3);
+							if (p0 & 0x20000000) d[col + 0] = p0;
+							if (p1 & 0x20000000) d[col + 1] = p1;
+							if (p2 & 0x20000000) d[col + 2] = p2;
+							if (p3 & 0x20000000) d[col + 3] = p3;
 						}
 					}
 				}
 				for (; col < w; ++col) {
 					UINT32 p = s[col];
-					INT32 m = ((INT32)p << 2) >> 31;
-					d[col] = (p & m) | (d[col] & ~m);
+					if (p & 0x20000000) d[col] = p;
 				}
 			} else {
 				int col = 0;
@@ -603,21 +601,16 @@ static inline void epic12_staging_rasterize_row(UINT32 *d, const UINT32 *s, int 
 							d[col + 2] = p2;
 							d[col + 3] = p3;
 						} else {
-							INT32 m0 = ((INT32)p0 << 2) >> 31;
-							INT32 m1 = ((INT32)p1 << 2) >> 31;
-							INT32 m2 = ((INT32)p2 << 2) >> 31;
-							INT32 m3 = ((INT32)p3 << 2) >> 31;
-							d[col + 0] = (p0 & m0) | (d[col + 0] & ~m0);
-							d[col + 1] = (p1 & m1) | (d[col + 1] & ~m1);
-							d[col + 2] = (p2 & m2) | (d[col + 2] & ~m2);
-							d[col + 3] = (p3 & m3) | (d[col + 3] & ~m3);
+							if (p0 & 0x20000000) d[col + 0] = p0;
+							if (p1 & 0x20000000) d[col + 1] = p1;
+							if (p2 & 0x20000000) d[col + 2] = p2;
+							if (p3 & 0x20000000) d[col + 3] = p3;
 						}
 					}
 				}
 				for (; col < w; ++col) {
 					UINT32 p = s[-col];
-					INT32 m = ((INT32)p << 2) >> 31;
-					d[col] = (p & m) | (d[col] & ~m);
+					if (p & 0x20000000) d[col] = p;
 				}
 			}
 		} else {
@@ -724,17 +717,16 @@ static inline void epic12_staging_write_trans4(UINT32 *d, const UINT32 *s)
 	UINT32 any_p = (p0 | p1 | p2 | p3) & 0x20000000;
 	if (any_p) {
 		UINT32 all_p = (p0 & p1 & p2 & p3) & 0x20000000;
-		if (all_p) {
-			d[0] = p0; d[1] = p1; d[2] = p2; d[3] = p3;
+		if (all_p && ((((uintptr_t)d | (uintptr_t)s) & 7) == 0)) {
+			const UINT64 *s64 = (const UINT64*)s;
+			UINT64 *d64 = (UINT64*)d;
+			d64[0] = s64[0];
+			d64[1] = s64[1];
 		} else {
-			INT32 m0 = ((INT32)p0 << 2) >> 31;
-			INT32 m1 = ((INT32)p1 << 2) >> 31;
-			INT32 m2 = ((INT32)p2 << 2) >> 31;
-			INT32 m3 = ((INT32)p3 << 2) >> 31;
-			d[0] = (p0 & m0) | (d[0] & ~m0);
-			d[1] = (p1 & m1) | (d[1] & ~m1);
-			d[2] = (p2 & m2) | (d[2] & ~m2);
-			d[3] = (p3 & m3) | (d[3] & ~m3);
+			if (p0 & 0x20000000) d[0] = p0;
+			if (p1 & 0x20000000) d[1] = p1;
+			if (p2 & 0x20000000) d[2] = p2;
+			if (p3 & 0x20000000) d[3] = p3;
 		}
 	}
 }
@@ -1003,6 +995,35 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 
 	if (transparent && tint_mode == 0 && !flipx) {
 		if (dimx == 16) {
+			if ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					UINT64 w0 = s64[0], w1 = s64[1], w2 = s64[2], w3 = s64[3];
+					UINT64 w4 = s64[4], w5 = s64[5], w6 = s64[6], w7 = s64[7];
+					UINT64 all_bits = w0 & w1 & w2 & w3 & w4 & w5 & w6 & w7;
+					if ((all_bits & 0x2000000020000000ULL) == 0x2000000020000000ULL) {
+						d64[0] = w0; d64[1] = w1; d64[2] = w2; d64[3] = w3;
+						d64[4] = w4; d64[5] = w5; d64[6] = w6; d64[7] = w7;
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					UINT64 any_bits = w0 | w1 | w2 | w3 | w4 | w5 | w6 | w7;
+					if ((any_bits & 0x2000000020000000ULL) == 0) {
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					epic12_staging_write_trans4(d_row, s_row);
+					epic12_staging_write_trans4(d_row + 4, s_row + 4);
+					epic12_staging_write_trans4(d_row + 8, s_row + 8);
+					epic12_staging_write_trans4(d_row + 12, s_row + 12);
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
 			for (int r = 0; r < dimy; ++r) {
 				epic12_staging_write_trans4(d_row, s_row);
 				epic12_staging_write_trans4(d_row + 4, s_row + 4);
@@ -1014,6 +1035,31 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 			return;
 		}
 		if (dimx == 8) {
+			if ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					UINT64 w0 = s64[0], w1 = s64[1], w2 = s64[2], w3 = s64[3];
+					UINT64 all_bits = w0 & w1 & w2 & w3;
+					if ((all_bits & 0x2000000020000000ULL) == 0x2000000020000000ULL) {
+						d64[0] = w0; d64[1] = w1; d64[2] = w2; d64[3] = w3;
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					UINT64 any_bits = w0 | w1 | w2 | w3;
+					if ((any_bits & 0x2000000020000000ULL) == 0) {
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					epic12_staging_write_trans4(d_row, s_row);
+					epic12_staging_write_trans4(d_row + 4, s_row + 4);
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
 			for (int r = 0; r < dimy; ++r) {
 				epic12_staging_write_trans4(d_row, s_row);
 				epic12_staging_write_trans4(d_row + 4, s_row + 4);
@@ -1047,6 +1093,37 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 
 	if (transparent && tint_mode == 1 && !flipx) {
 		if (dimx == 16) {
+			if ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					UINT64 w0 = s64[0], w1 = s64[1], w2 = s64[2], w3 = s64[3];
+					UINT64 w4 = s64[4], w5 = s64[5], w6 = s64[6], w7 = s64[7];
+					UINT64 all_bits = w0 & w1 & w2 & w3 & w4 & w5 & w6 & w7;
+					if ((all_bits & 0x2000000020000000ULL) == 0x2000000020000000ULL) {
+						d64[0] = epic12_tint63_2pix(w0); d64[1] = epic12_tint63_2pix(w1);
+						d64[2] = epic12_tint63_2pix(w2); d64[3] = epic12_tint63_2pix(w3);
+						d64[4] = epic12_tint63_2pix(w4); d64[5] = epic12_tint63_2pix(w5);
+						d64[6] = epic12_tint63_2pix(w6); d64[7] = epic12_tint63_2pix(w7);
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					UINT64 any_bits = w0 | w1 | w2 | w3 | w4 | w5 | w6 | w7;
+					if ((any_bits & 0x2000000020000000ULL) == 0) {
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					epic12_staging_write_tint63_trans4(d_row, s_row);
+					epic12_staging_write_tint63_trans4(d_row + 4, s_row + 4);
+					epic12_staging_write_tint63_trans4(d_row + 8, s_row + 8);
+					epic12_staging_write_tint63_trans4(d_row + 12, s_row + 12);
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
 			for (int r = 0; r < dimy; ++r) {
 				epic12_staging_write_tint63_trans4(d_row, s_row);
 				epic12_staging_write_tint63_trans4(d_row + 4, s_row + 4);
@@ -1058,6 +1135,32 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 			return;
 		}
 		if (dimx == 8) {
+			if ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					UINT64 w0 = s64[0], w1 = s64[1], w2 = s64[2], w3 = s64[3];
+					UINT64 all_bits = w0 & w1 & w2 & w3;
+					if ((all_bits & 0x2000000020000000ULL) == 0x2000000020000000ULL) {
+						d64[0] = epic12_tint63_2pix(w0); d64[1] = epic12_tint63_2pix(w1);
+						d64[2] = epic12_tint63_2pix(w2); d64[3] = epic12_tint63_2pix(w3);
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					UINT64 any_bits = w0 | w1 | w2 | w3;
+					if ((any_bits & 0x2000000020000000ULL) == 0) {
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					epic12_staging_write_tint63_trans4(d_row, s_row);
+					epic12_staging_write_tint63_trans4(d_row + 4, s_row + 4);
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
 			for (int r = 0; r < dimy; ++r) {
 				epic12_staging_write_tint63_trans4(d_row, s_row);
 				epic12_staging_write_tint63_trans4(d_row + 4, s_row + 4);
@@ -1090,6 +1193,65 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 	}
 
 	if (transparent && tint_mode == 2 && !flipx) {
+		if ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0) {
+			if (dimx == 16) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					UINT64 w0 = s64[0], w1 = s64[1], w2 = s64[2], w3 = s64[3];
+					UINT64 w4 = s64[4], w5 = s64[5], w6 = s64[6], w7 = s64[7];
+					UINT64 all_bits = w0 & w1 & w2 & w3 & w4 & w5 & w6 & w7;
+					if ((all_bits & 0x2000000020000000ULL) == 0x2000000020000000ULL) {
+						d64[0] = 0x2000000020000000ULL; d64[1] = 0x2000000020000000ULL;
+						d64[2] = 0x2000000020000000ULL; d64[3] = 0x2000000020000000ULL;
+						d64[4] = 0x2000000020000000ULL; d64[5] = 0x2000000020000000ULL;
+						d64[6] = 0x2000000020000000ULL; d64[7] = 0x2000000020000000ULL;
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					UINT64 any_bits = w0 | w1 | w2 | w3 | w4 | w5 | w6 | w7;
+					if ((any_bits & 0x2000000020000000ULL) == 0) {
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					for (int col = 0; col < 16; ++col) {
+						if (s_row[col] & 0x20000000) d_row[col] = 0x20000000;
+					}
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
+			if (dimx == 8) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					UINT64 w0 = s64[0], w1 = s64[1], w2 = s64[2], w3 = s64[3];
+					UINT64 all_bits = w0 & w1 & w2 & w3;
+					if ((all_bits & 0x2000000020000000ULL) == 0x2000000020000000ULL) {
+						d64[0] = 0x2000000020000000ULL; d64[1] = 0x2000000020000000ULL;
+						d64[2] = 0x2000000020000000ULL; d64[3] = 0x2000000020000000ULL;
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					UINT64 any_bits = w0 | w1 | w2 | w3;
+					if ((any_bits & 0x2000000020000000ULL) == 0) {
+						d_row += 8192;
+						s_row += s_step;
+						continue;
+					}
+					for (int col = 0; col < 8; ++col) {
+						if (s_row[col] & 0x20000000) d_row[col] = 0x20000000;
+					}
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
+		}
 		for (int r = 0; r < dimy; ++r) {
 			for (int col = 0; col < dimx; ++col) {
 				if (s_row[col] & 0x20000000) d_row[col] = 0x20000000;
@@ -1516,7 +1678,51 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 		const UINT32 *s_row = m_bitmaps + ((size_t)(s_y_start & 4095)) * 8192 + s_x_start;
 
 		if (step_count > 1 && repeated_src) {
-			if (!trans && tint_mode == 2 && !flipx && dimx == 8 && ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0)) {
+			if (!trans && tint_mode == 1 && !flipx && dimx == 16 && ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0)) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 w0 = epic12_tint63_2pix(s64[0]);
+					UINT64 w1 = epic12_tint63_2pix(s64[1]);
+					UINT64 w2 = epic12_tint63_2pix(s64[2]);
+					UINT64 w3 = epic12_tint63_2pix(s64[3]);
+					UINT64 w4 = epic12_tint63_2pix(s64[4]);
+					UINT64 w5 = epic12_tint63_2pix(s64[5]);
+					UINT64 w6 = epic12_tint63_2pix(s64[6]);
+					UINT64 w7 = epic12_tint63_2pix(s64[7]);
+					UINT64 *d64 = (UINT64*)d_row;
+					for (int k = 0; k < step_count; ++k) {
+						d64[8 * k + 0] = w0;
+						d64[8 * k + 1] = w1;
+						d64[8 * k + 2] = w2;
+						d64[8 * k + 3] = w3;
+						d64[8 * k + 4] = w4;
+						d64[8 * k + 5] = w5;
+						d64[8 * k + 6] = w6;
+						d64[8 * k + 7] = w7;
+					}
+					d_row += 8192;
+					s_row += s_step;
+				}
+			} else if (!trans && tint_mode == 0 && !flipx && dimx == 16 && ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0)) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 w0 = s64[0], w1 = s64[1], w2 = s64[2], w3 = s64[3];
+					UINT64 w4 = s64[4], w5 = s64[5], w6 = s64[6], w7 = s64[7];
+					UINT64 *d64 = (UINT64*)d_row;
+					for (int k = 0; k < step_count; ++k) {
+						d64[8 * k + 0] = w0;
+						d64[8 * k + 1] = w1;
+						d64[8 * k + 2] = w2;
+						d64[8 * k + 3] = w3;
+						d64[8 * k + 4] = w4;
+						d64[8 * k + 5] = w5;
+						d64[8 * k + 6] = w6;
+						d64[8 * k + 7] = w7;
+					}
+					d_row += 8192;
+					s_row += s_step;
+				}
+			} else if (!trans && tint_mode == 2 && !flipx && dimx == 8 && ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0)) {
 				for (int r = 0; r < dimy; ++r) {
 					const UINT64 *s64 = (const UINT64*)s_row;
 					UINT64 w0 = s64[0] & 0x2000000020000000ULL;
