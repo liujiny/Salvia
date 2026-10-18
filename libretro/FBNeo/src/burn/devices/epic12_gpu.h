@@ -739,6 +739,42 @@ static inline void epic12_staging_write_trans4(UINT32 *d, const UINT32 *s)
 	}
 }
 
+static inline UINT32 epic12_tint63_pixel(UINT32 p)
+{
+	const UINT32 hi = p & 0x00808080;
+	const UINT32 sat = (hi << 1) - (hi >> 4);
+	const UINT32 doubled = (p << 1) & 0x00f8f8f8;
+	return (p & 0x20000000) | doubled | sat;
+}
+
+static inline UINT64 epic12_tint63_2pix(UINT64 s)
+{
+	const UINT64 hi = s & 0x0080808000808080ULL;
+	const UINT64 sat = (hi << 1) - (hi >> 4);
+	const UINT64 doubled = (s << 1) & 0x00f8f8f800f8f8f8ULL;
+	return (s & 0x2000000020000000ULL) | doubled | sat;
+}
+
+static inline void epic12_staging_write_tint63_trans4(UINT32 *d, const UINT32 *s)
+{
+	UINT32 p0 = s[0], p1 = s[1], p2 = s[2], p3 = s[3];
+	UINT32 any_p = (p0 | p1 | p2 | p3) & 0x20000000;
+	if (any_p) {
+		UINT32 all_p = (p0 & p1 & p2 & p3) & 0x20000000;
+		if (all_p && ((((uintptr_t)d | (uintptr_t)s) & 7) == 0)) {
+			const UINT64 *s64 = (const UINT64*)s;
+			UINT64 *d64 = (UINT64*)d;
+			d64[0] = epic12_tint63_2pix(s64[0]);
+			d64[1] = epic12_tint63_2pix(s64[1]);
+		} else {
+			if (p0 & 0x20000000) d[0] = epic12_tint63_pixel(p0);
+			if (p1 & 0x20000000) d[1] = epic12_tint63_pixel(p1);
+			if (p2 & 0x20000000) d[2] = epic12_tint63_pixel(p2);
+			if (p3 & 0x20000000) d[3] = epic12_tint63_pixel(p3);
+		}
+	}
+}
+
 static inline void epic12_staging_write_tint4(UINT32 *d, const UINT32 *s,
 	const UINT32 *lut_r, const UINT32 *lut_g, const UINT32 *lut_b)
 {
@@ -763,10 +799,10 @@ static inline void epic12_staging_write_tint_trans4(UINT32 *d, const UINT32 *s,
 }
 
 static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_row, int dimx, int dimy, int s_step,
-	int flipx, int transparent, bool is_identity_tint,
+	int flipx, int transparent, int tint_mode,
 	const UINT32 *lut_r, const UINT32 *lut_g, const UINT32 *lut_b)
 {
-	if (!transparent && is_identity_tint && !flipx) {
+	if (!transparent && tint_mode == 0 && !flipx) {
 		if ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0) {
 			if (dimx == 8) {
 				for (int r = 0; r < dimy; ++r) {
@@ -823,7 +859,108 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 		return;
 	}
 
-	if (transparent && is_identity_tint && !flipx) {
+	if (!transparent && tint_mode == 1 && !flipx) {
+		if ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0) {
+			if (dimx == 16) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					UINT64 w0 = s64[0], w1 = s64[1], w2 = s64[2], w3 = s64[3];
+					UINT64 w4 = s64[4], w5 = s64[5], w6 = s64[6], w7 = s64[7];
+					d64[0] = epic12_tint63_2pix(w0);
+					d64[1] = epic12_tint63_2pix(w1);
+					d64[2] = epic12_tint63_2pix(w2);
+					d64[3] = epic12_tint63_2pix(w3);
+					d64[4] = epic12_tint63_2pix(w4);
+					d64[5] = epic12_tint63_2pix(w5);
+					d64[6] = epic12_tint63_2pix(w6);
+					d64[7] = epic12_tint63_2pix(w7);
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
+			if (dimx == 8) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					UINT64 w0 = s64[0], w1 = s64[1], w2 = s64[2], w3 = s64[3];
+					d64[0] = epic12_tint63_2pix(w0);
+					d64[1] = epic12_tint63_2pix(w1);
+					d64[2] = epic12_tint63_2pix(w2);
+					d64[3] = epic12_tint63_2pix(w3);
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
+			if (dimx == 4) {
+				for (int r = 0; r < dimy; ++r) {
+					const UINT64 *s64 = (const UINT64*)s_row;
+					UINT64 *d64 = (UINT64*)d_row;
+					UINT64 w0 = s64[0], w1 = s64[1];
+					d64[0] = epic12_tint63_2pix(w0);
+					d64[1] = epic12_tint63_2pix(w1);
+					d_row += 8192;
+					s_row += s_step;
+				}
+				return;
+			}
+			const int count64 = dimx >> 1;
+			const bool odd = (dimx & 1) != 0;
+			for (int r = 0; r < dimy; ++r) {
+				const UINT64 *s64 = (const UINT64*)s_row;
+				UINT64 *d64 = (UINT64*)d_row;
+				int col = 0;
+				for (; col <= count64 - 4; col += 4) {
+					UINT64 w0 = s64[col + 0], w1 = s64[col + 1], w2 = s64[col + 2], w3 = s64[col + 3];
+					d64[col + 0] = epic12_tint63_2pix(w0);
+					d64[col + 1] = epic12_tint63_2pix(w1);
+					d64[col + 2] = epic12_tint63_2pix(w2);
+					d64[col + 3] = epic12_tint63_2pix(w3);
+				}
+				for (; col < count64; ++col) {
+					d64[col] = epic12_tint63_2pix(s64[col]);
+				}
+				if (odd) d_row[dimx - 1] = epic12_tint63_pixel(s_row[dimx - 1]);
+				d_row += 8192;
+				s_row += s_step;
+			}
+			return;
+		}
+		for (int r = 0; r < dimy; ++r) {
+			for (int col = 0; col < dimx; ++col) d_row[col] = epic12_tint63_pixel(s_row[col]);
+			d_row += 8192;
+			s_row += s_step;
+		}
+		return;
+	}
+
+	if (!transparent && tint_mode == 2 && !flipx) {
+		if ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0) {
+			const int count64 = dimx >> 1;
+			const bool odd = (dimx & 1) != 0;
+			for (int r = 0; r < dimy; ++r) {
+				const UINT64 *s64 = (const UINT64*)s_row;
+				UINT64 *d64 = (UINT64*)d_row;
+				for (int col = 0; col < count64; ++col) {
+					d64[col] = s64[col] & 0x2000000020000000ULL;
+				}
+				if (odd) d_row[dimx - 1] = s_row[dimx - 1] & 0x20000000;
+				d_row += 8192;
+				s_row += s_step;
+			}
+			return;
+		}
+		for (int r = 0; r < dimy; ++r) {
+			for (int col = 0; col < dimx; ++col) d_row[col] = s_row[col] & 0x20000000;
+			d_row += 8192;
+			s_row += s_step;
+		}
+		return;
+	}
+
+	if (transparent && tint_mode == 0 && !flipx) {
 		if (dimx == 16) {
 			for (int r = 0; r < dimy; ++r) {
 				epic12_staging_write_trans4(d_row, s_row);
@@ -852,9 +989,77 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 			}
 			return;
 		}
+		for (int r = 0; r < dimy; ++r) {
+			int col = 0;
+			for (; col <= dimx - 4; col += 4) {
+				epic12_staging_write_trans4(d_row + col, s_row + col);
+			}
+			for (; col < dimx; ++col) {
+				UINT32 p = s_row[col];
+				if (p & 0x20000000) d_row[col] = p;
+			}
+			d_row += 8192;
+			s_row += s_step;
+		}
+		return;
 	}
 
-	if (!transparent && !is_identity_tint && !flipx) {
+	if (transparent && tint_mode == 1 && !flipx) {
+		if (dimx == 16) {
+			for (int r = 0; r < dimy; ++r) {
+				epic12_staging_write_tint63_trans4(d_row, s_row);
+				epic12_staging_write_tint63_trans4(d_row + 4, s_row + 4);
+				epic12_staging_write_tint63_trans4(d_row + 8, s_row + 8);
+				epic12_staging_write_tint63_trans4(d_row + 12, s_row + 12);
+				d_row += 8192;
+				s_row += s_step;
+			}
+			return;
+		}
+		if (dimx == 8) {
+			for (int r = 0; r < dimy; ++r) {
+				epic12_staging_write_tint63_trans4(d_row, s_row);
+				epic12_staging_write_tint63_trans4(d_row + 4, s_row + 4);
+				d_row += 8192;
+				s_row += s_step;
+			}
+			return;
+		}
+		if (dimx == 4) {
+			for (int r = 0; r < dimy; ++r) {
+				epic12_staging_write_tint63_trans4(d_row, s_row);
+				d_row += 8192;
+				s_row += s_step;
+			}
+			return;
+		}
+		for (int r = 0; r < dimy; ++r) {
+			int col = 0;
+			for (; col <= dimx - 4; col += 4) {
+				epic12_staging_write_tint63_trans4(d_row + col, s_row + col);
+			}
+			for (; col < dimx; ++col) {
+				UINT32 p = s_row[col];
+				if (p & 0x20000000) d_row[col] = epic12_tint63_pixel(p);
+			}
+			d_row += 8192;
+			s_row += s_step;
+		}
+		return;
+	}
+
+	if (transparent && tint_mode == 2 && !flipx) {
+		for (int r = 0; r < dimy; ++r) {
+			for (int col = 0; col < dimx; ++col) {
+				if (s_row[col] & 0x20000000) d_row[col] = 0x20000000;
+			}
+			d_row += 8192;
+			s_row += s_step;
+		}
+		return;
+	}
+
+	if (!transparent && tint_mode == 3 && !flipx) {
 		if (dimx == 16) {
 			for (int r = 0; r < dimy; ++r) {
 				epic12_staging_write_tint4(d_row, s_row, lut_r, lut_g, lut_b);
@@ -885,7 +1090,7 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 		}
 	}
 
-	if (transparent && !is_identity_tint && !flipx) {
+	if (transparent && tint_mode == 3 && !flipx) {
 		if (dimx == 16) {
 			for (int r = 0; r < dimy; ++r) {
 				epic12_staging_write_tint_trans4(d_row, s_row, lut_r, lut_g, lut_b);
@@ -917,7 +1122,7 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 	}
 
 	for (int r = 0; r < dimy; ++r) {
-		epic12_staging_rasterize_row(d_row, s_row, dimx, flipx, transparent, is_identity_tint, lut_r, lut_g, lut_b);
+		epic12_staging_rasterize_row(d_row, s_row, dimx, flipx, transparent, tint_mode == 0, lut_r, lut_g, lut_b);
 		d_row += 8192;
 		s_row += s_step;
 	}
@@ -1052,10 +1257,18 @@ static inline bool epic12_gpu_staging_blit(int x, int y, int sx, int sy, int w, 
 	rectangle r_inv(x, x + w - 1, y, y + h - 1);
 	epic12_gpu_invalidate(r_inv);
 
-	const bool is_identity_tint = (tint_r_idx == 32 && tint_g_idx == 32 && tint_b_idx == 32);
-	const UINT32 *lut_r = epic12_gpu_tint_r_lut[tint_r_idx & 63];
-	const UINT32 *lut_g = epic12_gpu_tint_g_lut[tint_g_idx & 63];
-	const UINT32 *lut_b = epic12_gpu_tint_b_lut[tint_b_idx & 63];
+	int tint_mode = 3;
+	if (tint_r_idx == 32 && tint_g_idx == 32 && tint_b_idx == 32) {
+		tint_mode = 0;
+	} else if (tint_r_idx == 63 && tint_g_idx == 63 && tint_b_idx == 63) {
+		tint_mode = 1;
+	} else if (tint_r_idx == 0 && tint_g_idx == 0 && tint_b_idx == 0) {
+		tint_mode = 2;
+	}
+
+	const UINT32 *lut_r = (tint_mode <= 2) ? NULL : epic12_gpu_tint_r_lut[tint_r_idx & 63];
+	const UINT32 *lut_g = (tint_mode <= 2) ? NULL : epic12_gpu_tint_g_lut[tint_g_idx & 63];
+	const UINT32 *lut_b = (tint_mode <= 2) ? NULL : epic12_gpu_tint_b_lut[tint_b_idx & 63];
 
 	const int cur_y_start = flipy ? (h - 1) : 0;
 	const int s_step = flipy ? -8192 : 8192;
@@ -1063,7 +1276,7 @@ static inline bool epic12_gpu_staging_blit(int x, int y, int sx, int sy, int w, 
 	const int s_x_start = flipx ? (sx + w - 1) : sx;
 	const UINT32 *s = m_bitmaps + ((size_t)((sy + cur_y_start) & 4095)) * 8192 + s_x_start;
 
-	epic12_staging_rasterize_blit(d, s, w, h, s_step, flipx, transparent, is_identity_tint, lut_r, lut_g, lut_b);
+	epic12_staging_rasterize_blit(d, s, w, h, s_step, flipx, transparent, tint_mode, lut_r, lut_g, lut_b);
 	epic12_device_blit_delay += (unsigned)(w * h);
 #if SALVIA_FBNEO_DIAGNOSTICS
 	++epic12_gpu_diag_submit_staging_ident;
@@ -1203,10 +1416,18 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 		}
 #endif
 
-		const bool is_identity_tint = (tint_r_idx == 32 && tint_g_idx == 32 && tint_b_idx == 32);
-		const UINT32 *lut_r = is_identity_tint ? NULL : epic12_gpu_tint_r_lut[tint_r_idx & 63];
-		const UINT32 *lut_g = is_identity_tint ? NULL : epic12_gpu_tint_g_lut[tint_g_idx & 63];
-		const UINT32 *lut_b = is_identity_tint ? NULL : epic12_gpu_tint_b_lut[tint_b_idx & 63];
+		int tint_mode = 3;
+		if (tint_r_idx == 32 && tint_g_idx == 32 && tint_b_idx == 32) {
+			tint_mode = 0;
+		} else if (tint_r_idx == 63 && tint_g_idx == 63 && tint_b_idx == 63) {
+			tint_mode = 1;
+		} else if (tint_r_idx == 0 && tint_g_idx == 0 && tint_b_idx == 0) {
+			tint_mode = 2;
+		}
+
+		const UINT32 *lut_r = (tint_mode <= 2) ? NULL : epic12_gpu_tint_r_lut[tint_r_idx & 63];
+		const UINT32 *lut_g = (tint_mode <= 2) ? NULL : epic12_gpu_tint_g_lut[tint_g_idx & 63];
+		const UINT32 *lut_b = (tint_mode <= 2) ? NULL : epic12_gpu_tint_b_lut[tint_b_idx & 63];
 
 		UINT32 *d_row = m_bitmaps + ((size_t)y) * 8192 + x;
 		const int s_x_start = flipx ? (sx + dimx - 1) : sx;
@@ -1214,7 +1435,7 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 		const int s_step = flipy ? -8192 : 8192;
 		const UINT32 *s_row = m_bitmaps + ((size_t)(s_y_start & 4095)) * 8192 + s_x_start;
 
-		epic12_staging_rasterize_blit(d_row, s_row, dimx, dimy, s_step, flipx, trans, is_identity_tint, lut_r, lut_g, lut_b);
+		epic12_staging_rasterize_blit(d_row, s_row, dimx, dimy, s_step, flipx, trans, tint_mode, lut_r, lut_g, lut_b);
 
 		epic12_device_blit_delay += (unsigned)(dimx * dimy);
 #if SALVIA_FBNEO_DIAGNOSTICS
