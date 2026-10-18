@@ -235,6 +235,7 @@ static int s_snap_page_y = 0;
 static int s_snap_page_u = 0;
 static int s_snap_page_v = 0;
 static int s_snap_page_row_h = 0;
+static int s_snap_col256_u = 0;
 static int s_snap_max_page_x = 0;
 static int s_snap_max_page_y = 0;
 static bool epic12_gpu_staging_pages[EPIC12_VRAM_PAGES];
@@ -245,7 +246,7 @@ struct Epic12SnapshotEntry {
 	int snap_x, snap_y;
 	unsigned version;
 };
-static Epic12SnapshotEntry s_snap_cache[64];
+static Epic12SnapshotEntry s_snap_cache[256];
 
 static inline void epic12_gpu_staging_reset()
 {
@@ -254,7 +255,7 @@ static inline void epic12_gpu_staging_reset()
 
 static void epic12_gpu_snapshot_reset()
 {
-	if (s_snap_max_page_x > 0 || s_snap_max_page_y > 0 || s_snap_page_u > 0 || s_snap_page_v > 0) {
+	if (s_snap_max_page_x > 0 || s_snap_max_page_y > 0 || s_snap_page_u > 0 || s_snap_page_v > 0 || s_snap_col256_u > 0) {
 		int max_px = s_snap_max_page_x;
 		int max_py = s_snap_max_page_y;
 		int x1 = ((max_px + 1) << 7) - 1;
@@ -269,6 +270,7 @@ static void epic12_gpu_snapshot_reset()
 	s_snap_page_u = 0;
 	s_snap_page_v = 0;
 	s_snap_page_row_h = 0;
+	s_snap_col256_u = 0;
 	s_snap_max_page_x = 0;
 	s_snap_max_page_y = 0;
 	memset(s_snap_cache, 0, sizeof(s_snap_cache));
@@ -281,6 +283,11 @@ static inline bool epic12_gpu_snapshot_alloc(int w, int h, int &out_x, int &out_
 	if (w <= 128 && h <= 128) {
 		const int aligned_w = (w + 15) & ~15;
 		const int aligned_h = (h + 3) & ~3;
+
+		if (s_snap_col256_u > 0) {
+			++s_snap_page_x;
+			s_snap_col256_u = 0;
+		}
 
 		if (s_snap_page_u + aligned_w > 128) {
 			s_snap_page_u = 0;
@@ -310,14 +317,40 @@ static inline bool epic12_gpu_snapshot_alloc(int w, int h, int &out_x, int &out_
 		return true;
 	}
 
-	// Large staging sprite (w > 128 or h > 128, up to 512x256).
-	// Allocate dedicated page-aligned column(s) across the 256-line snapshot space.
+	// Tall or large staging sprite (w > 128 or h > 128, up to 512x256).
+	// If coming from 128x128 cell packing, advance to next column.
 	if (s_snap_page_u > 0 || s_snap_page_v > 0 || s_snap_page_y > 0) {
 		++s_snap_page_x;
 		s_snap_page_u = 0;
 		s_snap_page_v = 0;
 		s_snap_page_row_h = 0;
 		s_snap_page_y = 0;
+		s_snap_col256_u = 0;
+	}
+
+	if (w <= 128) {
+		// Tall sprite (w <= 128, 128 < h <= 256, e.g. 32x224 water slices):
+		// Shelf pack horizontally within 128-wide column across full 256 height
+		const int aligned_w = (w + 15) & ~15;
+		if (s_snap_col256_u + aligned_w > 128) {
+			++s_snap_page_x;
+			s_snap_col256_u = 0;
+		}
+		if (s_snap_page_x >= 64) return false;
+
+		out_x = (s_snap_page_x << 7) + s_snap_col256_u;
+		out_y = EPIC12_SNAPSHOT_Y;
+		s_snap_col256_u += aligned_w;
+
+		if (s_snap_page_x > s_snap_max_page_x) s_snap_max_page_x = s_snap_page_x;
+		if (1 > s_snap_max_page_y) s_snap_max_page_y = 1;
+		return true;
+	}
+
+	// Wide sprite (w > 128): allocate dedicated page-aligned column(s)
+	if (s_snap_col256_u > 0) {
+		++s_snap_page_x;
+		s_snap_col256_u = 0;
 	}
 
 	const int cols = (w + 127) >> 7;
@@ -1869,7 +1902,11 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	bool is_staging = false;
 	bool reused = false;
 	unsigned ver = 0;
-	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256) {
+	// Background raster scanlines (h <= 4) and vertical slices (w <= 64 && h > 128) tile
+	// off-screen VRAM without overwriting in the same frame; snapshotting them scatters a few
+	// source pages across dozens of snapshot pages, thrashing the atlas and page limit.
+	// Only multi-part sprites (e.g. boss explosion/pork item parts) need staging snapshots.
+	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256 && w > 4 && h > 4 && !(w <= 64 && h > 128)) {
 		const int spx0 = sx >> 7, spx1 = (sx + w - 1) >> 7;
 		const int spy0 = sy >> 7, spy1 = (sy + h - 1) >> 7;
 		if (spx0 == spx1 && spy0 == spy1) {
@@ -1897,7 +1934,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 					}
 				}
 			}
-			const unsigned h_idx = (((unsigned)sx * 31) ^ ((unsigned)sy * 17) ^ ((unsigned)w * 7) ^ (unsigned)h) & 63;
+			const unsigned h_idx = (((unsigned)sx * 31) ^ ((unsigned)sy * 17) ^ ((unsigned)w * 7) ^ (unsigned)h) & 255;
 			if (s_snap_cache[h_idx].sx == sx && s_snap_cache[h_idx].sy == sy &&
 				s_snap_cache[h_idx].w == w && s_snap_cache[h_idx].h == h &&
 				s_snap_cache[h_idx].version == ver) {
@@ -1906,19 +1943,33 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 				reused = true;
 			} else {
 				int snap_x, snap_y;
-				if (!epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
+				if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
+					draw_sx = snap_x;
+					draw_sy = snap_y;
+					s_snap_cache[h_idx].sx = sx;
+					s_snap_cache[h_idx].sy = sy;
+					s_snap_cache[h_idx].w = w;
+					s_snap_cache[h_idx].h = h;
+					s_snap_cache[h_idx].snap_x = snap_x;
+					s_snap_cache[h_idx].snap_y = snap_y;
+					s_snap_cache[h_idx].version = ver;
+				} else {
 					epic12_gpu_retire_bin0(EPIC12_GPU_FLUSH_SOURCE_PAGES);
-					epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y);
+					if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
+						draw_sx = snap_x;
+						draw_sy = snap_y;
+						s_snap_cache[h_idx].sx = sx;
+						s_snap_cache[h_idx].sy = sy;
+						s_snap_cache[h_idx].w = w;
+						s_snap_cache[h_idx].h = h;
+						s_snap_cache[h_idx].snap_x = snap_x;
+						s_snap_cache[h_idx].snap_y = snap_y;
+						s_snap_cache[h_idx].version = ver;
+					} else {
+						draw_sx = sx;
+						draw_sy = sy;
+					}
 				}
-				draw_sx = snap_x;
-				draw_sy = snap_y;
-				s_snap_cache[h_idx].sx = sx;
-				s_snap_cache[h_idx].sy = sy;
-				s_snap_cache[h_idx].w = w;
-				s_snap_cache[h_idx].h = h;
-				s_snap_cache[h_idx].snap_x = snap_x;
-				s_snap_cache[h_idx].snap_y = snap_y;
-				s_snap_cache[h_idx].version = ver;
 			}
 		}
 	}
@@ -1939,7 +1990,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 			if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
 				draw_sx = snap_x;
 				draw_sy = snap_y;
-				const unsigned h_idx = (((unsigned)sx * 31) ^ ((unsigned)sy * 17) ^ ((unsigned)w * 7) ^ (unsigned)h) & 63;
+				const unsigned h_idx = (((unsigned)sx * 31) ^ ((unsigned)sy * 17) ^ ((unsigned)w * 7) ^ (unsigned)h) & 255;
 				s_snap_cache[h_idx].sx = sx;
 				s_snap_cache[h_idx].sy = sy;
 				s_snap_cache[h_idx].w = w;
@@ -1951,9 +2002,9 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 				draw_sx = sx;
 				draw_sy = sy;
 			}
-			py0 = draw_sy >> 7; py1 = (draw_sy + h - 1) >> 7;
-			px0 = draw_sx >> 7; px1 = (draw_sx + w - 1) >> 7;
 		}
+		py0 = draw_sy >> 7; py1 = (draw_sy + h - 1) >> 7;
+		px0 = draw_sx >> 7; px1 = (draw_sx + w - 1) >> 7;
 		fit = epic12_gpu_can_fit(0, dest, draw_sx, draw_sy, w, h, px0, px1, py0, py1, np, npl, m);
 	}
 	if (fit == 0) {
