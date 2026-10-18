@@ -1325,12 +1325,16 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256) {
 		spx0 = sx >> 7; spx1 = (sx + w - 1) >> 7;
 		spy0 = sy >> 7; spy1 = (sy + h - 1) >> 7;
-		for (int py = spy0; py <= spy1 && !is_staging; ++py) {
-			const int row = py << 6;
-			for (int px = spx0; px <= spx1; ++px) {
-				if (epic12_gpu_staging_pages[row | px]) {
-					is_staging = true;
-					break;
+		if (spx0 == spx1 && spy0 == spy1) {
+			is_staging = epic12_gpu_staging_pages[(spy0 << 6) | spx0];
+		} else {
+			for (int py = spy0; py <= spy1 && !is_staging; ++py) {
+				const int row = py << 6;
+				for (int px = spx0; px <= spx1; ++px) {
+					if (epic12_gpu_staging_pages[row | px]) {
+						is_staging = true;
+						break;
+					}
 				}
 			}
 		}
@@ -1339,10 +1343,14 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	bool reused = false;
 	if (is_staging) {
 		unsigned ver = 0;
-		for (int py = spy0; py <= spy1; ++py) {
-			const int row = py << 6;
-			for (int px = spx0; px <= spx1; ++px) {
-				ver += epic12_gpu_staging_version[row | px];
+		if (spx0 == spx1 && spy0 == spy1) {
+			ver = epic12_gpu_staging_version[(spy0 << 6) | spx0];
+		} else {
+			for (int py = spy0; py <= spy1; ++py) {
+				const int row = py << 6;
+				for (int px = spx0; px <= spx1; ++px) {
+					ver += epic12_gpu_staging_version[row | px];
+				}
 			}
 		}
 		const unsigned h_idx = (((unsigned)sx * 31) ^ ((unsigned)sy * 17) ^ ((unsigned)w * 7) ^ (unsigned)h) & 63;
