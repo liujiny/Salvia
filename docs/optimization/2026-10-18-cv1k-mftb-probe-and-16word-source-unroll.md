@@ -64,3 +64,9 @@ Baseline `cdad080a`. Iteration diagnostics image built with `SALVIA_FBNEO_DIAGNO
 
 1. **Host Test Suites**:
    - `libretro/FBNeo/tests/sh3_dispatch/run_inline.py`: **100% PASS** in both `-O3` and `-fsanitize=address,undefined` modes (442,729 test cases, zero errors).
+
+2. **Build Identity**:
+   - Commit: `f7039ef2`
+   - Archive Image: `fbneo-20261018-2035-f7039ef2-diag.xex`
+   - Image SHA256: `6bb7ca93658183f00167cbc7e7d1af0c4dbe144306dc6d237cf3cf7c420c49a0`
+
