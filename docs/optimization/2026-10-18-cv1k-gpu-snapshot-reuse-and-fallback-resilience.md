@@ -60,3 +60,9 @@ Baseline `6cf56920`. Iteration and release images built with snapshot cache hit 
 
 2. **Console Savestate Replay**:
    - The user's exact crash state (`mmpork.state`, frame 600, Stage 2 drilling tank boss) was verified with 1,421 GPU batches rendered cleanly and zero fallbacks.
+
+3. **Build Identity**:
+   - Commit: `da789a1e`
+   - Archive Image: `fbneo-20261018-2150-da789a1e-release.xex`
+   - Size: 34,668,544 bytes
+   - SHA256: `b8803bd385f91d3d028d98889f0d12664e3bdc16e79c5b873b56311b7a3291ee`
