@@ -276,35 +276,62 @@ static void epic12_gpu_snapshot_reset()
 
 static inline bool epic12_gpu_snapshot_alloc(int w, int h, int &out_x, int &out_y)
 {
-	if (w > 128 || h > 128) return false;
-	const int aligned_w = (w + 15) & ~15;
-	const int aligned_h = (h + 3) & ~3;
+	if (w > 512 || h > 256) return false;
 
-	if (s_snap_page_u + aligned_w > 128) {
-		s_snap_page_u = 0;
-		s_snap_page_v += s_snap_page_row_h;
-		s_snap_page_row_h = 0;
+	if (w <= 128 && h <= 128) {
+		const int aligned_w = (w + 15) & ~15;
+		const int aligned_h = (h + 3) & ~3;
+
+		if (s_snap_page_u + aligned_w > 128) {
+			s_snap_page_u = 0;
+			s_snap_page_v += s_snap_page_row_h;
+			s_snap_page_row_h = 0;
+		}
+		if (s_snap_page_v + aligned_h > 128) {
+			s_snap_page_u = 0;
+			s_snap_page_v = 0;
+			s_snap_page_row_h = 0;
+			++s_snap_page_x;
+			if (s_snap_page_x >= 64) {
+				s_snap_page_x = 0;
+				++s_snap_page_y;
+			}
+		}
+		if (s_snap_page_y >= 2) return false;
+
+		out_x = (s_snap_page_x << 7) + s_snap_page_u;
+		out_y = EPIC12_SNAPSHOT_Y + (s_snap_page_y << 7) + s_snap_page_v;
+
+		s_snap_page_u += aligned_w;
+		if (aligned_h > s_snap_page_row_h) s_snap_page_row_h = aligned_h;
+
+		if (s_snap_page_x > s_snap_max_page_x) s_snap_max_page_x = s_snap_page_x;
+		if (s_snap_page_y > s_snap_max_page_y) s_snap_max_page_y = s_snap_page_y;
+		return true;
 	}
-	if (s_snap_page_v + aligned_h > 128) {
+
+	// Large staging sprite (w > 128 or h > 128, up to 512x256).
+	// Allocate dedicated page-aligned column(s) across the 256-line snapshot space.
+	if (s_snap_page_u > 0 || s_snap_page_v > 0 || s_snap_page_y > 0) {
+		++s_snap_page_x;
 		s_snap_page_u = 0;
 		s_snap_page_v = 0;
 		s_snap_page_row_h = 0;
-		++s_snap_page_x;
-		if (s_snap_page_x >= 64) {
-			s_snap_page_x = 0;
-			++s_snap_page_y;
-		}
+		s_snap_page_y = 0;
 	}
-	if (s_snap_page_y >= 2) return false;
 
-	out_x = (s_snap_page_x << 7) + s_snap_page_u;
-	out_y = EPIC12_SNAPSHOT_Y + (s_snap_page_y << 7) + s_snap_page_v;
+	const int cols = (w + 127) >> 7;
+	if (s_snap_page_x + cols > 64) return false;
 
-	s_snap_page_u += aligned_w;
-	if (aligned_h > s_snap_page_row_h) s_snap_page_row_h = aligned_h;
+	out_x = s_snap_page_x << 7;
+	out_y = EPIC12_SNAPSHOT_Y;
 
-	if (s_snap_page_x > s_snap_max_page_x) s_snap_max_page_x = s_snap_page_x;
-	if (s_snap_page_y > s_snap_max_page_y) s_snap_max_page_y = s_snap_page_y;
+	const int last_x = s_snap_page_x + cols - 1;
+	if (last_x > s_snap_max_page_x) s_snap_max_page_x = last_x;
+	const int last_y = (h > 128) ? 1 : 0;
+	if (last_y > s_snap_max_page_y) s_snap_max_page_y = last_y;
+
+	s_snap_page_x += cols;
 	return true;
 }
 
@@ -797,6 +824,65 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 	}
 }
 
+#if SALVIA_FBNEO_DIAGNOSTICS
+static void epic12_gpu_record_war_sample(int x, int y, int w, int h, int sx, int sy, int dpx0, int dpx1, int dpy0, int dpy1)
+{
+	if (epic12_gpu_diag_war_sample_count < 10) {
+		int s = epic12_gpu_diag_war_sample_count++;
+		epic12_gpu_diag_war_samples[s][0] = x;
+		epic12_gpu_diag_war_samples[s][1] = y;
+		epic12_gpu_diag_war_samples[s][2] = w;
+		epic12_gpu_diag_war_samples[s][3] = h;
+		epic12_gpu_diag_war_samples[s][4] = sx;
+		epic12_gpu_diag_war_samples[s][5] = sy;
+		int cmd_idx = -1;
+		int conf_page = -1;
+		for (int py = dpy0; py <= dpy1 && conf_page < 0; ++py) {
+			const int row = py << 6;
+			for (int px = dpx0; px <= dpx1; ++px) {
+				if (epic12_gpu_source_pages[0][row | px]) {
+					conf_page = row | px;
+					break;
+				}
+			}
+		}
+		for (unsigned ci = 0; ci < epic12_gpu_count[0]; ++ci) {
+			const Epic12GpuCommand &cmd = epic12_gpu_commands[0][ci];
+			int c_px0 = cmd.sx >> 7, c_px1 = (cmd.sx + cmd.w - 1) >> 7;
+			int c_py0 = cmd.sy >> 7, c_py1 = (cmd.sy + cmd.h - 1) >> 7;
+			if (conf_page >= 0) {
+				int conf_px = conf_page & 63;
+				int conf_py = conf_page >> 6;
+				if (conf_px >= c_px0 && conf_px <= c_px1 && conf_py >= c_py0 && conf_py <= c_py1) {
+					cmd_idx = ci;
+					break;
+				}
+			}
+		}
+		if (cmd_idx >= 0) {
+			const Epic12GpuCommand &cmd = epic12_gpu_commands[0][cmd_idx];
+			epic12_gpu_diag_war_samples[s][6] = cmd.sx;
+			epic12_gpu_diag_war_samples[s][7] = cmd.sy;
+			epic12_gpu_diag_war_samples[s][8] = cmd.x;
+			epic12_gpu_diag_war_samples[s][9] = cmd.y;
+			epic12_gpu_diag_war_samples[s][16] = cmd_idx;
+			epic12_gpu_diag_war_samples[s][17] = cmd.w;
+			epic12_gpu_diag_war_samples[s][18] = cmd.h;
+			epic12_gpu_diag_war_samples[s][19] = cmd.blend;
+			epic12_gpu_diag_war_samples[s][20] = cmd.transparent;
+			epic12_gpu_diag_war_samples[s][21] = epic12_gpu_count[0];
+			epic12_gpu_diag_war_samples[s][22] = conf_page;
+			bool intersects = epic12_gpu_intersects(x, y, w, h, rectangle(cmd.sx, cmd.sx + cmd.w - 1, cmd.sy, cmd.sy + cmd.h - 1));
+			epic12_gpu_diag_war_samples[s][23] = intersects ? 1 : 0;
+		} else {
+			epic12_gpu_diag_war_samples[s][21] = epic12_gpu_count[0];
+			epic12_gpu_diag_war_samples[s][22] = conf_page;
+			epic12_gpu_diag_war_samples[s][23] = -1;
+		}
+	}
+}
+#endif
+
 // Direct fast path for off-screen staging blits (x >= 768, non-blended):
 // Avoids 17-argument function spills, LHS hazards, dynamic stack table generation,
 // and CRT memcpy overhead on in-order PowerPC cores.
@@ -858,6 +944,7 @@ static inline bool epic12_gpu_staging_blit(int x, int y, int sx, int sy, int w, 
 		if (war_overlap) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 			++epic12_gpu_diag_war768_count;
+			epic12_gpu_record_war_sample(x, y, w, h, sx, sy, dpx0, dpx1, dpy0, dpy1);
 #endif
 			epic12_gpu_flush_bin(0, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
 		}
@@ -956,6 +1043,7 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 			if (war_overlap) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 				++epic12_gpu_diag_war768_count;
+				epic12_gpu_record_war_sample(x, y, dimx, dimy, sx, sy, dpx0, dpx1, dpy0, dpy1);
 #endif
 				epic12_gpu_flush_bin(0, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
 			}
@@ -1114,9 +1202,10 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	int draw_sx = sx;
 	int draw_sy = sy;
 	bool is_staging = false;
-	if (sx >= 768 && sy < 4096 && w <= 128 && h <= 128) {
-		const int spx0 = sx >> 7, spx1 = (sx + w - 1) >> 7;
-		const int spy0 = sy >> 7, spy1 = (sy + h - 1) >> 7;
+	int spx0 = 0, spx1 = 0, spy0 = 0, spy1 = 0;
+	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256) {
+		spx0 = sx >> 7; spx1 = (sx + w - 1) >> 7;
+		spy0 = sy >> 7; spy1 = (sy + h - 1) >> 7;
 		for (int py = spy0; py <= spy1 && !is_staging; ++py) {
 			const int row = py << 6;
 			for (int px = spx0; px <= spx1; ++px) {
@@ -1130,8 +1219,13 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 
 	bool reused = false;
 	if (is_staging) {
-		const int sp = (sy >> 7) * 64 + (sx >> 7);
-		const unsigned ver = epic12_gpu_staging_version[sp];
+		unsigned ver = 0;
+		for (int py = spy0; py <= spy1; ++py) {
+			const int row = py << 6;
+			for (int px = spx0; px <= spx1; ++px) {
+				ver += epic12_gpu_staging_version[row | px];
+			}
+		}
 		const unsigned h_idx = (((unsigned)sx * 31) ^ ((unsigned)sy * 17) ^ ((unsigned)w * 7) ^ (unsigned)h) & 63;
 		if (s_snap_cache[h_idx].sx == sx && s_snap_cache[h_idx].sy == sy &&
 			s_snap_cache[h_idx].w == w && s_snap_cache[h_idx].h == h &&

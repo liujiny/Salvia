@@ -331,16 +331,16 @@ static void epic12_xenos_report()
 		epic12_xenos_log(message);
 	}
 	for (int s = 0; s < epic12_gpu_diag_war_sample_count; ++s) {
-		sprintf(message, "diag_war_sample %d: CPU dst=(%d,%d,%d,%d) src=(%d,%d) | GPU src=(%d,%d) dst=(%d,%d) | slot=%d sc.src=(%d,%d) sc.tint=%d c.tint=%d sc.tr=%d c.tr=%d",
+		sprintf(message, "diag_war_sample %d: CPU dst=(%d,%d,%d,%d) src=(%d,%d) | GPU cmd#%d/%d src=(%d,%d,%d,%d) dst=(%d,%d) pg=%d rect_hit=%d",
 			s, epic12_gpu_diag_war_samples[s][0], epic12_gpu_diag_war_samples[s][1],
 			epic12_gpu_diag_war_samples[s][2], epic12_gpu_diag_war_samples[s][3],
 			epic12_gpu_diag_war_samples[s][4], epic12_gpu_diag_war_samples[s][5],
+			epic12_gpu_diag_war_samples[s][16], epic12_gpu_diag_war_samples[s][21],
 			epic12_gpu_diag_war_samples[s][6], epic12_gpu_diag_war_samples[s][7],
-			epic12_gpu_diag_war_samples[s][8], epic12_gpu_diag_war_samples[s][9],
-			epic12_gpu_diag_war_samples[s][16],
 			epic12_gpu_diag_war_samples[s][17], epic12_gpu_diag_war_samples[s][18],
-			epic12_gpu_diag_war_samples[s][19], epic12_gpu_diag_war_samples[s][20],
-			epic12_gpu_diag_war_samples[s][21], epic12_gpu_diag_war_samples[s][22]);
+			epic12_gpu_diag_war_samples[s][8], epic12_gpu_diag_war_samples[s][9],
+			epic12_gpu_diag_war_samples[s][22],
+			epic12_gpu_diag_war_samples[s][23]);
 		epic12_xenos_log(message);
 	}
 	sprintf(message,"rejections blend=%u size=%u oob=%u sy=%u intersect=%u",
