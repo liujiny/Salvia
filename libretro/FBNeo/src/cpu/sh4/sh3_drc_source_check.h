@@ -13,9 +13,19 @@
 static SH3_SOURCE_INLINE bool sh3_drc_source_equal(const UINT16 *expected,
  const UINT16 *actual, unsigned words)
 {
- // Compare opcodes using bitwise XOR and OR. Keeping a group of four avoids
- // per-opcode loop overhead while evaluating 4 opcodes with a single conditional branch.
- // Bitwise OR cannot cancel non-zero differences; equality semantics remain 100% exact.
+ if (words <= 8) {
+  switch(words) {
+   case 0: return true;
+   case 1: return expected[0] == actual[0];
+   case 2: return !((unsigned)(expected[0] ^ actual[0]) | (unsigned)(expected[1] ^ actual[1]));
+   case 3: return !((unsigned)(expected[0] ^ actual[0]) | (unsigned)(expected[1] ^ actual[1]) | (unsigned)(expected[2] ^ actual[2]));
+   case 4: return !((unsigned)(expected[0] ^ actual[0]) | (unsigned)(expected[1] ^ actual[1]) | (unsigned)(expected[2] ^ actual[2]) | (unsigned)(expected[3] ^ actual[3]));
+   case 5: return !((unsigned)(expected[0] ^ actual[0]) | (unsigned)(expected[1] ^ actual[1]) | (unsigned)(expected[2] ^ actual[2]) | (unsigned)(expected[3] ^ actual[3]) | (unsigned)(expected[4] ^ actual[4]));
+   case 6: return !((unsigned)(expected[0] ^ actual[0]) | (unsigned)(expected[1] ^ actual[1]) | (unsigned)(expected[2] ^ actual[2]) | (unsigned)(expected[3] ^ actual[3]) | (unsigned)(expected[4] ^ actual[4]) | (unsigned)(expected[5] ^ actual[5]));
+   case 7: return !((unsigned)(expected[0] ^ actual[0]) | (unsigned)(expected[1] ^ actual[1]) | (unsigned)(expected[2] ^ actual[2]) | (unsigned)(expected[3] ^ actual[3]) | (unsigned)(expected[4] ^ actual[4]) | (unsigned)(expected[5] ^ actual[5]) | (unsigned)(expected[6] ^ actual[6]));
+   case 8: return !((unsigned)(expected[0] ^ actual[0]) | (unsigned)(expected[1] ^ actual[1]) | (unsigned)(expected[2] ^ actual[2]) | (unsigned)(expected[3] ^ actual[3]) | (unsigned)(expected[4] ^ actual[4]) | (unsigned)(expected[5] ^ actual[5]) | (unsigned)(expected[6] ^ actual[6]) | (unsigned)(expected[7] ^ actual[7]));
+  }
+ }
  while(words>=8) {
   unsigned diff = (unsigned)(expected[0] ^ actual[0])
                 | (unsigned)(expected[1] ^ actual[1])
