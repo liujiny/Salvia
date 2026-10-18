@@ -53,7 +53,7 @@ inline bool end(gzFile file) {
  * file for loading, so replacing the slot cannot switch files between passes.
  * A second-pass device read failure is still an error, never reported success. */
 inline bool validate(gzFile file, size_t coreSize, uint32_t& raSize) {
-    unsigned char scratch[8192];
+    unsigned char scratch[65536];
     raSize = 0;
     size_t remaining = coreSize;
     while (remaining) {

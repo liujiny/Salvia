@@ -153,6 +153,18 @@ static inline uint32_t computeRomCrc(const uint8_t* data, std::size_t size){
 // y evitamos el retardo en cada carga (caeria al match por nombre).
 static inline uint32_t computeRomCrcFromFile(const std::string& path){
 	if (path.empty()) return 0;
+	// Do not compute CRC for archives (.zip, .7z, .rar) as arcade cores identify
+	// games/cheats by driver name (e.g. mmpork.cht), not archive container CRC.
+	// Reading multi-megabyte archives sequentially from USB 2.0 freezes game launch for 6-10 seconds.
+	std::string ext;
+	size_t dot = path.rfind('.');
+	if (dot != std::string::npos) {
+		ext = path.substr(dot);
+		for (size_t i = 0; i < ext.size(); ++i) ext[i] = (char)tolower((unsigned char)ext[i]);
+	}
+	if (ext == ".zip" || ext == ".7z" || ext == ".rar" || ext == ".tar" || ext == ".gz") {
+		return 0;
+	}
 	FILE* f = fopen(path.c_str(), "rb");
 	if (!f) return 0;
 	uint32_t crc = 0;
@@ -160,7 +172,7 @@ static inline uint32_t computeRomCrcFromFile(const std::string& path){
 		if (fseek(f, 0, SEEK_END) != 0) break;
 		long sz = ftell(f);
 		if (sz <= 0) break;
-		const long CRC_FILE_MAX = 96L * 1024 * 1024;   // tope: no hashear imagenes de CD
+		const long CRC_FILE_MAX = 32L * 1024 * 1024;   // tope: no hashear imagenes de CD o paquetes grandes
 		if (sz > CRC_FILE_MAX) break;
 
 		if (fseek(f, 0, SEEK_SET) != 0) break;
