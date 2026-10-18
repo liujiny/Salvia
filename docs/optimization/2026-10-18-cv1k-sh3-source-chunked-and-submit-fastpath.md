@@ -48,4 +48,7 @@ Baseline `63e6bfb0`. Iteration diagnostics image built with `SALVIA_FBNEO_DIAGNO
    - `libretro/FBNeo/tests/epic12_gpu/run.py` (Debian PowerPC GCC + QEMU-PPC): **100% PASS** across all 14,400 commands, 10.4M shader cases, and full VRAM state comparisons.
 
 2. **Build Identity**:
-   - Iteration build pending compile and console verification.
+   - Commit: `cd2bab8e`
+   - Archive Image: `fbneo-20261018-2018-cd2bab8e-diag.xex`
+   - Image SHA256: `0b3d426085f940faf42ffa44806a3a0c83ed87012b034285b496859d8bb87d13`
+
