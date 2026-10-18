@@ -1868,6 +1868,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	int draw_sy = sy;
 	bool is_staging = false;
 	bool reused = false;
+	unsigned ver = 0;
 	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256) {
 		const int spx0 = sx >> 7, spx1 = (sx + w - 1) >> 7;
 		const int spy0 = sy >> 7, spy1 = (sy + h - 1) >> 7;
@@ -1886,7 +1887,6 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 		}
 
 		if (is_staging) {
-			unsigned ver = 0;
 			if (spx0 == spx1 && spy0 == spy1) {
 				ver = epic12_gpu_staging_version[(spy0 << 6) | spx0];
 			} else {
@@ -1903,19 +1903,22 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 				s_snap_cache[h_idx].version == ver) {
 				draw_sx = s_snap_cache[h_idx].snap_x;
 				draw_sy = s_snap_cache[h_idx].snap_y;
+				reused = true;
 			} else {
 				int snap_x, snap_y;
-				if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
-					draw_sx = snap_x;
-					draw_sy = snap_y;
-					s_snap_cache[h_idx].sx = sx;
-					s_snap_cache[h_idx].sy = sy;
-					s_snap_cache[h_idx].w = w;
-					s_snap_cache[h_idx].h = h;
-					s_snap_cache[h_idx].snap_x = snap_x;
-					s_snap_cache[h_idx].snap_y = snap_y;
-					s_snap_cache[h_idx].version = ver;
+				if (!epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
+					epic12_gpu_retire_bin0(EPIC12_GPU_FLUSH_SOURCE_PAGES);
+					epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y);
 				}
+				draw_sx = snap_x;
+				draw_sy = snap_y;
+				s_snap_cache[h_idx].sx = sx;
+				s_snap_cache[h_idx].sy = sy;
+				s_snap_cache[h_idx].w = w;
+				s_snap_cache[h_idx].h = h;
+				s_snap_cache[h_idx].snap_x = snap_x;
+				s_snap_cache[h_idx].snap_y = snap_y;
+				s_snap_cache[h_idx].version = ver;
 			}
 		}
 	}
@@ -1936,6 +1939,14 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 			if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
 				draw_sx = snap_x;
 				draw_sy = snap_y;
+				const unsigned h_idx = (((unsigned)sx * 31) ^ ((unsigned)sy * 17) ^ ((unsigned)w * 7) ^ (unsigned)h) & 63;
+				s_snap_cache[h_idx].sx = sx;
+				s_snap_cache[h_idx].sy = sy;
+				s_snap_cache[h_idx].w = w;
+				s_snap_cache[h_idx].h = h;
+				s_snap_cache[h_idx].snap_x = snap_x;
+				s_snap_cache[h_idx].snap_y = snap_y;
+				s_snap_cache[h_idx].version = ver;
 			} else {
 				draw_sx = sx;
 				draw_sy = sy;

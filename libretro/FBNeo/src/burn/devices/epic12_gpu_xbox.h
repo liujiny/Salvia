@@ -87,6 +87,7 @@ static bool epic12_xenos_init_reported;
 // Last HRESULT from a shader compile or resource creation, so a failure can
 // name both the step and the code that the banner has no room for.
 static HRESULT epic12_xenos_last_hr;
+static char epic12_xenos_last_error[128] = "";
 
 static unsigned epic12_xenos_free_mb()
 {
@@ -113,12 +114,19 @@ const char *epic12_gpu_take_message()
 		}
 		case 4: return "CV1000 GPU: CPU fallback - pixel self-test failed";
 		case 5: return "CV1000 GPU: CPU fallback - display unavailable";
-		case 6: return "CV1000 GPU: CPU fallback - transfer failed";
+		case 6:
+		{
+			static char message[160];
+			sprintf(message, "CV1000 GPU: fallback - %s",
+				epic12_xenos_last_error[0] ? epic12_xenos_last_error : "transfer failed");
+			return message;
+		}
 		case 7: return "CV1000 GPU: active (compatible batching)";
 	}
 	return NULL;
 }
 static bool epic12_xenos_failed, epic12_xenos_validated;
+static int epic12_xenos_consecutive_fails = 0;
 static Epic12GpuPageCache epic12_xenos_cache;
 static unsigned epic12_gpu_batch_page_capacity()
 {
@@ -199,6 +207,10 @@ static const char epic12_xenos_shader[] =
 
 static void epic12_xenos_log(const char *message)
 {
+	if (message) {
+		strncpy(epic12_xenos_last_error, message, sizeof(epic12_xenos_last_error) - 1);
+		epic12_xenos_last_error[sizeof(epic12_xenos_last_error) - 1] = 0;
+	}
 #if SALVIA_FBNEO_DIAGNOSTICS
 	// A separate file works even when frontend logging is disabled.
 	FILE *f = fopen("game:\\cv1000-gpu.log", "a");
@@ -656,6 +668,7 @@ static void epic12_xenos_resolve(int x,int y,int w,int h)
 static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,const rectangle &originalBounds,
 	Epic12GpuTiming *timing=NULL)
 {
+	epic12_xenos_last_error[0] = '\0';
 	D3DDevice *d=epic12_xenos_device;
 	bool needed[EPIC12_VRAM_PAGES]={false};
 	int slots[EPIC12_VRAM_PAGES];
@@ -973,7 +986,7 @@ static bool epic12_gpu_render(const Epic12GpuCommand *cmd,int count,const rectan
 	}
 	if(d!=epic12_xenos_device || generation!=epic12_xenos_generation) {
         SDL_XBOX_SetCoreGpuAsync(0); epic12_xenos_present_known=false;
-		epic12_xenos_release(); epic12_xenos_device=d; epic12_xenos_generation=generation; epic12_xenos_failed=false; epic12_xenos_error=0;
+		epic12_xenos_release(); epic12_xenos_device=d; epic12_xenos_generation=generation; epic12_xenos_failed=false; epic12_xenos_error=0; epic12_xenos_consecutive_fails=0;
 		timing=NULL; // exclude shader creation and self-test from timings
 	}
     unsigned presentSequence=0;
@@ -1064,12 +1077,19 @@ static bool epic12_gpu_render(const Epic12GpuCommand *cmd,int count,const rectan
 			}
 		}
 	}
-	if (!ok && !epic12_xenos_failed) {
-		epic12_xenos_log("transfer failed; using CPU for this session");
-		epic12_xenos_failed=true; epic12_xenos_error=6;
+	if (ok) {
+		epic12_xenos_consecutive_fails = 0;
+		epic12_xenos_set_status(epic12_xenos_attributes ? 1 : 7);
+	} else {
+		epic12_xenos_cache.clear();
+		epic12_xenos_log(epic12_xenos_last_error[0] ? epic12_xenos_last_error : "transfer failed");
+		if (++epic12_xenos_consecutive_fails >= 5) {
+			epic12_xenos_failed = true;
+			epic12_xenos_error = 6;
+			SDL_XBOX_SetCoreGpuAsync(0);
+			epic12_xenos_set_status(6);
+		}
 	}
-	if(!ok) SDL_XBOX_SetCoreGpuAsync(0);
-	epic12_xenos_set_status(ok?(epic12_xenos_attributes?1:7):epic12_xenos_error);
 	SDL_XBOX_ReleaseCoreGpu();
 	return ok;
 }
