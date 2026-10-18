@@ -928,8 +928,13 @@ static void gfx_draw(UINT32 *addr)
 	}
 
 #if defined(_XBOX) || defined(EPIC12_GPU_TEST)
-	// Direct fast-path for non-blended off-screen staging blits (x >= 768)
+	// Direct stream execution for off-screen staging blits (x >= 768, non-blended)
 	if (x >= 768 && !(attr & 0x0200)) {
+		int count = epic12_gpu_staging_stream(cur_addr);
+		if (count > 0) {
+			*addr = cur_addr + count * 20;
+			return;
+		}
 		const int sx = src_x & 0x1fff;
 		const int sy = src_y & 0x0fff;
 		if (sx + dimx <= 8192 && sy + dimy <= 4096 && dimx <= 512 && dimy <= 512) {

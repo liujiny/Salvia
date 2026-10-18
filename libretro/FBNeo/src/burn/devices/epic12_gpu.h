@@ -219,6 +219,7 @@ static void epic12_gpu_replay(const Epic12GpuCommand &c)
 }
 
 #include "epic12_gpu_batch.h"
+#include "epic12_gpu_region.h"
 
 static void epic12_gpu_snapshot_reset();
 static void epic12_gpu_staging_reset();
@@ -356,6 +357,9 @@ static void epic12_gpu_retire_bin0(Epic12GpuFlushReason reason)
 static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHER)
 {
 	epic12_gpu_flush_bin(0, reason);
+	if (reason == EPIC12_GPU_FLUSH_END_LIST || reason == EPIC12_GPU_FLUSH_OTHER) {
+		epic12_gpu_staging_reset();
+	}
 }
 
 
@@ -485,6 +489,167 @@ static void epic12_gpu_init_tint_luts()
 	epic12_gpu_tint_lut_ready = true;
 }
 
+static inline void epic12_staging_rasterize_row(UINT32 *d, const UINT32 *s, int w,
+	int flipx, int transparent, bool is_identity_tint,
+	const UINT32 *lut_r, const UINT32 *lut_g, const UINT32 *lut_b)
+{
+	if (transparent) {
+		if (is_identity_tint) {
+			if (!flipx) {
+				int col = 0;
+				for (; col <= w - 4; col += 4) {
+					UINT32 p0 = s[col + 0];
+					UINT32 p1 = s[col + 1];
+					UINT32 p2 = s[col + 2];
+					UINT32 p3 = s[col + 3];
+					UINT32 any_p = (p0 | p1 | p2 | p3) & 0x20000000;
+					if (any_p) {
+						UINT32 all_p = (p0 & p1 & p2 & p3) & 0x20000000;
+						if (all_p) {
+							d[col + 0] = p0;
+							d[col + 1] = p1;
+							d[col + 2] = p2;
+							d[col + 3] = p3;
+						} else {
+							INT32 m0 = ((INT32)p0 << 2) >> 31;
+							INT32 m1 = ((INT32)p1 << 2) >> 31;
+							INT32 m2 = ((INT32)p2 << 2) >> 31;
+							INT32 m3 = ((INT32)p3 << 2) >> 31;
+							d[col + 0] = (p0 & m0) | (d[col + 0] & ~m0);
+							d[col + 1] = (p1 & m1) | (d[col + 1] & ~m1);
+							d[col + 2] = (p2 & m2) | (d[col + 2] & ~m2);
+							d[col + 3] = (p3 & m3) | (d[col + 3] & ~m3);
+						}
+					}
+				}
+				for (; col < w; ++col) {
+					UINT32 p = s[col];
+					INT32 m = ((INT32)p << 2) >> 31;
+					d[col] = (p & m) | (d[col] & ~m);
+				}
+			} else {
+				int col = 0;
+				for (; col <= w - 4; col += 4) {
+					UINT32 p0 = s[-col - 0];
+					UINT32 p1 = s[-col - 1];
+					UINT32 p2 = s[-col - 2];
+					UINT32 p3 = s[-col - 3];
+					UINT32 any_p = (p0 | p1 | p2 | p3) & 0x20000000;
+					if (any_p) {
+						UINT32 all_p = (p0 & p1 & p2 & p3) & 0x20000000;
+						if (all_p) {
+							d[col + 0] = p0;
+							d[col + 1] = p1;
+							d[col + 2] = p2;
+							d[col + 3] = p3;
+						} else {
+							INT32 m0 = ((INT32)p0 << 2) >> 31;
+							INT32 m1 = ((INT32)p1 << 2) >> 31;
+							INT32 m2 = ((INT32)p2 << 2) >> 31;
+							INT32 m3 = ((INT32)p3 << 2) >> 31;
+							d[col + 0] = (p0 & m0) | (d[col + 0] & ~m0);
+							d[col + 1] = (p1 & m1) | (d[col + 1] & ~m1);
+							d[col + 2] = (p2 & m2) | (d[col + 2] & ~m2);
+							d[col + 3] = (p3 & m3) | (d[col + 3] & ~m3);
+						}
+					}
+				}
+				for (; col < w; ++col) {
+					UINT32 p = s[-col];
+					INT32 m = ((INT32)p << 2) >> 31;
+					d[col] = (p & m) | (d[col] & ~m);
+				}
+			}
+		} else {
+			// tinted + transparent
+			if (!flipx) {
+				int col = 0;
+				for (; col <= w - 4; col += 4) {
+					UINT32 p0 = s[col + 0];
+					UINT32 p1 = s[col + 1];
+					UINT32 p2 = s[col + 2];
+					UINT32 p3 = s[col + 3];
+					UINT32 any_p = (p0 | p1 | p2 | p3) & 0x20000000;
+					if (any_p) {
+						if (p0 & 0x20000000) d[col + 0] = lut_r[(p0 >> 19) & 0x1f] | lut_g[(p0 >> 11) & 0x1f] | lut_b[(p0 >> 3) & 0x1f] | 0x20000000;
+						if (p1 & 0x20000000) d[col + 1] = lut_r[(p1 >> 19) & 0x1f] | lut_g[(p1 >> 11) & 0x1f] | lut_b[(p1 >> 3) & 0x1f] | 0x20000000;
+						if (p2 & 0x20000000) d[col + 2] = lut_r[(p2 >> 19) & 0x1f] | lut_g[(p2 >> 11) & 0x1f] | lut_b[(p2 >> 3) & 0x1f] | 0x20000000;
+						if (p3 & 0x20000000) d[col + 3] = lut_r[(p3 >> 19) & 0x1f] | lut_g[(p3 >> 11) & 0x1f] | lut_b[(p3 >> 3) & 0x1f] | 0x20000000;
+					}
+				}
+				for (; col < w; ++col) {
+					UINT32 p = s[col];
+					if (p & 0x20000000) d[col] = lut_r[(p >> 19) & 0x1f] | lut_g[(p >> 11) & 0x1f] | lut_b[(p >> 3) & 0x1f] | 0x20000000;
+				}
+			} else {
+				int col = 0;
+				for (; col <= w - 4; col += 4) {
+					UINT32 p0 = s[-col - 0];
+					UINT32 p1 = s[-col - 1];
+					UINT32 p2 = s[-col - 2];
+					UINT32 p3 = s[-col - 3];
+					UINT32 any_p = (p0 | p1 | p2 | p3) & 0x20000000;
+					if (any_p) {
+						if (p0 & 0x20000000) d[col + 0] = lut_r[(p0 >> 19) & 0x1f] | lut_g[(p0 >> 11) & 0x1f] | lut_b[(p0 >> 3) & 0x1f] | 0x20000000;
+						if (p1 & 0x20000000) d[col + 1] = lut_r[(p1 >> 19) & 0x1f] | lut_g[(p1 >> 11) & 0x1f] | lut_b[(p1 >> 3) & 0x1f] | 0x20000000;
+						if (p2 & 0x20000000) d[col + 2] = lut_r[(p2 >> 19) & 0x1f] | lut_g[(p2 >> 11) & 0x1f] | lut_b[(p2 >> 3) & 0x1f] | 0x20000000;
+						if (p3 & 0x20000000) d[col + 3] = lut_r[(p3 >> 19) & 0x1f] | lut_g[(p3 >> 11) & 0x1f] | lut_b[(p3 >> 3) & 0x1f] | 0x20000000;
+					}
+				}
+				for (; col < w; ++col) {
+					UINT32 p = s[-col];
+					if (p & 0x20000000) d[col] = lut_r[(p >> 19) & 0x1f] | lut_g[(p >> 11) & 0x1f] | lut_b[(p >> 3) & 0x1f] | 0x20000000;
+				}
+			}
+		}
+	} else {
+		// !transparent (opaque copy)
+		if (is_identity_tint) {
+			if (!flipx) {
+				if ((((uintptr_t)d | (uintptr_t)s) & 7) == 0) {
+					if (w == 16) {
+						const UINT64 *s64 = (const UINT64*)s;
+						UINT64 *d64 = (UINT64*)d;
+						d64[0] = s64[0]; d64[1] = s64[1]; d64[2] = s64[2]; d64[3] = s64[3];
+						d64[4] = s64[4]; d64[5] = s64[5]; d64[6] = s64[6]; d64[7] = s64[7];
+					} else {
+						const UINT64 *s64 = (const UINT64*)s;
+						UINT64 *d64 = (UINT64*)d;
+						int col = 0;
+						const int count64 = w >> 1;
+						for (; col < count64; ++col) d64[col] = s64[col];
+						if (w & 1) d[w - 1] = s[w - 1];
+					}
+				} else {
+					for (int col = 0; col < w; ++col) d[col] = s[col];
+				}
+			} else {
+				for (int col = 0; col < w; ++col) d[col] = s[-col];
+			}
+		} else {
+			if (!flipx) {
+				int col = 0;
+				for (; col <= w - 4; col += 4) {
+					UINT32 p0 = s[col + 0], p1 = s[col + 1], p2 = s[col + 2], p3 = s[col + 3];
+					d[col + 0] = lut_r[(p0 >> 19) & 0x1f] | lut_g[(p0 >> 11) & 0x1f] | lut_b[(p0 >> 3) & 0x1f] | (p0 & 0x20000000);
+					d[col + 1] = lut_r[(p1 >> 19) & 0x1f] | lut_g[(p1 >> 11) & 0x1f] | lut_b[(p1 >> 3) & 0x1f] | (p1 & 0x20000000);
+					d[col + 2] = lut_r[(p2 >> 19) & 0x1f] | lut_g[(p2 >> 11) & 0x1f] | lut_b[(p2 >> 3) & 0x1f] | (p2 & 0x20000000);
+					d[col + 3] = lut_r[(p3 >> 19) & 0x1f] | lut_g[(p3 >> 11) & 0x1f] | lut_b[(p3 >> 3) & 0x1f] | (p3 & 0x20000000);
+				}
+				for (; col < w; ++col) {
+					UINT32 p = s[col];
+					d[col] = lut_r[(p >> 19) & 0x1f] | lut_g[(p >> 11) & 0x1f] | lut_b[(p >> 3) & 0x1f] | (p & 0x20000000);
+				}
+			} else {
+				for (int col = 0; col < w; ++col) {
+					UINT32 p = s[-col];
+					d[col] = lut_r[(p >> 19) & 0x1f] | lut_g[(p >> 11) & 0x1f] | lut_b[(p >> 3) & 0x1f] | (p & 0x20000000);
+				}
+			}
+		}
+	}
+}
+
 // Direct fast path for off-screen staging blits (x >= 768, non-blended):
 // Avoids 17-argument function spills, LHS hazards, dynamic stack table generation,
 // and CRT memcpy overhead on in-order PowerPC cores.
@@ -552,173 +717,156 @@ static inline bool epic12_gpu_staging_blit(int x, int y, int sx, int sy, int w, 
 	const UINT32 *lut_g = epic12_gpu_tint_g_lut[tint_g_idx & 63];
 	const UINT32 *lut_b = epic12_gpu_tint_b_lut[tint_b_idx & 63];
 
-	const int s_x_start = flipx ? (sx + w - 1) : sx;
 	for (int r = 0; r < h; ++r) {
 		const int cur_y = flipy ? (h - 1 - r) : r;
-		UINT32 *d = m_bitmaps + (y + r) * 8192 + x;
-		const UINT32 *s = m_bitmaps + ((sy + cur_y) & 4095) * 8192 + s_x_start;
+		UINT32 *d = m_bitmaps + ((size_t)(y + r)) * 8192 + x;
+		const int s_x_start = flipx ? (sx + w - 1) : sx;
+		const UINT32 *s = m_bitmaps + ((size_t)((sy + cur_y) & 4095)) * 8192 + s_x_start;
 
-		if (transparent) {
-			if (is_identity_tint) {
-				if (!flipx) {
-					int col = 0;
-					for (; col <= w - 4; col += 4) {
-						UINT32 p0 = s[col + 0];
-						UINT32 p1 = s[col + 1];
-						UINT32 p2 = s[col + 2];
-						UINT32 p3 = s[col + 3];
-						UINT32 any_p = (p0 | p1 | p2 | p3) & 0x20000000;
-						if (any_p) {
-							UINT32 all_p = (p0 & p1 & p2 & p3) & 0x20000000;
-							if (all_p) {
-								d[col + 0] = p0;
-								d[col + 1] = p1;
-								d[col + 2] = p2;
-								d[col + 3] = p3;
-							} else {
-								INT32 m0 = ((INT32)p0 << 2) >> 31;
-								INT32 m1 = ((INT32)p1 << 2) >> 31;
-								INT32 m2 = ((INT32)p2 << 2) >> 31;
-								INT32 m3 = ((INT32)p3 << 2) >> 31;
-								d[col + 0] = (p0 & m0) | (d[col + 0] & ~m0);
-								d[col + 1] = (p1 & m1) | (d[col + 1] & ~m1);
-								d[col + 2] = (p2 & m2) | (d[col + 2] & ~m2);
-								d[col + 3] = (p3 & m3) | (d[col + 3] & ~m3);
-							}
-						}
-					}
-					for (; col < w; ++col) {
-						UINT32 p = s[col];
-						INT32 m = ((INT32)p << 2) >> 31;
-						d[col] = (p & m) | (d[col] & ~m);
-					}
-				} else {
-					int col = 0;
-					for (; col <= w - 4; col += 4) {
-						UINT32 p0 = s[-col - 0];
-						UINT32 p1 = s[-col - 1];
-						UINT32 p2 = s[-col - 2];
-						UINT32 p3 = s[-col - 3];
-						UINT32 any_p = (p0 | p1 | p2 | p3) & 0x20000000;
-						if (any_p) {
-							UINT32 all_p = (p0 & p1 & p2 & p3) & 0x20000000;
-							if (all_p) {
-								d[col + 0] = p0;
-								d[col + 1] = p1;
-								d[col + 2] = p2;
-								d[col + 3] = p3;
-							} else {
-								INT32 m0 = ((INT32)p0 << 2) >> 31;
-								INT32 m1 = ((INT32)p1 << 2) >> 31;
-								INT32 m2 = ((INT32)p2 << 2) >> 31;
-								INT32 m3 = ((INT32)p3 << 2) >> 31;
-								d[col + 0] = (p0 & m0) | (d[col + 0] & ~m0);
-								d[col + 1] = (p1 & m1) | (d[col + 1] & ~m1);
-								d[col + 2] = (p2 & m2) | (d[col + 2] & ~m2);
-								d[col + 3] = (p3 & m3) | (d[col + 3] & ~m3);
-							}
-						}
-					}
-					for (; col < w; ++col) {
-						UINT32 p = s[-col];
-						INT32 m = ((INT32)p << 2) >> 31;
-						d[col] = (p & m) | (d[col] & ~m);
-					}
-				}
-			} else {
-				// tinted + transparent
-				if (!flipx) {
-					int col = 0;
-					for (; col <= w - 4; col += 4) {
-						UINT32 p0 = s[col + 0];
-						UINT32 p1 = s[col + 1];
-						UINT32 p2 = s[col + 2];
-						UINT32 p3 = s[col + 3];
-						UINT32 any_p = (p0 | p1 | p2 | p3) & 0x20000000;
-						if (any_p) {
-							if (p0 & 0x20000000) d[col + 0] = lut_r[(p0 >> 19) & 0x1f] | lut_g[(p0 >> 11) & 0x1f] | lut_b[(p0 >> 3) & 0x1f] | 0x20000000;
-							if (p1 & 0x20000000) d[col + 1] = lut_r[(p1 >> 19) & 0x1f] | lut_g[(p1 >> 11) & 0x1f] | lut_b[(p1 >> 3) & 0x1f] | 0x20000000;
-							if (p2 & 0x20000000) d[col + 2] = lut_r[(p2 >> 19) & 0x1f] | lut_g[(p2 >> 11) & 0x1f] | lut_b[(p2 >> 3) & 0x1f] | 0x20000000;
-							if (p3 & 0x20000000) d[col + 3] = lut_r[(p3 >> 19) & 0x1f] | lut_g[(p3 >> 11) & 0x1f] | lut_b[(p3 >> 3) & 0x1f] | 0x20000000;
-						}
-					}
-					for (; col < w; ++col) {
-						UINT32 p = s[col];
-						if (p & 0x20000000) d[col] = lut_r[(p >> 19) & 0x1f] | lut_g[(p >> 11) & 0x1f] | lut_b[(p >> 3) & 0x1f] | 0x20000000;
-					}
-				} else {
-					int col = 0;
-					for (; col <= w - 4; col += 4) {
-						UINT32 p0 = s[-col - 0];
-						UINT32 p1 = s[-col - 1];
-						UINT32 p2 = s[-col - 2];
-						UINT32 p3 = s[-col - 3];
-						UINT32 any_p = (p0 | p1 | p2 | p3) & 0x20000000;
-						if (any_p) {
-							if (p0 & 0x20000000) d[col + 0] = lut_r[(p0 >> 19) & 0x1f] | lut_g[(p0 >> 11) & 0x1f] | lut_b[(p0 >> 3) & 0x1f] | 0x20000000;
-							if (p1 & 0x20000000) d[col + 1] = lut_r[(p1 >> 19) & 0x1f] | lut_g[(p1 >> 11) & 0x1f] | lut_b[(p1 >> 3) & 0x1f] | 0x20000000;
-							if (p2 & 0x20000000) d[col + 2] = lut_r[(p2 >> 19) & 0x1f] | lut_g[(p2 >> 11) & 0x1f] | lut_b[(p2 >> 3) & 0x1f] | 0x20000000;
-							if (p3 & 0x20000000) d[col + 3] = lut_r[(p3 >> 19) & 0x1f] | lut_g[(p3 >> 11) & 0x1f] | lut_b[(p3 >> 3) & 0x1f] | 0x20000000;
-						}
-					}
-					for (; col < w; ++col) {
-						UINT32 p = s[-col];
-						if (p & 0x20000000) d[col] = lut_r[(p >> 19) & 0x1f] | lut_g[(p >> 11) & 0x1f] | lut_b[(p >> 3) & 0x1f] | 0x20000000;
-					}
-				}
-			}
-		} else {
-			// !transparent (opaque copy)
-			if (is_identity_tint) {
-				if (!flipx) {
-					if ((((uintptr_t)d | (uintptr_t)s) & 7) == 0) {
-						if (w == 16) {
-							const UINT64 *s64 = (const UINT64*)s;
-							UINT64 *d64 = (UINT64*)d;
-							d64[0] = s64[0]; d64[1] = s64[1]; d64[2] = s64[2]; d64[3] = s64[3];
-							d64[4] = s64[4]; d64[5] = s64[5]; d64[6] = s64[6]; d64[7] = s64[7];
-						} else {
-							const UINT64 *s64 = (const UINT64*)s;
-							UINT64 *d64 = (UINT64*)d;
-							int col = 0;
-							const int count64 = w >> 1;
-							for (; col < count64; ++col) d64[col] = s64[col];
-							if (w & 1) d[w - 1] = s[w - 1];
-						}
-					} else {
-						for (int col = 0; col < w; ++col) d[col] = s[col];
-					}
-				} else {
-					for (int col = 0; col < w; ++col) d[col] = s[-col];
-				}
-			} else {
-				if (!flipx) {
-					int col = 0;
-					for (; col <= w - 4; col += 4) {
-						UINT32 p0 = s[col + 0], p1 = s[col + 1], p2 = s[col + 2], p3 = s[col + 3];
-						d[col + 0] = lut_r[(p0 >> 19) & 0x1f] | lut_g[(p0 >> 11) & 0x1f] | lut_b[(p0 >> 3) & 0x1f] | (p0 & 0x20000000);
-						d[col + 1] = lut_r[(p1 >> 19) & 0x1f] | lut_g[(p1 >> 11) & 0x1f] | lut_b[(p1 >> 3) & 0x1f] | (p1 & 0x20000000);
-						d[col + 2] = lut_r[(p2 >> 19) & 0x1f] | lut_g[(p2 >> 11) & 0x1f] | lut_b[(p2 >> 3) & 0x1f] | (p2 & 0x20000000);
-						d[col + 3] = lut_r[(p3 >> 19) & 0x1f] | lut_g[(p3 >> 11) & 0x1f] | lut_b[(p3 >> 3) & 0x1f] | (p3 & 0x20000000);
-					}
-					for (; col < w; ++col) {
-						UINT32 p = s[col];
-						d[col] = lut_r[(p >> 19) & 0x1f] | lut_g[(p >> 11) & 0x1f] | lut_b[(p >> 3) & 0x1f] | (p & 0x20000000);
-					}
-				} else {
-					for (int col = 0; col < w; ++col) {
-						UINT32 p = s[-col];
-						d[col] = lut_r[(p >> 19) & 0x1f] | lut_g[(p >> 11) & 0x1f] | lut_b[(p >> 3) & 0x1f] | (p & 0x20000000);
-					}
-				}
-			}
-		}
+		epic12_staging_rasterize_row(d, s, w, flipx, transparent, is_identity_tint, lut_r, lut_g, lut_b);
 	}
 	epic12_device_blit_delay += (unsigned)(w * h);
 #if SALVIA_FBNEO_DIAGNOSTICS
 	++epic12_gpu_diag_submit_staging_ident;
 #endif
 	return true;
+}
+
+// Direct stream execution for contiguous off-screen staging blits (x >= 768, non-blended).
+// Streams through consecutive staging commands in m_ram16_copy in a single tight loop,
+// eliminating function dispatch, stack saves, and WAR checks for thousands of blits per frame.
+static inline int epic12_gpu_staging_stream(UINT32 start_addr)
+{
+#if SALVIA_CV1K_PROBE
+	SalviaCv1kSampledSpan<64> submitSpan(36);
+#endif
+	if (!epic12_gpu_tint_lut_ready) epic12_gpu_init_tint_luts();
+
+	const UINT32 max_ram = (UINT32)m_main_rammask + 1;
+	UINT32 cur_addr = start_addr;
+	int fused_count = 0;
+
+	while (1) {
+		const UINT32 ram_offset = cur_addr & m_main_rammask;
+		if (ram_offset + 20 > max_ram) break;
+
+		const UINT16 *p = &m_ram16_copy[ram_offset >> 1];
+		const UINT16 attr = p[0];
+
+		// Must be a draw command (0x1000) and not blended
+		if ((attr & 0xf000) != 0x1000 || (attr & 0x0200)) break;
+
+		const UINT16 dst_x_start = p[4];
+		// Must be offscreen staging destination (>= 768)
+		if (dst_x_start < 768) break;
+
+		const UINT16 dst_y_start = p[5];
+		const UINT16 w_raw = p[6];
+		const UINT16 h_raw = p[7];
+		const int dimx = (w_raw & 0x1fff) + 1;
+		const int dimy = (h_raw & 0x0fff) + 1;
+		const int x = (INT16)dst_x_start;
+		const int y = (INT16)dst_y_start;
+
+		const int sx = p[2] & 0x1fff;
+		const int sy = p[3] & 0x0fff;
+
+		// Boundary sanity check
+		if (sx + dimx > 8192 || sy + dimy > 4096 || x + dimx > 8192 || y + dimy > 4096 || dimx > 512 || dimy > 512) {
+			break;
+		}
+
+		// Fast clip rejection
+		if (x > m_clip.max_x || y > m_clip.max_y || x + dimx - 1 < m_clip.min_x || y + dimy - 1 < m_clip.min_y) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+			++epic12_gpu_diag_submit_clip;
+#endif
+			cur_addr += 20;
+			++fused_count;
+			continue;
+		}
+
+		// Check WAR hazard against queued GPU commands in bin 0
+		const int dpy0 = y >> 7, dpy1 = (y + dimy - 1) >> 7;
+		const int dpx0 = x >> 7, dpx1 = (x + dimx - 1) >> 7;
+		if (epic12_gpu_count[0]) {
+			bool war_overlap = false;
+			for (int py = dpy0; py <= dpy1 && !war_overlap; ++py) {
+				const int row = py << 6;
+				for (int px = dpx0; px <= dpx1; ++px) {
+					if (epic12_gpu_source_pages[0][row | px]) {
+						war_overlap = true;
+						break;
+					}
+				}
+			}
+			if (war_overlap) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_gpu_diag_war768_count;
+#endif
+				epic12_gpu_flush_bin(0, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
+			}
+		}
+
+		// Mark staging pages
+		if (dpy0 == dpy1 && dpx0 == dpx1) {
+			epic12_gpu_staging_pages[(dpy0 << 6) | dpx0] = true;
+		} else {
+			for (int py = dpy0; py <= dpy1; ++py) {
+				const int row = py << 6;
+				for (int px = dpx0; px <= dpx1; ++px) {
+					epic12_gpu_staging_pages[row | px] = true;
+				}
+			}
+		}
+
+		const int flipx = attr & 0x0800;
+		const int flipy = attr & 0x0400;
+		const int trans = attr & 0x0100;
+		const int tint_r_idx = (p[8] & 0x00ff) >> 2;
+		const int tint_g_idx = ((p[9] >> 8) & 0xff) >> 2;
+		const int tint_b_idx = (p[9] & 0xff) >> 2;
+
+#if SALVIA_FBNEO_DIAGNOSTICS
+		if (epic12_gpu_diag_stag_sample_count < 10) {
+			int s = epic12_gpu_diag_stag_sample_count++;
+			epic12_gpu_diag_stag_samples[s][0] = x;
+			epic12_gpu_diag_stag_samples[s][1] = y;
+			epic12_gpu_diag_stag_samples[s][2] = dimx;
+			epic12_gpu_diag_stag_samples[s][3] = dimy;
+			epic12_gpu_diag_stag_samples[s][4] = sx;
+			epic12_gpu_diag_stag_samples[s][5] = sy;
+			epic12_gpu_diag_stag_samples[s][6] = ((!!flipx) << 8) | ((!!flipy) << 4) | (trans ? 1 : 0);
+			epic12_gpu_diag_stag_samples[s][7] = ((tint_r_idx & 63) << 16) | ((tint_g_idx & 63) << 8) | (tint_b_idx & 63);
+		}
+#endif
+
+		const bool is_identity_tint = (tint_r_idx == 32 && tint_g_idx == 32 && tint_b_idx == 32);
+		const UINT32 *lut_r = is_identity_tint ? NULL : epic12_gpu_tint_r_lut[tint_r_idx & 63];
+		const UINT32 *lut_g = is_identity_tint ? NULL : epic12_gpu_tint_g_lut[tint_g_idx & 63];
+		const UINT32 *lut_b = is_identity_tint ? NULL : epic12_gpu_tint_b_lut[tint_b_idx & 63];
+
+		UINT32 *d_row = m_bitmaps + ((size_t)y) * 8192 + x;
+		const int s_x_start = flipx ? (sx + dimx - 1) : sx;
+		const int s_y_start = flipy ? (sy + dimy - 1) : sy;
+		const int s_step = flipy ? -8192 : 8192;
+		const UINT32 *s_row = m_bitmaps + ((size_t)(s_y_start & 4095)) * 8192 + s_x_start;
+
+		for (int r = 0; r < dimy; ++r) {
+			epic12_staging_rasterize_row(d_row, s_row, dimx, flipx, trans, is_identity_tint, lut_r, lut_g, lut_b);
+			d_row += 8192;
+			s_row += s_step;
+		}
+
+		epic12_device_blit_delay += (unsigned)(dimx * dimy);
+#if SALVIA_FBNEO_DIAGNOSTICS
+		++epic12_gpu_diag_submit_staging_ident;
+#endif
+		cur_addr += 20;
+		++fused_count;
+	}
+
+	return fused_count;
 }
 
 // Return true only when the draw was queued, or is an original no-op.
@@ -859,11 +1007,10 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	}
 	if (fit == 0) {
 		if (is_staging && draw_sy >= EPIC12_SNAPSHOT_Y) {
-			for (int r = 0; r < h; ++r) {
-				memcpy(m_bitmaps + (draw_sy + r) * 8192 + draw_sx,
-				       m_bitmaps + ((sy + r) & 4095) * 8192 + sx,
-				       w * sizeof(UINT32));
-			}
+			epic12_gpu_copy_rows(
+				m_bitmaps + (size_t)draw_sy * 8192 + draw_sx, 8192 * sizeof(UINT32),
+				m_bitmaps + (size_t)sy * 8192 + sx, 8192 * sizeof(UINT32),
+				w * sizeof(UINT32), h);
 #if SALVIA_FBNEO_DIAGNOSTICS
 			++epic12_gpu_diag_snapshot_count;
 			epic12_gpu_diag_snapshot_pixels += w * h;
