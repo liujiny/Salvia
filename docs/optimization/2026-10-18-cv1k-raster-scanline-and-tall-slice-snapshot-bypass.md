@@ -55,3 +55,10 @@ Baseline `a4247e56`. Elimination of 650 `source_pages` flushes and 2.8 GB textur
 2. **Host & PPC Test Suites**:
    - `libretro/FBNeo/tests/sh3_dispatch/run_inline.py`: **100% PASS** (442,729 test cases).
    - `libretro/FBNeo/tests/epic12_gpu/run.py` (QEMU-PPC): **100% PASS** (all 14,400 commands, 10.4M shader cases, full VRAM comparisons identical).
+
+3. **Build Identity**:
+   - Commit: `0beb867f`
+   - Archive Image: `fbneo-20261018-2241-0beb867f-release.xex`
+   - Size: 34,701,312 bytes
+   - SHA256: `29cc5460fa09591fea933a8be4d65a2092c042430edf076cf1d6127d043c649f`
+
