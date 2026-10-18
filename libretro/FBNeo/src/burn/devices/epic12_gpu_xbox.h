@@ -128,6 +128,9 @@ static unsigned epic12_gpu_batch_page_capacity()
 }
 static int epic12_xenos_atlas_height = 1024;
 static UINT64 epic12_xenos_cache_hits, epic12_xenos_upload_pages, epic12_xenos_input_pixels;
+#if SALVIA_FBNEO_DIAGNOSTICS
+static unsigned epic12_diag_upload_snap, epic12_diag_upload_vram;
+#endif
 
 // Positions are pixel boundaries in a 512x512 target. D3D9 pixel centres
 // lie on integers; the half-pixel adjustment is explicit in this shader.
@@ -231,9 +234,15 @@ static void epic12_xenos_report()
 	sprintf(message,"submission draws=%I64u feedback_resolves=%I64u feedback_pixels=%I64u",
 		epic12_xenos_draws,epic12_xenos_feedbacks,epic12_xenos_feedback_pixels);
 	epic12_xenos_log(message);
+#if SALVIA_FBNEO_DIAGNOSTICS
+	sprintf(message,"atlas slots=%d batch_page_limit=%u hits=%I64u upload_pages=%I64u upload_bytes=%I64u (snap_up=%u vram_up=%u) input_pixels=%I64u",
+		epic12_xenos_cache.capacity,epic12_gpu_batch_page_capacity(),epic12_xenos_cache_hits,epic12_xenos_upload_pages,
+		epic12_xenos_upload_pages*65536,epic12_diag_upload_snap,epic12_diag_upload_vram,epic12_xenos_input_pixels);
+#else
 	sprintf(message,"atlas slots=%d batch_page_limit=%u hits=%I64u upload_pages=%I64u upload_bytes=%I64u input_pixels=%I64u",
 		epic12_xenos_cache.capacity,epic12_gpu_batch_page_capacity(),epic12_xenos_cache_hits,epic12_xenos_upload_pages,
 		epic12_xenos_upload_pages*65536,epic12_xenos_input_pixels);
+#endif
 	epic12_xenos_log(message);
 	LARGE_INTEGER frequency;
 	sprintf(message,"flushes end=%u source_pages=%u region=%u source_dependency=%u command_limit=%u cpu_upload=%u cpu_draw=%u other=%u small_cpu=%u gpu_fallback=%u",
@@ -698,6 +707,10 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 			if(epic12_xenos_alpha_trim) epic12_xenos_alpha[next].build_row(y,source+y*8192);
 		}
 		slots[p]=next; ++epic12_xenos_upload_pages;
+#if SALVIA_FBNEO_DIAGNOSTICS
+		if (p >= 2048) ++epic12_diag_upload_snap;
+		else ++epic12_diag_upload_vram;
+#endif
 	}
 	if (locked) epic12_xenos_atlas->UnlockRect(0);
 	if(timing) QueryPerformanceCounter(&timing->stamp[2]);
