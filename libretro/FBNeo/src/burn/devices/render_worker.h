@@ -26,6 +26,7 @@ class BURN_RENDER_ALIGN BurnRenderWorker {
 		// Salvia's emulation thread uses hardware thread 1 (physical core 0).
 		// Workers use core 1 and, optionally, core 2.
 		XSetThreadProcessor(GetCurrentThread(), worker->index * 2);
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 		for (;;) {
 			WaitForSingleObject(worker->ready, INFINITE);
 			if (worker->quitting) return 0;

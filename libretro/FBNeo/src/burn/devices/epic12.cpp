@@ -463,6 +463,9 @@ void epic12_reset()
 #if defined(_XBOX) || defined(FBNEO_RENDER_THREADS_TEST) || defined(EPIC12_BLIT_TEST)
 	epic12_init_blend_tables();
 #endif
+#if defined(_XBOX) || defined(EPIC12_GPU_TEST)
+	epic12_gpu_init_tint_luts();
+#endif
 
 	m_blitter_busy = 0;
 	m_gfx_addr = 0;
@@ -915,6 +918,30 @@ static void gfx_draw(UINT32 *addr)
 
 	dimx    =   (w & 0x1fff) + 1;
 	dimy    =   (h & 0x0fff) + 1;
+
+	// Fast clip rejection: if the sprite rectangle is completely outside the active clip bounds, drop it immediately.
+	if (x > m_clip.max_x || y > m_clip.max_y || x + dimx - 1 < m_clip.min_x || y + dimy - 1 < m_clip.min_y) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+		++epic12_gpu_diag_submit_clip;
+#endif
+		return;
+	}
+
+#if defined(_XBOX) || defined(EPIC12_GPU_TEST)
+	// Direct fast-path for non-blended off-screen staging blits (x >= 768)
+	if (x >= 768 && !(attr & 0x0200)) {
+		const int sx = src_x & 0x1fff;
+		const int sy = src_y & 0x0fff;
+		if (sx + dimx <= 8192 && sy + dimy <= 4096 && dimx <= 512 && dimy <= 512) {
+			const int tint_r_idx = (tint_r & 0x00ff) >> 2;
+			const int tint_g_idx = ((tint_gb >> 8) & 0xff) >> 2;
+			const int tint_b_idx = (tint_gb & 0xff) >> 2;
+			if (epic12_gpu_staging_blit(x, y, sx, sy, dimx, dimy, flipx, flipy, trans, tint_r_idx, tint_g_idx, tint_b_idx)) {
+				return;
+			}
+		}
+	}
+#endif
 
 	// convert parameters to clr
 
