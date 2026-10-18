@@ -1789,29 +1789,42 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	}
 	// Original rasterizers reject horizontal wrap before clipping.
 	if (src_x + dimx > 8192) return true;
-	int x0 = dst_x_start < clip->min_x ? clip->min_x - dst_x_start : 0;
-	int y0 = dst_y_start < clip->min_y ? clip->min_y - dst_y_start : 0;
-	int x1 = dimx, y1 = dimy;
-	if (dst_x_start + x1 - 1 > clip->max_x) x1 = clip->max_x - dst_x_start + 1;
-	if (dst_y_start + y1 - 1 > clip->max_y) y1 = clip->max_y - dst_y_start + 1;
-	if (x1 <= x0 || y1 <= y0) {
+	int x, y, w, h, sx, sy;
+	if (dst_x_start >= clip->min_x && dst_y_start >= clip->min_y &&
+	    dst_x_start + dimx - 1 <= clip->max_x && dst_y_start + dimy - 1 <= clip->max_y) {
+		x = dst_x_start;
+		y = dst_y_start;
+		w = dimx;
+		h = dimy;
+		sx = src_x;
+		sy = (src_y) & 4095;
+	} else {
+		int x0 = dst_x_start < clip->min_x ? clip->min_x - dst_x_start : 0;
+		int y0 = dst_y_start < clip->min_y ? clip->min_y - dst_y_start : 0;
+		int x1 = dimx, y1 = dimy;
+		if (dst_x_start + x1 - 1 > clip->max_x) x1 = clip->max_x - dst_x_start + 1;
+		if (dst_y_start + y1 - 1 > clip->max_y) y1 = clip->max_y - dst_y_start + 1;
+		if (x1 <= x0 || y1 <= y0) {
 #if SALVIA_FBNEO_DIAGNOSTICS
-		++epic12_gpu_diag_submit_clip;
+			++epic12_gpu_diag_submit_clip;
 #endif
-		return true;
+			return true;
+		}
+		w = x1 - x0;
+		h = y1 - y0;
+		x = dst_x_start + x0;
+		y = dst_y_start + y0;
+		sx = src_x + (flipx ? dimx - x1 : x0);
+		sy = (src_y + (flipy ? dimy - y1 : y0)) & 4095;
 	}
-	const int w = x1 - x0, h = y1 - y0;
 	if (w > 512 || h > 512) {
 		++epic12_gpu_reject_size;
 		return false;
 	}
-	const int x = dst_x_start + x0, y = dst_y_start + y0;
 	if (x < 0 || y < 0 || x + w > 8192 || y + h > 4096) {
 		++epic12_gpu_reject_oob;
 		return false;
 	}
-	const int sx = src_x + (flipx ? dimx - x1 : x0);
-	const int sy = (src_y + (flipy ? dimy - y1 : y0)) & 4095;
 	if (sy + h > 4096) {
 		++epic12_gpu_reject_sy;
 		return false;
@@ -1854,10 +1867,10 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	int draw_sx = sx;
 	int draw_sy = sy;
 	bool is_staging = false;
-	int spx0 = 0, spx1 = 0, spy0 = 0, spy1 = 0;
+	bool reused = false;
 	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256) {
-		spx0 = sx >> 7; spx1 = (sx + w - 1) >> 7;
-		spy0 = sy >> 7; spy1 = (sy + h - 1) >> 7;
+		const int spx0 = sx >> 7, spx1 = (sx + w - 1) >> 7;
+		const int spy0 = sy >> 7, spy1 = (sy + h - 1) >> 7;
 		if (spx0 == spx1 && spy0 == spy1) {
 			is_staging = epic12_gpu_staging_pages[(spy0 << 6) | spx0];
 		} else {
@@ -1871,40 +1884,38 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 				}
 			}
 		}
-	}
 
-	bool reused = false;
-	if (is_staging) {
-		unsigned ver = 0;
-		if (spx0 == spx1 && spy0 == spy1) {
-			ver = epic12_gpu_staging_version[(spy0 << 6) | spx0];
-		} else {
-			for (int py = spy0; py <= spy1; ++py) {
-				const int row = py << 6;
-				for (int px = spx0; px <= spx1; ++px) {
-					ver += epic12_gpu_staging_version[row | px];
+		if (is_staging) {
+			unsigned ver = 0;
+			if (spx0 == spx1 && spy0 == spy1) {
+				ver = epic12_gpu_staging_version[(spy0 << 6) | spx0];
+			} else {
+				for (int py = spy0; py <= spy1; ++py) {
+					const int row = py << 6;
+					for (int px = spx0; px <= spx1; ++px) {
+						ver += epic12_gpu_staging_version[row | px];
+					}
 				}
 			}
-		}
-		const unsigned h_idx = (((unsigned)sx * 31) ^ ((unsigned)sy * 17) ^ ((unsigned)w * 7) ^ (unsigned)h) & 63;
-		if (s_snap_cache[h_idx].sx == sx && s_snap_cache[h_idx].sy == sy &&
-			s_snap_cache[h_idx].w == w && s_snap_cache[h_idx].h == h &&
-			s_snap_cache[h_idx].version == ver) {
-			draw_sx = s_snap_cache[h_idx].snap_x;
-			draw_sy = s_snap_cache[h_idx].snap_y;
-			reused = true;
-		} else {
-			int snap_x, snap_y;
-			if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
-				draw_sx = snap_x;
-				draw_sy = snap_y;
-				s_snap_cache[h_idx].sx = sx;
-				s_snap_cache[h_idx].sy = sy;
-				s_snap_cache[h_idx].w = w;
-				s_snap_cache[h_idx].h = h;
-				s_snap_cache[h_idx].snap_x = snap_x;
-				s_snap_cache[h_idx].snap_y = snap_y;
-				s_snap_cache[h_idx].version = ver;
+			const unsigned h_idx = (((unsigned)sx * 31) ^ ((unsigned)sy * 17) ^ ((unsigned)w * 7) ^ (unsigned)h) & 63;
+			if (s_snap_cache[h_idx].sx == sx && s_snap_cache[h_idx].sy == sy &&
+				s_snap_cache[h_idx].w == w && s_snap_cache[h_idx].h == h &&
+				s_snap_cache[h_idx].version == ver) {
+				draw_sx = s_snap_cache[h_idx].snap_x;
+				draw_sy = s_snap_cache[h_idx].snap_y;
+			} else {
+				int snap_x, snap_y;
+				if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
+					draw_sx = snap_x;
+					draw_sy = snap_y;
+					s_snap_cache[h_idx].sx = sx;
+					s_snap_cache[h_idx].sy = sy;
+					s_snap_cache[h_idx].w = w;
+					s_snap_cache[h_idx].h = h;
+					s_snap_cache[h_idx].snap_x = snap_x;
+					s_snap_cache[h_idx].snap_y = snap_y;
+					s_snap_cache[h_idx].version = ver;
+				}
 			}
 		}
 	}
