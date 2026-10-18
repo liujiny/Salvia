@@ -42,3 +42,10 @@ Baseline `d1f3a567`. Iteration diagnostics image built with `SALVIA_FBNEO_DIAGNO
 2. **Host Test Suites**:
    - `libretro/FBNeo/tests/sh3_dispatch/run_inline.py`: **100% PASS** (all 8 host suites, 442,729 test cases).
    - `libretro/FBNeo/tests/epic12_gpu/run.py` (Debian PowerPC GCC + QEMU-PPC): **100% PASS** (all 14,400 commands, 10.4M shader cases, full VRAM comparisons).
+   - `salvia-tests/run_bench_state9.py 60`: **PASS** (60 frames benchmark on `mmpork.state9`).
+
+3. **Build Identity**:
+   - Commit: `be9c95a9`
+   - Archive Image: `fbneo-20261018-1946-be9c95a9-diag.xex`
+   - Image SHA256: `91b774c23926d0ae941917c1a02fd52540595edf454eaa97ea474b6b70c484f4`
+
