@@ -295,7 +295,9 @@ static inline bool epic12_gpu_snapshot_alloc(int w, int h, int &out_x, int &out_
 				++s_snap_page_y;
 			}
 		}
-		if (s_snap_page_y >= 2) return false;
+		if (s_snap_page_y >= 2) {
+			epic12_gpu_snapshot_reset();
+		}
 
 		out_x = (s_snap_page_x << 7) + s_snap_page_u;
 		out_y = EPIC12_SNAPSHOT_Y + (s_snap_page_y << 7) + s_snap_page_v;
@@ -325,7 +327,10 @@ static inline bool epic12_gpu_snapshot_alloc(int w, int h, int &out_x, int &out_
 		s_snap_page_x = 0;
 		++s_snap_page_y;
 	}
-	if (s_snap_page_y + pages_h > 2) return false;
+	if (s_snap_page_y + pages_h > 2) {
+		epic12_gpu_snapshot_reset();
+		if (s_snap_page_y + pages_h > 2) return false;
+	}
 
 	out_x = s_snap_page_x << 7;
 	out_y = EPIC12_SNAPSHOT_Y + (s_snap_page_y << 7);
@@ -401,7 +406,6 @@ static void epic12_gpu_flush_bin(int b, Epic12GpuFlushReason reason = EPIC12_GPU
 	}
 #endif
 	epic12_gpu_invalidate(epic12_gpu_bounds[b]);
-	epic12_gpu_snapshot_reset();
 	epic12_gpu_count[b] = 0;
 	epic12_gpu_pixels[b] = 0;
 	epic12_gpu_source_count[b] = 0;
@@ -418,6 +422,7 @@ static void epic12_gpu_flush(Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHE
 {
 	epic12_gpu_flush_bin(0, reason);
 	if (reason == EPIC12_GPU_FLUSH_END_LIST || reason == EPIC12_GPU_FLUSH_OTHER) {
+		epic12_gpu_snapshot_reset();
 		epic12_gpu_staging_reset();
 	}
 }
