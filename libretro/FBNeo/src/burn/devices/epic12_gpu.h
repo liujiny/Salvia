@@ -276,42 +276,16 @@ static void epic12_gpu_snapshot_reset()
 
 static inline bool epic12_gpu_snapshot_alloc(int w, int h, int &out_x, int &out_y)
 {
+	if (w > 128 || h > 128) return false;
 	const int aligned_w = (w + 15) & ~15;
 	const int aligned_h = (h + 3) & ~3;
 
-	if (aligned_w <= 128 && aligned_h <= 128) {
-		if (s_snap_page_u + aligned_w > 128) {
-			s_snap_page_u = 0;
-			s_snap_page_v += s_snap_page_row_h;
-			s_snap_page_row_h = 0;
-		}
-		if (s_snap_page_v + aligned_h > 128) {
-			s_snap_page_u = 0;
-			s_snap_page_v = 0;
-			s_snap_page_row_h = 0;
-			++s_snap_page_x;
-			if (s_snap_page_x >= 64) {
-				s_snap_page_x = 0;
-				++s_snap_page_y;
-			}
-		}
-		if (s_snap_page_y >= 2) {
-			epic12_gpu_snapshot_reset();
-		}
-
-		out_x = (s_snap_page_x << 7) + s_snap_page_u;
-		out_y = EPIC12_SNAPSHOT_Y + (s_snap_page_y << 7) + s_snap_page_v;
-
-		s_snap_page_u += aligned_w;
-		if (aligned_h > s_snap_page_row_h) s_snap_page_row_h = aligned_h;
-
-		if (s_snap_page_x > s_snap_max_page_x) s_snap_max_page_x = s_snap_page_x;
-		if (s_snap_page_y > s_snap_max_page_y) s_snap_max_page_y = s_snap_page_y;
-		return true;
+	if (s_snap_page_u + aligned_w > 128) {
+		s_snap_page_u = 0;
+		s_snap_page_v += s_snap_page_row_h;
+		s_snap_page_row_h = 0;
 	}
-
-	// For large sprites (>128px): advance to page boundary
-	if (s_snap_page_u > 0 || s_snap_page_v > 0) {
+	if (s_snap_page_v + aligned_h > 128) {
 		s_snap_page_u = 0;
 		s_snap_page_v = 0;
 		s_snap_page_row_h = 0;
@@ -321,23 +295,16 @@ static inline bool epic12_gpu_snapshot_alloc(int w, int h, int &out_x, int &out_
 			++s_snap_page_y;
 		}
 	}
-	int pages_w = (aligned_w + 127) >> 7;
-	int pages_h = (aligned_h + 127) >> 7;
-	if (s_snap_page_x + pages_w > 64) {
-		s_snap_page_x = 0;
-		++s_snap_page_y;
-	}
-	if (s_snap_page_y + pages_h > 2) {
-		epic12_gpu_snapshot_reset();
-		if (s_snap_page_y + pages_h > 2) return false;
-	}
+	if (s_snap_page_y >= 2) return false;
 
-	out_x = s_snap_page_x << 7;
-	out_y = EPIC12_SNAPSHOT_Y + (s_snap_page_y << 7);
+	out_x = (s_snap_page_x << 7) + s_snap_page_u;
+	out_y = EPIC12_SNAPSHOT_Y + (s_snap_page_y << 7) + s_snap_page_v;
 
-	s_snap_page_x += pages_w;
+	s_snap_page_u += aligned_w;
+	if (aligned_h > s_snap_page_row_h) s_snap_page_row_h = aligned_h;
+
 	if (s_snap_page_x > s_snap_max_page_x) s_snap_max_page_x = s_snap_page_x;
-	if (s_snap_page_y + pages_h - 1 > s_snap_max_page_y) s_snap_max_page_y = s_snap_page_y + pages_h - 1;
+	if (s_snap_page_y > s_snap_max_page_y) s_snap_max_page_y = s_snap_page_y;
 	return true;
 }
 
@@ -406,6 +373,7 @@ static void epic12_gpu_flush_bin(int b, Epic12GpuFlushReason reason = EPIC12_GPU
 	}
 #endif
 	epic12_gpu_invalidate(epic12_gpu_bounds[b]);
+	epic12_gpu_snapshot_reset();
 	epic12_gpu_count[b] = 0;
 	epic12_gpu_pixels[b] = 0;
 	epic12_gpu_source_count[b] = 0;
@@ -1037,7 +1005,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	int draw_sx = sx;
 	int draw_sy = sy;
 	bool is_staging = false;
-	if (sx >= 768 && sy < 4096) {
+	if (sx >= 768 && sy < 4096 && w <= 128 && h <= 128) {
 		const int spx0 = sx >> 7, spx1 = (sx + w - 1) >> 7;
 		const int spy0 = sy >> 7, spy1 = (sy + h - 1) >> 7;
 		for (int py = spy0; py <= spy1 && !is_staging; ++py) {
