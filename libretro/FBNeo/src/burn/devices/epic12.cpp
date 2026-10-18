@@ -19,11 +19,13 @@ Redistributions may not be sold, nor may they be used in a commercial product or
 #include <xtl.h>
 extern "C" {
 unsigned long long salvia_cv1k_probe[40];
+#if !defined(_XBOX) && !defined(__powerpc__) && !defined(__ppc__) && !defined(__PPC__)
 unsigned long long salvia_cv1k_tick(void)
 {
 	LARGE_INTEGER now;
 	return QueryPerformanceCounter(&now) ? (unsigned long long)now.QuadPart : 0ull;
 }
+#endif
 }
 #endif
 

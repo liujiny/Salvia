@@ -36,8 +36,23 @@
 // would collide with, so this header must not pull in <xtl.h>.
 extern "C" {
 	extern unsigned long long salvia_cv1k_probe[40];
-	extern unsigned long long salvia_cv1k_tick(void);
 }
+
+#if defined(_XBOX)
+extern "C" unsigned __int64 __mftb(void);
+#pragma intrinsic(__mftb)
+static inline unsigned long long salvia_cv1k_tick(void)
+{
+	return (unsigned long long)__mftb();
+}
+#elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
+static inline unsigned long long salvia_cv1k_tick(void)
+{
+	return (unsigned long long)__builtin_ppc_get_timebase();
+}
+#else
+extern "C" unsigned long long salvia_cv1k_tick(void);
+#endif
 
 // Accumulates one span into a probe slot pair on scope exit, so a function with
 // several early returns still measures exactly once. slot holds the ticks and

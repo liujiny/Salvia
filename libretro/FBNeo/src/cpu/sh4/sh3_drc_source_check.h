@@ -40,6 +40,14 @@ static SH3_SOURCE_INLINE bool sh3_drc_source_equal(const UINT16 *expected,
 			case 4: return sh3_load64_unaligned(expected) == sh3_load64_unaligned(actual);
 		}
 	}
+	while (words >= 16) {
+		const uint64_t diff = (sh3_load64_unaligned(expected) ^ sh3_load64_unaligned(actual))
+		                    | (sh3_load64_unaligned(expected + 4) ^ sh3_load64_unaligned(actual + 4))
+		                    | (sh3_load64_unaligned(expected + 8) ^ sh3_load64_unaligned(actual + 8))
+		                    | (sh3_load64_unaligned(expected + 12) ^ sh3_load64_unaligned(actual + 12));
+		if (diff) return false;
+		expected += 16; actual += 16; words -= 16;
+	}
 	while (words >= 8) {
 		const uint64_t diff = (sh3_load64_unaligned(expected) ^ sh3_load64_unaligned(actual))
 		                    | (sh3_load64_unaligned(expected + 4) ^ sh3_load64_unaligned(actual + 4));
