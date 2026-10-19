@@ -17,7 +17,7 @@
 // rectangle.
 typedef unsigned int __vector4 __attribute__((vector_size(16)));
 
-static unsigned long cases,alignedStores,unalignedLoads,prefetches;
+static unsigned long cases,alignedStores,alignedLoads,unalignedLoads,prefetches;
 static unsigned long outOfRangeLoads,outOfRangeStores,outOfRangePrefetches;
 // The rectangle being copied, so a stub can prove that a load or a store stays
 // inside it. Source and destination are checked separately.
@@ -25,6 +25,17 @@ static const unsigned char *liveBase;
 static size_t liveBytes;
 static const unsigned char *liveOutBase;
 static size_t liveOutBytes;
+
+static __vector4 __lvx(const void *base,int offset)
+{
+	const unsigned char *address=(const unsigned char*)base+offset;
+	assert(((uintptr_t)address&15)==0);
+	if(address<liveBase || address+16>liveBase+liveBytes) ++outOfRangeLoads;
+	++alignedLoads;
+	__vector4 value;
+	memcpy(&value,address,16);
+	return value;
+}
 
 static __vector4 __loadunalignedvector(const unsigned int *p)
 {
@@ -172,6 +183,7 @@ int main()
 	run(1024,240,32768,2048,4,0);
 	run(4,512,32768,2048,0,4);
 	if(!alignedStores) { fprintf(stderr,"FAIL: no aligned vector store ran\n"); return 1; }
+	if(!alignedLoads) { fprintf(stderr,"FAIL: no aligned vector load ran\n"); return 1; }
 	if(!unalignedLoads) { fprintf(stderr,"FAIL: no unaligned vector load ran\n"); return 1; }
 	if(!prefetches) { fprintf(stderr,"FAIL: no prefetch hints\n"); return 1; }
 	if(outOfRangeLoads) { fprintf(stderr,"FAIL: %lu vector loads outside the source rectangle\n",outOfRangeLoads); return 1; }
@@ -179,8 +191,8 @@ int main()
 	if(outOfRangePrefetches) { fprintf(stderr,"FAIL: %lu prefetch hints outside the rectangle\n",outOfRangePrefetches); return 1; }
 	const unsigned endianProbe=1;
 	printf("PASS: %lu rectangles; %llu exact bytes; %lu vector stores, every one 16-byte aligned and inside its row; "
-		"0 unaligned stores; %lu unaligned vector loads; %lu prefetch hints, all inside the rectangle; %s-endian\n",
-		cases,bytesCopied,alignedStores,unalignedLoads,prefetches,
+		"0 unaligned stores; %lu aligned loads; %lu unaligned vector loads; %lu prefetch hints, all inside the rectangle; %s-endian\n",
+		cases,bytesCopied,alignedStores,alignedLoads,unalignedLoads,prefetches,
 		*(const unsigned char*)&endianProbe?"little":"big");
 	return 0;
 }

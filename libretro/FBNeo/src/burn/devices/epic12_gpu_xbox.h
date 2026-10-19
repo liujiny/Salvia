@@ -715,9 +715,10 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 				epic12_gpu_tile_page(lr.pBits,source,next);
 				if(epic12_xenos_alpha_trim) epic12_xenos_alpha[next].build(source,8192);
 			}
-		} else for(int y=0;y<128;++y) {
-			memcpy((BYTE*)lr.pBits+(ay+y)*lr.Pitch+ax*4,source+y*8192,128*4);
-			if(epic12_xenos_alpha_trim) epic12_xenos_alpha[next].build_row(y,source+y*8192);
+		} else {
+			epic12_gpu_copy_rows((BYTE*)lr.pBits + (size_t)ay * lr.Pitch + (size_t)ax * 4,
+				(size_t)lr.Pitch, source, 8192 * sizeof(UINT32), 128 * sizeof(UINT32), 128);
+			if(epic12_xenos_alpha_trim) epic12_xenos_alpha[next].build(source,8192);
 		}
 		slots[p]=next; ++epic12_xenos_upload_pages;
 #if SALVIA_FBNEO_DIAGNOSTICS
