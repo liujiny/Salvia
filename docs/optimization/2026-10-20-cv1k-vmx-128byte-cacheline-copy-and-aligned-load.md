@@ -62,4 +62,26 @@ Baseline `43fb6bf6`. Hardware-accelerated memory copy utilizing 128-byte Xenon c
 
 ## Build and Distro360 Handoff
 
-(Will be populated after XEX compilation)
+Diagnostics XEX 构建完成并归档：
+- **Tag**: `fast-copy 5ee98d75 20261020-0646 diag`
+- **Candidate Image**: `Distro360/fbneo-fast-copy-diag.xex`
+  - 大小: `34,701,312` 字节
+  - SHA256: `54c04ca16e4c82f4201e8a29b49d06e87e200257c03ad8a97255e87e30726f6f`
+  - 归档: `salvia-tests/xex-archive/fbneo-20261020-0649-fast-copy-diag.xex`
+- **Baseline Image**: `Distro360/fbneo-0beb867f-diag.xex`
+  - 大小: `34,701,312` 字节
+  - SHA256: `0e4d3cbef3654f3073f6d3f75105472f76169dfcf05adc4be79c5fdbfd3a4331`
+  - 归档: `salvia-tests/xex-archive/fbneo-20261018-2231-6f540fe6-diag.xex`
+- **Distro360 状态**: 严格只保留上述对比 A/B 对，无任何重复镜像。
+- **Xenia Canary 验证 (`mmpork.state8`, 60 帧)**:
+  - `input_upload`: 0.514 ms
+  - `flushes`: `end=60 source_pages=0 region=0 source_dependency=0 gpu_fallback=0`
+  - 渲染器和管线完整正常运行，无任何图形故障或崩溃。
+
+## Limits
+
+- 真实显存总线带宽提升与每帧传输延迟缩短需在 Xbox 360 实机通过 `Distro360/cv1000-gpu.log` 中的 `input_upload` 与帧时间确认。
+
+## Revert
+
+`git revert <sha>` 恢复原 `epic12_gpu_region.h` 与 `epic12_gpu_xbox.h` 并删除本报告。
