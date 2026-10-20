@@ -31,13 +31,17 @@ static SH3_SOURCE_INLINE bool sh3_drc_source_equal(const UINT16 *expected,
  const UINT16 *actual, unsigned words)
 {
 	if (expected == actual) return true;
-	if (words <= 4) {
+	if (words <= 8) {
 		switch (words) {
 			case 0: return true;
 			case 1: return expected[0] == actual[0];
 			case 2: return sh3_load32_unaligned(expected) == sh3_load32_unaligned(actual);
 			case 3: return (sh3_load32_unaligned(expected) == sh3_load32_unaligned(actual)) & (expected[2] == actual[2]);
 			case 4: return sh3_load64_unaligned(expected) == sh3_load64_unaligned(actual);
+			case 5: return (sh3_load64_unaligned(expected) == sh3_load64_unaligned(actual)) & (expected[4] == actual[4]);
+			case 6: return (sh3_load64_unaligned(expected) == sh3_load64_unaligned(actual)) & (sh3_load32_unaligned(expected + 4) == sh3_load32_unaligned(actual + 4));
+			case 7: return (sh3_load64_unaligned(expected) == sh3_load64_unaligned(actual)) & (sh3_load32_unaligned(expected + 4) == sh3_load32_unaligned(actual + 4)) & (expected[6] == actual[6]);
+			case 8: return (sh3_load64_unaligned(expected) == sh3_load64_unaligned(actual)) & (sh3_load64_unaligned(expected + 4) == sh3_load64_unaligned(actual + 4));
 		}
 	}
 	while (words >= 16) {
@@ -48,22 +52,21 @@ static SH3_SOURCE_INLINE bool sh3_drc_source_equal(const UINT16 *expected,
 		if (diff) return false;
 		expected += 16; actual += 16; words -= 16;
 	}
-	while (words >= 8) {
+	if (words >= 8) {
 		const uint64_t diff = (sh3_load64_unaligned(expected) ^ sh3_load64_unaligned(actual))
 		                    | (sh3_load64_unaligned(expected + 4) ^ sh3_load64_unaligned(actual + 4));
 		if (diff) return false;
 		expected += 8; actual += 8; words -= 8;
 	}
-	while (words >= 4) {
-		if (sh3_load64_unaligned(expected) != sh3_load64_unaligned(actual)) return false;
-		expected += 4; actual += 4; words -= 4;
-	}
-	while (words >= 2) {
-		if (sh3_load32_unaligned(expected) != sh3_load32_unaligned(actual)) return false;
-		expected += 2; actual += 2; words -= 2;
-	}
-	if (words) {
-		return *expected == *actual;
+	switch (words) {
+		case 0: return true;
+		case 1: return expected[0] == actual[0];
+		case 2: return sh3_load32_unaligned(expected) == sh3_load32_unaligned(actual);
+		case 3: return (sh3_load32_unaligned(expected) == sh3_load32_unaligned(actual)) & (expected[2] == actual[2]);
+		case 4: return sh3_load64_unaligned(expected) == sh3_load64_unaligned(actual);
+		case 5: return (sh3_load64_unaligned(expected) == sh3_load64_unaligned(actual)) & (expected[4] == actual[4]);
+		case 6: return (sh3_load64_unaligned(expected) == sh3_load64_unaligned(actual)) & (sh3_load32_unaligned(expected + 4) == sh3_load32_unaligned(actual + 4));
+		case 7: return (sh3_load64_unaligned(expected) == sh3_load64_unaligned(actual)) & (sh3_load32_unaligned(expected + 4) == sh3_load32_unaligned(actual + 4)) & (expected[6] == actual[6]);
 	}
 	return true;
 }
