@@ -54,11 +54,17 @@ Baseline `b78940fb`. Elimination of 17.28 ms emulation-to-blitter thread stalls 
      - **Host & PPC**: 100% PASS (4,044 rectangles; 10,112,328 exact bytes; 196,769 vector stores).
 
 2. **Build and Distro360 Handoff**:
-   - Baseline SHA: `b78940fb`
-   - Image set compiled with `build-xex.sh --flavor diag`.
-   - Distro360 maintains strictly the A/B pair:
-     - Baseline: `Distro360/fbneo-war-fix-diag.xex`
-     - Candidate: `Distro360/fbneo-peak-fix-diag.xex`
+   - **Candidate Image**: `Distro360/fbneo-peak-fix-diag.xex`
+     - Tag: `peak-fix 4acafbeb 20261020-1854 diag`
+     - 大小: `34,701,312` 字节
+     - SHA256: `e69f5c5c08a3072d05410528d7d8d89427fb7c38135744d169262604c4755460`
+     - 归档: `salvia-tests/xex-archive/fbneo-20261020-1854-peak-fix-diag.xex`
+   - **Baseline Image**: `Distro360/fbneo-war-fix-diag.xex`
+     - Tag: `war-fix ac997808 20261020-1816 diag`
+     - 大小: `34,701,312` 字节
+     - SHA256: `828ab646d32677f2d3375776af61027e9be18a2ff24c92562545c0f2d9b35131`
+     - 归档: `salvia-tests/xex-archive/fbneo-20261020-1816-war-fix-diag.xex`
+   - **Distro360 状态**: 严格只保留上述对比 A/B 对，无任何重复镜像。
 
 ## Limits
 
