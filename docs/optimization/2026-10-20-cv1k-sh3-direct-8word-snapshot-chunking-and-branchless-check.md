@@ -50,9 +50,17 @@ Baseline `12562103`. Direct branchless 64-bit unrolled comparison for common tra
 2. **Build and Distro360 Handoff**:
    - Baseline SHA: `12562103`
    - Image set compiled with `build-xex.sh --baseline 12562103 --tag source-opt --flavor diag`.
-   - Distro360 maintains strictly the A/B pair:
-     - Baseline: `Distro360/fbneo-peak-fix-diag.xex`
-     - Candidate: `Distro360/fbneo-source-opt-diag.xex`
+   - **Candidate Image**: `Distro360/fbneo-source-opt-diag.xex`
+     - Tag: `source-opt 65be0b2a 20261020-1934 diag`
+     - Size: `34,701,312` bytes
+     - SHA256: `85c6c39038d356a12db0a11013405c1602bed58432e93fa16912a4bf1e8fed28`
+     - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261020-1934-source-opt-diag.xex`
+   - **Baseline Image**: `Distro360/fbneo-peak-fix-diag.xex`
+     - Tag: `peak-fix 4acafbeb 20261020-1850 diag`
+     - Size: `34,701,312` bytes
+     - SHA256: `e69f5c5c08a3072d05410528d7d8d89427fb7c38135744d169262604c4755460`
+     - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261020-1855-peak-fix-diag.xex`
+   - Distro360 maintains strictly the A/B pair above.
 
 ## Limits
 
