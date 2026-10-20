@@ -1,6 +1,6 @@
-# CV1000: Slice Interleave 30 Optimization & Pipeline Overhead Reduction
+# CV1000: Slice Interleave 30 Optimization & Pipeline Overhead Reduction (REJECTED)
 
-Baseline `7a458e78`. Reduction of frame slice interleave frequency from `nInterleave = 60` to `nInterleave = 30` in `d_cv1k.cpp`, doubling per-slice cycle budget from 28,444 to 56,888 cycles, further halving outer dispatch loop context switches, slice timer checks, and `short_budget` interpreter fallbacks.
+Baseline `7a458e78`. Reduction of frame slice interleave frequency from `nInterleave = 60` to `nInterleave = 30` in `d_cv1k.cpp`.
 
 ## Why
 
@@ -14,23 +14,7 @@ Baseline `7a458e78`. Reduction of frame slice interleave frequency from `nInterl
      - `present = 1.002 - 1.327 ms`.
      - `sampled_active_loop = 18.437 - 19.673 ms` (~50.8 - 54.2 FPS).
      - In heavy scenes, the active loop slightly exceeds the 16.666 ms VSync interval, causing perceived 50 Hz judder.
-   - To achieve rock-solid 60 FPS across even the heaviest bullet hell peaks with comfortable headroom, another 1.5 - 2.0 ms needs to be eliminated from `cpu_io`.
-
-2. **Analysis of 30-Slice Interleave (8 Scanlines per Slice)**:
-   - Cave CV1000 arcade hardware has **no mid-frame raster scanline interrupts**; the only raster IRQ is VBLANK (IRQ 2) triggered at the end of the frame (`Sh3SetIRQLine(2, CPU_IRQSTATUS_HOLD)`).
-   - In `d_cv1k.cpp`, there is no driver or device work performed inside the slice loop:
-     ```cpp
-     for (INT32 i = 0; i < nInterleave; i++) {
-         CPU_RUN(0, Sh3);
-     }
-     ```
-   - In `Sh3Run_timerhack`, timers (`sh4_run_timers`) are only evaluated at slice boundaries when `m_sh4_icount <= 0`.
-   - Reducing `nInterleave` from 60 to 30:
-     - 1 slice = 8 scanlines ($555.5\,\mu\text{s}$).
-     - Slices per frame cut by 50% (from 60 to 30).
-     - Per-slice cycle budget doubles from 28,444 to 56,888 cycles ($102,400,000 / 60 / 30$).
-     - Quadrupled block execution headroom allows long straight-line chains and loop sequences to run natively without budget truncation.
-     - Halves context switches between C++ outer dispatch and native DRC execution.
+   - Hypothesis: reduce `nInterleave` from 60 to 30 to further cut slice transition overhead.
 
 ## What
 
@@ -39,33 +23,19 @@ Baseline `7a458e78`. Reduction of frame slice interleave frequency from `nInterl
      - Cuts slice transitions and timer sweeps from 60 to 30 per frame.
      - Doubles slice cycle budget to 56,888 cycles.
 
-## Verification
+## Verification & Console Outcome (REJECTED)
 
-1. **Unit Test Suites (Host & PPC Big-Endian)**:
-   - `libretro/FBNeo/tests/sh3_dispatch/run_inline.py`:
-     - **100% PASS**: all 8 host suites in optimized and ASan/UBSan modes (including 12,000 traces x 12 slices, guards, aliases, partial exits, 442,729 source check cases).
-   - `libretro/FBNeo/tests/sh3_ppc/run.py`:
-     - **100% PASS**: 846,030 cases in QEMU PPC big-endian (compiled 727,804, fallback 118,226).
+1. **Real Console Verification (`slice30-opt e71e8c09`, 2,252 Frames)**:
+   - **`core_slow_frame_ms`**: 3 samples, average `total = 36.685 ms` (**~27.2 FPS**)!
+   - **`core_sampled_peak_ms`**: `cpu_io = 40.039 ms`, `total = 40.984 ms` (**~24.4 FPS**)!
+   - **`cpu_io`**: Increased from **13.831 ms** (`nInterleave = 60`) to **16.320 ms**!
+   - **`timer_callbacks`**: Dropped sharply from 34.9 callbacks/frame down to 6.9 callbacks/frame. Because TMU timer evaluations only occur at slice boundaries in `Sh3Run_timerhack`, a 555.5 us interval is too coarse for the SH-3 TMU timers, causing timer event delivery to lag and guest task queues to pile up during heavy bullet storms.
+   - **User report**: "这次出现了最低30帧的情况，上次是没有的" (Exact match with the 36.7 ms - 41.0 ms spikes observed in the log).
 
-2. **Build and Distro360 Handoff**:
-   - Baseline SHA: `7a458e78`
-   - Image set compiled with `build-xex.sh --baseline HEAD~1 --tag slice30-opt --flavor diag`.
-   - **Candidate Image**: `Distro360/fbneo-slice30-opt-diag.xex`
-     - Tag: `slice30-opt e71e8c09 20261020-2013 diag`
-     - Size: `34,701,312` bytes
-     - SHA256: `15ec251015e22eeddaabbd3b8fa3f6b97f93040a10819a83d44fb6d0a5f33eb1`
-     - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261020-2013-slice30-opt-diag.xex`
-   - **Baseline Image**: `Distro360/fbneo-slice-opt-diag.xex`
-     - Tag: `slice-opt 5126c8e6 20261020-1948 diag`
-     - Size: `34,701,312` bytes
-     - SHA256: `775e20d76444827569759bf21c996d713ae2dba68926dc5f63b2e59ebc041a13`
-     - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261020-1948-slice-opt-diag.xex`
-   - Distro360 maintains strictly the A/B pair above.
-
-## Limits
-
-- Real-hardware execution time savings in `cpu_io` and frontend `game_and_ui` must be verified via `Distro360/cv1000-gpu.log` on Xbox 360.
+2. **Outcome**:
+   - `nInterleave = 30` is rejected.
+   - `nInterleave = 60` (`5126c8e6`) remains the optimal slice frequency on Xbox 360 hardware.
 
 ## Revert
 
-`git revert <sha>` restores `nInterleave = 60` in `d_cv1k.cpp` and removes this review document.
+Reverted via `git revert e71e8c09`.
