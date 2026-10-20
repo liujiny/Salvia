@@ -39,9 +39,17 @@ Baseline `c8c561bc`. Reduction of frame slice interleave frequency from `nInterl
 2. **Build and Distro360 Handoff**:
    - Baseline SHA: `c8c561bc`
    - Image set compiled with `build-xex.sh --baseline c8c561bc --tag slice-opt --flavor diag`.
-   - Distro360 maintains strictly the A/B pair:
-     - Baseline: `Distro360/fbneo-source-opt-diag.xex`
-     - Candidate: `Distro360/fbneo-slice-opt-diag.xex`
+   - **Candidate Image**: `Distro360/fbneo-slice-opt-diag.xex`
+     - Tag: `slice-opt 5126c8e6 20261020-1948 diag`
+     - Size: `34,701,312` bytes
+     - SHA256: `775e20d76444827569759bf21c996d713ae2dba68926dc5f63b2e59ebc041a13`
+     - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261020-1948-slice-opt-diag.xex`
+   - **Baseline Image**: `Distro360/fbneo-source-opt-diag.xex`
+     - Tag: `source-opt 65be0b2a 20261020-1934 diag`
+     - Size: `34,701,312` bytes
+     - SHA256: `85c6c39038d356a12db0a11013405c1602bed58432e93fa16912a4bf1e8fed28`
+     - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261020-1934-source-opt-diag.xex`
+   - Distro360 maintains strictly the A/B pair above.
 
 ## Limits
 
