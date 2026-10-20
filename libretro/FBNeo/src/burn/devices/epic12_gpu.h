@@ -1902,11 +1902,11 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	bool is_staging = false;
 	bool reused = false;
 	unsigned ver = 0;
-	// Background raster scanlines (h <= 4) and vertical slices (w <= 64 && h > 128) tile
+	// Background raster scanlines (w > 64 && h <= 4) and vertical slices (w <= 64 && h > 128) tile
 	// off-screen VRAM without overwriting in the same frame; snapshotting them scatters a few
 	// source pages across dozens of snapshot pages, thrashing the atlas and page limit.
 	// Only multi-part sprites (e.g. boss explosion/pork item parts) need staging snapshots.
-	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256 && w > 4 && h > 4 && !(w <= 64 && h > 128)) {
+	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256 && !(w > 64 && h <= 4) && !(w <= 64 && h > 128)) {
 		const int spx0 = sx >> 7, spx1 = (sx + w - 1) >> 7;
 		const int spy0 = sy >> 7, spy1 = (sy + h - 1) >> 7;
 		if (spx0 == spx1 && spy0 == spy1) {
