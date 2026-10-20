@@ -806,7 +806,7 @@ static INT32 DrvFrame()
 #endif
 	Sh3NewFrame();
 
-	INT32 nInterleave = 30;
+	INT32 nInterleave = 60;
 	INT32 nCyclesTotal[1] = { DriverClock / 60 };
 	INT32 nCyclesDone[1] = { nExtraCycles[0] };
 
