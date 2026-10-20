@@ -341,17 +341,20 @@ static bool delay_slot_eligible(UINT16 op)
 {
  switch (op & 0xf00f) {
   case 0x6000: case 0x6001: case 0x6002: case 0x6003: return true; // MOV/MOV.B/MOV.W/MOV.L Rm,Rn
-  case 0x6008: case 0x6009: case 0x600c: case 0x600d: case 0x600e: case 0x600f: return true; // SWAP/EXTU/EXTS
+  case 0x6008: case 0x6009: case 0x600a: case 0x600b: case 0x600c: case 0x600d: case 0x600e: case 0x600f: return true; // SWAP/NEGC/NEG/EXTU/EXTS
   case 0x0007: return true; // MUL.L
   case 0x0029: return true; // MOVT
  }
- switch (op) {
-  case 0x0009: return true; // NOP
+ switch (op & 0xf0ff) {
   case 0x0012: case 0x401e: return true; // STC/LDC GBR
   case 0x000a: case 0x001a: case 0x002a: return true; // STS MACH/MACL/PR
   case 0x400a: case 0x401a: case 0x402a: return true; // LDS MACH/MACL/PR
  }
+ if (op == 0x0009) return true; // NOP
+ if ((op & 0xf000) == 0x7000) return true; // ADD #imm,Rn
  if ((op & 0xf000) == 0xe000) return true; // MOV #imm,Rn
+ if ((op & 0xf00f) == 0x300c || (op & 0xf00f) == 0x3008) return true; // ADD/SUB Rm,Rn
+ if ((op & 0xf00f) >= 0x2008 && (op & 0xf00f) <= 0x200b) return true; // TST/AND/XOR/OR Rm,Rn
  if ((op & 0xf000) == 0x2000 && (op & 15) == 14) return true; // MULU.W Rm,Rn
  if ((op & 0xf000) == 0x2000 && (op & 15) == 15) return true; // MULS.W Rm,Rn
  if (op == 0x3005 || op == 0x300d) return true; // DMULU.L / DMULS.L
@@ -824,6 +827,19 @@ struct Compiler {
   switch (op & 0xf00f) {
    case 0x6003: a=reg(m); dst=reg(n,false); move(dst,a); dirty(dst); return true;
    case 0x6007: a=reg(m); dst=reg(n,false); logic(dst,a,a,124); dirty(dst); return true; // nor
+   case 0x600a: { // NEGC Rm, Rn: Rn = -Rm - T, T = (Rm != 0) | T
+    a=reg(m); dst=reg(n,false); int sr=reg(G_SR);
+    rotate(11,sr,0,31,31);
+    cmpi(a,0);
+    emit(0x7c000026);
+    rotate(0,0,3,31,31);
+    emit(d(26,0,0,1));
+    logic(0,0,11,444);
+    emit(x(12,a,0,104));
+    sub(dst,12,11);
+    rotate(sr,0,0,31,31,true);
+    dirty(dst); dirty(sr); return true;
+   }
    case 0x600b: a=reg(m); dst=reg(n,false); emit(x(dst,a,0,104)); dirty(dst); return true;
    case 0x600c: case 0x600d: case 0x600e: case 0x600f:
     a=reg(m); dst=reg(n,false);
