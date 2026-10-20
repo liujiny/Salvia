@@ -662,13 +662,13 @@ struct Compiler {
    }
    rotate(0,11,32-ram.span_bits,ram.span_bits+3,31);
    cmpi(0,ram.start>>ram.span_bits,true); guard(2,true,device_opcode);
-   rotate(12,11,0,32-ram.span_bits,31);
+   const unsigned extract_bits=(ram.backing_bits && ram.backing_bits<ram.span_bits)?ram.backing_bits:ram.span_bits;
+   rotate(12,11,0,32-extract_bits,31);
    if(!write && size==4 && ram.watch!=0xffffffffu) {
-    UINT32 watch_off=ram.watch-ram.start;
+    UINT32 watch_off=(ram.watch-ram.start)&((1u<<extract_bits)-1);
     if(watch_off<=0xffff) { cmpi(12,(int)watch_off,true); guard(2,false,service_opcode); }
     else { imm(0,watch_off); cmp(12,0); guard_watch(service_opcode); }
    }
-   if(ram.backing_bits!=ram.span_bits)rotate(12,12,0,32-ram.backing_bits,31);
    ram_bias(12);
   } else {
    address(base, index, disp, absolute);
