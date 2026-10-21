@@ -75,6 +75,7 @@ void Sh3RunEnd();
 void Sh3BurnUntilInt();
 
 INT32 Sh3TotalCycles();
+INT32 Sh3GetRemainingCycles();
 void Sh3NewFrame();
 void Sh3BurnCycles(INT32 cycles);
 INT32 Sh3Idle(INT32 cycles);

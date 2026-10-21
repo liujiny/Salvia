@@ -820,6 +820,11 @@ void Sh3BurnCycles(INT32 cycles)
 	sh3_total_cycles += cycles;
 }
 
+INT32 Sh3GetRemainingCycles()
+{
+	return m_sh4_icount;
+}
+
 INT32 Sh3Idle(INT32 cycles)
 {
 	m_sh4_icount -= cycles;

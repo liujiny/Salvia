@@ -456,8 +456,8 @@ static UINT32 __fastcall speedhack_read_long(UINT32 offset)
 {
 	UINT32 pc = Sh3GetPC(-1);
 	if ( offset == hacky_idle_ram && (pc == hacky_idle_pc || pc == hacky_idle_pc+2)) {
-		//bprintf(0, _T("l"));
-		Sh3BurnCycles(speedhack_burn);
+		INT32 rem = Sh3GetRemainingCycles();
+		Sh3BurnCycles(rem > 0 ? rem : speedhack_burn);
 	}
 	UINT32 V = *((UINT32 *)(DrvMainRAM + (offset & 0xfffffc)));
 #ifdef LSB_FIRST
@@ -768,12 +768,16 @@ static INT32 DrvFrame()
 		epic12_set_blitterdelay((delay) ? ((delay - 1) + 50) : 0, speedhack_burn);
 		epic12_set_blitterthreading(DrvDips[1] & 1);
 		Sh3SetTimerGranularity(DrvDips[1] & 2);
+#ifdef _XBOX
 		extern int g_benchmark_target_frames;
 		if (g_benchmark_target_frames > 0) {
 			Sh3SetDrc(0);
 		} else {
 			Sh3SetDrc(!(DrvDips[3] & 0x10));
 		}
+#else
+		Sh3SetDrc(!(DrvDips[3] & 0x10));
+#endif
 
 		// test stuff for el_rika
 		epic12_set_blitter_clipping_margin(!(DrvDips[2] & 0x40));
