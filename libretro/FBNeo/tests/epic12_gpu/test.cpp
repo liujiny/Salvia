@@ -260,6 +260,50 @@ static bool alpha_snapshot_integration(UINT32 *ref, UINT32 *got)
 	return true;
 }
 
+static bool staging_snapshot_war_prevention(UINT32 *ref, UINT32 *got)
+{
+	(void)ref;
+	epic12_gpu_reset();
+	m_bitmaps = got;
+	clr_t tint; tint.r = tint.g = tint.b = 32;
+
+	// Populate staging page 6 (x=768, y=0)
+	epic12_gpu_cpu_write(768, 0, 128, 4);
+
+	// Submit draw command from staging area with w=71, h=4 (matches console WAR samples)
+	// With threshold w <= 128, this MUST be snapshotted to EPIC12_SNAPSHOT_Y.
+	if (!epic12_gpu_submit(0, 0, 0, 0, 0, &m_clip, got, 768, 0, 0, 0, 71, 4, 0, 0, 0, &tint)) return false;
+
+	// The queued draw in bin 0 should sample from the snapshot area, NOT staging page 6 (768 >> 7 = 6).
+	if (epic12_gpu_source_pages[0][6]) {
+		puts("FAIL staging strip w=71 h=4 was not snapshotted out of page 6");
+		return false;
+	}
+
+	// Now rewrite to page 6 (x=768, y=0) via staging blit
+	// It must NOT trigger a WAR flush!
+	unsigned flushes_before = epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY];
+	epic12_gpu_staging_blit(768, 0, 0, 0, 64, 4, 0, 0, 0, 32, 32, 32);
+	if (epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY] != flushes_before) {
+		puts("FAIL staging rewrite triggered WAR flush");
+		return false;
+	}
+
+	// Wide raster test (w=320, h=1): MUST NOT be snapshotted (w > 128 && h <= 4 bypass)
+	epic12_gpu_flush();
+	epic12_gpu_cpu_write(768, 0, 320, 1);
+	if (!epic12_gpu_submit(0, 0, 0, 0, 0, &m_clip, got, 768, 0, 0, 0, 320, 1, 0, 0, 0, &tint)) return false;
+	// Must stay in page 6
+	if (!epic12_gpu_source_pages[0][6]) {
+		puts("FAIL wide raster was snapshotted when it should have been bypassed");
+		return false;
+	}
+	epic12_gpu_flush();
+
+	puts("PASS staging snapshot WAR prevention: 71..128px multi-part strips snapshotted, >128px rasters bypassed");
+	return true;
+}
+
 static bool clipped_cpu_invalidation(UINT32 *ref, UINT32 *got, const UINT32 *initial)
 {
 	const int cases[][4]={{-8,32,16,16},{32,-8,16,16},{248,32,16,16},
@@ -521,6 +565,7 @@ int main()
 		(unsigned long long)gpu_test_fast_groups,(unsigned long long)gpu_test_feedback_groups,
 		(unsigned long long)gpu_test_unified_groups);
 	if(!cache_coherency(ref,got)) {puts("FAIL persistent cache/dirty source coherency");return 21;}
+	if(!staging_snapshot_war_prevention(ref,got)) {puts("FAIL staging snapshot WAR prevention");return 24;}
 	if(!reorder_invariants() || !snapshot_boundaries() || !alpha_snapshot_integration(ref,got)) {puts("FAIL alpha/snapshot regression");return 22;}
 	if(!gpu_test_reorder_moved) {puts("FAIL reorder path never exercised");return 23;}
 	printf("PASS reorder model exercised: batches=%llu moved_commands=%llu\n",

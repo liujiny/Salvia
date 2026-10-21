@@ -514,7 +514,11 @@ static inline int epic12_gpu_can_fit(int b, const rectangle &dest, int sx, int s
 			for (int px = px0; px <= px1; ++px) {
 				const int page = row | px;
 				if (!epic12_gpu_source_pages[b][page]) {
-					newPageList[newPages++] = page;
+					if (newPages < 128) {
+						newPageList[newPages++] = page;
+					} else {
+						return 3;
+					}
 				}
 			}
 		}
@@ -1895,18 +1899,19 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	++epic12_gpu_diag_submit_onscreen;
 #endif
 	unsigned np = 0;
-	int npl[32];
+	int npl[128];
 	rectangle m;
 	int draw_sx = sx;
 	int draw_sy = sy;
 	bool is_staging = false;
 	bool reused = false;
 	unsigned ver = 0;
-	// Background raster scanlines (w > 64 && h <= 4) tile off-screen VRAM without overwriting
+	// Background raster scanlines (w > 128 && h <= 4) tile off-screen VRAM without overwriting
 	// in the same frame; snapshotting them scatters a few source pages across dozens of snapshot
-	// pages, thrashing the atlas and page limit. All other staging sprites (including tall multi-part
-	// boss segments packed into dedicated 256-height columns) are snapshotted to eliminate WAR stalls.
-	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256 && !(w > 64 && h <= 4)) {
+	// pages, thrashing the atlas and page limit. All other staging sprites (including multi-part
+	// strips with w <= 128 and tall boss segments packed into dedicated columns) are snapshotted
+	// to eliminate WAR stalls.
+	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256 && !(w > 128 && h <= 4)) {
 		const int spx0 = sx >> 7, spx1 = (sx + w - 1) >> 7;
 		const int spy0 = sy >> 7, spy1 = (sy + h - 1) >> 7;
 		if (spx0 == spx1 && spy0 == spy1) {
