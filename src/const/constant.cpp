@@ -56,6 +56,7 @@ const std::string START_FROM_EXCEPTION = "%$_START_FROMEXCEPTION_$%";
 const std::string SCRAPPING_DAT = "images.bin";
 const std::string TITLE_EMU_FILENAME = "title.png";
 const std::string PASS_MASK = "****";
+const std::string DEFAULT_LANG = "en";
 
 // Caracteres que queremos sustituir por un espacio (para no pegar palabras)
 const char SYMBOLS_TO_SPACE[] = ":-._/\\|,;"; 
@@ -141,7 +142,8 @@ const char *ICONS_CARTS_PATH[] = {"Nintendo - Game Boy Advance-content.png",  //
 	"Commodore - 64-content.png",											  // cart_c64
 	"Sharp - X68000-content.png",											  // cart_x68k
 	"Commodore - Amiga-content.png",										  // cart_amiga
-	"Amiga - CD32-content.png"												  // cart_cd32	
+	"Amiga - CD32-content.png",												  // cart_cd32	
+	"Nintendo - Nintendo 64-content.png",									  // cart_n64
 };
 
 // Nombres de sistema de libretro-database (ficheros rdb/ y carpetas cht/), indexado por
@@ -178,7 +180,8 @@ const char *RDB_SYSTEM_NAMES[] = {
 	"",												   // cart_c64
 	"",												   // cart_x68k
 	"",				    							   // cart_amiga
-	""												   // cart_cd32
+	"",												   // cart_cd32
+	"Nintendo - Nintendo 64"						   // cart_n64
 };
 
 /* El indice es eje*2 + (valor>0), y que eje es cada stick NO coincide entre

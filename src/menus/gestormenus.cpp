@@ -26,16 +26,6 @@ std::string syncOptionsStrings[TOTAL_VIDEO_SYNC];
 std::string aspectRatioStrings[TOTAL_VIDEO_RATIO];
 std::string videoScaleStrings[TOTAL_VIDEO_SCALE];
 std::string videoIntScaleStrings[TOTAL_INT_SCALE];
-/* La lista de shaders es dinamica (assets\shaders), asi que ya no puede ser
- * un array de tamano fijo. La rellena rellenarShaderStrings() bajo demanda.
- *
- * OJO con el orden: poblarMenuCoreOverrides (via poblarMenuEmulacion) se
- * construye ANTES que poblarMenuVideo, y las dos necesitan esta lista. Cuando
- * era un array de tamano fijo daba igual -siempre tenia TOTAL_SHADERS huecos-,
- * pero un vector vacio dejaba la lista del override por core con un solo
- * elemento ("Auto"), y un shaderMode >= 1 quedaba FUERA DE RANGO: la opcion se
- * veia en blanco hasta que pulsabas izquierda/derecha y el modulo la metia en
- * rango. Por eso ambos sitios llaman al helper en vez de asumir un orden. */
 std::vector<std::string> videoShaderStrings;
 std::string ACTION_ASK_STR[MAX_ASK];
 std::string TipoKeyStr[KEY_JOY_MAX];
@@ -89,6 +79,7 @@ GestorMenus::GestorMenus(int screenw, int screenh){
 	scrapGamesSelection = 1;
 
 	tmpTextOption = NULL;
+	menuLangsIdx = 0;
 }
 
 GestorMenus::~GestorMenus() {
@@ -167,6 +158,8 @@ void GestorMenus::inicializar(CfgLoader *refConfig, Joystick *joystick) {
 	Menu* menuSearchGamesGuide = new Menu(LanguageManager::instance()->get("menu.guides.title"), face_h_big * 2, this->getW() - marginX, menuRaiz);
 	Menu* parentAchievements = new Menu(LanguageManager::instance()->get("menu.achievement.title"), menuRaiz);
 
+	//Rellenamos algunas listas necesarias
+	rellenarVideoShaderStrings();
 	//Poblar Menu de logros
 	poblarMenuLogros(parentAchievements, refConfig);
 	//Este menu no cuelga de ningun lado, pero ponemos partidas guardadas como padre
@@ -270,7 +263,6 @@ void GestorMenus::poblarMenuEmulacion(Menu* menuEmulation, CfgLoader *refConfig)
 	//--------Menu de sincronizacion de video---------
     std::vector<std::string> syncvals;
 	for (int i=0; i < TOTAL_VIDEO_SYNC; i++){
-		syncOptionsStrings[i] = LanguageManager::instance()->get("menu.sync.sync" + Constant::TipoToStr(i));
 		syncvals.push_back(syncOptionsStrings[i]);
 	}
 	menuEmulation->opciones.push_back(new OpcionLista(LanguageManager::instance()->get("menu.options.sync"), syncvals, &refConfig->configMain[cfg::syncMode].getIntRef()));
@@ -301,6 +293,23 @@ void GestorMenus::poblarMenuEmulacion(Menu* menuEmulation, CfgLoader *refConfig)
 	Menu *menuCoreOverrides = new Menu(LanguageManager::instance()->get("menu.core.overrides"), menuEmulation);
 	poblarMenuCoreOverrides(menuCoreOverrides, refConfig);
 	menuEmulation->opciones.push_back(new OpcionSubMenu(LanguageManager::instance()->get("menu.core.overrides"), menuCoreOverrides));
+
+	//--------Preferencia de idioma---------
+	//Obtenemos el idioma principal
+	buscarIdiomasMenu(refConfig->configMain[cfg::mainLang].valueStr);
+	//Rellenamos la lista
+    std::vector<std::string> langvals;
+	for (unsigned int i=0; i < menuLangs.size(); i++){
+		langvals.push_back(LanguageManager::instance()->get("menu.languages.code." + menuLangs[i]));
+	}
+	OpcionLista *listaLang = new OpcionLista(LanguageManager::instance()->get("menu.options.languages"), langvals, &menuLangsIdx);
+	menuEmulation->opciones.push_back(listaLang);
+
+	t_langMenuData *langMenuData = new t_langMenuData();
+	langMenuData->listLangs = &menuLangs;
+	langMenuData->refConfig = refConfig;
+	listaLang->callback = &GestorMenus::selectLang;
+	listaLang->context  = langMenuData;
 
 }
 
@@ -387,11 +396,9 @@ void GestorMenus::poblarMenuPad(Menu* menuEntrada, CfgLoader *refConfig, Joystic
 	poblarMenuAssignFrontend(menuAssignFrontend, joystick);
 }
 
-/* Rellena videoShaderStrings desde el registro de shaders. Idempotente y sin
- * dependencia de orden: la llaman tanto poblarMenuVideo como
- * poblarMenuCoreOverrides, y la primera que entre deja la lista lista para la
- * otra. Ver la nota de la declaracion de videoShaderStrings. */
-static void rellenarShaderStrings(){
+/* Rellena rellenarVideoShaderStrings desde el registro de shaders. Idempotente y sin
+ * dependencia de orden */
+void GestorMenus::rellenarVideoShaderStrings(){
 	ShaderRegistry* shaders = ShaderRegistry::instance();
 	if ((int)videoShaderStrings.size() == shaders->count()) return;
 
@@ -399,13 +406,28 @@ static void rellenarShaderStrings(){
 	for (int i=0; i < shaders->count(); i++){
 		videoShaderStrings.push_back(shaders->displayName(i));
 	}
+
+	for (int i=0; i < TOTAL_VIDEO_SYNC; i++){
+		syncOptionsStrings[i] = LanguageManager::instance()->get("menu.sync.sync" + Constant::TipoToStr(i));
+	}
+
+	for (int i=0; i < TOTAL_VIDEO_RATIO; i++){
+		aspectRatioStrings[i] = LanguageManager::instance()->get("menu.aspect.aspect" + Constant::TipoToStr(i));
+	}
+
+	for (int i=0; i < TOTAL_INT_SCALE; i++){
+		videoIntScaleStrings[i] = LanguageManager::instance()->get("menu.options.integerscale.type" + Constant::TipoToStr(i));
+	}
+
+	for (int i=0; i < TOTAL_VIDEO_SCALE; i++){
+		videoScaleStrings[i] = LanguageManager::instance()->get("menu.scale.scale" + Constant::TipoToStr(i));
+	}
 }
 
 void GestorMenus::poblarMenuVideo(Menu* menuVideo, CfgLoader *refConfig){
 	//Relacion de aspecto
 	std::vector<std::string> aspectRates;
 	for (int i=0; i < TOTAL_VIDEO_RATIO; i++){
-		aspectRatioStrings[i] = LanguageManager::instance()->get("menu.aspect.aspect" + Constant::TipoToStr(i));
 		aspectRates.push_back(aspectRatioStrings[i]);
 	}
 	menuVideo->opciones.push_back(new OpcionLista(LanguageManager::instance()->get("menu.options.aspect"), aspectRates, &refConfig->configMain[cfg::aspectRatio].getIntRef()));
@@ -414,14 +436,12 @@ void GestorMenus::poblarMenuVideo(Menu* menuVideo, CfgLoader *refConfig){
     std::vector<std::string> filtros;
 
 #if defined(_XBOX) || defined(SALVIA_GPU_VIDEO)
-	rellenarShaderStrings();
 	for (std::size_t i=0; i < videoShaderStrings.size(); i++){
 		filtros.push_back(videoShaderStrings[i]);
 	}
 	menuVideo->opciones.push_back(new OpcionLista(LanguageManager::instance()->get("menu.options.scale"), filtros, &refConfig->configMain[cfg::shaderMode].getIntRef()));
 #else
 	for (int i=0; i < TOTAL_VIDEO_SCALE; i++){
-		videoScaleStrings[i] = LanguageManager::instance()->get("menu.scale.scale" + Constant::TipoToStr(i));
 		filtros.push_back(videoScaleStrings[i]);
 	}
 	menuVideo->opciones.push_back(new OpcionLista(LanguageManager::instance()->get("menu.options.scale"), filtros, &refConfig->configMain[cfg::scaleMode].getIntRef()));
@@ -431,7 +451,6 @@ void GestorMenus::poblarMenuVideo(Menu* menuVideo, CfgLoader *refConfig){
 	
 	std::vector<std::string> scaleInt;
 	for (int i=0; i < TOTAL_INT_SCALE; i++){
-		videoIntScaleStrings[i] = LanguageManager::instance()->get("menu.options.integerscale.type" + Constant::TipoToStr(i));
 		scaleInt.push_back(videoIntScaleStrings[i]);
 	}
 	menuVideo->opciones.push_back(new OpcionLista(LanguageManager::instance()->get("menu.options.integerscale.type"), scaleInt, &refConfig->configMain[cfg::scaleIntMode].getIntRef()));
@@ -443,15 +462,14 @@ void GestorMenus::poblarMenuVideo(Menu* menuVideo, CfgLoader *refConfig){
 		bgMenu.push_back(LanguageManager::instance()->get("menu.background.anim" + Constant::TipoToStr(i)));
 	}
 
+	OpcionLista *listaBkg = new OpcionLista(LanguageManager::instance()->get("menu.background.anim.title"), bgMenu, &refConfig->configMain[cfg::animBG].getIntRef());
+	listaBkg->callback = &GestorMenus::selectBackground;
+	menuVideo->opciones.push_back(listaBkg);	
+
 	#ifndef _XBOX
 	//En xbox siempre mostramos pantalla completa
 	menuVideo->opciones.push_back(new OpcionBool(LanguageManager::instance()->get("menu.video.fullscreen"), &refConfig->configMain[cfg::fullscreen].getBoolRef()));
 	#endif
-	OpcionLista *listaBkg = new OpcionLista(LanguageManager::instance()->get("menu.background.anim.title"), bgMenu, &refConfig->configMain[cfg::animBG].getIntRef());
-	listaBkg->callback = &GestorMenus::selectBackground;
-	menuVideo->opciones.push_back(listaBkg);
-
-	
 
 	//Resolucion de pantalla (se aplica al REINICIAR). Entrada 0 = "Auto"
 	//(Xbox: XGetVideoMode del dashboard, capado a 720p; Windows: default 1280x720).
@@ -767,7 +785,6 @@ void GestorMenus::poblarMenuCoreOverrides(Menu *menu, CfgLoader *refConfig){
 	filtros.push_back(autoOverrideTxt);
 
 	#if defined(_XBOX) || defined(SALVIA_GPU_VIDEO)
-		rellenarShaderStrings();
 		for (std::size_t i=0; i < videoShaderStrings.size(); i++){
 			filtros.push_back(videoShaderStrings[i]);
 		}
@@ -3134,4 +3151,37 @@ std::string GestorMenus::trOrDefault(const std::string &key, const char *fallbac
 	if (s.empty() || s[0] == '[')
 		return std::string(fallback);
 	return s;
+}
+
+void GestorMenus::buscarIdiomasMenu(std::string selectedLang){
+	//menuLangs;
+	dirutil dir;
+	vector<unique_ptr<FileProps>> files;
+	std::string rutaScan = Constant::getAppDir() + "\\assets\\i18n";
+	
+	dir.listFiles(rutaScan.c_str(), files, ".ini", "", true, false);
+
+	for (unsigned int i=0; i < files.size(); i++){
+		LOG_DEBUG("Lang file found %s", files.at(i).get()->filename.c_str());
+		const std::string lang = dir.getFileNameNoExt(files.at(i).get()->filename);
+		menuLangs.push_back(lang);
+		if (lang == selectedLang){
+			menuLangsIdx = i;
+		}
+	}
+	
+	LOG_DEBUG("Found %d language files", files.size());
+}
+
+std::string GestorMenus::selectLang(void* inst, void *index, void *values) {
+	if (!inst || !index || !values) return "";
+	t_langMenuData* langMenuData = static_cast<t_langMenuData*>(inst);
+	const int idx = *static_cast<int*>(index);
+	//std::vector<std::string>* labels = static_cast<std::vector<std::string>*>(values);
+	if (idx < 0 || idx >= (int)langMenuData->listLangs->size()) return "";
+	//Obtenemos el texto del elemento seleccionado
+	std::string mainLang = langMenuData->listLangs->at(idx);
+	langMenuData->refConfig->configMain[cfg::mainLang].setPropValue(mainLang);
+	//bool fileFound = LanguageManager::instance()->loadLanguage(Constant::getAppDir() + "\\assets\\i18n\\" + mainLang + ".ini");
+	return "";
 }

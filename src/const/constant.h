@@ -394,6 +394,7 @@ typedef enum {cart_gba,
 			  cart_x68k,
 			  cart_amiga,
 			  cart_cd32,
+			  cart_n64,
 			  max_carts};
 
 extern float aspectRatioValues[]; 
@@ -436,6 +437,7 @@ extern const std::string SCRAPPING_DAT;
 extern const std::string PASS_MASK;
 extern const char SYMBOLS_TO_SPACE[];
 extern const char SYMBOLS_TO_REMOVE[];
+extern const std::string DEFAULT_LANG;
 
 #define LIGHTGUN_SIZES_COUNT 4
 extern const int LIGHTGUN_SIZES[LIGHTGUN_SIZES_COUNT];
@@ -452,9 +454,10 @@ typedef enum {
 
 enum SYNC_TYPES{
 	SYNC_TO_AUDIO = 0,
-	SYNC_TO_VIDEO,
+	SYNC_TO_VIDEO,          // limitador por reloj de CPU y vsync normal (como antes de 9f9f64bc)
+	SYNC_TO_VIDEO_ADAPT,    // pacer por vblanks + present inmediato si llega tarde (Sync::limit_fps)
 	SYNC_NONE,
-	SYNC_FAST_FORWARD
+	SYNC_FAST_FORWARD       // no se guarda nunca: puede cambiar de valor
 };
 
 /* SDL 1.2: Definir mascaras segun el orden de bytes del sistema */

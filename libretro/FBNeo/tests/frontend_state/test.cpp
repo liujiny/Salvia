@@ -73,6 +73,7 @@ static bool failPreview=false;
 namespace lodepng {static unsigned encode(const std::string&,const std::vector<unsigned char>&,int,int,int,int){if(failPreview)throw std::bad_alloc();return 0;}}
 GameMenu* gameMenu;
 t_rom_paths romPaths;
+int g_benchmark_target_frames = 0;
 static std::vector<unsigned char> liveState;
 static unsigned char sram[4096];
 static bool failLoad=false, failSave=false;

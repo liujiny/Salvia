@@ -436,6 +436,11 @@ private:
 		Joystick* joystick;
 	} ;
 
+	struct t_langMenuData{
+		CfgLoader *refConfig;
+		std::vector<std::string> *listLangs;
+	} ;
+
     // Lista de todos los menus para liberar memoria al final
     std::vector<Menu*> todosLosMenus;
 	Menu* menuCoreOptions;
@@ -480,6 +485,10 @@ private:
 	int face_h_small;
 	GameFaqsMenu gameFaqsMenu;
 	std::vector<struct MenuStatus> historyMenu;
+	//Lista de lenguajes que soporta el menu. Se rellena al iniciar la aplicacion
+	std::vector<std::string> menuLangs;
+	int menuLangsIdx;
+
 
 	int getScreenNumLines();
 	void clearSelectedText();
@@ -499,6 +508,8 @@ private:
 	void drawImage(int i, OpcionImage *opcion, SDL_Surface *video_page);
 	void drawBordersMenuOverlay(SDL_Surface *video_page);
 
+	void rellenarVideoShaderStrings();
+
 	void resetAskPosition();
 	void poblarMenuScrapper(CfgLoader *refConfig, Menu* menuScrapper);
 	void poblarMenuHotkeys(Menu* menuHotkeys, Joystick *joystick);
@@ -513,6 +524,7 @@ private:
 	void poblarMenuLightgun(Menu* menuAudio, CfgLoader *refConfig);
 	void checkMultipleSystemCore(CfgLoader *refConfig, Menu *menu, int coreIdx);
 	void addMusicOptionList(CfgLoader *refConfig, int posCore, std::vector<Opcion*> &opciones);
+	void buscarIdiomasMenu(std::string selectedLang);
 
 	std::string guardarJoysticks(Joystick* joy);
 	std::string guardarGameJoysticks(Joystick* joy);
@@ -649,6 +661,7 @@ public:
 	static std::string selectMidiVolume(void* inst, void *index, void *values);
 	static std::string selectMidiModule(void* inst, void *index, void *values);
 	static std::string selectResolution(void* inst, void *index, void *values);
+	static std::string selectLang(void* inst, void *index, void *values);
 
 	static void onUserText(const std::string& text, void* userData);
 	static void onScrapPasswordText(const std::string& text, void* userData);

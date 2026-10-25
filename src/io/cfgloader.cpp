@@ -31,8 +31,8 @@ CfgLoader::CfgLoader(){
 	loadCoreParams();
 
 	// Se cargan los textos una vez que hemos cargado la configuracion y ya tenemos idioma asignado
-	const std::string mainLang = this->configMain[cfg::mainLang].valueStr;
-	LanguageManager::instance()->loadLanguage(Constant::getAppDir() + "\\assets\\i18n\\" + mainLang + ".ini");
+	checkSystemLang();
+	
 	findAllBgMusic();
 	findAllSoundfonts();
 }
@@ -42,6 +42,14 @@ CfgLoader::~CfgLoader(){
 
 void CfgLoader::initMainConfig(){
 	dirutil dir;
+	std::string romPath = "";
+
+	#ifdef _XBOX
+		romPath = "game:\\roms";
+	#else 
+		romPath = ".\\roms";
+	#endif
+
 	//Cargamos valores por defecto
 	configMain[cfg::emulators] = cfg::t_cfg_props("emulators", "");
 	configMain[cfg::emulators].desc = "#emulators: Sets a list of emulators in the order they will be presented in the frontend."
@@ -97,7 +105,8 @@ void CfgLoader::initMainConfig(){
 	configMain[cfg::syncMode].desc = "#Video Synchronization mode"
 									"\n#SYNC_TO_AUDIO	0"
 									"\n#SYNC_TO_VIDEO	1"
-									"\n#SYNC_NONE		2";
+									"\n#SYNC_TO_VIDEO_ADAPT	2"
+									"\n#SYNC_NONE		3";
 
 	configMain[cfg::libretrosystem] = cfg::t_cfg_props("libretrosystem", dir.getDirActual() + Constant::getFileSep() + "system");
 	configMain[cfg::libretrosystem].desc = "#Directory where the libretro bios are stored";
@@ -108,7 +117,7 @@ void CfgLoader::initMainConfig(){
 	configMain[cfg::libretro_state] = cfg::t_cfg_props("libretro_state", dir.getDirActual() + Constant::getFileSep() + "data" + Constant::getFileSep() + "states");
 	configMain[cfg::libretro_state].desc = "#Directory to store savestates";
 
-	configMain[cfg::roms_path] = cfg::t_cfg_props("roms_path", "");	
+	configMain[cfg::roms_path] = cfg::t_cfg_props("roms_path", romPath);	
 	configMain[cfg::roms_path].desc = "#The path usb:\\roms automatically scans Usb0, Usb1, and Usb2 for the target directory"
 									"\n#Or Hdd:\\roms for the main console hard disk"
 									"\n#Or game:\\roms for this directory";
@@ -194,10 +203,10 @@ void CfgLoader::initMainConfig(){
 	configMain[cfg::mainLang].desc = "#mainLang: Main system lang. If not specified on xbox 360, it will try to find the configured"
 									 "\n#from the console with some of this values: es, en, fr, de, it (although only 'es' and 'en' are actually supported)";
 
-	configMain[cfg::scrapRegion] = cfg::t_cfg_props("scrapRegion", "");
+	configMain[cfg::scrapRegion] = cfg::t_cfg_props("scrapRegion", "eu");
 	configMain[cfg::scrapRegion].desc = "#Region for the artwork scraper";
 
-	configMain[cfg::scrapLang] = cfg::t_cfg_props("scrapLang", "");
+	configMain[cfg::scrapLang] = cfg::t_cfg_props("scrapLang", DEFAULT_LANG);
 	configMain[cfg::scrapLang].desc = "#Language for the artwork scraper";
 
 	configMain[cfg::scrapOrigin] = cfg::t_cfg_props("scrapOrigin", (int)SC_SCREENCSRAPER);
@@ -314,8 +323,6 @@ void CfgLoader::loadMainConfig(){
 	}
 	filecfg.close();
 
-	checkSystemLang();
-
 	if (fileopened){
 		if (isDebug()) LOG_DEBUG("Loading emulators", "");
 		std::string emulist;
@@ -391,7 +398,7 @@ void CfgLoader::checkSystemLang(){
 	std::string mainLang = configMain[cfg::mainLang].valueStr;
 	std::string xmlRegion, xmlLang;
 	
-	if (configMain[cfg::mainLang].valueStr.empty()){
+	if (mainLang.empty()){
 		//Try to guess the language
 #ifdef _XBOX
 		// Obtener el ID del idioma del sistema
@@ -403,7 +410,7 @@ void CfgLoader::checkSystemLang(){
 				langXbox = "es";
 				break;
 			case XC_LANGUAGE_ENGLISH:
-				langXbox = "en";
+				langXbox = DEFAULT_LANG;
 				break;
 			case XC_LANGUAGE_FRENCH:
 				langXbox = "fr";
@@ -416,20 +423,28 @@ void CfgLoader::checkSystemLang(){
 				break;
 			default:
 				// Idioma por defecto si no coincide
-				langXbox = "en";
+				langXbox = DEFAULT_LANG;
 				break;
 		}
-
-		configMain[cfg::mainLang].setPropValue(langXbox);
+		mainLang = langXbox;
 #else
-		configMain[cfg::mainLang].setPropValue(std::string("en"));
+		mainLang = DEFAULT_LANG;
 #endif
-		configMain[cfg::scrapRegion] = cfg::t_cfg_props("scrapRegion", std::string("eu"));
-		configMain[cfg::scrapLang] = cfg::t_cfg_props("scrapLang", configMain[cfg::mainLang].valueStr);
 	}
 
-	configMain[cfg::mainLang].getPropValue(mainLang);
-	xmlRegion = fileio.cargarFichero(Constant::getAppDir() + "\\assets\\i18n\\regionsListe.xml");
+	bool fileFound = LanguageManager::instance()->loadLanguage(Constant::getAppDir() + "\\assets\\i18n\\" + mainLang + ".ini");
+	if (!fileFound){
+		LOG_DEBUG("Language %s not found", mainLang);
+		mainLang = DEFAULT_LANG;
+		fileFound = LanguageManager::instance()->loadLanguage(Constant::getAppDir() + "\\assets\\i18n\\" + mainLang + ".ini");
+		if (!fileFound){
+			LOG_DEBUG("Default language %s not found", DEFAULT_LANG);
+		}
+	}
+
+	configMain[cfg::mainLang].setPropValue(mainLang);
+
+    xmlRegion = fileio.cargarFichero(Constant::getAppDir() + "\\assets\\i18n\\regionsListe.xml");
 	parsearRegiones(xmlRegion.c_str(), mainLang, region);
 	xmlRegion.clear();
 	
@@ -1148,7 +1163,8 @@ std::string CfgLoader::saveCoreOverrideParams(int emuIdx){
 		"\n#AUTO           -1"
 		"\n#SYNC_TO_AUDIO	0"
 		"\n#SYNC_TO_VIDEO   1"
-		"\n#SYNC_NONE       2", &ConfigEmu::syncMode}
+		"\n#SYNC_TO_VIDEO_ADAPT 2"
+		"\n#SYNC_NONE       3", &ConfigEmu::syncMode}
     };
 
 	//The override list, has the option "auto", which is represented as -1. That's why we subtract 1
