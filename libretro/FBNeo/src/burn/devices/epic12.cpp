@@ -1421,7 +1421,8 @@ UINT32 epic12_blitter_read(UINT32 offset)
 			{
 				//m_maincpu->spin_until_time(attotime::from_usec(10));
 				if (sleep_on_busy) {
-					Sh3BurnCycles(m_burn_cycles); // 0x400 @ (12800000*8)
+					INT32 rem = Sh3GetRemainingCycles();
+					Sh3BurnCycles(rem > 0 ? rem : m_burn_cycles);
 				}
 				//bprintf(0, _T("%d frame - blitter busy read....."), nCurrentFrame);
 
