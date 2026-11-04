@@ -454,10 +454,12 @@ static UINT32 hacky_idle_pc;
 
 static UINT32 __fastcall speedhack_read_long(UINT32 offset)
 {
-	UINT32 pc = Sh3GetPC(-1);
-	if ( offset == hacky_idle_ram && (pc == hacky_idle_pc || pc == hacky_idle_pc+2)) {
-		INT32 rem = Sh3GetRemainingCycles();
-		Sh3BurnCycles(rem > 0 ? rem : speedhack_burn);
+	if ( offset == hacky_idle_ram ) {
+		UINT32 pc = Sh3GetPC(-1);
+		if (pc == hacky_idle_pc || pc == hacky_idle_pc+2) {
+			INT32 rem = Sh3GetRemainingCycles();
+			Sh3BurnCycles(rem > 0 ? rem : speedhack_burn);
+		}
 	}
 	UINT32 V = *((UINT32 *)(DrvMainRAM + (offset & 0xfffffc)));
 #ifdef LSB_FIRST
