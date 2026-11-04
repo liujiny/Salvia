@@ -60,3 +60,15 @@ Baseline `779a9a16` (blitter spin loop fast-forwarding & branchless blend). Impl
      - Size: `34,832,384` bytes
      - SHA256: `6aa963c87514250a94321e58712a2b1b6f012bcb9245cac39b4d6c6c97da2394`
      - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261104-1900-cv1k-core-affinity-diag.xex`
+
+4. **Real Xbox 360 Console Validation & Rejection Rationale**:
+   - Telemetry from real console runs (`cv1000-gpu.log`, sessions 139–141):
+     - Session 139: `game_and_ui=16.032 present=0.607 limiter=1.622 sampled_active_loop=18.261 sampled_peak=64.065`
+     - Session 140: `game_and_ui=12.225 present=0.683 limiter=4.039 sampled_active_loop=16.946 sampled_peak=25.673`
+     - Session 141: `game_and_ui=12.503 present=0.538 limiter=4.014 sampled_active_loop=17.055 sampled_peak=22.214`
+   - **Observed Regressions**:
+     - Elevated priority (`THREAD_PRIORITY_ABOVE_NORMAL`) on Core 0 HW Thread 0 starved Core 0 HW Thread 1 (the kernel and XAM system thread that services wireless controller interrupts).
+     - As a direct result, during frame drops, wireless gamepad input packets were queued and delayed, manifesting as stick drift (stick release events missed/lagged) and high input latency ("卡帧的时候手柄会有漂移，延迟大").
+     - Audio on HW Thread 3 suffered contention from `BurnRenderWorker` on HW Thread 2 running at `THREAD_PRIORITY_HIGHEST`, causing the peak frame time to spike to 64.065 ms (compared to 24.198 ms in Phase 1 `779a9a16`).
+   - **Decision**: Reject experiment and revert `4763a884`. Restore baseline `779a9a16` (`THREAD_PRIORITY_NORMAL`, audio on HW 5, `CPU_THREAD 1`).
+
