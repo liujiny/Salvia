@@ -18,15 +18,15 @@
 
 static const int video_bpp = 16;
 
-/* Final layout:
- *   core 0  Xbox 360 Dashboard                      ┐
- *   core 1  main / Salvia / retro_run / dynarec PSX ┘ same physical core
- *   core 2  PSX GPU helper thread        ┐
- *   core 3  idle                         ┘ same physical core
- *   core 4  IO & HTTP					  ┐
- *   core 5  Xaudio and SDL Sound thread  ┘ same physical core
+/* Physical core and hardware thread layout (Xbox 360 Xenon 3 cores x 2 threads):
+ *   Core 0 (HW 0): Main emulation thread (Salvia / retro_run / SH-3 DRC)
+ *   Core 0 (HW 1): OS kernel background tasks & dashboard (idle)
+ *   Core 1 (HW 2): GPU / Blitter render worker
+ *   Core 1 (HW 3): SDL / XAudio audio playback thread (sleeps 95% of time)
+ *   Core 2 (HW 4): IO / HTTP (achievements, scraper, background loading)
+ *   Core 2 (HW 5): Auxiliary IO / secondary workers
  */
-#define CPU_THREAD 1
+#define CPU_THREAD 0
 #define IO_THREAD 4
 
 static int video_width = 1280;

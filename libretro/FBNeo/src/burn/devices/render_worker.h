@@ -23,8 +23,8 @@ class BURN_RENDER_ALIGN BurnRenderWorker {
 
 	static DWORD WINAPI run(void *data) {
 		BurnRenderWorker *worker = (BurnRenderWorker *)data;
-		// Salvia's emulation thread uses hardware thread 1 (physical core 0).
-		// Workers use core 1 and, optionally, core 2.
+		// Salvia's emulation thread uses hardware thread 0 (physical core 0).
+		// Workers use core 1 (HW 2) and, optionally, core 2 (HW 4).
 		XSetThreadProcessor(GetCurrentThread(), worker->index * 2);
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 		for (;;) {
