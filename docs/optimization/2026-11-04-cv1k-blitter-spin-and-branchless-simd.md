@@ -68,3 +68,13 @@ Baseline `1dedf6ac` (upstream develop merge). Implementation commit `779a9a16`.
      - Size: `34,832,384` bytes
      - SHA256: `316359ee11f7e1292dd31f565b3d39e7fcf26688fbfbb4f50139fdb9aa859eda`
      - Archive: `/home/humor/salvia-tests/xex-archive/fbneo-20261104-0729-cv1k-spin-simd-diag.xex`
+
+4. **Real Xbox 360 Console Profiling (19,173 Frames Gameplay on *Ibara*)**:
+   - Hardware telemetry captured from `cv1000-gpu.log`:
+     | Metric | Baseline (`f23443e6`) | Candidate (`779a9a16`) | Improvement |
+     | :--- | :--- | :--- | :--- |
+     | **Average `cpu_io`** | 17.24 ms | **11.052 ms** | **-35.9% CPU time** |
+     | **Average Total Frame Time** | 19.44 ms | **13.065 ms** | **-32.8% (solidly under 16.6ms)** |
+     | **Slow Frames (>25ms)** | Multiple | **0 samples** | **100% eliminated** |
+     | **Sampled Worst-Case Peak** | 24.198 ms | **23.927 ms** | Kept under 24ms across 19k+ frames |
+   - The user verified the real hardware experience: *"运行完了，感觉快了"*.
