@@ -147,9 +147,7 @@ void XboxDX_SoundFocus(int nHwnd)
 
 static void XboxDX_ThreadInit(_THIS)
 {
-	/* Audio thread pinned to HW thread 3 (Core 1 secondary SMT thread).
-	   Sleep-paced audio playback coexists smoothly with Render Worker on HW 2. */
-	XSetThreadProcessor(GetCurrentThread(), 3);
+	XSetThreadProcessor(GetCurrentThread(), 5);
 }
 
 static void XboxDX_WaitAudio_BusyWait(_THIS)
