@@ -129,7 +129,11 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
  // One chain starts here: nothing in it may be assumed valid yet.
  sh3_chain_dirty=0;
 #endif
- if(m_sh4_icount<=0 || failed || (!blocks && !allocate())) {
+ if(m_sh4_icount<=0) {
+  if(Count) { ++sh3_drc_work.exit_budget; sh3_drc_work.fallback.last_origin=SH3_FB_BUDGET; }
+  return false;
+ }
+ if(failed || (!blocks && !allocate())) {
   if(Count) { ++sh3_drc_work.exit_gate; sh3_drc_work.fallback.last_origin=SH3_FB_GATE; }
   return false;
  }
@@ -376,10 +380,6 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   }
   if(!entry) {
    if(Count) { ++sh3_drc_work.exit_no_entry; sh3_drc_work.fallback.last_origin=SH3_FB_NO_ENTRY; }
-   return false;
-  }
-  if(m_sh4_icount<cycles) {
-   if(Count) { ++sh3_drc_work.exit_budget; sh3_drc_work.fallback.last_origin=SH3_FB_BUDGET; }
    return false;
   }
   // A partial/guarded block requests one interpreter step at its updated PC,

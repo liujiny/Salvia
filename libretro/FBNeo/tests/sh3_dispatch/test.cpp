@@ -161,7 +161,7 @@ static bool reference_dispatch() {
     (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page)) {
   compile(b,pc,source); set.tag[way]=pc;
  }
- if(!b.entry || m_sh4_icount<b.cycles)return false;
+ if(!b.entry || m_sh4_icount<=0)return false;
  return b.entry(&sh3_ppc_state)!=0;
 }
 template<bool Count> static bool sh3_drc_service_movll(unsigned) { return false; }
@@ -363,12 +363,13 @@ static bool fallback_origin_checks() {
   m_delay=0;m_test_irq=0;sh3_drc_enabled=true;recycle=false;
   sh3_drc_work.fallback.last_origin=SH3_FB_UNKNOWN;
   unsigned expected=SH3_FB_UNKNOWN;
-  if(which==0){m_sh4_icount=0;expected=SH3_FB_GATE;}
+  if(which==0){Sh3Ppc::failed=true;expected=SH3_FB_GATE;}
   if(which==1){m_pc=1;expected=SH3_FB_FETCH;}
   if(which==2){ram[0][0]=0;expected=SH3_FB_NO_ENTRY;}
-  if(which==3){m_sh4_icount=1;expected=SH3_FB_BUDGET;}
+  if(which==3){m_sh4_icount=0;expected=SH3_FB_BUDGET;}
   if(which==4){ram[0][0]=0x3100;expected=SH3_FB_PARTIAL;}
   if(sh3_drc_dispatch_impl<false,true>() || sh3_drc_work.fallback.last_origin!=expected)return false;
+  Sh3Ppc::failed=false;
  }
  puts("PASS exact dispatcher fallback origins: gate, fetch, no-entry, budget and partial");
  return true;
