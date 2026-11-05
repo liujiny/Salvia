@@ -1485,7 +1485,7 @@ static inline bool epic12_gpu_staging_blit(int x, int y, int sx, int sy, int w, 
 				}
 			}
 		}
-		if (war_overlap) {
+		if (war_overlap && epic12_gpu_intersects(x, y, w, h, epic12_gpu_source_bounds[0])) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 			++epic12_gpu_diag_war768_count;
 			epic12_gpu_record_war_sample(x, y, w, h, sx, sy, dpx0, dpx1, dpy0, dpy1);
@@ -1645,7 +1645,7 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 					}
 				}
 			}
-			if (war_overlap) {
+			if (war_overlap && epic12_gpu_intersects(x, y, total_dimx, dimy, epic12_gpu_source_bounds[0])) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 				++epic12_gpu_diag_war768_count;
 				epic12_gpu_record_war_sample(x, y, total_dimx, dimy, sx, sy, dpx0, dpx1, dpy0, dpy1);
