@@ -91,3 +91,7 @@ Baseline `df5fc83e` (Audio IDCT32 and speedhack hoist). Implementation commit `2
 - **Reviewed Mirrored Paths**:
   - `libretro/FBNeo/src/cpu/sh4/sh3_drc_dispatch.h` (SHA256: `c43519b695ade3f90c8302d5f59b18ac3501f7762d02a9b92e4a136207b1408b`)
   - `libretro/FBNeo/tests/sh3_dispatch/test.cpp` (SHA256: `3aace50d8516a64ce770bcbcff19dbca45110bbb6681171463bcd7baf1724d83`)
+- **Console Deployment**:
+  - Target: Xbox 360 Jasper (`192.168.2.232:21`, `xboxftp:xboxftp`)
+  - Target Path: `/Usb0/Salvia-360/fbneo.xex`
+  - Upload Size: 34,832,384 bytes (verified via remote FTP `SIZE` command)
