@@ -9,7 +9,7 @@ from pathlib import Path
 import re
 import subprocess
 
-NAMES=('MOVBL','MOVWL','MOVLL','MOV','MOVBP','MOVWP','MOVLP','NOT','SWAPB','SWAPW','NEGC','NEG','EXTUB','EXTUW','EXTSB','EXTSW')
+NAMES=('MOVBL','MOVWL','MOVLL','MOV','MOVBP','MOVWP','MOVLP','NOT','SWAPB','SWAPW','NEGC','NEG','EXTUB','EXTUW','EXTSB','EXTSW','MOVBS','MOVWS','MOVLS','MOVBM','MOVWM','MOVLM','MOVLS4','MOVLL4')
 def extract(text,name):
     m=re.search(r'static inline void '+re.escape(name)+r'\(const UINT16 opcode\)\s*\{',text)
     if not m: raise ValueError('missing production helper '+name)
@@ -39,7 +39,10 @@ int main() {
   state=initial;generic_calls=0;execute_one((UINT16)op);
   TestState expected=state;if(generic_calls!=1)return 2;
   state=initial;generic_calls=0;sh3_execute_hot_fallback((UINT16)op);
-  bool selected=(op&0xff00)==0x6000;
+  bool selected = ((op & 0xf000) == 0x6000) ||
+                  ((op & 0xf000) == 0x2000 && ((op & 0x0f) <= 2 || ((op & 0x0f) >= 4 && (op & 0x0f) <= 6))) ||
+                  ((op & 0xf000) == 0x1000) ||
+                  ((op & 0xf000) == 0x5000);
   if(memcmp(&state,&expected,sizeof(state)) || generic_calls!=(selected?0u:1u)) {
    fprintf(stderr,"FAIL op=%04X variant=%u calls=%u\n",op,variant,generic_calls);return 1;
   }

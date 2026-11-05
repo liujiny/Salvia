@@ -7,7 +7,7 @@ typedef uint8_t UINT8; typedef int8_t INT8;
 typedef uint16_t UINT16; typedef int16_t INT16;
 typedef uint32_t UINT32; typedef int32_t INT32;
 struct TestState {
- UINT32 r[16], ea, sr, pc, reads, trace, other;
+ UINT32 r[16], ea, sr, pc, reads, writes, trace, other;
  INT32 cycles;
 };
 static TestState state;
@@ -29,6 +29,13 @@ static UINT32 read_memory(UINT32 address,unsigned width) {
 #define RB(a) ((UINT8)read_memory((a),1))
 #define RW(a) ((UINT16)read_memory((a),2))
 #define RL(a) read_memory((a),4)
+static void write_memory(UINT32 address,UINT32 value,unsigned width) {
+ ++state.writes;
+ state.trace=(state.trace*131u)^address^(width<<24)^value^state.pc;
+}
+#define WB(a,v) write_memory((a),(v),1)
+#define WW(a,v) write_memory((a),(v),2)
+#define WL(a,v) write_memory((a),(v),4)
 static void other_handler(unsigned id,UINT16 opcode) {
  state.other=id; state.trace=state.trace*131u+opcode;
 }
