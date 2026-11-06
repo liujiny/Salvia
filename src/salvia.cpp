@@ -2440,50 +2440,52 @@ bool loadGameAtStart(int argc, char *argv[]){
 				}
 			}
 
+			// 3. Benchmark mode check
 			if (!ret) {
 				FILE* bf = fopen("game:\\salvia_benchmark.txt", "r");
-			if (!bf) bf = fopen("d:\\salvia_benchmark.txt", "r");
-			if (!bf) {
-				std::string ap = Constant::getAppDir() + "\\salvia_benchmark.txt";
-				bf = fopen(ap.c_str(), "r");
-			}
-			if (!bf) bf = fopen("salvia_benchmark.txt", "r");
-
-			if (bf) {
-				char line[256];
-				std::string bRom;
-				int bFrames = 1000;
-				while (fgets(line, sizeof(line), bf)) {
-					char* p = line + strlen(line) - 1;
-					while (p >= line && (*p == '\r' || *p == '\n' || *p == ' ' || *p == '\t')) { *p = '\0'; p--; }
-					if (strncmp(line, "rom=", 4) == 0) bRom = line + 4;
-					else if (strncmp(line, "state=", 6) == 0) g_benchmark_state = line + 6;
-					else if (strncmp(line, "frames=", 7) == 0) bFrames = atoi(line + 7);
+				if (!bf) bf = fopen("d:\\salvia_benchmark.txt", "r");
+				if (!bf) {
+					std::string ap = Constant::getAppDir() + "\\salvia_benchmark.txt";
+					bf = fopen(ap.c_str(), "r");
 				}
-				fclose(bf);
-				if (!bRom.empty()) {
-					dirutil dutil;
-					if (!dutil.fileExists(bRom.c_str()) && strncmp(bRom.c_str(), "game:\\", 6) == 0) {
-						std::string alt = std::string("d:\\") + (bRom.c_str() + 6);
-						if (dutil.fileExists(alt.c_str())) bRom = alt;
-						else {
-							alt = Constant::getAppDir() + "\\" + (bRom.c_str() + 6);
+				if (!bf) bf = fopen("salvia_benchmark.txt", "r");
+
+				if (bf) {
+					char line[256];
+					std::string bRom;
+					int bFrames = 1000;
+					while (fgets(line, sizeof(line), bf)) {
+						char* p = line + strlen(line) - 1;
+						while (p >= line && (*p == '\r' || *p == '\n' || *p == ' ' || *p == '\t')) { *p = '\0'; p--; }
+						if (strncmp(line, "rom=", 4) == 0) bRom = line + 4;
+						else if (strncmp(line, "state=", 6) == 0) g_benchmark_state = line + 6;
+						else if (strncmp(line, "frames=", 7) == 0) bFrames = atoi(line + 7);
+					}
+					fclose(bf);
+					if (!bRom.empty()) {
+						dirutil dutil;
+						if (!dutil.fileExists(bRom.c_str()) && strncmp(bRom.c_str(), "game:\\", 6) == 0) {
+							std::string alt = std::string("d:\\") + (bRom.c_str() + 6);
 							if (dutil.fileExists(alt.c_str())) bRom = alt;
+							else {
+								alt = Constant::getAppDir() + "\\" + (bRom.c_str() + 6);
+								if (dutil.fileExists(alt.c_str())) bRom = alt;
+							}
 						}
-					}
-					if (!g_benchmark_state.empty() && !dutil.fileExists(g_benchmark_state.c_str()) && strncmp(g_benchmark_state.c_str(), "game:\\", 6) == 0) {
-						std::string alt = std::string("d:\\") + (g_benchmark_state.c_str() + 6);
-						if (dutil.fileExists(alt.c_str())) g_benchmark_state = alt;
-						else {
-							alt = Constant::getAppDir() + "\\" + (g_benchmark_state.c_str() + 6);
+						if (!g_benchmark_state.empty() && !dutil.fileExists(g_benchmark_state.c_str()) && strncmp(g_benchmark_state.c_str(), "game:\\", 6) == 0) {
+							std::string alt = std::string("d:\\") + (g_benchmark_state.c_str() + 6);
 							if (dutil.fileExists(alt.c_str())) g_benchmark_state = alt;
+							else {
+								alt = Constant::getAppDir() + "\\" + (g_benchmark_state.c_str() + 6);
+								if (dutil.fileExists(alt.c_str())) g_benchmark_state = alt;
+							}
 						}
+						g_benchmark_target_frames = bFrames > 0 ? bFrames : 1000;
+						romToLaunch = bRom;
+						LOG_INFO("Benchmark mode: rom=%s state=%s frames=%d\n",
+							bRom.c_str(), g_benchmark_state.c_str(), g_benchmark_target_frames);
+						ret = launchGame(bRom) == 1;
 					}
-					g_benchmark_target_frames = bFrames > 0 ? bFrames : 1000;
-					romToLaunch = bRom;
-					LOG_INFO("Benchmark mode: rom=%s state=%s frames=%d\n",
-						bRom.c_str(), g_benchmark_state.c_str(), g_benchmark_target_frames);
-					ret = launchGame(bRom) == 1;
 				}
 			}
 		}
