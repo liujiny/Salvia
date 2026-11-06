@@ -191,8 +191,11 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   if(shadow) {
    const Shadow &cand=shadow[index];
    if(cand.pc==pc && cand.source==source && sector_epoch[cand.sector]==cand.epoch &&
-      (!cand.check_read_map || MemMapR[phys>>SH3_SHIFT]==page) &&
-      sh3_drc_source_equal(cand.original,source,cand.words)) copy=&cand;
+      (!cand.check_read_map || MemMapR[phys>>SH3_SHIFT]==page)
+#if !SALVIA_CV1K_FAST_SHADOW
+      && sh3_drc_source_equal(cand.original,source,cand.words)
+#endif
+     ) copy=&cand;
   }
   if(copy) {
    if(Count) ++sh3_drc_work.shadow_hits;

@@ -46,4 +46,10 @@
 #ifndef SALVIA_CV1K_BLIT_PATH_PROBE
 #define SALVIA_CV1K_BLIT_PATH_PROBE 0
 #endif
+// ibara360 architecture: bypass per-block guest RAM source equality comparison on shadow cache hit.
+// In Cave CV1000, game code in SDRAM/ROM is static and does not self-modify during gameplay.
+// Shadow entries validate PC, source pointer, sector epoch and read-page mapping.
+#ifndef SALVIA_CV1K_FAST_SHADOW
+#define SALVIA_CV1K_FAST_SHADOW 1
+#endif
 #endif

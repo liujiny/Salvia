@@ -45,6 +45,9 @@ static Lookup lookup[CACHE_SETS];
 #ifndef SALVIA_CV1K_SHADOW
 #define SALVIA_CV1K_SHADOW 1
 #endif
+#ifndef SALVIA_CV1K_FAST_SHADOW
+#define SALVIA_CV1K_FAST_SHADOW 0
+#endif
 enum { SECTOR_COUNT=1, SECTOR_WORDS=1 };
 struct Shadow {
  UINT32 pc;

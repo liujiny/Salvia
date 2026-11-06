@@ -54,6 +54,7 @@ static INT32 is_type_d;
 static INT32 DriverClock; // selected cpu clockrate
 static INT32 nPrevBurnCPUSpeedAdjust;
 static UINT8 nPrevCPUTenth;
+static UINT8 nPrevTimingModel = 0xFF;
 static INT32 speedhack_burn; // 10ms @ cpu clock, calculated in DrvFrame
 
 #ifdef _XBOX
@@ -215,6 +216,10 @@ static struct BurnDIPInfo DefaultDIPList[]=
 	{0   , 0xfe, 0   ,    2, "Thread Sync"		},
 	{0x01, 0x01, 0x04, 0x00, "Before Exec"		},
 	{0x01, 0x01, 0x04, 0x04, "Before Draw"		},
+
+	{0   , 0xfe, 0   ,    2, "Timing Model (ibara360)" },
+	{0x01, 0x01, 0x08, 0x00, "Arcade PCB Fit (78% + Bus Stall)" },
+	{0x01, 0x01, 0x08, 0x08, "Unthrottled (100% 102.4MHz)" },
 
 	{0   , 0xfe, 0   ,    2, "Blitter Timing"	},
 	{0x02, 0x01, 0x20, 0x00, "Accurate (Buffis)"},
@@ -535,6 +540,7 @@ static INT32 DrvDoReset()
 
 	nPrevBurnCPUSpeedAdjust = -1;
 	nPrevCPUTenth = 0xff;
+	nPrevTimingModel = 0xff;
 
 	hold_coin.reset();
 
@@ -746,12 +752,14 @@ static INT32 DrvFrame()
 #endif
 
 	// check if cpu rate changes here..
-	if (nPrevBurnCPUSpeedAdjust != nBurnCPUSpeedAdjust || (DrvDips[3] & 0x0f) != nPrevCPUTenth) {
+	if (nPrevBurnCPUSpeedAdjust != nBurnCPUSpeedAdjust || (DrvDips[3] & 0x0f) != nPrevCPUTenth || (DrvDips[1] & 0x08) != nPrevTimingModel) {
 		bprintf(0, _T("Setting CPU Clock selection.\n"));
 		nPrevBurnCPUSpeedAdjust = nBurnCPUSpeedAdjust;
 		nPrevCPUTenth = DrvDips[3] & 0x0f;
+		nPrevTimingModel = DrvDips[1] & 0x08;
 
-		INT32 i_percent = ((double)100 * nBurnCPUSpeedAdjust / 256) + 0.5; // whole percent comes from UI
+		INT32 base_percent = (DrvDips[1] & 0x08) ? 100 : 78; // ibara360 arcade fit: 78% effective throughput
+		INT32 i_percent = ((double)base_percent * nBurnCPUSpeedAdjust / 256) + 0.5; // whole percent comes from UI
 		double dPercent = i_percent + (0.1 * (DrvDips[3] & 0xf)); // .x tenth percent comes from DIPS
 
 		DriverClock = (INT32)((INT64)SH3_CLOCK * dPercent / 100);
@@ -760,7 +768,7 @@ static INT32 DrvFrame()
 		Sh3SetClockCV1k(DriverClock);
 		ymz770_set_buffered(Sh3TotalCycles, DriverClock);
 
-		bprintf(0, _T("Main Clock %d  at %0.1f%%  Adjusted Clock %d\n"), SH3_CLOCK, dPercent, DriverClock);
+		bprintf(0, _T("Main Clock %d  at %0.1f%%  Adjusted Clock %d (base %d%%)\n"), SH3_CLOCK, dPercent, DriverClock, base_percent);
 	}
 	// set blitter delay, blitter threading & speedhack via dip setting
 	{

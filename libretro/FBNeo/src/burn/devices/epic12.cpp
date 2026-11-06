@@ -1290,6 +1290,12 @@ static void gfx_exec_write(UINT32 data)
 				//bprintf(0, _T("new blit_delay  %I64d   cycles  %d\n"),m_blit_delay_ns, cycles);
 
 				sh4_set_cave_blitter_delay_timer(cycles);
+#ifdef _XBOX
+				// ibara360 architecture: CV1000 Blitter SDRAM bus contention stalls the SH-3 CPU.
+				if (cycles > 0 && dips && !(dips[1] & 0x08)) {
+					Sh3BurnCycles(cycles);
+				}
+#endif
 			}
 
 			epic12_device_blit_delay = 0;
