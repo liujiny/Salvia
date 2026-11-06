@@ -518,6 +518,7 @@ static void speedhack_set(UINT32 ram, UINT32 pc)
 
 #if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
 #include "cv1k_fastboot.h"
+static bool s_cv1k_aot_done = false;
 #endif
 
 static INT32 DrvDoReset()
@@ -529,6 +530,7 @@ static INT32 DrvDoReset()
 	Sh3Close();
 #if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
 	cv1k_boot_prepare();
+	s_cv1k_aot_done = false;
 #endif
 
 	epic12_reset();
@@ -813,6 +815,14 @@ static INT32 DrvFrame()
 
 #if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
 	cv1k_boot_step();
+	if (!s_cv1k_aot_done) {
+		bool ready = (nCurrentFrame >= 180);
+		if (!cv1k_boot_pending && nCurrentFrame >= 60) ready = true;
+		if (ready) {
+			s_cv1k_aot_done = true;
+			Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x1000000 : 0x800000);
+		}
+	}
 #endif
 
 #ifdef _XBOX
@@ -902,7 +912,11 @@ static INT32 DrvScan(INT32 nAction, INT32 *pnMin)
 	// A loaded state already contains its own program bytes. Never patch an
 	// older running-game state or carry a pending cold-boot patch into it.
 	// Loading persistent EEPROM/high scores during cold boot must keep it armed.
-	if ((nAction & ACB_WRITE) && (nAction & ACB_VOLATILE)) cv1k_boot_pending = NULL;
+	if ((nAction & ACB_WRITE) && (nAction & ACB_VOLATILE)) {
+		cv1k_boot_pending = NULL;
+		s_cv1k_aot_done = true;
+		Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x1000000 : 0x800000);
+	}
 #endif
 
 	serflash_scan(nAction, pnMin); // writes back to flash (hiscores ddpdfk, etc) here

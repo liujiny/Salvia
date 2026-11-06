@@ -529,6 +529,22 @@ int main() {
  Sh3SetDrcReadMirror(ram,0x0c000000,idle_ram,1);
  if(sh3_idle_watch_ram || sh3_idle_watch_pc)return 23;
  printf("EDGE sampled idle candidates / live metadata / handler PC / no state mutation PASS\n");
+ // Verify AOT Precompilation
+ if(Sh3SetDrcRam(ram,0x0c000000,0x10000,0x10000))return 31;
+ {
+  UINT16 *p=(UINT16*)(ram+0x200);
+  p[0]=0x2fe6; // mov.l r14, @-r15 (prologue)
+  p[1]=0x7005; // add #5, r0
+  p[2]=0x8b02; // bf .+6 (to 0x208)
+  p[3]=0x7001; // add #1, r0
+  p[4]=0x000b; // rts
+  p[5]=0x0009; // nop
+ }
+ unsigned precompiled_used_before = Sh3Ppc::used;
+ Sh3DrcPrecompile(0x0c000000, 0x10000);
+ if(Sh3Ppc::used <= precompiled_used_before)return 32;
+ printf("EDGE AOT precompilation / BFS control flow traversal PASS\n");
+ Sh3SetDrcRam(NULL,0,0,0);
  printf("PASS %u cases compiled %u fallback %u\n",cases,compiled,fallback);
  Sh3Exit();return 0;
 }

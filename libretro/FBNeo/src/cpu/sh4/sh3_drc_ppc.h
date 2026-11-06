@@ -1473,4 +1473,200 @@ static void sh3_drc_exit()
 
 // Preserve the one-block entry for the existing instruction differential tests.
 static bool sh3_drc_run() { return sh3_drc_dispatch<false>(); }
+
+struct Sh3PrecompileQueue {
+	UINT8 *visited;
+	UINT32 bitmap_bytes;
+	UINT32 start_pc;
+	UINT32 size;
+	UINT32 *queue;
+	UINT32 q_head;
+	UINT32 q_tail;
+	UINT32 q_mask;
+
+	bool is_visited(UINT32 a) const {
+		if (a < start_pc || a >= start_pc + size || (a & 1)) return true;
+		UINT32 off = (a - start_pc) >> 1;
+		if ((off >> 3) >= bitmap_bytes) return true;
+		return (visited[off >> 3] & (1u << (off & 7))) != 0;
+	}
+	void mark_visited(UINT32 a) {
+		if (a < start_pc || a >= start_pc + size || (a & 1)) return;
+		UINT32 off = (a - start_pc) >> 1;
+		if ((off >> 3) < bitmap_bytes) {
+			visited[off >> 3] |= (1u << (off & 7));
+		}
+	}
+	void push(UINT32 a) {
+		if (a < start_pc || a >= start_pc + size || (a & 1)) return;
+		if (is_visited(a)) return;
+		mark_visited(a);
+		if (((q_tail + 1) & q_mask) != q_head) {
+			queue[q_tail] = a;
+			q_tail = (q_tail + 1) & q_mask;
+		}
+	}
+	bool pop(UINT32 &a) {
+		if (q_head == q_tail) return false;
+		a = queue[q_head];
+		q_head = (q_head + 1) & q_mask;
+		return true;
+	}
+};
+
+void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
+{
+	if (!sh3_drc_enabled || !Sh3Ppc::blocks || !Sh3Ppc::lookup || size < 2) return;
+
+	UINT32 span_words = (size + 1) >> 1;
+	UINT32 bitmap_bytes = (span_words + 7) >> 3;
+	if (bitmap_bytes > (1024 * 1024)) bitmap_bytes = (1024 * 1024);
+	UINT8 *visited = (UINT8*)calloc(1, bitmap_bytes);
+	if (!visited) return;
+
+	const UINT32 QUEUE_MASK = 65535u;
+	UINT32 *queue = (UINT32*)malloc((QUEUE_MASK + 1) * sizeof(UINT32));
+	if (!queue) { free(visited); return; }
+
+	Sh3PrecompileQueue q;
+	q.visited = visited;
+	q.bitmap_bytes = bitmap_bytes;
+	q.start_pc = start_pc;
+	q.size = size;
+	q.queue = queue;
+	q.q_head = 0;
+	q.q_tail = 0;
+	q.q_mask = QUEUE_MASK;
+
+	// 1. Seed vector and primary entry points
+	q.push(start_pc);
+	q.push(start_pc + 0x100);
+	q.push(start_pc + 0x400);
+	q.push(start_pc + 0x600);
+
+	// 2. Scan backing memory for function prologues and code pointers
+	UINT32 phys_start = start_pc & AM;
+	const UINT8 *base_page = MemMapF[phys_start >> SH3_SHIFT];
+	if (base_page && (uintptr_t)base_page >= SH3_MAXHANDLER) {
+		const UINT16 *words = (const UINT16*)(base_page + (phys_start & SH3_PAGEM));
+		UINT32 scan_words = (size >> 1);
+		for (UINT32 i = 0; i < scan_words - 1; ++i) {
+			UINT16 op = words[i];
+			if (op == 0x4f22 || op == 0x2fe6 || op == 0x2fd6 || op == 0x2fc6 ||
+			    op == 0x2fb6 || op == 0x2fa6 || op == 0x2f96 || op == 0x2f86) {
+				q.push(start_pc + (i << 1));
+			}
+			if ((i & 1) == 0 && i + 1 < scan_words) {
+				UINT32 ptr = ((UINT32)words[i] << 16) | words[i + 1];
+				if (ptr >= start_pc && ptr < start_pc + size && (ptr & 1) == 0) {
+					q.push(ptr);
+				}
+			}
+		}
+	}
+
+	// 3. BFS control-flow traversal and precompilation
+	UINT32 precompiled_count = 0;
+	UINT32 pc = 0;
+	while (q.pop(pc)) {
+		if (Sh3Ppc::used + Sh3Ppc::MAX_WORDS >= (Sh3Ppc::CACHE_WORDS - 262144)) {
+			break;
+		}
+
+		UINT32 phys = pc & AM;
+		const UINT8 *page = MemMapF[phys >> SH3_SHIFT];
+		if (!page || (uintptr_t)page < SH3_MAXHANDLER || (phys & 1)) continue;
+		const UINT16 *source = (const UINT16*)(page + (phys & SH3_PAGEM));
+
+		unsigned index = ((pc >> 1) ^ (pc >> 11) ^ (pc >> 21)) & (Sh3Ppc::CACHE_SETS - 1);
+		Sh3Ppc::Lookup &set = Sh3Ppc::lookup[index];
+		bool already_compiled = false;
+		for (unsigned w = 0; w < Sh3Ppc::WAYS; ++w) {
+			if (set.tag[w] == pc) {
+				Sh3Ppc::Block &ex = Sh3Ppc::blocks[index * Sh3Ppc::WAYS + w];
+				if (ex.entry && ex.pc == pc && ex.source == source) {
+					already_compiled = true;
+					break;
+				}
+			}
+		}
+		if (already_compiled) continue;
+
+		unsigned way = sh3_drc_lookup4(set.tag, set.next, pc);
+		Sh3Ppc::Block &b = Sh3Ppc::blocks[index * Sh3Ppc::WAYS + way];
+		Sh3Ppc::compile(b, pc, source);
+		Sh3Ppc::arena_note_slot(index * Sh3Ppc::WAYS + way, b);
+		set.tag[way] = pc;
+
+		if (b.entry) {
+			precompiled_count++;
+#if SALVIA_CV1K_SHADOW
+			if (Sh3Ppc::shadow) {
+				Sh3Ppc::Shadow &dst = Sh3Ppc::shadow[index];
+				dst.pc = b.pc; dst.source = b.source; dst.entry = b.entry;
+				dst.words = b.words; dst.cycles = b.cycles;
+				dst.check_read_map = b.check_read_map ? 1 : 0;
+				dst.sector = (UINT8)Sh3Ppc::arena_sector_of(b.entry);
+				dst.epoch = Sh3Ppc::sector_epoch[dst.sector];
+				dst.reason = (UINT8)(Sh3Ppc::slot_sector ? (Sh3Ppc::slot_sector[index * Sh3Ppc::WAYS + way] >> 5) : 0);
+				dst.stores = (UINT8)(Sh3Ppc::slot_stores ? Sh3Ppc::slot_stores[index * Sh3Ppc::WAYS + way] : 0);
+				memcpy(dst.original, b.original, (unsigned)b.words * 2);
+			}
+#endif
+			for (unsigned i = 0; i < b.words; ++i) {
+				UINT16 op = source[i];
+				UINT32 cur_pc = pc + (i << 1);
+				if ((op & 0xff00) == 0x8b00) { // BF
+					INT8 disp = (INT8)(op & 0xff);
+					q.push(cur_pc + 4 + disp * 2);
+					q.push(cur_pc + 2);
+				} else if ((op & 0xff00) == 0x8f00) { // BF/S
+					INT8 disp = (INT8)(op & 0xff);
+					q.push(cur_pc + 4 + disp * 2);
+					q.push(cur_pc + 4);
+				} else if ((op & 0xff00) == 0x8900) { // BT
+					INT8 disp = (INT8)(op & 0xff);
+					q.push(cur_pc + 4 + disp * 2);
+					q.push(cur_pc + 2);
+				} else if ((op & 0xff00) == 0x8d00) { // BT/S
+					INT8 disp = (INT8)(op & 0xff);
+					q.push(cur_pc + 4 + disp * 2);
+					q.push(cur_pc + 4);
+				} else if ((op & 0xf000) == 0xa000) { // BRA
+					INT16 disp12 = (INT16)((op & 0xfff) << 4) >> 4;
+					q.push(cur_pc + 4 + disp12 * 2);
+				} else if ((op & 0xf000) == 0xb000) { // BSR
+					INT16 disp12 = (INT16)((op & 0xfff) << 4) >> 4;
+					q.push(cur_pc + 4 + disp12 * 2);
+					q.push(cur_pc + 4);
+				} else if ((op & 0xf0ff) == 0x0003 || (op & 0xf0ff) == 0x400b) { // BSRF / JSR
+					q.push(cur_pc + 4);
+				}
+			}
+			if (Sh3Ppc::sh3_block_end_reason == Sh3Ppc::END_WINDOW) {
+				q.push(pc + (b.words << 1));
+			}
+		}
+	}
+
+	free(queue);
+	free(visited);
+
+#if defined(_XBOX)
+	if (precompiled_count > 0) {
+		UINT32 bytes = Sh3Ppc::used * 4;
+		for (UINT32 p = 0; p < bytes; p += 128) {
+			__dcbst(0, (const char*)Sh3Ppc::code + p);
+		}
+		__sync();
+		for (UINT32 p = 0; p < bytes; p += 128) {
+			__icbi(0, (const char*)Sh3Ppc::code + p);
+		}
+		__sync();
+		__isync();
+	}
+#endif
+	bprintf(PRINT_IMPORTANT, _T("CV1000: AOT precompiled %u blocks (%u KB PPC code)\n"),
+		precompiled_count, (Sh3Ppc::used * 4) / 1024);
+}
 #endif
