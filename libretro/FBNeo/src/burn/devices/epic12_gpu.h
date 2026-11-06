@@ -1485,7 +1485,20 @@ static inline bool epic12_gpu_staging_blit(int x, int y, int sx, int sy, int w, 
 				}
 			}
 		}
-		if (war_overlap && epic12_gpu_intersects(x, y, w, h, epic12_gpu_source_bounds[0])) {
+		bool war_conflict = false;
+		if (war_overlap) {
+			const int x_max = x + w - 1;
+			const int y_max = y + h - 1;
+			for (int ci = 0; ci < epic12_gpu_count[0]; ++ci) {
+				const Epic12GpuCommand &cmd = epic12_gpu_commands[0][ci];
+				if (cmd.sx <= x_max && cmd.sx + cmd.w > x &&
+				    cmd.sy <= y_max && cmd.sy + cmd.h > y) {
+					war_conflict = true;
+					break;
+				}
+			}
+		}
+		if (war_conflict) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 			++epic12_gpu_diag_war768_count;
 			epic12_gpu_record_war_sample(x, y, w, h, sx, sy, dpx0, dpx1, dpy0, dpy1);
@@ -1645,7 +1658,20 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 					}
 				}
 			}
-			if (war_overlap && epic12_gpu_intersects(x, y, total_dimx, dimy, epic12_gpu_source_bounds[0])) {
+			bool war_conflict = false;
+			if (war_overlap) {
+				const int x_max = x + total_dimx - 1;
+				const int y_max = y + dimy - 1;
+				for (int ci = 0; ci < epic12_gpu_count[0]; ++ci) {
+					const Epic12GpuCommand &cmd = epic12_gpu_commands[0][ci];
+					if (cmd.sx <= x_max && cmd.sx + cmd.w > x &&
+					    cmd.sy <= y_max && cmd.sy + cmd.h > y) {
+						war_conflict = true;
+						break;
+					}
+				}
+			}
+			if (war_conflict) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 				++epic12_gpu_diag_war768_count;
 				epic12_gpu_record_war_sample(x, y, total_dimx, dimy, sx, sy, dpx0, dpx1, dpy0, dpy1);
