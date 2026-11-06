@@ -1,6 +1,7 @@
 #pragma once
 
 #include "salvia.h"
+#include "salvia_standalone.h"
 #include <video/shaderpreset.h>
 #include <http/httputil.h>
 #include <http/scrapper.h>
@@ -2107,13 +2108,11 @@ std::string initPathAndLog(char** argv){
 	#endif
 
 	#ifdef _XBOX
-		char xexPath[MAX_PATH];
-		memset(xexPath, 0, sizeof(xexPath));
-		if (GetModuleFileNameA(NULL, xexPath, sizeof(xexPath) - 1) > 0) {
-			Constant::setAppDir(xexPath);
-		} else {
+		#if defined(SALVIA_STANDALONE_MMPORK) && SALVIA_STANDALONE_MMPORK
+			Constant::setAppDir(string(dir.getDirActual()) + "mmpork.xex");
+		#else
 			Constant::setAppDir(dir.getDirActual() + string(EMU_LIB_NAME) + ".xex");
-		}
+		#endif
 	#else
 		Constant::setAppDir(argv[0]);
 	#endif	
@@ -2372,19 +2371,36 @@ bool loadGameAtStart(int argc, char *argv[]){
 		}
 		if (!ret) {
 			// 1. Standalone auto-boot check (e.g. mmpork.xex or salvia_autoboot.txt)
-			std::string exeName = Constant::getAppExecutable();
-			Constant::lowerCase(&exeName);
-			bool isStandaloneMmpork = (exeName.find("mmpork") != std::string::npos);
-			std::string autoRom;
+			dirutil dutil;
+			bool isStandaloneMmpork = false;
+			#if defined(SALVIA_STANDALONE_MMPORK) && SALVIA_STANDALONE_MMPORK
+				isStandaloneMmpork = true;
+			#endif
+			if (!isStandaloneMmpork) {
+				if (dutil.fileExists("game:\\mmpork.boot") || dutil.fileExists("d:\\mmpork.boot") ||
+				    dutil.fileExists("game:\\mmpork.autoboot") || dutil.fileExists("d:\\mmpork.autoboot") ||
+				    dutil.fileExists("mmpork.boot") || dutil.fileExists("mmpork.autoboot")) {
+					isStandaloneMmpork = true;
+				}
+			}
+			if (!isStandaloneMmpork) {
+				std::string exeName = Constant::getAppExecutable();
+				Constant::lowerCase(&exeName);
+				if (exeName.find("mmpork") != std::string::npos) {
+					isStandaloneMmpork = true;
+				}
+			}
 
 			if (isStandaloneMmpork) {
-				dirutil dutil;
 				const char* candidates[] = {
 					"game:\\mmpork.zip",
 					"d:\\mmpork.zip",
+					"game:\\roms\\mmpork.zip",
+					"d:\\roms\\mmpork.zip",
 					"mmpork.zip",
 					NULL
 				};
+				std::string autoRom;
 				for (int i = 0; candidates[i]; i++) {
 					if (dutil.fileExists(candidates[i])) {
 						autoRom = candidates[i];
