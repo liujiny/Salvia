@@ -53,3 +53,11 @@ During extensive gameplay of Cave CV1000 *Muchi Muchi Pork!* (`mmpork`) on Xbox 
 2. **Physical Memory Status**:
    - 32 MiB physical RAM reclaimed.
    - Pause menu surface allocation failure guarded against NULL dereference.
+
+3. **Artifact Identity & Build**:
+   - Build script: `/home/humor/salvia-tests/xex-build/build-xex.sh --tag cv1k-pause-crash-fix --baseline a34b3549 --flavor diag`
+   - Archive Image: `/home/humor/salvia-tests/xex-archive/fbneo-20261106-2058-cv1k-pause-crash-fix-diag.xex`
+   - Deployed Image: `Distro360/fbneo.xex`
+   - Flavor: `diag` (`SALVIA_FBNEO_DIAGNOSTICS 1`)
+   - Image Size: 34,832,384 bytes
+   - SHA256: `209728324d43744cf2153ef88b16a75774a59517dae3d3a15faade8a2ff426b3`
