@@ -1652,20 +1652,9 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 	free(queue);
 	free(visited);
 
-#if defined(_XBOX)
 	if (precompiled_count > 0) {
-		UINT32 bytes = Sh3Ppc::used * 4;
-		for (UINT32 p = 0; p < bytes; p += 128) {
-			__dcbst(0, (const char*)Sh3Ppc::code + p);
-		}
-		__sync();
-		for (UINT32 p = 0; p < bytes; p += 128) {
-			__icbi(0, (const char*)Sh3Ppc::code + p);
-		}
-		__sync();
-		__isync();
+		Sh3Ppc::sync_code(Sh3Ppc::code, Sh3Ppc::code + Sh3Ppc::used);
 	}
-#endif
 	bprintf(PRINT_IMPORTANT, _T("CV1000: AOT precompiled %u blocks (%u KB PPC code)\n"),
 		precompiled_count, (Sh3Ppc::used * 4) / 1024);
 }
