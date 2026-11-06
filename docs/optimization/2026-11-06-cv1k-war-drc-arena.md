@@ -91,3 +91,11 @@ slot_sector[slot] = (UINT8)((((UINT32*)block.entry - code) / SECTOR_WORDS) | (sh
    - `libretro/FBNeo/tests/sh3_hot_fallback/run.py --output /tmp/sh3_hot_out`: **100% PASS** (524,288 opcode cases, 6,912 directed loads).
    - `libretro/FBNeo/tests/ymz770_idct/run.py`: **100% PASS** (100,000 subband vectors bit-identical).
    - `libretro/FBNeo/tests/frontend_state/run.py`: **100% PASS** (streaming, CRC, worker ownership).
+
+2. **Artifact Identity & Build**:
+   - Build script: `/home/humor/salvia-tests/xex-build/build-xex.sh --tag cv1k-war-drc-arena --baseline d8e766a7 --flavor diag`
+   - Archive Image: `/home/humor/salvia-tests/xex-archive/fbneo-20261106-2001-cv1k-war-drc-arena-diag.xex`
+   - Deployed Image: `Distro360/fbneo.xex`
+   - Flavor: `diag` (`SALVIA_FBNEO_DIAGNOSTICS 1`)
+   - Image Size: 34,844,672 bytes
+   - SHA256: `9f6c72976fbc1845e9b644f94da297bacf7904fd37aaa143c817033a4c1c83d3`
