@@ -30,10 +30,9 @@
 // by about 40% (host: 1.23M -> 1.79M arena words at 60 frames, 3.72M -> 5.24M
 // at 1800), so the working set reaches a 20 MiB arena inside one 3,500-frame
 // console window and the ring starts reusing 1 MiB sectors. 32 MiB is the size
-// the pre-ring sweep measured as the default; on extended CV1000 gameplay
-// (6,200+ frames), 32 MiB fills up and triggers 22+ sector evictions. 64 MiB
-// eliminates all arena recycling and block invalidation.
-#define SH3_PPC_CACHE_BYTES (64 * 1024 * 1024)
+// the pre-ring sweep measured as the default; it keeps the same state inside
+// ~62% instead of 99.9% and delays the first reuse by about 1,000 frames.
+#define SH3_PPC_CACHE_BYTES (32 * 1024 * 1024)
 #endif
 
 // How many instructions past a delayed conditional's delay slot the fused
@@ -64,10 +63,10 @@
 // straddles a sector boundary, so reusing a sector can be made safe by
 // invalidating exactly the block-table slots that were compiled into it — a
 // bounded cost — instead of discarding every compiled block in the cache.
-// 2 MiB with 64 MiB arena keeps SECTOR_COUNT at 32, exactly fitting into the
-// 5-bit sector field of slot_sector (slot_sector[i] & 0x1F).
+// 1 MiB keeps the alignment waste (at most MAX_WORDS per sector) under 1% and
+// the slot map that makes the invalidation cheap at TABLE_SIZE bytes.
 #ifndef SH3_PPC_SECTOR_BYTES
-#define SH3_PPC_SECTOR_BYTES (2 * 1024 * 1024)
+#define SH3_PPC_SECTOR_BYTES (1024 * 1024)
 #endif
 
 namespace Sh3Ppc {

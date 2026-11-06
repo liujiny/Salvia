@@ -1868,7 +1868,7 @@ struct retro_system_av_info GameMenu::getAvInfo(){
 *
 */
 SDL_Surface* GameMenu::clonarPantalla(SDL_Surface* src, int transparency) {
-    if (!src) return NULL;
+    if (!src || !overlay) return NULL;
 	SDL_Surface* copia = NULL;
 	//Dimensiones y calculo de aspecto
 	Dimension srcDim = {src->w, src->h};
@@ -1881,16 +1881,22 @@ SDL_Surface* GameMenu::clonarPantalla(SDL_Surface* src, int transparency) {
 		copia = SDL_CreateRGBSurface(SDL_SWSURFACE, overlay->w, overlay->h, overlay->format->BitsPerPixel, 
 			overlay->format->Rmask, overlay->format->Gmask, 
 			overlay->format->Bmask, 0);
+		if (!copia) return NULL;
 		SDL_BlitSurface(src, NULL, copia, NULL);
 		boxRGBA(copia, 0, 0, copia->w -1, copia->h -1, Constant::colors[clBackground].sdlColor.r, Constant::colors[clBackground].sdlColor.g, Constant::colors[clBackground].sdlColor.b, transparency);
 	} else {
 		SDL_Surface *tmp = SDL_CreateRGBSurface(SDL_SWSURFACE, overlay->w, overlay->h, 
 			src->format->BitsPerPixel, src->format->Rmask, src->format->Gmask, 
 			src->format->Bmask, src->format->Amask);
+		if (!tmp) return NULL;
 		
 		double zoomX = (double)dstRect.w / srcDim.w;
 		double zoomY = (double)dstRect.h / srcDim.h;
 		SDL_Surface *tmp2 = zoomSurface(src, zoomX, zoomY, false);
+		if (!tmp2) {
+			SDL_FreeSurface(tmp);
+			return NULL;
+		}
 		SDL_BlitSurface(tmp2, NULL, tmp, &dstRect);
 		SDL_FreeSurface(tmp2);
 
@@ -1907,7 +1913,9 @@ SDL_Surface* GameMenu::clonarPantalla(SDL_Surface* src, int transparency) {
 	}
 	
 	// Imagen plana sin transparencias
-	SDL_SetAlpha(copia, SDL_RLEACCEL, 0xFF);
+	if (copia) {
+		SDL_SetAlpha(copia, SDL_RLEACCEL, 0xFF);
+	}
     return copia;
 }
 
