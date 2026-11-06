@@ -2107,7 +2107,13 @@ std::string initPathAndLog(char** argv){
 	#endif
 
 	#ifdef _XBOX
-		Constant::setAppDir(dir.getDirActual() + string(EMU_LIB_NAME) + ".xex");
+		char xexPath[MAX_PATH];
+		memset(xexPath, 0, sizeof(xexPath));
+		if (GetModuleFileNameA(NULL, xexPath, sizeof(xexPath) - 1) > 0) {
+			Constant::setAppDir(xexPath);
+		} else {
+			Constant::setAppDir(dir.getDirActual() + string(EMU_LIB_NAME) + ".xex");
+		}
 	#else
 		Constant::setAppDir(argv[0]);
 	#endif	
@@ -2365,7 +2371,77 @@ bool loadGameAtStart(int argc, char *argv[]){
 			LOG_DEBUG("No se encontraron datos de lanzamiento.\n");
 		}
 		if (!ret) {
-			FILE* bf = fopen("game:\\salvia_benchmark.txt", "r");
+			// 1. Standalone auto-boot check (e.g. mmpork.xex or salvia_autoboot.txt)
+			std::string exeName = Constant::getAppExecutable();
+			Constant::lowerCase(&exeName);
+			bool isStandaloneMmpork = (exeName.find("mmpork") != std::string::npos);
+			std::string autoRom;
+
+			if (isStandaloneMmpork) {
+				dirutil dutil;
+				const char* candidates[] = {
+					"game:\\mmpork.zip",
+					"d:\\mmpork.zip",
+					"mmpork.zip",
+					NULL
+				};
+				for (int i = 0; candidates[i]; i++) {
+					if (dutil.fileExists(candidates[i])) {
+						autoRom = candidates[i];
+						break;
+					}
+				}
+				if (autoRom.empty()) {
+					std::string ap = Constant::getAppDir() + "\\mmpork.zip";
+					if (dutil.fileExists(ap.c_str())) autoRom = ap;
+				}
+				if (!autoRom.empty()) {
+					LOG_INFO("Standalone MMPork auto-boot: launching %s in full play mode\n", autoRom.c_str());
+					ret = launchGame(autoRom) == 1;
+				}
+			}
+
+			if (!ret) {
+				// Standalone autoboot text configuration check
+				FILE* af = fopen("game:\\salvia_autoboot.txt", "r");
+				if (!af) af = fopen("d:\\salvia_autoboot.txt", "r");
+				if (!af) {
+					std::string ap = Constant::getAppDir() + "\\salvia_autoboot.txt";
+					af = fopen(ap.c_str(), "r");
+				}
+				if (!af) af = fopen("salvia_autoboot.txt", "r");
+				if (af) {
+					char line[256];
+					std::string aRom, aState;
+					while (fgets(line, sizeof(line), af)) {
+						char* p = line + strlen(line) - 1;
+						while (p >= line && (*p == '\r' || *p == '\n' || *p == ' ' || *p == '\t')) { *p = '\0'; p--; }
+						if (strncmp(line, "rom=", 4) == 0) aRom = line + 4;
+						else if (strncmp(line, "state=", 6) == 0) aState = line + 6;
+					}
+					fclose(af);
+					if (!aRom.empty()) {
+						dirutil dutil;
+						if (!dutil.fileExists(aRom.c_str()) && strncmp(aRom.c_str(), "game:\\", 6) == 0) {
+							std::string alt = std::string("d:\\") + (aRom.c_str() + 6);
+							if (dutil.fileExists(alt.c_str())) aRom = alt;
+							else {
+								alt = Constant::getAppDir() + "\\" + (aRom.c_str() + 6);
+								if (dutil.fileExists(alt.c_str())) aRom = alt;
+							}
+						}
+						ret = launchGame(aRom) == 1;
+						if (ret && !aState.empty()) {
+							if (dutil.fileExists(aState.c_str())) {
+								loadStateFromPath(aState.c_str());
+							}
+						}
+					}
+				}
+			}
+
+			if (!ret) {
+				FILE* bf = fopen("game:\\salvia_benchmark.txt", "r");
 			if (!bf) bf = fopen("d:\\salvia_benchmark.txt", "r");
 			if (!bf) {
 				std::string ap = Constant::getAppDir() + "\\salvia_benchmark.txt";
