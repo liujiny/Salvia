@@ -125,6 +125,7 @@ void Sh3SetDrcIdleWatch(const UINT32*, const UINT32*) {}
 void Sh3SetDrcDeviceRead(INT32, UINT32, INT32) {}
 INT32 Sh3SetDrcRam(UINT8*, UINT32, UINT32, UINT32) { return 0; }
 void Sh3DrcPrecompile(UINT32, UINT32) {}
+UINT32 Sh3DrcCompileCount() { return 0; }
 #endif
 
 static UINT32  m_spc;

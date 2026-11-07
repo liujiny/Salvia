@@ -18,6 +18,7 @@
 extern INT32 nBurnRenderCores;
 static SalviaReviewProfile<4> cv1k_review;
 static SalviaReviewTail<4> cv1k_review_tail;
+static SalviaReviewStalls<4> cv1k_review_stalls;
 static SalviaReviewTick cv1k_review_slow_ticks;
 #endif
 
@@ -95,6 +96,20 @@ void cv1k_review_report(void (*emit)(const char*))
             emit(text);
         }
     }
+    if (QueryPerformanceFrequency(&frequency) && frequency.QuadPart > 0) {
+        const double unit = 1000.0 / (double)frequency.QuadPart;
+        sprintf(text, "core_stall_watch frames=%u invalid=%u threshold_ms=100 count=%u retained=%u peak_ms=%.3f coverage=all_core_frames",
+            cv1k_review_stalls.frames, cv1k_review_stalls.invalid, cv1k_review_stalls.count,
+            cv1k_review_stalls.retained, cv1k_review_stalls.peak * unit);
+        emit(text);
+        for (unsigned i = 0; i < cv1k_review_stalls.retained; ++i) {
+            const SalviaReviewStalls<4>::Event &event = cv1k_review_stalls.events[i];
+            sprintf(text, "core_stall rank=%u interval_frame=%u prep=%.3f cpu_io=%.3f audio_tail_misc=%.3f draw_sync=%.3f total=%.3f compiled_blocks=%u includes_aot=1",
+                i + 1, event.frame, event.ticks[0] * unit, event.ticks[1] * unit,
+                event.ticks[2] * unit, event.ticks[3] * unit, event.total * unit, event.compiled);
+            emit(text);
+        }
+    }
     Sh3WorkReport(emit);
 #if SALVIA_CV1K_PROBE
     {
@@ -148,6 +163,7 @@ void cv1k_review_report(void (*emit)(const char*))
 #endif
     cv1k_review.clear_window();
     cv1k_review_tail.clear_window();
+    cv1k_review_stalls.clear_window();
 #endif
 }
 #endif
@@ -651,6 +667,7 @@ static INT32 DrvInit()
 #ifdef _XBOX
 	cv1k_review.clear_window();
 	cv1k_review_tail.clear_window();
+	cv1k_review_stalls.clear_window();
 	LARGE_INTEGER reviewFrequency;
 	cv1k_review_slow_ticks = (SALVIA_FBNEO_DIAGNOSTICS && QueryPerformanceFrequency(&reviewFrequency) && reviewFrequency.QuadPart > 0)
 		? (SalviaReviewTick)reviewFrequency.QuadPart / 40 : 0; // strict >25 ms core samples
@@ -749,8 +766,9 @@ static INT32 DrvFrame()
 	const bool workSample = SALVIA_FBNEO_DIAGNOSTICS && salvia_review_work_sample(cv1k_review.rng, reviewSample) &&
 		(DrvDips[1] & 2) && !(DrvDips[3] & 0x10);
 	salvia_cv1k_work_sample_frame = workSample ? 1u : 0u;
+	const UINT32 compiledBefore = SALVIA_FBNEO_DIAGNOSTICS ? Sh3DrcCompileCount() : 0;
 	SalviaReviewTick reviewMarks[5];
-	if (reviewSample) reviewMarks[0] = salvia_review_clock();
+	if (SALVIA_FBNEO_DIAGNOSTICS) reviewMarks[0] = salvia_review_clock();
 #endif
 
 	// check if cpu rate changes here..
@@ -826,7 +844,7 @@ static INT32 DrvFrame()
 #endif
 
 #ifdef _XBOX
-	if (reviewSample) reviewMarks[1] = salvia_review_clock();
+	if (SALVIA_FBNEO_DIAGNOSTICS) reviewMarks[1] = salvia_review_clock();
 #endif
 	Sh3NewFrame();
 
@@ -852,7 +870,7 @@ static INT32 DrvFrame()
 
 	Sh3SetIRQLine(2, CPU_IRQSTATUS_HOLD);
 #ifdef _XBOX
-	if (reviewSample) reviewMarks[2] = salvia_review_clock();
+	if (SALVIA_FBNEO_DIAGNOSTICS) reviewMarks[2] = salvia_review_clock();
 #endif
 
 	if (pBurnSoundOut) {
@@ -865,7 +883,7 @@ static INT32 DrvFrame()
 
 	rtc9701_once_per_frame();
 #ifdef _XBOX
-	if (reviewSample) reviewMarks[3] = salvia_review_clock();
+	if (SALVIA_FBNEO_DIAGNOSTICS) reviewMarks[3] = salvia_review_clock();
 #endif
 
 	if (DrvDips[1] & 4) { // Thread Sync: Before Draw
@@ -876,9 +894,11 @@ static INT32 DrvFrame()
 		BurnDrvRedraw();
 	}
 #ifdef _XBOX
-	if (reviewSample) {
+	if (SALVIA_FBNEO_DIAGNOSTICS) {
 		reviewMarks[4] = salvia_review_clock();
-		if (cv1k_review.record(reviewMarks))
+		cv1k_review_stalls.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks * 4,
+			Sh3DrcCompileCount() - compiledBefore);
+		if (reviewSample && cv1k_review.record(reviewMarks))
 			cv1k_review_tail.record_validated(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks);
 	}
 #endif

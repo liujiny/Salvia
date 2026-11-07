@@ -1524,6 +1524,8 @@ static void sh3_drc_exit()
 // Preserve the one-block entry for the existing instruction differential tests.
 static bool sh3_drc_run() { return sh3_drc_dispatch<false>(); }
 
+UINT32 Sh3DrcCompileCount() { return (UINT32)Sh3Ppc::sh3_gen_blocks; }
+
 struct Sh3PrecompileQueue {
 	UINT8 *visited;
 	UINT32 bitmap_bytes;

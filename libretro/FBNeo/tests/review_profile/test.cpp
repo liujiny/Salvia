@@ -50,6 +50,32 @@ int main() {
     SalviaReviewTick wide[5] = {base, base+1, base+2, base+3, base+((SalviaReviewTick)1<<33)};
     tail.record_validated(wide, 7, 25);
     CHECK(tail.slowTotal == ((SalviaReviewTick)1<<33) && tail.peak == tail.slowTotal);
+    SalviaReviewStalls<4> stalls = {0};
+    stalls.record(boundary, 1, 25, 3);
+    CHECK(stalls.frames == 1 && stalls.count == 0 && stalls.peak == 25);
+    stalls.record(cpuSlow, 2, 25, 7);
+    CHECK(stalls.count == 1 && stalls.events[0].frame == 2 && stalls.events[0].compiled == 7);
+    stalls.record(badCore, 3, 25);
+    CHECK(stalls.invalid == 1 && stalls.frames == 2 && stalls.count == 1);
+    for (unsigned i = 0; i < 20; ++i) {
+        SalviaReviewTick marks[5] = {100, 101, 102, 103, 200 + i};
+        stalls.record(marks, 100 + i, 25, i);
+    }
+    CHECK(stalls.count == 21 && stalls.retained == 8 && stalls.frames == 22);
+    for (unsigned i = 0; i < 8; ++i) {
+        CHECK(stalls.events[i].total == 119 - i && stalls.events[i].frame == 119 - i);
+        CHECK(stalls.events[i].compiled == 19 - i && stalls.events[i].ticks[3] == 116 - i);
+    }
+    // A later, shorter stall cannot evict one of the retained worst frames.
+    stalls.record(cpuSlow, 200, 25);
+    CHECK(stalls.retained == 8 && stalls.count == 22 && stalls.events[7].total == 112);
+    stalls.clear_window();
+    CHECK(!stalls.frames && !stalls.count && !stalls.retained && !stalls.peak && !stalls.invalid);
+    stalls.record(wide, 201, 25, 99);
+    CHECK(stalls.events[0].total == ((SalviaReviewTick)1 << 33) && stalls.events[0].compiled == 99);
+    stalls.record(cpuSlow, 202, 0);
+    CHECK(stalls.frames == 1 && stalls.count == 1);
+    puts("PASS all-frame stall capture / bounded worst eight / coherent phases / compiler delta / invalid clocks / reset / 64-bit ticks");
     puts("PASS slow-frame threshold, mixed phase dominance, coherent peak frame, invalid exclusion, reset and 64-bit ticks");
     printf("PASS review profile: %u/1000000 samples; phase sums, clock guards, pause windows and 3/4-stage layouts\n", selected);
     return 0;

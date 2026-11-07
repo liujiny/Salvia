@@ -83,6 +83,39 @@ template<unsigned N> struct SalviaReviewTail {
     }
 };
 
+// A rare multi-second stall is easily missed by the random sample. Keep the
+// worst eight complete frames in memory; the existing pause hook prints them.
+// Boundary clocks only: the instruction/dispatch sampling policy is unchanged.
+template<unsigned N> struct SalviaReviewStalls {
+    struct Event {
+        unsigned frame, compiled;
+        SalviaReviewTick ticks[N], total;
+    } events[8];
+    unsigned frames, invalid, count, retained;
+    SalviaReviewTick peak;
+    void clear_window() { memset(this, 0, sizeof(*this)); }
+    void record(const SalviaReviewTick (&stamp)[N + 1], unsigned frame,
+                SalviaReviewTick threshold, unsigned compiled = 0) {
+        if (!threshold) return;
+        if (!stamp[0]) { ++invalid; return; }
+        for (unsigned i = 0; i < N; ++i)
+            if (stamp[i + 1] < stamp[i]) { ++invalid; return; }
+        ++frames;
+        SalviaReviewTick elapsed = stamp[N] - stamp[0];
+        if (elapsed > peak) peak = elapsed;
+        if (elapsed <= threshold) return;
+        ++count;
+        unsigned pos = 0;
+        while (pos < retained && events[pos].total >= elapsed) ++pos;
+        if (pos == 8) return;
+        if (retained < 8) ++retained;
+        for (unsigned i = retained - 1; i > pos; --i) events[i] = events[i - 1];
+        Event &event = events[pos];
+        event.frame = frame; event.total = elapsed; event.compiled = compiled;
+        for (unsigned i = 0; i < N; ++i) event.ticks[i] = stamp[i + 1] - stamp[i];
+    }
+};
+
 // Defined by the statically linked frontend; accessed only on the emulation thread.
 extern "C" { extern unsigned salvia_cv1k_work_sample_frame; }
 // The wall clock is a Windows/console facility; host differential builds only

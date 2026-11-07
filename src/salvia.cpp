@@ -15,6 +15,8 @@
 #ifdef _XBOX
 #include "../libretro/FBNeo/src/burn/devices/cv1k_review_profile.h"
 static SalviaReviewProfile<3> g_review_loop;
+static SalviaReviewStalls<4> g_review_stalls;
+static SalviaReviewTick g_review_stall_threshold;
 extern "C" { unsigned salvia_cv1k_work_sample_frame = 0; }
 static unsigned g_review_work_skipped;
 // Called by the existing pause hook, never from a running frame or audio callback.
@@ -35,7 +37,20 @@ static void salvia_review_frontend_report()
             g_review_loop.ticks[0] * avg, g_review_loop.ticks[1] * avg,
             g_review_loop.ticks[2] * avg, g_review_loop.total * avg, g_review_loop.peak * unit);
     }
+    if (QueryPerformanceFrequency(&frequency) && frequency.QuadPart > 0) {
+        const double unit = 1000.0 / (double)frequency.QuadPart;
+        fprintf(file, "CV1000 review: frontend_stall_watch frames=%u invalid=%u threshold_ms=100 count=%u retained=%u peak_ms=%.3f coverage=all_started_loops_including_preloop_events\n",
+            g_review_stalls.frames, g_review_stalls.invalid, g_review_stalls.count,
+            g_review_stalls.retained, g_review_stalls.peak * unit);
+        for (unsigned i = 0; i < g_review_stalls.retained; ++i) {
+            const SalviaReviewStalls<4>::Event &event = g_review_stalls.events[i];
+            fprintf(file, "CV1000 review: frontend_stall rank=%u interval_frame=%u events=%.3f game_and_ui=%.3f present=%.3f limiter=%.3f total=%.3f\n",
+                i + 1, event.frame, event.ticks[0] * unit, event.ticks[1] * unit,
+                event.ticks[2] * unit, event.ticks[3] * unit, event.total * unit);
+        }
+    }
     fclose(file);
+    g_review_stalls.clear_window();
     g_review_loop.clear_window();
     g_review_work_skipped = 0;
 #endif
@@ -2856,13 +2871,30 @@ static void __declspec(noinline) printAndDelay(){
 static void __declspec(noinline) runGameLoop() {
 	//__try {
 		while (gameMenu->running) {
+#ifdef _XBOX
+            const bool stallWatch = SALVIA_FBNEO_DIAGNOSTICS && strcmp(EMU_LIB_NAME, "fbneo") == 0 &&
+                gameMenu->getEmuStatus() == EMU_STARTED;
+            SalviaReviewTick stallMarks[5];
+            if (stallWatch) {
+                if (!g_review_stall_threshold) {
+                    LARGE_INTEGER frequency;
+                    if (QueryPerformanceFrequency(&frequency) && frequency.QuadPart > 0)
+                        g_review_stall_threshold = (SalviaReviewTick)frequency.QuadPart / 10;
+                }
+                stallMarks[0] = salvia_review_clock();
+            }
+#endif
 			processFrontendEvents();
 #ifdef _XBOX
 			salvia_cv1k_work_sample_frame = 0;
 			const bool reviewSample = SALVIA_FBNEO_DIAGNOSTICS && strcmp(EMU_LIB_NAME, "fbneo") == 0 &&
 				gameMenu->getEmuStatus() == EMU_STARTED && g_review_loop.begin();
 			SalviaReviewTick reviewMarks[4];
-			if (reviewSample) reviewMarks[0] = salvia_review_clock();
+			if (reviewSample || stallWatch) {
+                SalviaReviewTick now = salvia_review_clock();
+                if (reviewSample) reviewMarks[0] = now;
+                if (stallWatch) stallMarks[1] = now;
+            }
 #endif
 
 			/* Musica de menu: aqui SOLO se abre o cierra el grifo.  El
@@ -2929,7 +2961,11 @@ static void __declspec(noinline) runGameLoop() {
 
 			gameMenu->processFrontendEventsAfter();
 #ifdef _XBOX
-			if (reviewSample) reviewMarks[1] = salvia_review_clock();
+			if (reviewSample || stallWatch) {
+                SalviaReviewTick now = salvia_review_clock();
+                if (reviewSample) reviewMarks[1] = now;
+                if (stallWatch) stallMarks[2] = now;
+            }
 #endif
 
 			/* Se presenta en cuanto el frame esta listo y la espera del
@@ -2943,10 +2979,18 @@ static void __declspec(noinline) runGameLoop() {
 			gameMenu->sync->note_flip(flipEnd - flipIni);
 			gameMenu->sync->note_present(flipEnd);
 #ifdef _XBOX
-			if (reviewSample) reviewMarks[2] = salvia_review_clock();
+			if (reviewSample || stallWatch) {
+                SalviaReviewTick now = salvia_review_clock();
+                if (reviewSample) reviewMarks[2] = now;
+                if (stallWatch) stallMarks[3] = now;
+            }
 #endif
 			gameMenu->sync->limit_fps(nextFrameTime, *gameMenu->current_sync, gameMenu->gameTicks);
 #ifdef _XBOX
+            if (stallWatch && gameMenu->getEmuStatus() == EMU_STARTED) {
+                stallMarks[4] = salvia_review_clock();
+                g_review_stalls.record(stallMarks, g_review_loop.frames, g_review_stall_threshold);
+            }
 			if (reviewSample) {
 				reviewMarks[3] = salvia_review_clock();
 				if (!salvia_cv1k_work_sample_frame) g_review_loop.record(reviewMarks);
