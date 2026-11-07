@@ -31,9 +31,9 @@
 // at 1800), so the working set reaches a 20 MiB arena inside one 3,500-frame
 // console window and the ring starts reusing 1 MiB sectors. 32 MiB is the size
 // the pre-ring sweep measured as the default; it keeps the same state inside
-// 48 MiB arena: provides 14.5 MiB headroom above the 33.5 MiB Muchi Muchi Pork peak working set,
-// completely eliminating all 22 full-cache evictions while safely preserving title RAM margins.
-#define SH3_PPC_CACHE_BYTES (48 * 1024 * 1024)
+// 32 MiB arena keeps the working set bounded within 16 ring sectors while
+// preserving crucial title RAM for 160MB-footprint games (ddpsdoj).
+#define SH3_PPC_CACHE_BYTES (32 * 1024 * 1024)
 #endif
 
 // How many instructions past a delayed conditional's delay slot the fused
@@ -1570,6 +1570,9 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 	UINT32 precompiled_count = 0;
 	UINT32 pc = 0;
 	while (q.pop(pc)) {
+		if (++precompiled_count >= 8192) {
+			break;
+		}
 		if (Sh3Ppc::used + Sh3Ppc::MAX_WORDS >= (Sh3Ppc::CACHE_WORDS - 262144)) {
 			break;
 		}

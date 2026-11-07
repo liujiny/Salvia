@@ -218,8 +218,8 @@ static struct BurnDIPInfo DefaultDIPList[]=
 	{0x01, 0x01, 0x04, 0x04, "Before Draw"		},
 
 	{0   , 0xfe, 0   ,    2, "Timing Model (ibara360)" },
-	{0x01, 0x01, 0x08, 0x00, "Arcade PCB Fit (78% + Bus Stall)" },
-	{0x01, 0x01, 0x08, 0x08, "Unthrottled (100% 102.4MHz)" },
+	{0x01, 0x01, 0x08, 0x00, "Arcade PCB Fit (Bus Stall)" },
+	{0x01, 0x01, 0x08, 0x08, "Unthrottled (102.4MHz No Stall)" },
 
 	{0   , 0xfe, 0   ,    2, "Blitter Timing"	},
 	{0x02, 0x01, 0x20, 0x00, "Accurate (Buffis)"},
@@ -760,7 +760,7 @@ static INT32 DrvFrame()
 		nPrevCPUTenth = DrvDips[3] & 0x0f;
 		nPrevTimingModel = DrvDips[1] & 0x08;
 
-		INT32 base_percent = (DrvDips[1] & 0x08) ? 100 : 78; // ibara360 arcade fit: 78% effective throughput
+		INT32 base_percent = 100; // 102.4MHz nominal; authentic slowdown is achieved dynamically via bus stalls in epic12
 		INT32 i_percent = ((double)base_percent * nBurnCPUSpeedAdjust / 256) + 0.5; // whole percent comes from UI
 		double dPercent = i_percent + (0.1 * (DrvDips[3] & 0xf)); // .x tenth percent comes from DIPS
 
@@ -820,7 +820,7 @@ static INT32 DrvFrame()
 		if (!cv1k_boot_pending && nCurrentFrame >= 60) ready = true;
 		if (ready) {
 			s_cv1k_aot_done = true;
-			Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x1000000 : 0x800000);
+			Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x400000 : 0x200000);
 		}
 	}
 #endif
