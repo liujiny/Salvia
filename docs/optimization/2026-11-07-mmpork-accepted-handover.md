@@ -160,3 +160,11 @@ release仅归档，尚未在实机运行；不能把诊断版实测数字标为r
 主机与仓库Distro360/fbneo.xex仍是已验收诊断版983c；A/B目录仍是原始对照与已验收诊断版。
 运行源码镜像Distro360/fbneo.xex及其链接PE已由本次构建更新为release输出，
 不能据该构建目录推断主机当前版本。源码头文件镜像逐字节核对匹配。
+
+
+## 10. 后续AOT建议的独立交接
+
+应用户后续要求，预编译优化建议另见
+[CV1000 AOT优化建议交接](2026-11-07-cv1k-aot-optimization-plan-handover.md)。
+这是后续研究建议，尚未实施，不改变本次mmpork已验收状态。
+外部副本：`cv1000_aot_optimization_handover.md`，与本交接外部副本位于同一目录。
