@@ -820,9 +820,11 @@ static INT32 DrvFrame()
 		if (was_pending && !cv1k_boot_pending) {
 			s_cv1k_aot_done = true;
 			Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x400000 : 0x200000);
+			Sh3DrcPrecompile(0xac000000, is_type_d ? 0x400000 : 0x200000);
 		} else if (!cv1k_boot_pending && nCurrentFrame >= 300) {
 			s_cv1k_aot_done = true;
 			Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x400000 : 0x200000);
+			Sh3DrcPrecompile(0xac000000, is_type_d ? 0x400000 : 0x200000);
 		}
 	}
 #endif
@@ -918,6 +920,7 @@ static INT32 DrvScan(INT32 nAction, INT32 *pnMin)
 		cv1k_boot_pending = NULL;
 		s_cv1k_aot_done = true;
 		Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x1000000 : 0x800000);
+		Sh3DrcPrecompile(0xac000000, is_type_d ? 0x1000000 : 0x800000);
 	}
 #endif
 

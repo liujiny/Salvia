@@ -1899,7 +1899,17 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	if (!epic12_gpu_enabled) return false;
 	int sm = smode, dm = dmode, sa = s_alpha, da = d_alpha;
 	if (blend) {
+		if (dm == 4) {
+			dm = 0;
+			da = 31 - da;
+		}
 		if (sm == 3 && (dm == 0 || dm == 3 || dm == 7)) {
+			sm = 0;
+			sa = 31;
+		} else if (sm == 4 && (dm == 0 || dm == 3 || dm == 7)) {
+			sm = 0;
+			sa = 31 - sa;
+		} else if (sm == 7 && (dm == 0 || dm == 3 || dm == 7)) {
 			sm = 0;
 			sa = 31;
 		} else if (sm == 1 && (dm == 0 || dm == 3 || dm == 7)) {

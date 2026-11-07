@@ -628,9 +628,9 @@ struct Compiler {
   const RamWindow &ram=ram_window;
   const unsigned device_opcode=(sh3_device_reads[0].callback || sh3_device_reads[1].callback)?service_opcode:0;
   bool constant_ram=ram.base && base==-1 &&
-   ((absolute&0x7fffffffu)&~(ram.span-1))==ram.start;
+   ((absolute&AM)&~(ram.span-1))==ram.start;
   bool direct=constant_ram || (ram.base && base!=-1 &&
-   ((block_pc&0x7fffffffu)&~(ram.span-1))==ram.start);
+   ((block_pc&AM)&~(ram.span-1))==ram.start);
   // A constant PC-relative operand needs no runtime address translation.
   // Keep real memory reads: literal data can change without changing code.
   if (constant_ram && ((absolute&(size-1)) ||
@@ -643,7 +643,7 @@ struct Compiler {
   int data = reg(value,write || address_value);
   if (constant_ram) {
    // A compile-time-bound RAM operand needs no runtime translation at all.
-   ram_address(12,(absolute-ram.start)&ram.mask);
+   ram_address(12,((absolute&AM)-ram.start)&ram.mask);
   } else if (direct) {
    address(base,index,disp,absolute);
    // Match every external alias accepted by the interpreter, including
@@ -665,22 +665,47 @@ struct Compiler {
     rotate(0,11,3,29,31); cmpi(0,7,true); guard(0,true,device_opcode);
    }
    rotate(0,11,32-ram.span_bits,ram.span_bits+3,31);
-   cmpi(0,ram.start>>ram.span_bits,true); guard(2,true,device_opcode);
-   const unsigned extract_bits=(ram.backing_bits && ram.backing_bits<ram.span_bits)?ram.backing_bits:ram.span_bits;
-   rotate(12,11,0,32-extract_bits,31);
-   if(!write && size==4 && ram.watch!=0xffffffffu) {
-    UINT32 watch_off=(ram.watch-ram.start)&((1u<<extract_bits)-1);
-    if(watch_off<=0xffff) { cmpi(12,(int)watch_off,true); guard(2,false,service_opcode); }
-    else { imm(0,watch_off); cmp(12,0); guard_watch(service_opcode); }
+   cmpi(0,ram.start>>ram.span_bits,true);
+   if (write) {
+    guard(2,true,device_opcode);
+    const unsigned extract_bits=(ram.backing_bits && ram.backing_bits<ram.span_bits)?ram.backing_bits:ram.span_bits;
+    rotate(12,11,0,32-extract_bits,31);
+    ram_bias(12);
+   } else {
+    UINT32 *not_direct_ram = branch(2, false);
+    const unsigned extract_bits=(ram.backing_bits && ram.backing_bits<ram.span_bits)?ram.backing_bits:ram.span_bits;
+    rotate(12,11,0,32-extract_bits,31);
+    if(size==4 && ram.watch!=0xffffffffu) {
+     UINT32 watch_off=(ram.watch-ram.start)&((1u<<extract_bits)-1);
+     if(watch_off<=0xffff) { cmpi(12,(int)watch_off,true); guard(2,false,service_opcode); }
+     else { imm(0,watch_off); cmp(12,0); guard_watch(service_opcode); }
+    }
+    ram_bias(12);
+    UINT32 *done_direct = jump();
+    patch(not_direct_ram);
+    rotate(0, 11, 18, 17, 29); // ((address & AM) >> 16) * sizeof(pointer)
+    load(12, SO(read_map));
+    emit(x(12, 12, 0, 23)); // lwzx map entry
+    cmpi(12, SH3_MAXHANDLER, true);
+    guard(0, false, device_opcode);
+    rotate(0, 11, 0, 16, 31);
+    add(12, 12, 0);
+    patch(done_direct);
    }
-   ram_bias(12);
   } else {
    address(base, index, disp, absolute);
    // All address arithmetic is explicitly reduced to 32 bits for Xenon.
    rotate(11, 11, 0, 0, 31);
-   imm(0, 0xe0000000); cmp(11, 0, true); guard(0, true,device_opcode);
    if (size > 1) { emit(d(28, 11, 0, size - 1)); guard(2, true,device_opcode); }
-   rotate(11, 11, 0, 3, 31); // SH3 physical address mask (AM)
+   rotate(0, 11, 16, 16, 31); // r0 = (r11 >> 16) & 0xffff
+   cmpi(0, 0xe000, true);
+   UINT32 *not_p4 = branch(0, true); // if r0 < 0xe000, P0..P3
+   cmpi(0, 0xf000, true);
+   guard(2, true, device_opcode); // if not DrvCacheRAM, guard trips
+   UINT32 *is_cache_ram = jump();
+   patch(not_p4);
+   rotate(11, 11, 0, 3, 31); // SH3 physical address mask (AM) for P0..P3
+   patch(is_cache_ram);
    rotate(0, 11, 18, 14, 29); // (address >> 16) * sizeof(pointer)
    load(12, write ? SO(write_map) : SO(read_map));
    emit(x(12, 12, 0, 23)); // lwzx map entry
@@ -1559,8 +1584,9 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 			}
 			if ((i & 1) == 0 && i + 1 < scan_words) {
 				UINT32 ptr = ((UINT32)words[i] << 16) | words[i + 1];
-				if (ptr >= start_pc && ptr < start_pc + size && (ptr & 1) == 0) {
-					q.push(ptr);
+				UINT32 phys_ptr = ptr & AM;
+				if (phys_ptr >= phys_start && phys_ptr < phys_start + size && (phys_ptr & 1) == 0) {
+					q.push((start_pc & ~AM) | phys_ptr);
 				}
 			}
 		}
@@ -1570,7 +1596,7 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 	UINT32 precompiled_count = 0;
 	UINT32 pc = 0;
 	while (q.pop(pc)) {
-		if (++precompiled_count >= 8192) {
+		if (++precompiled_count >= 16384) {
 			break;
 		}
 		if (Sh3Ppc::used + Sh3Ppc::MAX_WORDS >= (Sh3Ppc::CACHE_WORDS - 262144)) {
