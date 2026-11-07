@@ -8,6 +8,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#if defined(_XBOX)
+#include <xtl.h>
+#endif
 
 #ifndef UINT32
 typedef uint32_t UINT32;
