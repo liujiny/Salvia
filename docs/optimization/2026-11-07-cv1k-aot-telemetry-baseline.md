@@ -62,8 +62,21 @@
    `python3 libretro/FBNeo/tests/sh3_ppc/run.py --toolchain-root /home/humor/salvia-tests/toolchains/ppc/root`
    - 全指令集执行回归通过。
 
-## 4. 后续步骤
+## 4. 构建与产物
 
-1. 保持当前源码修改，镜像至构建工作区。
-2. 编译诊断版 XEX（`SALVIA_FBNEO_DIAGNOSTICS 1`）。
-3. 部署至 Xbox 360 Jasper 进行无输入基准测试，采集 `mmpork` 及 `ddpsdoj` 的真实 AOT 运行数据表。
+1. **Xbox 360 原生工具链构建**：
+   - 解决 `<xtl.h>` / `<windef.h>` 中 `typedef float FLOAT;` 与 `sh4.cpp` FPU 操作码 `FLOAT()` 的宏冲突：在 `sh3_aot_profile.h` 中彻底移除 `<xtl.h>`，使用 PPC 硬件定时器内联函数 `#pragma intrinsic(__mftb)`（50MHz TimeBase，50,000 ticks/ms）。
+   - 构建命令：
+     ```bash
+     bash /home/humor/salvia-tests/mmpork-boss-dialog-20261107/build-reviewed-xex.sh --baseline f61421f6 --tag aot-telemetry --flavor diag --force
+     ```
+   - 产物 SHA-256：`94217fb9746699d5fb8bbfcf2f36dfc6b6adf253d2e9720e803960a7ca0f328f`
+   - 归档路径：`/home/humor/salvia-tests/xex-archive/fbneo-20261107-2153-aot-telemetry-diag.xex`
+   - 部署路径：`Distro360/fbneo.xex`（诊断版，`SALVIA_FBNEO_DIAGNOSTICS 1`）。
+
+## 5. 后续步骤
+
+1. 保持当前源码修改与可回退提交 `75c95c20`。
+2. 待主机就绪（192.168.2.232 上电并启动至 Aurora）后，通过 FTP 上传 `fbneo.xex` 并执行基准采集。
+3. 采集 `mmpork` 与 `ddpsdoj` 的真实 `cv1000-gpu.log`，提取 `aot_run`、`aot_summary` 以及 `rebuild_uncovered` 统计事实表。
+4. 依据实测数字评估 Codex 第二优先级（计数/预算解耦、队满 visited 修正、active-low 投币触发修正）与第三优先级。
