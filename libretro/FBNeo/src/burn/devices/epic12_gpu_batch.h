@@ -4,6 +4,7 @@
 
 static int epic12_gpu_dest_mode(const Epic12GpuCommand &c)
 {
+	if (c.smode == 2 && c.dmode == 0) return 2;
 	return (c.dmode == 4 || c.dmode == 7 || c.dmode == 3) ? 0 : c.dmode;
 }
 

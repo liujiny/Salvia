@@ -160,7 +160,10 @@ static const char epic12_xenos_shader[] =
 " s=min(31.0,floor(s*tintAlpha.rgb/31.0+0.0001));\n"
 " float3 outc=s;\n"
 " if(mode.y>0.5) {\n"
-"  if(mode.z>0.5 && tintAlpha.a<0.5) {\n"
+"  if(mode.z>1.5) {\n"
+"   float3 d=floor(tex2D(destination,p.dst).rgb*(255.0/8.0)+0.001);\n"
+"   outc=min(31.0,floor(d*s/31.0+0.0001)+floor(d*mode.w/31.0+0.0001));\n"
+"  } else if(mode.z>0.5 && tintAlpha.a<0.5) {\n"
 "   outc=s;\n"
 "  } else {\n"
 "   outc=floor(s*tintAlpha.a/31.0+0.0001);\n"
@@ -195,11 +198,16 @@ static const char epic12_xenos_shader[] =
 " if(mode.x>0.5) clip(raw.a-0.0625);\n"
 " float3 s=floor(raw.rgb*(255.0/8.0)+0.001);\n"
 " s=min(31.0,floor(s*tintAlpha.rgb/31.0+0.0001));\n"
-" float3 outc=floor(s*tintAlpha.a/31.0+0.0001);\n"
 " float3 d=floor(tex2D(destination,p.dst).rgb*(255.0/8.0)+0.001);\n"
-" float3 factor=mode.w;\n"
-" if(mode.z>0.5) factor=s;\n"
-" outc=min(31.0,outc+floor(d*factor/31.0+0.0001));\n"
+" float3 outc;\n"
+" if(mode.z>1.5) {\n"
+"  outc=min(31.0,floor(d*s/31.0+0.0001)+floor(d*mode.w/31.0+0.0001));\n"
+" } else {\n"
+"  outc=floor(s*tintAlpha.a/31.0+0.0001);\n"
+"  float3 factor=mode.w;\n"
+"  if(mode.z>0.5) factor=s;\n"
+"  outc=min(31.0,outc+floor(d*factor/31.0+0.0001));\n"
+" }\n"
 " return float4(outc*(8.0/255.0),raw.a);\n"
 "}\n"
 "float4 ps_fast(P p):COLOR0 { return shade_fast(p,floor(p.tint+0.5),floor(p.mode+0.5)); }\n"
@@ -899,6 +907,7 @@ static bool epic12_xenos_selftest()
 	for(int y=0;y<128;++y) for(int x=0;x<256;++x)
 		scratch[y*8192+x]=((x+y)&1?0x20000000:0)|((x&31)<<19)|((y&31)<<11)|(((x+y)&31)<<3);
 	Epic12GpuCommand commands[224];
+	memset(commands, 0, sizeof(commands));
 	for(int i=0;i<32;++i) {
 		Epic12GpuCommand &c=commands[i];
 		c.sx=128+i; c.sy=i; c.x=(i*7)%33; c.y=(i*11)%33; c.w=32; c.h=32;

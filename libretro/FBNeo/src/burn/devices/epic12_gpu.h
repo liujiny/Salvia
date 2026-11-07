@@ -7,7 +7,7 @@
 
 struct Epic12GpuCommand {
 	int sx, sy, x, y, w, h;
-	int flipx, flipy, transparent, blend, dmode, sa, da;
+	int flipx, flipy, transparent, blend, smode, dmode, sa, da;
 	clr_t tint;
 };
 
@@ -170,7 +170,7 @@ static unsigned epic12_blit_path_index(const Epic12GpuCommand &c)
 {
 	if (!c.blend && c.tint.r == 32 && c.tint.g == 32 && c.tint.b == 32)
 		return EPIC12_BLIT_PATH_SIMPLE_F0_TR0 + (c.flipx ? 2 : 0) + (c.transparent ? 1 : 0);
-	if (c.blend && c.dmode == 0)
+	if (c.blend && c.smode == 0 && c.dmode == 0)
 		return EPIC12_BLIT_PATH_FIXED_F0_TR0 + (c.flipx ? 2 : 0) + (c.transparent ? 1 : 0);
 	if (!c.blend) return EPIC12_BLIT_PATH_TINTED_PLAIN;
 	if (c.dmode == 1) return EPIC12_BLIT_PATH_BLEND_D1;
@@ -202,15 +202,20 @@ static void epic12_gpu_replay(const Epic12GpuCommand &c)
 		}
 		return;
 	}
-	if (c.blend && c.dmode == 0) {
+	if (c.blend && c.smode == 0 && c.dmode == 0) {
 		epic12_draw_fixed(c.flipx,c.transparent,GPU_CPU_ARGS);
 		return;
 	}
+	const int tinted = (c.tint.r != 32) | (c.tint.g != 32) | (c.tint.b != 32);
 #define GPU_CPU_CASE(f,t) \
 	if (!c.blend) draw_sprite_f##f##_ti1_tr##t##_plain(GPU_CPU_ARGS); \
 	else if (c.dmode == 1) draw_sprite_f##f##_ti1_tr##t##_s0_d1(GPU_CPU_ARGS); \
 	else if (c.dmode == 7) draw_sprite_f##f##_ti1_tr##t##_s0_d7(GPU_CPU_ARGS); \
 	else if (c.dmode == 3) draw_sprite_f##f##_ti1_tr##t##_s0_d3(GPU_CPU_ARGS); \
+	else if (c.smode == 2 && c.dmode == 0) { \
+		if (tinted) draw_sprite_f##f##_ti1_tr##t##_s2_d0(GPU_CPU_ARGS); \
+		else draw_sprite_f##f##_ti0_tr##t##_s2_d0(GPU_CPU_ARGS); \
+	} \
 	else draw_sprite_f##f##_ti1_tr##t##_s0_d4(GPU_CPU_ARGS)
 	if (c.flipx) { if (c.transparent) { GPU_CPU_CASE(1,1); } else { GPU_CPU_CASE(1,0); } }
 	else { if (c.transparent) { GPU_CPU_CASE(0,1); } else { GPU_CPU_CASE(0,0); } }
@@ -589,7 +594,7 @@ static inline int epic12_gpu_can_fit(int b, const rectangle &dest, int sx, int s
 static inline void epic12_gpu_add_to_bin(int b, const rectangle &merged, unsigned newPages, const int *newPageList,
 	int px0, int px1, int py0, int py1,
 	int sx, int sy, int x, int y, int w, int h, int flipx, int flipy, int transparent,
-	int blend, int dmode, int s_alpha, int d_alpha, const clr_t *tint_clr)
+	int blend, int smode, int dmode, int s_alpha, int d_alpha, const clr_t *tint_clr)
 {
 	const int dpy0 = y >> 7, dpy1 = (y + h - 1) >> 7;
 	const int dpx0 = x >> 7, dpx1 = (x + w - 1) >> 7;
@@ -621,7 +626,7 @@ static inline void epic12_gpu_add_to_bin(int b, const rectangle &merged, unsigne
 	Epic12GpuCommand &cmd = epic12_gpu_commands[b][epic12_gpu_count[b]++];
 	cmd.sx = sx; cmd.sy = sy; cmd.x = x; cmd.y = y; cmd.w = w; cmd.h = h;
 	cmd.flipx = !!flipx; cmd.flipy = !!flipy; cmd.transparent = !!transparent;
-	cmd.blend = !!blend; cmd.dmode = dmode; cmd.sa = s_alpha; cmd.da = d_alpha; cmd.tint = *tint_clr;
+	cmd.blend = !!blend; cmd.smode = smode; cmd.dmode = dmode; cmd.sa = s_alpha; cmd.da = d_alpha; cmd.tint = *tint_clr;
 	const unsigned pixels = (unsigned)(w * h);
 	epic12_gpu_pixels[b] += pixels;
 	epic12_device_blit_delay += pixels;
@@ -1893,12 +1898,12 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 #endif
 	if (!epic12_gpu_enabled) return false;
 #ifndef EPIC12_GPU_TEST
-	const int norm_dm = (dmode == 4 || dmode == 7 || dmode == 3) ? 0 : dmode;
-	if (blend && norm_dm != 0 && !(norm_dm == 1 && s_alpha == 0)) {
+	const int norm_dm = (smode == 2 && dmode == 0) ? 2 : ((dmode == 4 || dmode == 7 || dmode == 3) ? 0 : dmode);
+	if (blend && norm_dm != 0 && !(norm_dm == 1 && s_alpha == 0) && norm_dm != 2) {
 		return false;
 	}
 #endif
-	if (blend && (smode != 0 || (dmode != 0 && dmode != 1 && dmode != 4 && dmode != 7 && dmode != 3))) {
+	if (blend && ((smode != 0 && !(smode == 2 && dmode == 0)) || (dmode != 0 && dmode != 1 && dmode != 4 && dmode != 7 && dmode != 3))) {
 		++epic12_gpu_reject_blend;
 		++epic12_gpu_reject_smode_dmode[smode & 7][dmode & 7];
 		return false;
@@ -1966,7 +1971,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 		Epic12GpuCommand c;
 		c.sx = sx; c.sy = sy; c.x = x; c.y = y; c.w = w; c.h = h;
 		c.flipx = !!flipx; c.flipy = !!flipy; c.transparent = !!transparent;
-		c.blend = !!blend; c.dmode = dmode; c.sa = s_alpha; c.da = d_alpha; c.tint = *tint_clr;
+		c.blend = !!blend; c.smode = smode; c.dmode = dmode; c.sa = s_alpha; c.da = d_alpha; c.tint = *tint_clr;
 #if SALVIA_FBNEO_DIAGNOSTICS
 		++epic12_gpu_diag_submit_staging_replay;
 #endif
@@ -2097,7 +2102,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 		++epic12_gpu_diag_bin_hits[0];
 #endif
 		epic12_gpu_add_to_bin(0, m, np, npl, px0, px1, py0, py1,
-			draw_sx, draw_sy, x, y, w, h, flipx, flipy, transparent, blend, dmode, s_alpha, d_alpha, tint_clr);
+			draw_sx, draw_sy, x, y, w, h, flipx, flipy, transparent, blend, smode, dmode, s_alpha, d_alpha, tint_clr);
 		return true;
 	}
 	return false;

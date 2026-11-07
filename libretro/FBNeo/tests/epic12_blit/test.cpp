@@ -21,7 +21,7 @@ int main(){
   if(epic12_packed_add(a,b)!=expected)return 2;
  }
  puts("PASS 65536 tint/alpha rounding cases and 1000000 packed colour sums");
- const unsigned words=0x2000*0x1000;
+ const unsigned words=0x2000*4352;
  UINT32 *ref=(UINT32*)calloc(words,4),*got=(UINT32*)calloc(words,4);
  if(!ref||!got)return 3;
  epic12_device_blitfunction funcs[2][2][2]={
