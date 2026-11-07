@@ -97,8 +97,40 @@ and collect the build-tagged log. Match frame/job/pixel work across variants;
 GPU counters are cumulative while core timing windows reset on pause. Check
 that the new column counter is nonzero and assess worker time / draw_sync /
 all-frame peak, not random samples alone. A 100-ms watchdog does not prove
-there were no 25-ms frames. The candidate is provisional until console testing.
+there were no 25-ms frames. The fixed-save console results are recorded below; normal-play acceptance is still pending.
 
 If timing is worse or the change is rejected, make a separate revert commit
 with the measurements and restore the verified baseline XEX. A Git revert
 alone does not update the Windows mirror or the console executable.
+
+
+## Fixed-save console result (180 frames, 2026-11-07)
+
+Both images completed the automatic benchmark and wrote `done frames=180`.
+The same launch via the general frontend was used. On this console `exit(0)`
+powered the machine off; the user rebooted into Aurora to retrieve the logs.
+The temporary benchmark configuration was restored to its original empty bytes
+and the completion marker removed after collection.
+
+Work is identical: 100 worker jobs, 25,319,953 dispatch calls, 1,973 timer callbacks,
+364,387 staging-ident commands, 1,457 staging replay commands, 17,716 onscreen
+commands, 4,278 snapshots / 13,993,098 pixels and 42,231,479 measured GPU pixels.
+There are no source-page/region/dependency mid-frame flushes in either run.
+
+| Metric | Baseline | Row-major candidate |
+| --- | ---: | ---: |
+| Worker busy, 100 jobs | 5177.217 ms | 2647.162 ms |
+| GPU flush, 99 measured batches | 492.001 ms | 508.644 ms |
+| Frames over 100 ms | 20 | 1 |
+| All-frame peak (cold initial draw) | 348.630 ms | 279.279 ms |
+
+Worker busy drops 48.87%. The remaining over-100-ms frame is initial drawing,
+not compilation (zero compiled blocks). Candidate counters confirm 1,691 column
+groups / 136,234 commands / 23,253,902 charged pixels. Two random core samples
+show a 45.232-ms maximum; two samples do not establish a whole-run average FPS
+or rule out other slow frames. The first change is measured-positive and retained,
+but the original smooth-play problem is not yet declared resolved.
+
+Candidate XEX SHA-256: `983cbbaa1d264952f5ca437b082ee30932aba34b56467cd56287090756182c91`.
+Raw `baseline-console.log`, `candidate-console.log`, matching summaries and done
+markers are retained in the external evidence directory.
