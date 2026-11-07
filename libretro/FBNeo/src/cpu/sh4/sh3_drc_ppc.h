@@ -704,6 +704,9 @@ struct Compiler {
     ram_bias(12);
     UINT32 *done_direct = jump();
     patch(not_direct_ram);
+    rotate(0, 11, 16, 16, 31); // r0 = (r11 >> 16) & 0xffff
+    cmpi(0, 0xe000, true);
+    guard(1, false, device_opcode); // if r0 >= 0xe000 on read, guard trips
     rotate(0, 11, 18, 17, 29); // ((address & AM) >> 16) * sizeof(pointer)
     load(12, SO(read_map));
     emit(x(12, 12, 0, 23)); // lwzx map entry
@@ -1571,7 +1574,7 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 	UINT8 *visited = (UINT8*)calloc(1, bitmap_bytes);
 	if (!visited) return;
 
-	const UINT32 QUEUE_MASK = 131071u;
+	const UINT32 QUEUE_MASK = 65535u;
 	UINT32 *queue = (UINT32*)malloc((QUEUE_MASK + 1) * sizeof(UINT32));
 	if (!queue) { free(visited); return; }
 
@@ -1617,7 +1620,7 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 	UINT32 precompiled_count = 0;
 	UINT32 pc = 0;
 	while (q.pop(pc)) {
-		if (++precompiled_count >= 65536) {
+		if (++precompiled_count >= 16384) {
 			break;
 		}
 		if (Sh3Ppc::used + Sh3Ppc::MAX_WORDS >= (Sh3Ppc::CACHE_WORDS - 262144)) {
