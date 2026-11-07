@@ -3,6 +3,7 @@
 
 #include "tiles_generic.h"
 #include "sh4_intf.h"
+#include "sh3_aot_profile.h"
 #include "sh3comn.h"
 #include "epic12.h"
 #include "serflash.h"
@@ -837,8 +838,8 @@ static INT32 DrvFrame()
 		bool force_early = (DrvInputs[0] & 0x0c) != 0;
 		if (!cv1k_boot_pending && (nCurrentFrame >= 30 || force_early)) {
 			s_cv1k_aot_done = true;
-			Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x400000 : 0x200000);
-			Sh3DrcPrecompile(0xac000000, is_type_d ? 0x400000 : 0x200000);
+			Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x400000 : 0x200000, SH3_AOT_TRIGGER_BOOT);
+			Sh3DrcPrecompile(0xac000000, is_type_d ? 0x400000 : 0x200000, SH3_AOT_TRIGGER_BOOT);
 		}
 	}
 #endif
@@ -935,8 +936,8 @@ static INT32 DrvScan(INT32 nAction, INT32 *pnMin)
 	if ((nAction & ACB_WRITE) && (nAction & ACB_VOLATILE)) {
 		cv1k_boot_pending = NULL;
 		s_cv1k_aot_done = true;
-		Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x400000 : 0x200000);
-		Sh3DrcPrecompile(0xac000000, is_type_d ? 0x400000 : 0x200000);
+		Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x400000 : 0x200000, SH3_AOT_TRIGGER_LOAD);
+		Sh3DrcPrecompile(0xac000000, is_type_d ? 0x400000 : 0x200000, SH3_AOT_TRIGGER_LOAD);
 	}
 #endif
 

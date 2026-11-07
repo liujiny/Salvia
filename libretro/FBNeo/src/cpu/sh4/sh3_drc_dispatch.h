@@ -8,6 +8,9 @@
 #if defined(_XBOX)
 #include "salvia_cv1k_probe.h"
 #endif
+#if SALVIA_FBNEO_DIAGNOSTICS
+#include "sh3_aot_profile.h"
+#endif
 #ifndef SALVIA_CV1K_PROBE
 #define SALVIA_CV1K_PROBE 0
 #endif
@@ -339,7 +342,14 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
     else ++sh3_drc_work.chain_clean_entries;
 #endif
    }
-   if(!tag_hit) ++sh3_drc_work.rebuild_conflict;
+   if(!tag_hit) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+    if(!b.entry) ++sh3_drc_work.rebuild_uncovered;
+    else ++sh3_drc_work.rebuild_conflict;
+#else
+    ++sh3_drc_work.rebuild_conflict;
+#endif
+   }
    else if(!same) ++sh3_drc_work.rebuild_source;
    else if(!map_ok) ++sh3_drc_work.rebuild_map;
 #if SALVIA_CV1K_LINK_PROBE >= 2
@@ -379,6 +389,15 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   entry=b.entry; cycles=b.cycles; words=b.words;
   reason=slot_sector?(unsigned)(slot_sector[index*WAYS+way]>>5):0u;
   stores=slot_stores?slot_stores[index*WAYS+way]:0u;
+#if SALVIA_FBNEO_DIAGNOSTICS
+  if(slot_aot_state) {
+   const unsigned slot_idx = index*WAYS+way;
+   if(slot_aot_state[slot_idx] == 1) {
+    slot_aot_state[slot_idx] = 2;
+    ++sh3_aot_profile.total_aot_executed;
+   }
+  }
+#endif
 #if SALVIA_CV1K_SHADOW
   if(shadow && b.entry) {
    // The record now describes the bytes at this pc, so this is the moment to

@@ -38,7 +38,7 @@ void Sh3SetDrcDeviceRead(INT32 slot, UINT32 address, INT32 handler);
 // Mapping/handler changes revoke the window and invalidate compiled blocks.
 INT32 Sh3SetDrcRam(UINT8* ram, UINT32 start, UINT32 span, UINT32 backing_size);
 // Ahead-of-time (AOT) static precompilation of executable blocks across a RAM window.
-void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size);
+void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger = 0);
 // Monotonic compiler counter, including AOT; diagnostic frame deltas only.
 UINT32 Sh3DrcCompileCount();
 

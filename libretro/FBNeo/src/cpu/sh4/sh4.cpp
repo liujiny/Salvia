@@ -35,6 +35,8 @@ Redistributions may not be sold, nor may they be used in a commercial product or
 #define SALVIA_CV1K_PROBE 0
 #endif
 #include "sh4_intf.h"
+#include "sh3_aot_profile.h"
+Sh3AotProfile sh3_aot_profile;
 #include <stddef.h>
 #include "sh4.h"
 #include "sh4regs.h"
@@ -124,7 +126,7 @@ void Sh3SetDrcReadMirror(UINT8*, UINT32, UINT32, INT32) {}
 void Sh3SetDrcIdleWatch(const UINT32*, const UINT32*) {}
 void Sh3SetDrcDeviceRead(INT32, UINT32, INT32) {}
 INT32 Sh3SetDrcRam(UINT8*, UINT32, UINT32, UINT32) { return 0; }
-void Sh3DrcPrecompile(UINT32, UINT32) {}
+void Sh3DrcPrecompile(UINT32, UINT32, INT32) {}
 UINT32 Sh3DrcCompileCount() { return 0; }
 #endif
 
@@ -5013,8 +5015,11 @@ void Sh3WorkReport(void (*emit)(const char*))
 			(int)SALVIA_CV1K_SHADOW_TOUCH); emit(text);
 	}
 #endif
-	sprintf(text,"drc_work_rebuild_causes conflict=%" SH3_WORK_COUNT " source=%" SH3_WORK_COUNT " read_map=%" SH3_WORK_COUNT,
-		p.rebuild_conflict,p.rebuild_source,p.rebuild_map); emit(text);
+#if SALVIA_FBNEO_DIAGNOSTICS
+	Sh3AotReport(emit);
+#endif
+	sprintf(text,"drc_work_rebuild_causes uncovered=%" SH3_WORK_COUNT " conflict=%" SH3_WORK_COUNT " source=%" SH3_WORK_COUNT " read_map=%" SH3_WORK_COUNT,
+		p.rebuild_uncovered,p.rebuild_conflict,p.rebuild_source,p.rebuild_map); emit(text);
 	// Why the blocks that ran ended: window_out, jump_rel, jump_indirect,
 	// branch_delayed, self_loop, unsupported. Only window_out and jump_rel and
 	// branch_delayed have compile-time targets a fusion pass could continue

@@ -13,11 +13,12 @@ typedef unsigned long long Sh3WorkCount;
 struct Sh3DrcWorkProfile {
  Sh3WorkCount frames, slices, cpu_off_slices, normal_mode_slices;
  Sh3WorkCount dispatch_calls, lookups, rebuilds, validation_spans, validation_words;
- // Why a compile() was requested. `conflict` is a tag/source-pointer miss (the
- // set could not hold this PC), `source` is a same-PC snapshot mismatch (the
- // guest rewrote or re-uploaded the opcodes), `map` is a read-map change only.
+ // Why a compile() was requested. `uncovered` is first-time execution of code
+ // never compiled, `conflict` is a tag/source-pointer miss (the set could not
+ // hold this PC), `source` is a same-PC snapshot mismatch (the guest rewrote or
+ // re-uploaded the opcodes), `map` is a read-map change only.
  // Written on the compile path, never from generated code or the hot loop.
- Sh3WorkCount rebuild_conflict, rebuild_source, rebuild_map;
+ Sh3WorkCount rebuild_uncovered, rebuild_conflict, rebuild_source, rebuild_map;
  // Why the blocks that actually ran ended, counted per entry (work-sampled
  // builds). In order: the instruction window ran out, a PC-relative jump
  // (BRA/BSR), a register-indirect transfer, a delayed conditional, a

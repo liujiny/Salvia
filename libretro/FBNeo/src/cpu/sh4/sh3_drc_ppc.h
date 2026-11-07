@@ -13,6 +13,7 @@
 #else
 #include <sys/mman.h>
 #endif
+#include "sh3_aot_profile.h"
 
 // Arena size override, so the host differential harness can select an arena
 // size from otherwise identical sources. Overflow runs the full reset in
@@ -207,6 +208,12 @@ static UINT8 *slot_sector;
 // to every generated store.
 static UINT8 *slot_stores;
 static unsigned sh3_block_stores;
+#if SALVIA_FBNEO_DIAGNOSTICS
+static UINT8 *slot_aot_state;
+static bool s_in_aot_precompile = false;
+static unsigned s_sync_code_calls = 0;
+static unsigned s_sync_code_words = 0;
+#endif
 // Write stamps: one byte per 64-byte line of the registered RAM window,
 // indexed by the line's byte offset inside that window (so the external
 // aliases of CV1000's RAM, and the folded mirror of an 8 MiB backing in a
@@ -278,6 +285,10 @@ static __declspec(naked) void invalidate_line(int offset, const void *base)
 
 static void sync_code(UINT32 *begin, UINT32 *end)
 {
+#if SALVIA_FBNEO_DIAGNOSTICS
+ ++s_sync_code_calls;
+ s_sync_code_words += (unsigned)(end - begin);
+#endif
 #ifdef _XBOX
  char *p = (char*)((uintptr_t)begin & ~(uintptr_t)127);
  for (; p < (char*)end; p += 128) __dcbst(0, p);
@@ -1193,6 +1204,9 @@ static bool allocate()
  slot_sector=(UINT8*)malloc(TABLE_SIZE);
  if(slot_sector)memset(slot_sector,0xFF,TABLE_SIZE); // no slot has code yet
  slot_stores=(UINT8*)calloc(TABLE_SIZE,1);
+#if SALVIA_FBNEO_DIAGNOSTICS
+ slot_aot_state=(UINT8*)calloc(TABLE_SIZE,1);
+#endif
 #if SALVIA_CV1K_SHADOW
  shadow=(Shadow*)calloc(CACHE_SETS,sizeof(Shadow));
 #endif
@@ -1216,6 +1230,9 @@ static bool allocate()
   free(blocks); blocks=NULL; free(lookup); lookup=NULL;
   free(slot_sector); slot_sector=NULL;
   free(slot_stores); slot_stores=NULL;
+#if SALVIA_FBNEO_DIAGNOSTICS
+  free(slot_aot_state); slot_aot_state=NULL;
+#endif
 #if SALVIA_CV1K_SHADOW
   free(shadow); shadow=NULL;
 #endif
@@ -1268,6 +1285,12 @@ static void arena_reuse_sector(unsigned sector)
   // Only the low five bits are the sector; the top three carry the block-end
   // reason recorded by arena_note_slot().
   if((slot_sector[i]&0x1Fu)!=(UINT8)sector) continue;
+#if SALVIA_FBNEO_DIAGNOSTICS
+  if(slot_aot_state && slot_aot_state[i] == 1) {
+   ++sh3_aot_profile.total_aot_replaced_cold;
+   slot_aot_state[i] = 0;
+  }
+#endif
   slot_sector[i]=0xFF;
   if(slot_stores) slot_stores[i]=0;
   lookup[i/WAYS].tag[i%WAYS]=0;
@@ -1286,6 +1309,19 @@ static void arena_note_slot(unsigned slot,const Block &block)
  if(!slot_sector || !block.entry || slot>=TABLE_SIZE) return;
  slot_sector[slot]=(UINT8)((((UINT32*)block.entry-code)/SECTOR_WORDS) | (sh3_block_end_reason<<5));
  if(slot_stores) slot_stores[slot]=(UINT8)(sh3_block_stores>255?255:sh3_block_stores);
+#if SALVIA_FBNEO_DIAGNOSTICS
+ if(slot_aot_state) {
+  if(s_in_aot_precompile) {
+   slot_aot_state[slot]=1;
+  } else {
+   if(slot_aot_state[slot]==1) {
+    ++sh3_aot_profile.total_aot_replaced_cold;
+   }
+   slot_aot_state[slot]=3;
+   ++sh3_aot_profile.total_jit_compiled;
+  }
+ }
+#endif
 }
 
 static void compile(Block &block, UINT32 pc, const UINT16 *source)
@@ -1471,6 +1507,9 @@ static void sh3_drc_reset()
  if(Sh3Ppc::lookup)memset(Sh3Ppc::lookup,0,Sh3Ppc::CACHE_SETS*sizeof(Sh3Ppc::Lookup));
  if(Sh3Ppc::slot_sector)memset(Sh3Ppc::slot_sector,0xFF,Sh3Ppc::TABLE_SIZE);
  if(Sh3Ppc::slot_stores)memset(Sh3Ppc::slot_stores,0,Sh3Ppc::TABLE_SIZE);
+#if SALVIA_FBNEO_DIAGNOSTICS
+ if(Sh3Ppc::slot_aot_state)memset(Sh3Ppc::slot_aot_state,0,Sh3Ppc::TABLE_SIZE);
+#endif
 #if SALVIA_CV1K_SHADOW
  // Every record is gone, so every copy of one is too, and the sector
  // generations start over with the arena.
@@ -1504,6 +1543,9 @@ static void sh3_drc_exit()
  free(Sh3Ppc::lookup); Sh3Ppc::lookup=NULL;
  free(Sh3Ppc::slot_sector); Sh3Ppc::slot_sector=NULL;
  free(Sh3Ppc::slot_stores); Sh3Ppc::slot_stores=NULL;
+#if SALVIA_FBNEO_DIAGNOSTICS
+ free(Sh3Ppc::slot_aot_state); Sh3Ppc::slot_aot_state=NULL;
+#endif
 #if SALVIA_CV1K_SHADOW
  free(Sh3Ppc::shadow); Sh3Ppc::shadow=NULL;
 #endif
@@ -1536,6 +1578,12 @@ struct Sh3PrecompileQueue {
 	UINT32 q_tail;
 	UINT32 q_mask;
 
+	UINT32 push_attempts;
+	UINT32 push_success;
+	UINT32 push_duplicate;
+	UINT32 push_full;
+	UINT32 queue_peak;
+
 	bool is_visited(UINT32 a) const {
 		if (a < start_pc || a >= start_pc + size || (a & 1)) return true;
 		UINT32 off = (a - start_pc) >> 1;
@@ -1550,12 +1598,21 @@ struct Sh3PrecompileQueue {
 		}
 	}
 	void push(UINT32 a) {
+		++push_attempts;
 		if (a < start_pc || a >= start_pc + size || (a & 1)) return;
-		if (is_visited(a)) return;
+		if (is_visited(a)) {
+			++push_duplicate;
+			return;
+		}
 		mark_visited(a);
 		if (((q_tail + 1) & q_mask) != q_head) {
 			queue[q_tail] = a;
 			q_tail = (q_tail + 1) & q_mask;
+			++push_success;
+			UINT32 count = (q_tail - q_head) & q_mask;
+			if (count > queue_peak) queue_peak = count;
+		} else {
+			++push_full;
 		}
 	}
 	bool pop(UINT32 &a) {
@@ -1566,19 +1623,49 @@ struct Sh3PrecompileQueue {
 	}
 };
 
-void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
+void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 {
 	if (!sh3_drc_enabled || !Sh3Ppc::blocks || !Sh3Ppc::lookup || size < 2) return;
+
+#if SALVIA_FBNEO_DIAGNOSTICS
+	Sh3Ppc::s_in_aot_precompile = true;
+	UINT64 t0 = sh3_aot_timer_ticks();
+	unsigned sync_calls_before = Sh3Ppc::s_sync_code_calls;
+	unsigned sync_words_before = Sh3Ppc::s_sync_code_words;
+	UINT32 used_before = Sh3Ppc::used;
+	UINT32 seed_prologues = 0;
+	UINT32 seed_pointers = 0;
+	UINT32 seed_fixed = 0;
+	UINT32 popped = 0;
+	UINT32 map_reject = 0;
+	UINT32 already_compiled = 0;
+	UINT32 compile_attempts = 0;
+	UINT32 compile_success = 0;
+	UINT32 compile_failed = 0;
+	UINT32 slots_replaced = 0;
+	UINT32 exit_reason = SH3_AOT_EXIT_QUEUE_EMPTY;
+#endif
 
 	UINT32 span_words = (size + 1) >> 1;
 	UINT32 bitmap_bytes = (span_words + 7) >> 3;
 	if (bitmap_bytes > (1024 * 1024)) bitmap_bytes = (1024 * 1024);
 	UINT8 *visited = (UINT8*)calloc(1, bitmap_bytes);
-	if (!visited) return;
+	if (!visited) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+		Sh3Ppc::s_in_aot_precompile = false;
+#endif
+		return;
+	}
 
 	const UINT32 QUEUE_MASK = 65535u;
 	UINT32 *queue = (UINT32*)malloc((QUEUE_MASK + 1) * sizeof(UINT32));
-	if (!queue) { free(visited); return; }
+	if (!queue) {
+		free(visited);
+#if SALVIA_FBNEO_DIAGNOSTICS
+		Sh3Ppc::s_in_aot_precompile = false;
+#endif
+		return;
+	}
 
 	Sh3PrecompileQueue q;
 	q.visited = visited;
@@ -1589,12 +1676,20 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 	q.q_head = 0;
 	q.q_tail = 0;
 	q.q_mask = QUEUE_MASK;
+	q.push_attempts = 0;
+	q.push_success = 0;
+	q.push_duplicate = 0;
+	q.push_full = 0;
+	q.queue_peak = 0;
 
 	// 1. Seed vector and primary entry points
 	q.push(start_pc);
 	q.push(start_pc + 0x100);
 	q.push(start_pc + 0x400);
 	q.push(start_pc + 0x600);
+#if SALVIA_FBNEO_DIAGNOSTICS
+	seed_fixed = 4;
+#endif
 
 	// 2. Scan backing memory for function prologues and code pointers
 	UINT32 phys_start = start_pc & AM;
@@ -1607,12 +1702,18 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 			if (op == 0x4f22 || op == 0x2fe6 || op == 0x2fd6 || op == 0x2fc6 ||
 			    op == 0x2fb6 || op == 0x2fa6 || op == 0x2f96 || op == 0x2f86) {
 				q.push(start_pc + (i << 1));
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++seed_prologues;
+#endif
 			}
 			if ((i & 1) == 0 && i + 1 < scan_words) {
 				UINT32 ptr = ((UINT32)words[i] << 16) | words[i + 1];
 				UINT32 phys_ptr = ptr & AM;
 				if (phys_ptr >= phys_start && phys_ptr < phys_start + size && (phys_ptr & 1) == 0) {
 					q.push((start_pc & ~AM) | phys_ptr);
+#if SALVIA_FBNEO_DIAGNOSTICS
+					++seed_pointers;
+#endif
 				}
 			}
 		}
@@ -1622,40 +1723,66 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 	UINT32 precompiled_count = 0;
 	UINT32 pc = 0;
 	while (q.pop(pc)) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+		++popped;
+#endif
 		if (++precompiled_count >= 16384) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+			exit_reason = SH3_AOT_EXIT_BUDGET_REACHED;
+#endif
 			break;
 		}
 		if (Sh3Ppc::used + Sh3Ppc::MAX_WORDS >= (Sh3Ppc::CACHE_WORDS - 262144)) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+			exit_reason = SH3_AOT_EXIT_ARENA_FULL;
+#endif
 			break;
 		}
 
 		UINT32 phys = pc & AM;
 		const UINT8 *page = MemMapF[phys >> SH3_SHIFT];
-		if (!page || (uintptr_t)page < SH3_MAXHANDLER || (phys & 1)) continue;
+		if (!page || (uintptr_t)page < SH3_MAXHANDLER || (phys & 1)) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+			++map_reject;
+#endif
+			continue;
+		}
 		const UINT16 *source = (const UINT16*)(page + (phys & SH3_PAGEM));
 
 		unsigned index = ((pc >> 1) ^ (pc >> 11) ^ (pc >> 21)) & (Sh3Ppc::CACHE_SETS - 1);
 		Sh3Ppc::Lookup &set = Sh3Ppc::lookup[index];
-		bool already_compiled = false;
+		bool is_already = false;
 		for (unsigned w = 0; w < Sh3Ppc::WAYS; ++w) {
 			if (set.tag[w] == pc) {
 				Sh3Ppc::Block &ex = Sh3Ppc::blocks[index * Sh3Ppc::WAYS + w];
 				if (ex.entry && ex.pc == pc && ex.source == source) {
-					already_compiled = true;
+					is_already = true;
 					break;
 				}
 			}
 		}
-		if (already_compiled) continue;
+		if (is_already) {
+#if SALVIA_FBNEO_DIAGNOSTICS
+			++already_compiled;
+#endif
+			continue;
+		}
 
 		unsigned way = sh3_drc_lookup4(set.tag, set.next, pc);
 		Sh3Ppc::Block &b = Sh3Ppc::blocks[index * Sh3Ppc::WAYS + way];
+#if SALVIA_FBNEO_DIAGNOSTICS
+		if (b.entry) ++slots_replaced;
+		++compile_attempts;
+#endif
 		Sh3Ppc::compile(b, pc, source);
 		Sh3Ppc::arena_note_slot(index * Sh3Ppc::WAYS + way, b);
 		set.tag[way] = pc;
 
 		if (b.entry) {
 			precompiled_count++;
+#if SALVIA_FBNEO_DIAGNOSTICS
+			++compile_success;
+#endif
 #if SALVIA_CV1K_SHADOW
 			if (Sh3Ppc::shadow) {
 				Sh3Ppc::Shadow &dst = Sh3Ppc::shadow[index];
@@ -1702,8 +1829,17 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 			if (Sh3Ppc::sh3_block_end_reason == Sh3Ppc::END_WINDOW) {
 				q.push(pc + (b.words << 1));
 			}
+		} else {
+#if SALVIA_FBNEO_DIAGNOSTICS
+			++compile_failed;
+#endif
 		}
 	}
+
+#if SALVIA_FBNEO_DIAGNOSTICS
+	UINT32 queue_remaining = (q.q_tail - q.q_head) & q.q_mask;
+	Sh3Ppc::s_in_aot_precompile = false;
+#endif
 
 	free(queue);
 	free(visited);
@@ -1711,7 +1847,54 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 	if (precompiled_count > 0) {
 		Sh3Ppc::sync_code(Sh3Ppc::code, Sh3Ppc::code + Sh3Ppc::used);
 	}
+
+#if SALVIA_FBNEO_DIAGNOSTICS
+	UINT64 t1 = sh3_aot_timer_ticks();
+	unsigned sync_calls_after = Sh3Ppc::s_sync_code_calls;
+	unsigned sync_words_after = Sh3Ppc::s_sync_code_words;
+	Sh3AotRunRecord rec;
+	memset(&rec, 0, sizeof(rec));
+	rec.start_pc = start_pc;
+	rec.size = size;
+	rec.trigger = (UINT32)trigger;
+	rec.seed_fixed = seed_fixed;
+	rec.seed_prologues = seed_prologues;
+	rec.seed_pointers = seed_pointers;
+	rec.push_attempts = q.push_attempts;
+	rec.push_success = q.push_success;
+	rec.push_duplicate = q.push_duplicate;
+	rec.push_full = q.push_full;
+	rec.queue_peak = q.queue_peak;
+	rec.popped = popped;
+	rec.map_reject = map_reject;
+	rec.already_compiled = already_compiled;
+	rec.compile_attempts = compile_attempts;
+	rec.compile_success = compile_success;
+	rec.compile_failed = compile_failed;
+	rec.legacy_precompiled_count = precompiled_count;
+	rec.exit_reason = exit_reason;
+	rec.queue_remaining = queue_remaining;
+	rec.words_added = Sh3Ppc::used - used_before;
+	rec.slots_replaced = slots_replaced;
+	rec.sync_calls = sync_calls_after - sync_calls_before;
+	rec.sync_words = sync_words_after - sync_words_before;
+	rec.arena_used_after = Sh3Ppc::used;
+	rec.duration_ticks = (t1 > t0) ? (t1 - t0) : 0;
+	sh3_aot_profile.record_run(rec);
+
+	const char *trig_name = (trigger == SH3_AOT_TRIGGER_BOOT) ? "boot" :
+	                        (trigger == SH3_AOT_TRIGGER_LOAD) ? "load" :
+	                        (trigger == SH3_AOT_TRIGGER_RESET) ? "reset" : "test";
+	const char *exit_name = (exit_reason == SH3_AOT_EXIT_QUEUE_EMPTY) ? "queue_empty" :
+	                        (exit_reason == SH3_AOT_EXIT_BUDGET_REACHED) ? "budget_reached" : "arena_full";
+	double dur_ms = sh3_aot_ticks_to_ms(rec.duration_ticks);
+	bprintf(PRINT_IMPORTANT, _T("CV1000: AOT [%hs] 0x%08X (size %u KB): compiled %u/%u (legacy_count=%u, PPC +%u KB) in %.2f ms, exit=%hs q_rem=%u\n"),
+		trig_name, start_pc, size / 1024,
+		compile_success, compile_attempts, precompiled_count,
+		(rec.words_added * 4) / 1024, dur_ms, exit_name, queue_remaining);
+#else
 	bprintf(PRINT_IMPORTANT, _T("CV1000: AOT precompiled %u blocks (%u KB PPC code)\n"),
 		precompiled_count, (Sh3Ppc::used * 4) / 1024);
+#endif
 }
 #endif
