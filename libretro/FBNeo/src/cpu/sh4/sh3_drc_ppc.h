@@ -208,9 +208,9 @@ static UINT8 *slot_sector;
 // to every generated store.
 static UINT8 *slot_stores;
 static unsigned sh3_block_stores;
+static bool s_in_aot_precompile = false;
 #if SALVIA_FBNEO_DIAGNOSTICS
 static UINT8 *slot_aot_state;
-static bool s_in_aot_precompile = false;
 static unsigned s_sync_code_calls = 0;
 static unsigned s_sync_code_words = 0;
 #endif
@@ -1424,7 +1424,7 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
  block.cycles=(UINT16)max_cycles; block.check_read_map=check_read;
  block.entry=count?(int (*)(Sh3PpcState*))(code+used):NULL;
  if(count) {
-  sync_code(code+used,c.out);
+  if(!s_in_aot_precompile) sync_code(code+used,c.out);
   used=(unsigned)(c.out-code+3)&~3u; // 16-byte block alignment
   if(used>sh3_drc_work.arena_peak)sh3_drc_work.arena_peak=used;
  }
@@ -1627,12 +1627,12 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 {
 	if (!sh3_drc_enabled || (!Sh3Ppc::blocks && !Sh3Ppc::allocate()) || !Sh3Ppc::lookup || size < 2) return;
 
-#if SALVIA_FBNEO_DIAGNOSTICS
 	Sh3Ppc::s_in_aot_precompile = true;
-	UINT64 t0 = sh3_aot_timer_ticks();
+	UINT32 used_before = Sh3Ppc::used;
+#if SALVIA_FBNEO_DIAGNOSTICS
+	volatile UINT64 t0 = sh3_aot_timer_ticks();
 	unsigned sync_calls_before = Sh3Ppc::s_sync_code_calls;
 	unsigned sync_words_before = Sh3Ppc::s_sync_code_words;
-	UINT32 used_before = Sh3Ppc::used;
 	UINT32 seed_prologues = 0;
 	UINT32 seed_pointers = 0;
 	UINT32 seed_fixed = 0;
@@ -1651,9 +1651,7 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 	if (bitmap_bytes > (1024 * 1024)) bitmap_bytes = (1024 * 1024);
 	UINT8 *visited = (UINT8*)calloc(1, bitmap_bytes);
 	if (!visited) {
-#if SALVIA_FBNEO_DIAGNOSTICS
 		Sh3Ppc::s_in_aot_precompile = false;
-#endif
 		return;
 	}
 
@@ -1661,9 +1659,7 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 	UINT32 *queue = (UINT32*)malloc((QUEUE_MASK + 1) * sizeof(UINT32));
 	if (!queue) {
 		free(visited);
-#if SALVIA_FBNEO_DIAGNOSTICS
 		Sh3Ppc::s_in_aot_precompile = false;
-#endif
 		return;
 	}
 
@@ -1691,39 +1687,83 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 	seed_fixed = 4;
 #endif
 
-	// 2. Scan backing memory for function prologues and code pointers
 	UINT32 phys_start = start_pc & AM;
 	const UINT8 *base_page = MemMapF[phys_start >> SH3_SHIFT];
+	const UINT16 *words = NULL;
+	UINT32 scan_words = 0;
 	if (base_page && (uintptr_t)base_page >= SH3_MAXHANDLER) {
-		const UINT16 *words = (const UINT16*)(base_page + (phys_start & SH3_PAGEM));
-		UINT32 scan_words = (size >> 1);
-		for (UINT32 i = 0; i < scan_words - 1; ++i) {
-			UINT16 op = words[i];
-			if (op == 0x4f22 || op == 0x2fe6 || op == 0x2fd6 || op == 0x2fc6 ||
-			    op == 0x2fb6 || op == 0x2fa6 || op == 0x2f96 || op == 0x2f86) {
-				q.push(start_pc + (i << 1));
+		words = (const UINT16*)(base_page + (phys_start & SH3_PAGEM));
+		scan_words = (size >> 1);
+		if (scan_words >= 2) {
+			UINT32 reset_pc = ((UINT32)words[0] << 16) | words[1];
+			UINT32 phys_reset = reset_pc & AM;
+			if (phys_reset >= phys_start && phys_reset < phys_start + size && !(phys_reset & 1)) {
+				q.push((start_pc & ~AM) | phys_reset);
 #if SALVIA_FBNEO_DIAGNOSTICS
-				++seed_prologues;
+				++seed_fixed;
 #endif
-			}
-			if ((i & 1) == 0 && i + 1 < scan_words) {
-				UINT32 ptr = ((UINT32)words[i] << 16) | words[i + 1];
-				UINT32 phys_ptr = ptr & AM;
-				if (phys_ptr >= phys_start && phys_ptr < phys_start + size && (phys_ptr & 1) == 0) {
-					q.push((start_pc & ~AM) | phys_ptr);
-#if SALVIA_FBNEO_DIAGNOSTICS
-					++seed_pointers;
-#endif
-				}
 			}
 		}
 	}
 
-	// 3. BFS control-flow traversal and precompilation
+	// 2. Priority-ordered BFS control-flow traversal and precompilation
 	UINT32 legacy_budget = 0;
 	UINT32 precompiled_count = 0;
+	UINT32 prologue_scan_idx = 0;
+	UINT32 pointer_scan_idx = 0;
 	UINT32 pc = 0;
-	while (q.pop(pc)) {
+
+	for (;;) {
+		// If queue is empty, replenish with next unvisited seed from memory (prologues first, then pointers)
+		if (q.q_head == q.q_tail) {
+			if (words) {
+				bool found_seed = false;
+				while (prologue_scan_idx < scan_words - 1) {
+					UINT32 i = prologue_scan_idx++;
+					UINT16 op = words[i];
+					if (op == 0x4f22 || op == 0x2fe6 || op == 0x2fd6 || op == 0x2fc6 ||
+					    op == 0x2fb6 || op == 0x2fa6 || op == 0x2f96 || op == 0x2f86) {
+						UINT32 cand_pc = start_pc + (i << 1);
+						if (!q.is_visited(cand_pc)) {
+							q.push(cand_pc);
+#if SALVIA_FBNEO_DIAGNOSTICS
+							++seed_prologues;
+#endif
+							found_seed = true;
+							break;
+						}
+					}
+				}
+				if (!found_seed) {
+					while (pointer_scan_idx < scan_words - 1) {
+						UINT32 i = pointer_scan_idx++;
+						if ((i & 1) == 0 && i + 1 < scan_words) {
+							UINT32 ptr = ((UINT32)words[i] << 16) | words[i + 1];
+							UINT32 phys_ptr = ptr & AM;
+							if (phys_ptr >= phys_start && phys_ptr < phys_start + size && !(phys_ptr & 1)) {
+								UINT32 cand_pc = (start_pc & ~AM) | phys_ptr;
+								if (!q.is_visited(cand_pc)) {
+									q.push(cand_pc);
+#if SALVIA_FBNEO_DIAGNOSTICS
+									++seed_pointers;
+#endif
+									found_seed = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+				if (!found_seed) {
+					break;
+				}
+			} else {
+				break;
+			}
+		}
+
+		if (!q.pop(pc)) break;
+
 #if SALVIA_FBNEO_DIAGNOSTICS
 		++popped;
 #endif
@@ -1840,18 +1880,18 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 
 #if SALVIA_FBNEO_DIAGNOSTICS
 	UINT32 queue_remaining = (q.q_tail - q.q_head) & q.q_mask;
-	Sh3Ppc::s_in_aot_precompile = false;
 #endif
+	Sh3Ppc::s_in_aot_precompile = false;
 
 	free(queue);
 	free(visited);
 
 	if (precompiled_count > 0) {
-		Sh3Ppc::sync_code(Sh3Ppc::code, Sh3Ppc::code + Sh3Ppc::used);
+		Sh3Ppc::sync_code(Sh3Ppc::code + used_before, Sh3Ppc::code + Sh3Ppc::used);
 	}
 
 #if SALVIA_FBNEO_DIAGNOSTICS
-	UINT64 t1 = sh3_aot_timer_ticks();
+	volatile UINT64 t1 = sh3_aot_timer_ticks();
 	unsigned sync_calls_after = Sh3Ppc::s_sync_code_calls;
 	unsigned sync_words_after = Sh3Ppc::s_sync_code_words;
 	Sh3AotRunRecord rec;
@@ -1881,7 +1921,7 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 	rec.sync_calls = sync_calls_after - sync_calls_before;
 	rec.sync_words = sync_words_after - sync_words_before;
 	rec.arena_used_after = Sh3Ppc::used;
-	rec.duration_ticks = (t1 > t0) ? (t1 - t0) : 0;
+	rec.duration_ticks = (t1 > t0) ? (UINT64)(t1 - t0) : 0;
 	sh3_aot_profile.record_run(rec);
 
 	const char *trig_name = (trigger == SH3_AOT_TRIGGER_BOOT) ? "boot" :

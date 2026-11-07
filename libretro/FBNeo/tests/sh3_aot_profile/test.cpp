@@ -186,7 +186,121 @@ int main() {
 		assert(mq.push_duplicate == 1);
 	}
 
-	printf("PASS Sh3AotProfile: lifecycle, bounded runs=%u, execution tracking, formatting, queue retry on full\n",
+	// Test 8: Prioritized control-flow before fallback seed replenishment
+	{
+		struct StagedQueue {
+			uint8_t visited[16];
+			uint32_t queue[16];
+			uint32_t q_head;
+			uint32_t q_tail;
+			uint32_t q_mask;
+			uint32_t start_pc;
+			uint32_t size;
+
+			bool is_visited(uint32_t a) const {
+				if (a < start_pc || a >= start_pc + size || (a & 1)) return true;
+				uint32_t off = (a - start_pc) >> 1;
+				return (visited[off >> 3] & (1u << (off & 7))) != 0;
+			}
+			void push(uint32_t a) {
+				if (a < start_pc || a >= start_pc + size || (a & 1) || is_visited(a)) return;
+				uint32_t off = (a - start_pc) >> 1;
+				visited[off >> 3] |= (1u << (off & 7));
+				queue[q_tail] = a;
+				q_tail = (q_tail + 1) & q_mask;
+			}
+			bool pop(uint32_t &a) {
+				if (q_head == q_tail) return false;
+				a = queue[q_head];
+				q_head = (q_head + 1) & q_mask;
+				return true;
+			}
+		};
+
+		StagedQueue sq = {};
+		sq.q_mask = 15;
+		sq.start_pc = 0x0c000000;
+		sq.size = 0x1000;
+
+		// Mock backing memory with:
+		// Word 0x000: entry vector
+		// Word 0x020 (pc=0x0c000040): STS.L PR,@-R15 (prologue seed)
+		// Word 0x040 (pc=0x0c000080): pointer seed
+		uint16_t words[256] = {0};
+		words[0x20] = 0x4f22; // prologue
+		words[0x40] = 0x0c00; words[0x41] = 0x0090; // pointer to 0x0c000090
+
+		// Push primary vector
+		sq.push(0x0c000000);
+
+		std::vector<uint32_t> visit_order;
+		uint32_t prologue_idx = 0;
+		uint32_t pointer_idx = 0;
+		uint32_t pc = 0;
+
+		for (;;) {
+			if (sq.q_head == sq.q_tail) {
+				bool found = false;
+				while (prologue_idx < 255) {
+					uint32_t i = prologue_idx++;
+					if (words[i] == 0x4f22) {
+						uint32_t cand = sq.start_pc + (i << 1);
+						if (!sq.is_visited(cand)) {
+							sq.push(cand);
+							found = true;
+							break;
+						}
+					}
+				}
+				if (!found) {
+					while (pointer_idx < 254) {
+						uint32_t i = pointer_idx++;
+						if ((i & 1) == 0) {
+							uint32_t ptr = ((uint32_t)words[i] << 16) | words[i + 1];
+							if (ptr >= sq.start_pc && ptr < sq.start_pc + sq.size && !(ptr & 1)) {
+								if (!sq.is_visited(ptr)) {
+									sq.push(ptr);
+									found = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+				if (!found) break;
+			}
+
+			if (!sq.pop(pc)) break;
+			visit_order.push_back(pc);
+
+			// If we visit vector 0x0c000000, it discovers branch target 0x0c000004 & 0x0c000008
+			if (pc == 0x0c000000) {
+				sq.push(0x0c000004);
+				sq.push(0x0c000008);
+			}
+			// If we visit 0x0c000004, it discovers branch target 0x0c00000c
+			if (pc == 0x0c000004) {
+				sq.push(0x0c00000c);
+			}
+		}
+
+		// Verify order:
+		// 1. Vector 0x0c000000
+		// 2. Branch 0x0c000004 (Depth 1)
+		// 3. Branch 0x0c000008 (Depth 1)
+		// 4. Branch 0x0c00000c (Depth 2)
+		// 5. Fallback prologue seed 0x0c000040 (only after active tree exhausted!)
+		// 6. Fallback pointer seed 0x0c000090 (only after prologues exhausted!)
+		assert(visit_order.size() == 6);
+		assert(visit_order[0] == 0x0c000000);
+		assert(visit_order[1] == 0x0c000004);
+		assert(visit_order[2] == 0x0c000008);
+		assert(visit_order[3] == 0x0c00000c);
+		assert(visit_order[4] == 0x0c000040);
+		assert(visit_order[5] == 0x0c000090);
+	}
+
+	printf("PASS Sh3AotProfile: lifecycle, bounded runs=%u, execution tracking, formatting, queue retry on full, prioritized staged traversal\n",
 		Sh3AotProfile::MAX_RUNS);
 	return 0;
 }

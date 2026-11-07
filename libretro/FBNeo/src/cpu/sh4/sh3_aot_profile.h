@@ -99,10 +99,15 @@ struct Sh3AotProfile {
 extern Sh3AotProfile sh3_aot_profile;
 
 #if defined(_XBOX)
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 extern "C" unsigned __int64 __mftb(void);
 #pragma intrinsic(__mftb)
 static inline UINT64 sh3_aot_timer_ticks() {
-	return (UINT64)__mftb();
+	_ReadWriteBarrier();
+	UINT64 val = (UINT64)__mftb();
+	_ReadWriteBarrier();
+	return val;
 }
 static inline double sh3_aot_ticks_to_ms(UINT64 ticks) {
 	// Xenon TimeBase runs at exactly 50 MHz (50,000 ticks per millisecond)
