@@ -100,3 +100,7 @@ build and must not be mistaken for the restored deployment image.
 workload and restored the original empty benchmark configuration. Its marker was
 removed. Continue with normal-play visual validation of the retained first
 change. The issue is not marked resolved until that feedback is available.
+
+
+Final status: the user subsequently accepted the restored first change with
+remaining stutter on 2026-11-07. See [accepted handover](2026-11-07-mmpork-accepted-handover.md).

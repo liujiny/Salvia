@@ -1,3 +1,5 @@
+> 最终状态：2026-11-07用户确认“虽然还有卡顿，但可接受”。本轮已验收结案；下文待验收描述是实验当时状态。最终交接见 [验收交接](2026-11-07-mmpork-accepted-handover.md)。
+
 # mmpork boss dialogue: row-major opaque staging columns
 
 Baseline repository HEAD: `5f685238` (documentation only after accepted functional
