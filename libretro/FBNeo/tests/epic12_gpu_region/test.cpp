@@ -148,9 +148,45 @@ static void run(int width,int rows,size_t srcPitch,size_t dstPitch,int srcOffset
 	++cases;
 }
 
+// Same allocation and arbitrary row aliases: compare against the original
+// forward qword loop, including rejected overlap/alignment/negative-step cases.
+static void staging32()
+{
+	const size_t bytes = 32768 * 16;
+	unsigned char *raw, *refRaw;
+	unsigned char *got = allocAligned(bytes, &raw);
+	unsigned char *ref = allocAligned(bytes, &refRaw);
+	unsigned admitted=0, rejected=0;
+	const int shifts[]={-32768,-256,-128,-112,-16,0,16,112,128,256,32768};
+	for(unsigned k=0;k<sizeof(shifts)/sizeof(shifts[0]);++k)
+	for(int offset=0;offset<16;offset+=4)
+	for(int height=0;height<=8;++height)
+	for(int direction=-1;direction<=1;direction+=2) {
+		for(size_t i=0;i<bytes;++i) got[i]=ref[i]=pattern(i);
+		const size_t src=32768*5+512, dst=src+shifts[k]+offset;
+		const bool expect=height>0 && direction==1 && !(offset&15) &&
+			(shifts[k]>=128 || shifts[k]<=-128);
+		liveBase=got;liveBytes=bytes;liveOutBase=got;liveOutBytes=bytes;
+		bool copied=epic12_gpu_copy_staging32(got+dst,got+src,height,direction*8192);
+		assert(copied==expect);
+		if(copied) {
+			for(int y=0;y<height;++y) {
+				unsigned long long *d=(unsigned long long*)(ref+dst+y*32768);
+				const unsigned long long *in=(const unsigned long long*)(ref+src+y*32768);
+				for(int x=0;x<16;++x) d[x]=in[x];
+			}
+			++admitted;
+		} else ++rejected;
+		assert(!memcmp(got,ref,bytes));
+	}
+	printf("PASS staging32: %u admitted / %u rejected aliases, alignments, heights and directions; exact full allocation\n",admitted,rejected);
+	free(raw);free(refRaw);
+}
+
 int main()
 {
 	assert(sizeof(unsigned int)==4);
+	staging32();
 	const int widths[]={0,1,2,3,4,5,6,7,8,12,15,16,17,20,31,32,33,63,64,65,127,128,129,
 		255,256,257,511,512,513,1023,1024,2047,2048};
 	const int rowsList[]={0,1,2,3,4,5,6,7,8,9,16,33};
