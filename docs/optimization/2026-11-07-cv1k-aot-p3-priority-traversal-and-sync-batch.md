@@ -69,3 +69,16 @@
    - `python3 libretro/FBNeo/tests/sh3_dispatch/run_inline.py --output /tmp/salvia-inline-tests`：**8/8 全部 PASS**。
 3. **PPC DRC 指令差分回归**：
    - `python3 libretro/FBNeo/tests/sh3_ppc/run.py --toolchain-root /home/humor/salvia-tests/toolchains/ppc/root`：**848,846 个测试用例全部 PASS**（含 `EDGE AOT precompilation / BFS control flow traversal PASS`）。
+
+## 4. 构建产物与哈希
+
+- 构建命令：
+  ```bash
+  bash /home/humor/salvia-tests/xex-build/build-xex.sh --baseline f61421f6 --tag aot-p3-opt --flavor diag --force
+  ```
+- 产物 SHA-256：
+  - `Distro360/fbneo.xex`：`7128e701c56a827771235252aefcf1c85fa049d17ea99a203168a82f280f6a1e`
+  - `Distro360/mmpork.xex`：`a8923d09f5628d6524739b61687ddedd77ab4286435236ac53bcdf5796cc33da`
+  - `Distro360/ddpsdoj.xex`：`4d0915ef522a94530c0a8da3c7573bf9586cf8dcedb8ca769071136af895d5bf`
+- 归档路径：`/home/humor/salvia-tests/xex-archive/`。
+
