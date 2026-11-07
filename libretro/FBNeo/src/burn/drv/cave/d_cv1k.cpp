@@ -835,7 +835,7 @@ static INT32 DrvFrame()
 #if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
 	cv1k_boot_step();
 	if (!s_cv1k_aot_done) {
-		bool force_early = (DrvInputs[0] & 0x0c) != 0;
+		bool force_early = ((DrvInputs[0] & 0x0c) != 0x0c);
 		if (!cv1k_boot_pending && (nCurrentFrame >= 30 || force_early)) {
 			s_cv1k_aot_done = true;
 			Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x400000 : 0x200000, SH3_AOT_TRIGGER_BOOT);

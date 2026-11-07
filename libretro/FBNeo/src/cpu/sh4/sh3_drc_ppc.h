@@ -1604,8 +1604,8 @@ struct Sh3PrecompileQueue {
 			++push_duplicate;
 			return;
 		}
-		mark_visited(a);
 		if (((q_tail + 1) & q_mask) != q_head) {
+			mark_visited(a);
 			queue[q_tail] = a;
 			q_tail = (q_tail + 1) & q_mask;
 			++push_success;
@@ -1625,7 +1625,7 @@ struct Sh3PrecompileQueue {
 
 void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 {
-	if (!sh3_drc_enabled || !Sh3Ppc::blocks || !Sh3Ppc::lookup || size < 2) return;
+	if (!sh3_drc_enabled || (!Sh3Ppc::blocks && !Sh3Ppc::allocate()) || !Sh3Ppc::lookup || size < 2) return;
 
 #if SALVIA_FBNEO_DIAGNOSTICS
 	Sh3Ppc::s_in_aot_precompile = true;
@@ -1720,13 +1720,14 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 	}
 
 	// 3. BFS control-flow traversal and precompilation
+	UINT32 legacy_budget = 0;
 	UINT32 precompiled_count = 0;
 	UINT32 pc = 0;
 	while (q.pop(pc)) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 		++popped;
 #endif
-		if (++precompiled_count >= 16384) {
+		if (++legacy_budget >= 16384) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 			exit_reason = SH3_AOT_EXIT_BUDGET_REACHED;
 #endif
@@ -1779,6 +1780,7 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 		set.tag[way] = pc;
 
 		if (b.entry) {
+			++legacy_budget;
 			precompiled_count++;
 #if SALVIA_FBNEO_DIAGNOSTICS
 			++compile_success;
@@ -1871,7 +1873,7 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 	rec.compile_attempts = compile_attempts;
 	rec.compile_success = compile_success;
 	rec.compile_failed = compile_failed;
-	rec.legacy_precompiled_count = precompiled_count;
+	rec.legacy_precompiled_count = legacy_budget;
 	rec.exit_reason = exit_reason;
 	rec.queue_remaining = queue_remaining;
 	rec.words_added = Sh3Ppc::used - used_before;
