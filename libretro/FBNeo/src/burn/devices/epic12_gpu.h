@@ -244,12 +244,37 @@ static int s_snap_raster_v = 0;
 static bool epic12_gpu_staging_pages[EPIC12_VRAM_PAGES];
 static unsigned epic12_gpu_staging_version[EPIC12_VRAM_PAGES];
 
+enum {
+	EPIC12_SNAP_SETS = 512,
+	EPIC12_SNAP_WAYS = 2
+};
+
 struct Epic12SnapshotEntry {
 	int sx, sy, w, h;
 	int snap_x, snap_y;
 	unsigned version;
 };
-static Epic12SnapshotEntry s_snap_cache[256];
+static Epic12SnapshotEntry s_snap_cache[EPIC12_SNAP_SETS][EPIC12_SNAP_WAYS];
+static UINT8 s_snap_lru[EPIC12_SNAP_SETS];
+
+static inline unsigned epic12_gpu_snap_hash(int sx, int sy, int w, int h)
+{
+	return ((unsigned)(sx >> 2) * 0x9e3779b9u) ^
+	       ((unsigned)(sy >> 2) * 0x85ebca6bu) ^
+	       ((unsigned)(w >> 2) * 0xc2b2ae35u) ^
+	       ((unsigned)h * 0x27d4eb2du);
+}
+
+static inline void epic12_gpu_snap_cache_insert(unsigned set, int way, int sx, int sy, int w, int h, int snap_x, int snap_y, unsigned ver)
+{
+	s_snap_cache[set][way].sx = sx;
+	s_snap_cache[set][way].sy = sy;
+	s_snap_cache[set][way].w = w;
+	s_snap_cache[set][way].h = h;
+	s_snap_cache[set][way].snap_x = snap_x;
+	s_snap_cache[set][way].snap_y = snap_y;
+	s_snap_cache[set][way].version = ver;
+}
 
 static inline void epic12_gpu_staging_reset()
 {
@@ -280,6 +305,7 @@ static void epic12_gpu_snapshot_reset()
 	s_snap_raster_cols = 0;
 	s_snap_raster_v = 0;
 	memset(s_snap_cache, 0, sizeof(s_snap_cache));
+	memset(s_snap_lru, 0, sizeof(s_snap_lru));
 }
 
 static inline bool epic12_gpu_snapshot_alloc(int w, int h, int &out_x, int &out_y)
@@ -1990,37 +2016,34 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 					}
 				}
 			}
-			const unsigned h_idx = (((unsigned)sx * 31) ^ ((unsigned)sy * 17) ^ ((unsigned)w * 7) ^ (unsigned)h) & 255;
-			if (s_snap_cache[h_idx].sx == sx && s_snap_cache[h_idx].sy == sy &&
-				s_snap_cache[h_idx].w == w && s_snap_cache[h_idx].h == h &&
-				s_snap_cache[h_idx].version == ver) {
-				draw_sx = s_snap_cache[h_idx].snap_x;
-				draw_sy = s_snap_cache[h_idx].snap_y;
+			const unsigned set = epic12_gpu_snap_hash(sx, sy, w, h) & (EPIC12_SNAP_SETS - 1);
+			int match_way = -1;
+			for (int way = 0; way < EPIC12_SNAP_WAYS; ++way) {
+				if (s_snap_cache[set][way].sx == sx && s_snap_cache[set][way].sy == sy &&
+					s_snap_cache[set][way].w == w && s_snap_cache[set][way].h == h &&
+					s_snap_cache[set][way].version == ver) {
+					match_way = way;
+					break;
+				}
+			}
+			if (match_way >= 0) {
+				draw_sx = s_snap_cache[set][match_way].snap_x;
+				draw_sy = s_snap_cache[set][match_way].snap_y;
 				reused = true;
 			} else {
 				int snap_x, snap_y;
+				int way = s_snap_lru[set] & (EPIC12_SNAP_WAYS - 1);
+				s_snap_lru[set] ^= 1;
 				if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
 					draw_sx = snap_x;
 					draw_sy = snap_y;
-					s_snap_cache[h_idx].sx = sx;
-					s_snap_cache[h_idx].sy = sy;
-					s_snap_cache[h_idx].w = w;
-					s_snap_cache[h_idx].h = h;
-					s_snap_cache[h_idx].snap_x = snap_x;
-					s_snap_cache[h_idx].snap_y = snap_y;
-					s_snap_cache[h_idx].version = ver;
+					epic12_gpu_snap_cache_insert(set, way, sx, sy, w, h, snap_x, snap_y, ver);
 				} else {
 					epic12_gpu_retire_bin0(EPIC12_GPU_FLUSH_SOURCE_PAGES);
 					if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
 						draw_sx = snap_x;
 						draw_sy = snap_y;
-						s_snap_cache[h_idx].sx = sx;
-						s_snap_cache[h_idx].sy = sy;
-						s_snap_cache[h_idx].w = w;
-						s_snap_cache[h_idx].h = h;
-						s_snap_cache[h_idx].snap_x = snap_x;
-						s_snap_cache[h_idx].snap_y = snap_y;
-						s_snap_cache[h_idx].version = ver;
+						epic12_gpu_snap_cache_insert(set, way, sx, sy, w, h, snap_x, snap_y, ver);
 					} else {
 						draw_sx = sx;
 						draw_sy = sy;
@@ -2046,14 +2069,10 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 			if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
 				draw_sx = snap_x;
 				draw_sy = snap_y;
-				const unsigned h_idx = (((unsigned)sx * 31) ^ ((unsigned)sy * 17) ^ ((unsigned)w * 7) ^ (unsigned)h) & 255;
-				s_snap_cache[h_idx].sx = sx;
-				s_snap_cache[h_idx].sy = sy;
-				s_snap_cache[h_idx].w = w;
-				s_snap_cache[h_idx].h = h;
-				s_snap_cache[h_idx].snap_x = snap_x;
-				s_snap_cache[h_idx].snap_y = snap_y;
-				s_snap_cache[h_idx].version = ver;
+				const unsigned set = epic12_gpu_snap_hash(sx, sy, w, h) & (EPIC12_SNAP_SETS - 1);
+				int way = s_snap_lru[set] & (EPIC12_SNAP_WAYS - 1);
+				s_snap_lru[set] ^= 1;
+				epic12_gpu_snap_cache_insert(set, way, sx, sy, w, h, snap_x, snap_y, ver);
 			} else {
 				draw_sx = sx;
 				draw_sy = sy;
