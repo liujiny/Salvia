@@ -1519,6 +1519,9 @@ static inline bool epic12_gpu_staging_blit(int x, int y, int sx, int sy, int w, 
 	SalviaCv1kSampledSpan<64> submitSpan(36);
 #endif
 	if (!epic12_gpu_tint_lut_ready) epic12_gpu_init_tint_luts();
+	// Off-screen destinations can still read an unfinished on-screen draw.
+	if (epic12_gpu_count[0] && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[0]))
+		epic12_gpu_flush(EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
 
 #if SALVIA_FBNEO_DIAGNOSTICS
 	if (epic12_gpu_diag_stag_sample_count < 10) {
@@ -1725,6 +1728,18 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 		// Check WAR hazard against queued GPU commands in bin 0
 		const int dpy0 = y >> 7, dpy1 = (y + dimy - 1) >> 7;
 		const int dpx0 = x >> 7, dpx1 = (x + total_dimx - 1) >> 7;
+		const int source_width = repeated_src ? dimx : total_dimx;
+		if (epic12_gpu_count[0] && epic12_gpu_intersects(sx, sy, source_width, dimy, epic12_gpu_bounds[0])) {
+			// Earlier fused CPU writes may be sources of the pending GPU batch.
+			// Publish their dirty pages before finishing that producer.
+			if (inv_max_x >= inv_min_x) {
+				rectangle r_inv(inv_min_x, inv_max_x, inv_min_y, inv_max_y);
+				epic12_gpu_invalidate(r_inv);
+				inv_min_x = 8192; inv_min_y = 4096;
+				inv_max_x = -1; inv_max_y = -1;
+			}
+			epic12_gpu_flush_bin(0, EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
+		}
 		if (epic12_gpu_count[0]) {
 			bool war_overlap = false;
 			if (dpy0 == dpy1 && dpx0 == dpx1) {

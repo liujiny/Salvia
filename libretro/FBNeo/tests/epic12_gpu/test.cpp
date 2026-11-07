@@ -283,7 +283,9 @@ static bool staging_snapshot_war_prevention(UINT32 *ref, UINT32 *got)
 	// Now rewrite to page 6 (x=768, y=0) via staging blit
 	// It must NOT trigger a WAR flush!
 	unsigned flushes_before = epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY];
-	epic12_gpu_staging_blit(768, 0, 0, 0, 64, 4, 0, 0, 0, 32, 32, 32);
+	// Use an unrelated off-screen source: reading the pending viewport itself
+	// requires a real producer barrier independently of this WAR test.
+	epic12_gpu_staging_blit(768, 0, 2048, 2048, 64, 4, 0, 0, 0, 32, 32, 32);
 	if (epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY] != flushes_before) {
 		puts("FAIL staging rewrite triggered WAR flush");
 		return false;
@@ -298,7 +300,7 @@ static bool staging_snapshot_war_prevention(UINT32 *ref, UINT32 *got)
 		return false;
 	}
 	flushes_before = epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY];
-	epic12_gpu_staging_blit(768, 0, 0, 0, 80, 120, 0, 0, 0, 32, 32, 32);
+	epic12_gpu_staging_blit(768, 0, 2048, 2048, 80, 120, 0, 0, 0, 32, 32, 32);
 	if (epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY] != flushes_before) {
 		puts("FAIL wide raster staging rewrite triggered WAR flush");
 		return false;
@@ -421,13 +423,31 @@ static bool blended_staging_coherency(UINT32 *ref, UINT32 *got)
  stage.sx=64;m_bitmaps=ref;epic12_gpu_replay(stage);m_bitmaps=got;
  if(!epic12_gpu_submit(0,0,1,0,0,&full,got,64,0,2048,0,16,16,0,31,0,&stage.tint))return false;
  for(int y=0;y<16;++y)for(int x=0;x<16;++x)if(ref[y*8192+2048+x]!=got[y*8192+2048+x])return false;
+ // The non-blended direct and stream paths read the same live surface.
+ for(int stream=0;stream<2;++stream) {
+  read.sx=stream?1152:1024;read.x=64;
+  m_bitmaps=ref;epic12_gpu_replay(read);m_bitmaps=got;
+  if(!epic12_gpu_submit(0,0,0,0,0,&view,got,read.sx,0,64,0,16,16,0,0,0,&read.tint))return false;
+  Epic12GpuCommand plain=stage;plain.sx=64;plain.blend=0;
+  m_bitmaps=ref;epic12_gpu_replay(plain);m_bitmaps=got;
+  if(stream) {
+   UINT16 commands[32]={0};commands[0]=0x1000;commands[2]=64;commands[4]=2048;
+   commands[6]=commands[7]=15;commands[8]=0x80;commands[9]=0x8080;
+   UINT16 *old_ram=m_ram16_copy;int old_mask=m_main_rammask;rectangle old_clip=m_clip;
+   m_ram16_copy=commands;m_main_rammask=63;m_clip=full;
+   int consumed=epic12_gpu_staging_stream(0);
+   m_ram16_copy=old_ram;m_main_rammask=old_mask;m_clip=old_clip;
+   if(consumed!=1)return false;
+  } else if(!epic12_gpu_staging_blit(2048,0,64,0,16,16,0,0,0,32,32,32))return false;
+  for(int y=0;y<16;++y)for(int x=0;x<16;++x)if(ref[y*8192+2048+x]!=got[y*8192+2048+x])return false;
+ }
  // Production accepts 4096 commands; model cropping must retain that many.
  static Epic12GpuCommand many[4096];
  read.sx=1024;read.x=0;read.w=read.h=1;
  for(int i=0;i<4096;++i) {many[i]=read;many[i].x=i&15;many[i].y=(i>>4)&15;}
  epic12_gpu_reset();rectangle bounds(0,15,0,15);
  if(!batch_matches(ref,got,many,4096,bounds))return false;
- puts("PASS blended staging: cached atlas invalidation, pending snapshot versions, disjoint batch retention, GPU-to-CPU read barrier and 4096-command model capacity");
+ puts("PASS blended staging: cached atlas invalidation, pending snapshot versions, disjoint batch retention, blended/direct/stream GPU-to-CPU read barriers and 4096-command model capacity");
  return true;
 }
 
