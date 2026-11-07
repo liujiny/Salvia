@@ -238,6 +238,9 @@ static int s_snap_page_row_h = 0;
 static int s_snap_col256_u = 0;
 static int s_snap_max_page_x = 0;
 static int s_snap_max_page_y = 0;
+static int s_snap_raster_col_x = 0;
+static int s_snap_raster_cols = 0;
+static int s_snap_raster_v = 0;
 static bool epic12_gpu_staging_pages[EPIC12_VRAM_PAGES];
 static unsigned epic12_gpu_staging_version[EPIC12_VRAM_PAGES];
 
@@ -273,6 +276,9 @@ static void epic12_gpu_snapshot_reset()
 	s_snap_col256_u = 0;
 	s_snap_max_page_x = 0;
 	s_snap_max_page_y = 0;
+	s_snap_raster_col_x = 0;
+	s_snap_raster_cols = 0;
+	s_snap_raster_v = 0;
 	memset(s_snap_cache, 0, sizeof(s_snap_cache));
 }
 
@@ -344,6 +350,31 @@ static inline bool epic12_gpu_snapshot_alloc(int w, int h, int &out_x, int &out_
 
 		if (s_snap_page_x > s_snap_max_page_x) s_snap_max_page_x = s_snap_page_x;
 		if (1 > s_snap_max_page_y) s_snap_max_page_y = 1;
+		return true;
+	}
+
+	// Wide thin raster / scanline strip (w > 128, h <= 4):
+	// Pack vertically on a shared set of page-aligned columns across full 256 height.
+	// This prevents page exhaustion while eliminating all WAR hazard flushes on bank 768.
+	if (w > 128 && h <= 4) {
+		const int cols = (w + 127) >> 7;
+		const int aligned_h = (h + 3) & ~3;
+		if (s_snap_raster_cols != cols || s_snap_raster_v + aligned_h > 256) {
+			s_snap_raster_col_x = s_snap_page_x;
+			s_snap_raster_cols = cols;
+			s_snap_raster_v = 0;
+			s_snap_page_x += cols;
+		}
+		if (s_snap_raster_col_x + cols > 64) return false;
+
+		out_x = s_snap_raster_col_x << 7;
+		out_y = EPIC12_SNAPSHOT_Y + s_snap_raster_v;
+		s_snap_raster_v += aligned_h;
+
+		const int last_x = s_snap_raster_col_x + cols - 1;
+		if (last_x > s_snap_max_page_x) s_snap_max_page_x = last_x;
+		const int last_y = (s_snap_raster_v > 128) ? 1 : 0;
+		if (last_y > s_snap_max_page_y) s_snap_max_page_y = last_y;
 		return true;
 	}
 
@@ -1928,12 +1959,10 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	bool is_staging = false;
 	bool reused = false;
 	unsigned ver = 0;
-	// Background raster scanlines (w > 128 && h <= 4) tile off-screen VRAM without overwriting
-	// in the same frame; snapshotting them scatters a few source pages across dozens of snapshot
-	// pages, thrashing the atlas and page limit. All other staging sprites (including multi-part
-	// strips with w <= 128 and tall boss segments packed into dedicated columns) are snapshotted
-	// to eliminate WAR stalls.
-	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256 && !(w > 128 && h <= 4)) {
+	// Staging sprites and raster scanlines (sx >= 768) are snapshotted to dedicated
+	// snapshot pages (w <= 128 cell shelf, tall column shelf, or wide raster shelf),
+	// completely eliminating WAR hazard flushes on bank 768.
+	if (sx >= 768 && sy < 4096 && w <= 512 && h <= 256) {
 		const int spx0 = sx >> 7, spx1 = (sx + w - 1) >> 7;
 		const int spy0 = sy >> 7, spy1 = (sy + h - 1) >> 7;
 		if (spx0 == spx1 && spy0 == spy1) {

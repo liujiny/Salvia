@@ -289,18 +289,23 @@ static bool staging_snapshot_war_prevention(UINT32 *ref, UINT32 *got)
 		return false;
 	}
 
-	// Wide raster test (w=320, h=1): MUST NOT be snapshotted (w > 128 && h <= 4 bypass)
+	// Wide raster test (w=352, h=1): packed vertically on wide raster shelf, snapshotted out of page 6
 	epic12_gpu_flush();
-	epic12_gpu_cpu_write(768, 0, 320, 1);
-	if (!epic12_gpu_submit(0, 0, 0, 0, 0, &m_clip, got, 768, 0, 0, 0, 320, 1, 0, 0, 0, &tint)) return false;
-	// Must stay in page 6
-	if (!epic12_gpu_source_pages[0][6]) {
-		puts("FAIL wide raster was snapshotted when it should have been bypassed");
+	epic12_gpu_cpu_write(768, 0, 352, 1);
+	if (!epic12_gpu_submit(0, 0, 0, 0, 0, &m_clip, got, 768, 0, 0, 0, 352, 1, 0, 0, 0, &tint)) return false;
+	if (epic12_gpu_source_pages[0][6]) {
+		puts("FAIL wide raster was not snapshotted out of page 6");
+		return false;
+	}
+	flushes_before = epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY];
+	epic12_gpu_staging_blit(768, 0, 0, 0, 80, 120, 0, 0, 0, 32, 32, 32);
+	if (epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY] != flushes_before) {
+		puts("FAIL wide raster staging rewrite triggered WAR flush");
 		return false;
 	}
 	epic12_gpu_flush();
 
-	puts("PASS staging snapshot WAR prevention: 71..128px multi-part strips snapshotted, >128px rasters bypassed");
+	puts("PASS staging snapshot WAR prevention: all multi-part strips and wide rasters snapshotted, 0 WAR flushes");
 	return true;
 }
 
