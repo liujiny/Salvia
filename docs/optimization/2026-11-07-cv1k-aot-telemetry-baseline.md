@@ -68,15 +68,18 @@
    - 解决 `<xtl.h>` / `<windef.h>` 中 `typedef float FLOAT;` 与 `sh4.cpp` FPU 操作码 `FLOAT()` 的宏冲突：在 `sh3_aot_profile.h` 中彻底移除 `<xtl.h>`，使用 PPC 硬件定时器内联函数 `#pragma intrinsic(__mftb)`（50MHz TimeBase，50,000 ticks/ms）。
    - 构建命令：
      ```bash
-     bash /home/humor/salvia-tests/mmpork-boss-dialog-20261107/build-reviewed-xex.sh --baseline f61421f6 --tag aot-telemetry --flavor diag --force
+     bash /home/humor/salvia-tests/xex-build/build-xex.sh --baseline f61421f6 --tag aot-telemetry --flavor diag --force
      ```
-   - 产物 SHA-256：`94217fb9746699d5fb8bbfcf2f36dfc6b6adf253d2e9720e803960a7ca0f328f`
-   - 归档路径：`/home/humor/salvia-tests/xex-archive/fbneo-20261107-2153-aot-telemetry-diag.xex`
-   - 部署路径：`Distro360/fbneo.xex`（诊断版，`SALVIA_FBNEO_DIAGNOSTICS 1`）。
+   - 产物与哈希：
+     - `Distro360/fbneo.xex`：SHA-256 `700142fdf89ea7ab7a3b9973a34144df83374ff55e3ccd4c7cbc7af86ef94005`
+     - `Distro360/mmpork.xex`：SHA-256 `a95284deb312e1ebffef77c6ebbe07b45a1aa37b0f7ca7a4f83f1aa824b446f3`
+     - `Distro360/ddpsdoj.xex`：SHA-256 `4af1246ecce63e3fd204031563fd40f4e6fbfe7ddcf959df6f0723dda725d6b4`
+   - 归档路径：`/home/humor/salvia-tests/xex-archive/`。
+   - 实机部署：通过 LAN FTP 上传 `Distro360/mmpork.xex` 至主机 `/Usb0/Salvia-360/mmpork.xex`，并通过 Aurora `SITE LAUNCH` 触发运行。
 
 ## 5. 后续步骤
 
-1. 保持当前源码修改与可回退提交 `75c95c20`。
-2. 待主机就绪（192.168.2.232 上电并启动至 Aurora）后，通过 FTP 上传 `fbneo.xex` 并执行基准采集。
-3. 采集 `mmpork` 与 `ddpsdoj` 的真实 `cv1000-gpu.log`，提取 `aot_run`、`aot_summary` 以及 `rebuild_uncovered` 统计事实表。
+1. 保持当前源码修改与可回退提交 `39b306f9`。
+2. 实机运行 `mmpork`（包含冷启动、吸引演示、进币开局及首关 Boss），暂停时核心将自动向 `cv1000-gpu.log` 输出第一优先级遥测字段。
+3. 从主机回传 `cv1000-gpu.log`，提取 `aot_run`、`aot_summary` 以及 `rebuild_uncovered` 统计事实表。
 4. 依据实测数字评估 Codex 第二优先级（计数/预算解耦、队满 visited 修正、active-low 投币触发修正）与第三优先级。
