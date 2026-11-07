@@ -53,3 +53,16 @@
 3. **PPC DRC 指令差分回归**：
    `python3 libretro/FBNeo/tests/sh3_ppc/run.py --toolchain-root /home/humor/salvia-tests/toolchains/ppc/root`
    - 848,846 个测试用例全部 PASS。
+
+## 4. 构建产物与哈希
+
+- 构建命令：
+  ```bash
+  bash /home/humor/salvia-tests/xex-build/build-xex.sh --baseline f61421f6 --tag aot-p2-fix --flavor diag --force
+  ```
+- 产物 SHA-256：
+  - `Distro360/fbneo.xex`：`62502db39adc788e032258995ee85f54b537b2424aca67410da03ff54103187d`
+  - `Distro360/mmpork.xex`：`db8840ecf0e8256d1d99526ac80350c4d5407f309547381ff44a34ebea90fef7`
+  - `Distro360/ddpsdoj.xex`：`837c29768e1360b1a1197f594fd061c68f325859df8e546780509ef01c5828a8`
+- 归档路径：`/home/humor/salvia-tests/xex-archive/`。
+
