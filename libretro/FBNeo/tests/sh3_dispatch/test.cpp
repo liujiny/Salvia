@@ -13,7 +13,7 @@ enum { AM=1023, SH3_SHIFT=8, SH3_PAGEM=255, SH3_MAXHANDLER=16 };
 // `ram_base` is the driver field the generated code's RAM-window base is
 // mirrored into; this fixture registers no window, so it stays NULL and the
 // write-stamp contract below never holds.
-struct Sh3PpcState { UINT32 pc, delay, r, total; int icount; UINT8 *ram_base; };
+struct Sh3PpcState { UINT32 pc, delay, r, total; int icount; UINT8 *ram_base; UINT8 *read_mirror; UINT32 mirror_page, mirror_handler; };
 static Sh3PpcState sh3_ppc_state;
 #define m_pc sh3_ppc_state.pc
 #define m_delay sh3_ppc_state.delay
@@ -378,7 +378,36 @@ static bool fallback_origin_checks() {
  return true;
 }
 
+static bool read_mirror_validation_checks() {
+	UINT8 dummy_ram[512];
+	const UINT8 *page = dummy_ram;
+	UINT32 phys = 256;
+	MemMapR[phys >> SH3_SHIFT] = dummy_ram;
+	if (!sh3_drc_check_read_map(phys, page)) return false;
+
+	MemMapR[phys >> SH3_SHIFT] = (UINT8*)1;
+	sh3_ppc_state.read_mirror = dummy_ram;
+	sh3_ppc_state.mirror_handler = 1;
+	sh3_ppc_state.mirror_page = 256;
+	if (!sh3_drc_check_read_map(phys, page)) return false;
+
+	sh3_ppc_state.mirror_handler = 2;
+	if (sh3_drc_check_read_map(phys, page)) return false;
+	sh3_ppc_state.mirror_handler = 1;
+
+	sh3_ppc_state.mirror_page = 512;
+	if (sh3_drc_check_read_map(phys, page)) return false;
+	sh3_ppc_state.mirror_page = 256;
+
+	sh3_ppc_state.read_mirror = dummy_ram + 100;
+	if (sh3_drc_check_read_map(phys, page)) return false;
+	sh3_ppc_state.read_mirror = NULL;
+
+	return true;
+}
+
 int main() {
+ if(!read_mirror_validation_checks()) {fputs("FAIL read mirror validation\n",stderr);return 9;}
  if(!fallback_origin_checks()) {fputs("FAIL fallback origins\n",stderr);return 7;}
  if(!workload_profile_checks()) {fputs("FAIL workload profile\n",stderr);return 6;}
  if(!cache_lifetime()) {fputs("FAIL allocation lifecycle\n",stderr); return 4;}

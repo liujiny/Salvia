@@ -12,6 +12,19 @@
 #define SALVIA_CV1K_PROBE 0
 #endif
 
+static inline bool sh3_drc_check_read_map(UINT32 phys, const UINT8 *page)
+{
+	const UINT8 *r = MemMapR[phys >> SH3_SHIFT];
+	if (r == page) return true;
+	if (sh3_ppc_state.read_mirror &&
+	    (uintptr_t)r == (uintptr_t)sh3_ppc_state.mirror_handler &&
+	    (phys & ~(unsigned)SH3_PAGEM) == sh3_ppc_state.mirror_page &&
+	    sh3_ppc_state.read_mirror == page) {
+		return true;
+	}
+	return false;
+}
+
 #if SALVIA_CV1K_STAMP_PROBE
 // Write-stamp helpers (docs/optimization/2026-10-09-cv1k-write-stamps.md).
 // A clean stamp pair is only meaningful while the registered window is the one
@@ -191,7 +204,7 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   if(shadow) {
    const Shadow &cand=shadow[index];
    if(cand.pc==pc && cand.source==source && sector_epoch[cand.sector]==cand.epoch &&
-      (!cand.check_read_map || MemMapR[phys>>SH3_SHIFT]==page)
+      (!cand.check_read_map || sh3_drc_check_read_map(phys, page))
 #if !SALVIA_CV1K_FAST_SHADOW
       && sh3_drc_source_equal(cand.original,source,cand.words)
 #endif
@@ -288,7 +301,7 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    // Classify before compile() overwrites the record it is derived from.
    const bool tag_hit=(b.source==source && b.pc==pc);
    const bool same=tag_hit && sh3_drc_source_equal(b.original,source,b.words);
-   const bool map_ok=(!b.check_read_map || MemMapR[phys>>SH3_SHIFT]==page);
+   const bool map_ok=(!b.check_read_map || sh3_drc_check_read_map(phys, page));
    if(tag_hit) {
     ++sh3_drc_work.validation_spans;
     sh3_drc_work.validation_words+=b.words;
@@ -351,9 +364,9 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    const bool stamps_clean=tag_hit && sh3_stamp_clean(source,b.words);
    const bool same=tag_hit && (stamps_clean || sh3_drc_source_equal(b.original,source,b.words));
    if(same) sh3_stamp_clear(source,b.words);
-   rebuild=!same || (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page);
+   rebuild=!same || (b.check_read_map && !sh3_drc_check_read_map(phys, page));
 #else
-   rebuild=(b.source!=source || b.pc!=pc || (b.check_read_map && MemMapR[phys>>SH3_SHIFT]!=page) ||
+   rebuild=(b.source!=source || b.pc!=pc || (b.check_read_map && !sh3_drc_check_read_map(phys, page)) ||
      !sh3_drc_source_equal(b.original,source,b.words));
 #endif
   }
