@@ -134,3 +134,9 @@ but the original smooth-play problem is not yet declared resolved.
 Candidate XEX SHA-256: `983cbbaa1d264952f5ca437b082ee30932aba34b56467cd56287090756182c91`.
 Raw `baseline-console.log`, `candidate-console.log`, matching summaries and done
 markers are retained in the external evidence directory.
+
+
+The independent aligned vector32 follow-up was reverted in `99512531` after
+only a 1.30% single-run difference; see
+[its rejection record](2026-11-07-mmpork-staging-vector32-rejected.md).
+The restored normal-play image remains the row-columns diagnostics SHA above.
