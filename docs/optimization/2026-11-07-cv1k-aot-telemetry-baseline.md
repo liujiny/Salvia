@@ -77,9 +77,47 @@
    - 归档路径：`/home/humor/salvia-tests/xex-archive/`。
    - 实机部署：通过 LAN FTP 上传 `Distro360/mmpork.xex` 至主机 `/Usb0/Salvia-360/mmpork.xex`，并通过 Aurora `SITE LAUNCH` 触发运行。
 
-## 5. 后续步骤
+## 5. 实机基线数据采集与关键发现 (`mmpork`)
 
-1. 保持当前源码修改与可回退提交 `39b306f9`。
-2. 实机运行 `mmpork`（包含冷启动、吸引演示、进币开局及首关 Boss），暂停时核心将自动向 `cv1000-gpu.log` 输出第一优先级遥测字段。
-3. 从主机回传 `cv1000-gpu.log`，提取 `aot_run`、`aot_summary` 以及 `rebuild_uncovered` 统计事实表。
-4. 依据实测数字评估 Codex 第二优先级（计数/预算解耦、队满 visited 修正、active-low 投币触发修正）与第三优先级。
+2026-11-07 22:08 采集自 Xbox 360 Jasper（`mmpork.xex` 运行 10,025 帧，包含冷启动、吸引演示、投币选人与关卡实际游玩）：
+
+```text
+CV1000 review: build=aot-telemetry 39b306f9 20261107-2158 diag frontend_interval_frames=10025 samples=147 invalid=0 work_count_skipped=0
+CV1000 GPU: review build=aot-telemetry 39b306f9 20261107-2158 diag game=mmpork interval_frames=10025 samples=147 invalid=0 clock_hz=102400000 render_cores=2 dips=00,07,00,00 bpp=4 (batches=7722)
+CV1000 GPU: aot_summary total_aot_compiled=0 aot_executed=0 aot_executed_pct=0.0 aot_cold_evicted=0 jit_compiled=10375 runs=0 (batches=7722)
+CV1000 GPU: drc_work_rebuild_causes uncovered=11 conflict=0 source=0 read_map=0 (batches=7722)
+CV1000 GPU: drc_work_arena bytes=33554432 words=8388608 recycles=0 evictions=0 evicted_slots=0 peak_words=1814400 peak_bytes=7257600 (batches=7722)
+CV1000 GPU: drc_work_shadow hits=2235576 entries=2239532 hits_pct=99 bytes=4194304 entry_bytes=128 pred_miss=210417 pred_miss_pct=9 touch=1 (batches=7722)
+```
+
+### 关键客观事实：AOT 在 MMPork 上从未实际执行 (`runs=0, total_aot_compiled=0`)
+
+遥测数据暴露了一个严重的隐蔽缺陷，证实了 Codex 在建议书第 2 节的推断，并揭示了更深层次的连锁触发根因：
+
+1. **Active-low 投币输入逻辑反转**：
+   - 在 `d_cv1k.cpp:838` 中：`bool force_early = (DrvInputs[0] & 0x0c) != 0;`。
+   - 街机投币开关为低电平有效（未按下时对应位为 1）。`DrvInputs[0]` 初始化为 `0xff`，未投币状态下 `(0xff & 0x0c) == 0x0c`（非零），导致 `force_early` 在**第 0 帧**即恒为真。
+2. **非 fastboot 游戏在第 0 帧空转**：
+   - `mmpork` 没有在 `cv1k_fastboot.h` 中配置 RAM 测试跳过补丁，`cv1k_boot_pending` 初始即为 `NULL`。
+   - 因此在第 0 帧、甚至在调用 `Sh3NewFrame()` 运行第一条 SH3 指令之前，条件 `(!cv1k_boot_pending && (nCurrentFrame >= 30 || force_early))` 便满足，直接调用了 `Sh3DrcPrecompile` 并将 `s_cv1k_aot_done` 置为 `true`。
+3. **冷启动内存分配未就绪**：
+   - `Sh3Ppc::allocate()` 是在首次 DRC 块 dispatch 时按需延迟调用的（`sh3_drc_dispatch.h:152`）。在第 0 帧尚未执行任何指令时，`Sh3Ppc::blocks` 与 `Sh3Ppc::lookup` 均为 `NULL`。
+   - `Sh3DrcPrecompile` 起始校验包含：
+     ```cpp
+     if (!sh3_drc_enabled || !Sh3Ppc::blocks || !Sh3Ppc::lookup || size < 2) return;
+     ```
+   - 因 `Sh3Ppc::blocks == NULL`，`Sh3DrcPrecompile` 在第 0 帧瞬间直接 `return`，未执行任何编译。
+   - 但此时 `s_cv1k_aot_done` 已经被标记为 `true`，后续帧再也不会触发 AOT！
+4. **结果**：
+   - 整场游戏（10,025 帧）的 10,375 个基本块**全由运行时 JIT 随用随编生成**，AOT 预编译在 `mmpork` 上形同虚设！
+
+---
+
+## 6. 下一步演进方案（第二优先级准备）
+
+根据第一优先级采集到的确凿事实，下一轮小范围修正聚焦于：
+1. **确保预编译能安全触达内存分配**：
+   - `Sh3DrcPrecompile` 中若 `!Sh3Ppc::blocks`，应主动调用 `Sh3Ppc::allocate()`，避免因尚未执行过 dispatch 而静默跳过。
+2. **修正投币低电平触发判定**：
+   - 投币按下为低电平（`!(DrvInputs[0] & 0x04) || !(DrvInputs[0] & 0x08)` 或 `(DrvInputs[0] & 0x0c) != 0x0c`）。未按投币时应等待解包帧数（例如 30 帧），而非第 0 帧立即触发。
+3. **计数与预算解耦 & 队满 visited 修正**（按 Codex 4.1 与 4.2 规划）。
