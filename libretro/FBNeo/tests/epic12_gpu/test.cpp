@@ -374,6 +374,44 @@ static bool clipped_cpu_invalidation(UINT32 *ref, UINT32 *got, const UINT32 *ini
 	return true;
 }
 
+// Compare CPU replay against the original blitter table, independently of
+// the shader model. These source modes also reach replay for off-screen draws.
+static bool source_mode_replay_oracle()
+{
+ UINT32 pixels[16]; m_bitmaps=pixels;
+ Epic12GpuCommand c; memset(&c,0,sizeof(c));
+ c.blend=1;c.x=8;c.w=2;c.h=1;
+ rectangle clip(8,9,0,0); unsigned cases=0;
+ for(int sm=1;sm<=2;++sm) for(int dm=0;dm<=7;++dm) {
+  if(dm!=0 && dm!=3 && dm!=7)continue;
+  c.smode=sm;c.dmode=dm;
+  for(int flip=0;flip<2;++flip) for(int tr=0;tr<2;++tr)
+  for(int ti=0;ti<3;++ti) for(int sa=0;sa<32;++sa) for(int da=0;da<32;++da) {
+   c.flipx=flip;c.transparent=tr;c.sa=sa;c.da=da;
+   c.tint.r=ti==0?32:(ti==1?13:63);c.tint.g=ti==0?32:27;c.tint.b=ti==0?32:5;
+   pixels[0]=0x2050a0e0;pixels[1]=0x00e82078;
+   pixels[8]=0x20609838;pixels[9]=0x2038c890;
+   epic12_device_blitfunction *table;
+#define ORIGINAL_TABLE(f,t) (ti ? epic12_device_f##f##_ti1_tr##t##_blit_funcs : epic12_device_f##f##_ti0_tr##t##_blit_funcs)
+   if(flip)table=tr?ORIGINAL_TABLE(1,1):ORIGINAL_TABLE(1,0);
+   else table=tr?ORIGINAL_TABLE(0,1):ORIGINAL_TABLE(0,0);
+#undef ORIGINAL_TABLE
+   table[sm|(dm<<3)](&clip,pixels,0,0,8,0,2,1,0,sa,da,&c.tint);
+   UINT32 expected0=pixels[8],expected1=pixels[9];
+   pixels[8]=0x20609838;pixels[9]=0x2038c890;
+   epic12_gpu_replay(c);
+   if(pixels[8]!=expected0 || pixels[9]!=expected1) {
+    printf("FAIL source-mode replay sm=%d dm=%d flip=%d transparent=%d tint=%d sa=%d da=%d\n",sm,dm,flip,tr,ti,sa,da);
+    return false;
+   }
+   ++cases;
+  }
+ }
+ m_bitmaps=NULL;
+ printf("PASS %u original-rasterizer source-mode replay cases: square/modulation, destination modes, flips, transparency, tints and alphas\n",cases);
+ return true;
+}
+
 int main()
 {
 	setbuf(stdout,NULL);
@@ -383,6 +421,7 @@ int main()
 	}
 	for(int a=0;a<32;++a) for(int b=0;b<32;++b) epic12_device_colrtable_add[a][b]=clamp(a+b);
 	epic12_init_blend_tables();
+	if(!source_mode_replay_oracle()) return 1;
 	Epic12GpuCommand c; memset(&c,0,sizeof(c)); c.blend=1;
 	for(int t=0;t<64;++t) for(int sa=0;sa<32;++sa) for(int s=0;s<32;++s)
 		for(int d=0;d<32;++d) for(int mode=0;mode<3;++mode) {

@@ -207,15 +207,33 @@ static void epic12_gpu_replay(const Epic12GpuCommand &c)
 		return;
 	}
 	const int tinted = (c.tint.r != 32) | (c.tint.g != 32) | (c.tint.b != 32);
+	// Newly admitted source modes must keep their original rasterizer when a
+	// small batch, off-screen staging draw or failed GPU batch is replayed.
+	// Selecting only by destination mode silently changed square/modulation
+	// draws into source-alpha blends and could contaminate later source pages.
+	if (c.blend && (c.smode == 1 || c.smode == 2)) {
+#define GPU_CPU_SOURCE_DRAW(f,t,s,d) \
+		if (tinted) draw_sprite_f##f##_ti1_tr##t##_s##s##_d##d(GPU_CPU_ARGS); \
+		else draw_sprite_f##f##_ti0_tr##t##_s##s##_d##d(GPU_CPU_ARGS)
+#define GPU_CPU_SOURCE_MODE(f,t,s) \
+		if (c.dmode == 0) { GPU_CPU_SOURCE_DRAW(f,t,s,0); } \
+		else if (c.dmode == 3) { GPU_CPU_SOURCE_DRAW(f,t,s,3); } \
+		else { GPU_CPU_SOURCE_DRAW(f,t,s,7); }
+#define GPU_CPU_SOURCE_CASE(f,t) \
+		if (c.smode == 1) { GPU_CPU_SOURCE_MODE(f,t,1); } \
+		else { GPU_CPU_SOURCE_MODE(f,t,2); }
+		if (c.flipx) { if (c.transparent) { GPU_CPU_SOURCE_CASE(1,1); } else { GPU_CPU_SOURCE_CASE(1,0); } }
+		else { if (c.transparent) { GPU_CPU_SOURCE_CASE(0,1); } else { GPU_CPU_SOURCE_CASE(0,0); } }
+#undef GPU_CPU_SOURCE_CASE
+#undef GPU_CPU_SOURCE_MODE
+#undef GPU_CPU_SOURCE_DRAW
+		return;
+	}
 #define GPU_CPU_CASE(f,t) \
 	if (!c.blend) draw_sprite_f##f##_ti1_tr##t##_plain(GPU_CPU_ARGS); \
 	else if (c.dmode == 1) draw_sprite_f##f##_ti1_tr##t##_s0_d1(GPU_CPU_ARGS); \
 	else if (c.dmode == 7) draw_sprite_f##f##_ti1_tr##t##_s0_d7(GPU_CPU_ARGS); \
 	else if (c.dmode == 3) draw_sprite_f##f##_ti1_tr##t##_s0_d3(GPU_CPU_ARGS); \
-	else if (c.smode == 2 && c.dmode == 0) { \
-		if (tinted) draw_sprite_f##f##_ti1_tr##t##_s2_d0(GPU_CPU_ARGS); \
-		else draw_sprite_f##f##_ti0_tr##t##_s2_d0(GPU_CPU_ARGS); \
-	} \
 	else draw_sprite_f##f##_ti1_tr##t##_s0_d4(GPU_CPU_ARGS)
 	if (c.flipx) { if (c.transparent) { GPU_CPU_CASE(1,1); } else { GPU_CPU_CASE(1,0); } }
 	else { if (c.transparent) { GPU_CPU_CASE(0,1); } else { GPU_CPU_CASE(0,0); } }
