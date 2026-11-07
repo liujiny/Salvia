@@ -814,17 +814,13 @@ static INT32 DrvFrame()
 	}
 
 #if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
-	bool was_pending = (cv1k_boot_pending != NULL);
 	cv1k_boot_step();
 	if (!s_cv1k_aot_done) {
-		if (was_pending && !cv1k_boot_pending) {
+		bool force_early = (DrvInputs[0] & 0x0c) != 0;
+		if (!cv1k_boot_pending && (nCurrentFrame >= 240 || force_early)) {
 			s_cv1k_aot_done = true;
-			Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x400000 : 0x200000);
-			Sh3DrcPrecompile(0xac000000, is_type_d ? 0x400000 : 0x200000);
-		} else if (!cv1k_boot_pending && nCurrentFrame >= 300) {
-			s_cv1k_aot_done = true;
-			Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x400000 : 0x200000);
-			Sh3DrcPrecompile(0xac000000, is_type_d ? 0x400000 : 0x200000);
+			Sh3DrcPrecompile(0x0c000000, is_type_d ? 0x1000000 : 0x800000);
+			Sh3DrcPrecompile(0xac000000, is_type_d ? 0x1000000 : 0x800000);
 		}
 	}
 #endif

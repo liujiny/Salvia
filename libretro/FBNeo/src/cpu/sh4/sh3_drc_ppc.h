@@ -667,10 +667,31 @@ struct Compiler {
    rotate(0,11,32-ram.span_bits,ram.span_bits+3,31);
    cmpi(0,ram.start>>ram.span_bits,true);
    if (write) {
-    guard(2,true,device_opcode);
+    UINT32 *not_direct_ram = branch(2, false);
     const unsigned extract_bits=(ram.backing_bits && ram.backing_bits<ram.span_bits)?ram.backing_bits:ram.span_bits;
     rotate(12,11,0,32-extract_bits,31);
     ram_bias(12);
+    UINT32 *done_direct = jump();
+    patch(not_direct_ram);
+    rotate(0, 11, 16, 16, 31); // r0 = (r11 >> 16) & 0xffff
+    cmpi(0, 0xe000, true);
+    UINT32 *not_p4 = branch(0, true); // if r0 < 0xe000, P0..P3
+    cmpi(0, 0xf000, true);
+    guard(2, true, device_opcode); // if not DrvCacheRAM, guard trips
+    UINT32 *is_cache_ram = jump();
+    patch(not_p4);
+    rotate(0, 11, 18, 17, 29); // ((address & AM) >> 16) * sizeof(pointer)
+    UINT32 *done_offset = jump();
+    patch(is_cache_ram);
+    rotate(0, 11, 18, 14, 29); // (address >> 16) * sizeof(pointer) for 0xf000
+    patch(done_offset);
+    load(12, SO(write_map));
+    emit(x(12, 12, 0, 23)); // lwzx map entry
+    cmpi(12, SH3_MAXHANDLER, true);
+    guard(0, false, device_opcode);
+    rotate(0, 11, 0, 16, 31);
+    add(12, 12, 0);
+    patch(done_direct);
    } else {
     UINT32 *not_direct_ram = branch(2, false);
     const unsigned extract_bits=(ram.backing_bits && ram.backing_bits<ram.span_bits)?ram.backing_bits:ram.span_bits;
@@ -1550,7 +1571,7 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 	UINT8 *visited = (UINT8*)calloc(1, bitmap_bytes);
 	if (!visited) return;
 
-	const UINT32 QUEUE_MASK = 65535u;
+	const UINT32 QUEUE_MASK = 131071u;
 	UINT32 *queue = (UINT32*)malloc((QUEUE_MASK + 1) * sizeof(UINT32));
 	if (!queue) { free(visited); return; }
 
@@ -1596,7 +1617,7 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size)
 	UINT32 precompiled_count = 0;
 	UINT32 pc = 0;
 	while (q.pop(pc)) {
-		if (++precompiled_count >= 16384) {
+		if (++precompiled_count >= 65536) {
 			break;
 		}
 		if (Sh3Ppc::used + Sh3Ppc::MAX_WORDS >= (Sh3Ppc::CACHE_WORDS - 262144)) {

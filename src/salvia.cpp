@@ -2110,6 +2110,8 @@ std::string initPathAndLog(char** argv){
 	#ifdef _XBOX
 		#if defined(SALVIA_STANDALONE_MMPORK) && SALVIA_STANDALONE_MMPORK
 			Constant::setAppDir(string(dir.getDirActual()) + "mmpork.xex");
+		#elif defined(SALVIA_STANDALONE_DDPSDOJ) && SALVIA_STANDALONE_DDPSDOJ
+			Constant::setAppDir(string(dir.getDirActual()) + "ddpsdoj.xex");
 		#else
 			Constant::setAppDir(dir.getDirActual() + string(EMU_LIB_NAME) + ".xex");
 		#endif
@@ -2414,6 +2416,53 @@ bool loadGameAtStart(int argc, char *argv[]){
 				if (!autoRom.empty()) {
 					LOG_INFO("Standalone MMPork auto-boot: launching %s in full play mode\n", autoRom.c_str());
 					ret = launchGame(autoRom) == 1;
+				}
+			}
+
+			if (!ret) {
+				bool isStandaloneDdpsdoj = false;
+				#if defined(SALVIA_STANDALONE_DDPSDOJ) && SALVIA_STANDALONE_DDPSDOJ
+					isStandaloneDdpsdoj = true;
+				#endif
+				if (!isStandaloneDdpsdoj) {
+					if (dutil.fileExists("game:\\ddpsdoj.boot") || dutil.fileExists("d:\\ddpsdoj.boot") ||
+					    dutil.fileExists("game:\\ddpsdoj.autoboot") || dutil.fileExists("d:\\ddpsdoj.autoboot") ||
+					    dutil.fileExists("ddpsdoj.boot") || dutil.fileExists("ddpsdoj.autoboot")) {
+						isStandaloneDdpsdoj = true;
+					}
+				}
+				if (!isStandaloneDdpsdoj) {
+					std::string exeName = Constant::getAppExecutable();
+					Constant::lowerCase(&exeName);
+					if (exeName.find("ddpsdoj") != std::string::npos) {
+						isStandaloneDdpsdoj = true;
+					}
+				}
+
+				if (isStandaloneDdpsdoj) {
+					const char* candidates[] = {
+						"game:\\ddpsdoj.zip",
+						"d:\\ddpsdoj.zip",
+						"game:\\roms\\ddpsdoj.zip",
+						"d:\\roms\\ddpsdoj.zip",
+						"ddpsdoj.zip",
+						NULL
+					};
+					std::string autoRom;
+					for (int i = 0; candidates[i]; i++) {
+						if (dutil.fileExists(candidates[i])) {
+							autoRom = candidates[i];
+							break;
+						}
+					}
+					if (autoRom.empty()) {
+						std::string ap = Constant::getAppDir() + "\\ddpsdoj.zip";
+						if (dutil.fileExists(ap.c_str())) autoRom = ap;
+					}
+					if (!autoRom.empty()) {
+						LOG_INFO("Standalone DDPSDOJ auto-boot: launching %s in full play mode\n", autoRom.c_str());
+						ret = launchGame(autoRom) == 1;
+					}
 				}
 			}
 
