@@ -451,6 +451,34 @@ static bool blended_staging_coherency(UINT32 *ref, UINT32 *got)
  return true;
 }
 
+static bool column_stream_equivalence(UINT32 *ref, UINT32 *got)
+{
+ const int count=100,x=895,y=120,h=20;
+ UINT16 commands[1024]={0};unsigned versions[EPIC12_VRAM_PAGES]={0};
+ for(int i=0;i<count;++i) {
+  UINT16 *p=commands+i*10;p[0]=0x1000;p[2]=1536+(i%4)*2;p[3]=256+(i%2)*8;
+  p[4]=x+i;p[5]=y;p[6]=1;p[7]=h-1;p[8]=0x80;p[9]=0x8080;
+  for(int row=0;row<h;++row)for(int col=0;col<2;++col)
+   ref[(p[3]+row)*8192+p[2]+col]=got[(p[3]+row)*8192+p[2]+col]=0x20000000|((i+row+col)&31)*0x080808;
+  for(int py=y>>7;py<=(y+h-1)>>7;++py)for(int px=(x+i)>>7;px<=(x+i+1)>>7;++px)++versions[py*64+px];
+ }
+ for(int row=y-1;row<=y+h;++row)for(int col=x-1;col<=x+count+1;++col)ref[row*8192+col]=got[row*8192+col]=0x2050a0e0;
+ rectangle clip(0,8191,0,4095);clr_t tint;tint.r=tint.g=tint.b=32;
+ m_bitmaps=ref;
+ for(int i=0;i<count;++i) {UINT16 *p=commands+i*10;draw_sprite_f0_ti0_tr0_simple(&clip,ref,p[2],p[3],p[4],p[5],2,h,0,0,0,&tint);}
+ UINT16 *old_ram=m_ram16_copy;int old_mask=m_main_rammask;rectangle old_clip=m_clip;
+ UINT64 old_delay=epic12_device_blit_delay;
+ m_bitmaps=got;epic12_gpu_reset();memset(epic12_gpu_staging_version,0,sizeof(epic12_gpu_staging_version));
+ m_ram16_copy=commands;m_main_rammask=2047;m_clip=clip;epic12_device_blit_delay=17;
+ int consumed=epic12_gpu_staging_stream(0);
+ bool ok=consumed==count && epic12_device_blit_delay==17+count*2*h &&
+  memcmp(versions,epic12_gpu_staging_version,sizeof(versions))==0;
+ for(int row=y-1;row<=y+h;++row)for(int col=x-1;col<=x+count+1;++col)if(ref[row*8192+col]!=got[row*8192+col])ok=false;
+ m_ram16_copy=old_ram;m_main_rammask=old_mask;m_clip=old_clip;epic12_device_blit_delay=old_delay;
+ if(ok)puts("PASS overlapping staging column stream: original pixel order, boundary guards, exact page versions, command count and guest pixel delay");
+ return ok;
+}
+
 // Compare CPU replay against the original blitter table, independently of
 // the shader model. These source modes also reach replay for off-screen draws.
 static bool source_mode_replay_oracle()
@@ -592,6 +620,7 @@ int main()
 	const unsigned vram_words=8192*4096;
 	UINT32 *initial=(UINT32*)calloc(words,4),*ref=(UINT32*)malloc(words*4),*got=(UINT32*)malloc(words*4);
 	if(!initial||!ref||!got)return 2;
+	if(!column_stream_equivalence(ref,got)) {puts("FAIL column stream equivalence");return 32;}
 	if(!blended_staging_coherency(ref,got)) {puts("FAIL blended staging coherency");return 31;}
 	// Distinct opaque/transparent colors in active atlas, viewport and wrap rows.
 	for(int y=0;y<1024;++y) for(int x=0;x<1024;++x) initial[y*8192+x]=rnd()&0x20f8f8f8;

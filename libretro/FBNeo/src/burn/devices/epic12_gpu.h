@@ -72,6 +72,9 @@ static unsigned epic12_gpu_diag_submit_clip;
 static unsigned epic12_gpu_diag_submit_staging_ident;
 static unsigned epic12_gpu_diag_submit_staging_replay;
 static unsigned epic12_gpu_diag_submit_onscreen;
+static unsigned epic12_gpu_diag_column_groups;
+static unsigned epic12_gpu_diag_column_commands;
+static unsigned epic12_gpu_diag_column_pixels;
 static int epic12_gpu_diag_stag_samples[10][8];
 static int epic12_gpu_diag_stag_sample_count;
 static int epic12_gpu_diag_war_samples[10][24];
@@ -118,6 +121,9 @@ static void epic12_gpu_diag_reset()
 	epic12_gpu_diag_submit_staging_ident=0;
 	epic12_gpu_diag_submit_staging_replay=0;
 	epic12_gpu_diag_submit_onscreen=0;
+	epic12_gpu_diag_column_groups=0;
+	epic12_gpu_diag_column_commands=0;
+	epic12_gpu_diag_column_pixels=0;
 	epic12_gpu_diag_stag_sample_count=0;
 	epic12_gpu_diag_war_sample_count=0;
 	epic12_gpu_diag_dep_true=0;
@@ -1622,6 +1628,8 @@ static inline bool epic12_gpu_staging_blit(int x, int y, int sx, int sy, int w, 
 	return true;
 }
 
+#include "epic12_staging_columns.h"
+
 // Direct stream execution for contiguous off-screen staging blits (x >= 768, non-blended).
 // Streams through consecutive staging commands in m_ram16_copy in a single tight loop,
 // eliminating function dispatch, stack saves, and WAR checks for thousands of blits per frame.
@@ -1689,9 +1697,17 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 		int total_dimx = dimx;
 		int step_count = 1;
 		bool repeated_src = false;
+		Epic12StagingColumns columns;
+		const unsigned column_count = (dimx == 2 && dimy >= 8) ?
+			epic12_staging_collect_columns(m_ram16_copy, m_main_rammask, cur_addr,
+				m_clip.min_x, m_clip.min_y, m_clip.max_x, m_clip.max_y, columns) : 0;
+		if (column_count) {
+			total_dimx = (int)columns.width;
+			step_count = (int)column_count;
+		}
 
 		// Peek forward to fuse adjacent horizontal strips
-		while (1) {
+		while (!column_count) {
 			const UINT32 next_ram = (cur_addr + step_count * 20) & m_main_rammask;
 			if (next_ram + 20 > max_ram) break;
 
@@ -1728,8 +1744,11 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 		// Check WAR hazard against queued GPU commands in bin 0
 		const int dpy0 = y >> 7, dpy1 = (y + dimy - 1) >> 7;
 		const int dpx0 = x >> 7, dpx1 = (x + total_dimx - 1) >> 7;
-		const int source_width = repeated_src ? dimx : total_dimx;
-		if (epic12_gpu_count[0] && epic12_gpu_intersects(sx, sy, source_width, dimy, epic12_gpu_bounds[0])) {
+		const int source_width = column_count ? columns.source_width : (repeated_src ? dimx : total_dimx);
+		const int source_height = column_count ? columns.source_height : dimy;
+		const int source_x = column_count ? columns.source_x : sx;
+		const int source_y = column_count ? columns.source_y : sy;
+		if (epic12_gpu_count[0] && epic12_gpu_intersects(source_x, source_y, source_width, source_height, epic12_gpu_bounds[0])) {
 			// Earlier fused CPU writes may be sources of the pending GPU batch.
 			// Publish their dirty pages before finishing that producer.
 			if (inv_max_x >= inv_min_x) {
@@ -1800,6 +1819,19 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 		}
 
 		if (x < inv_min_x) inv_min_x = x;
+		if (column_count) {
+			// Preserve the original per-command page versions rather than only
+			// the single increment already applied to the combined rectangle.
+			for (unsigned i = 0; i < column_count; ++i) {
+				const int cx = x + i;
+				for (int py = dpy0; py <= dpy1; ++py)
+					for (int px = cx >> 7; px <= (cx + 1) >> 7; ++px)
+						++epic12_gpu_staging_version[(py << 6) | px];
+			}
+			for (int py = dpy0; py <= dpy1; ++py)
+				for (int px = dpx0; px <= dpx1; ++px)
+					--epic12_gpu_staging_version[(py << 6) | px];
+		}
 		if (y < inv_min_y) inv_min_y = y;
 		if (x + total_dimx - 1 > inv_max_x) inv_max_x = x + total_dimx - 1;
 		if (y + dimy - 1 > inv_max_y) inv_max_y = y + dimy - 1;
@@ -1837,7 +1869,14 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 		const int s_step = flipy ? -8192 : 8192;
 		const UINT32 *s_row = m_bitmaps + ((size_t)(s_y_start & 4095)) * 8192 + s_x_start;
 
-		if (step_count > 1 && repeated_src) {
+		if (column_count) {
+			epic12_staging_draw_columns(m_bitmaps, (unsigned)y * 8192 + x, columns);
+#if SALVIA_FBNEO_DIAGNOSTICS
+			++epic12_gpu_diag_column_groups;
+			epic12_gpu_diag_column_commands += column_count;
+			epic12_gpu_diag_column_pixels += column_count * 2 * dimy;
+#endif
+		} else if (step_count > 1 && repeated_src) {
 			if (!trans && tint_mode == 1 && !flipx && dimx == 16 && ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0)) {
 				for (int r = 0; r < dimy; ++r) {
 					const UINT64 *s64 = (const UINT64*)s_row;
@@ -1909,7 +1948,7 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 			epic12_staging_rasterize_blit(d_row, s_row, total_dimx, dimy, s_step, flipx, trans, tint_mode, lut_r, lut_g, lut_b);
 		}
 
-		epic12_device_blit_delay += (unsigned)(total_dimx * dimy);
+		epic12_device_blit_delay += (unsigned)((column_count ? step_count * 2 : total_dimx) * dimy);
 #if SALVIA_FBNEO_DIAGNOSTICS
 		epic12_gpu_diag_submit_staging_ident += step_count;
 #endif
