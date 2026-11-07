@@ -51,6 +51,8 @@ enum Epic12GpuFlushReason {
 	EPIC12_GPU_FLUSH_OTHER,
 	EPIC12_GPU_FLUSH_REASON_COUNT
 };
+static void epic12_gpu_cpu_write(int x, int y, int w, int h,
+	Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHER, bool selective = false);
 static unsigned epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_REASON_COUNT];
 static unsigned epic12_gpu_flush_small_cpu;
 static unsigned epic12_gpu_flush_render_fallback;
@@ -2006,6 +2008,13 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 		c.sx = sx; c.sy = sy; c.x = x; c.y = y; c.w = w; c.h = h;
 		c.flipx = !!flipx; c.flipy = !!flipy; c.transparent = !!transparent;
 		c.blend = !!blend; c.smode = sm; c.dmode = dm; c.sa = sa; c.da = da; c.tint = *tint_clr;
+		// A CPU staging draw reads live VRAM and writes pages that may already
+		// be resident in the atlas or represented by a reusable snapshot.
+		// Drain a possible GPU producer, then reuse the upload path's existing
+		// conservative page barriers for the write; disjoint batches can stay.
+		if (epic12_gpu_count[0] && epic12_gpu_intersects(sx, sy, w, h, epic12_gpu_bounds[0]))
+			epic12_gpu_flush(EPIC12_GPU_FLUSH_SOURCE_DEPENDENCY);
+		epic12_gpu_cpu_write(x, y, w, h, EPIC12_GPU_FLUSH_CPU_DRAW, true);
 #if SALVIA_FBNEO_DIAGNOSTICS
 		++epic12_gpu_diag_submit_staging_replay;
 #endif
@@ -2143,7 +2152,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 }
 
 static void epic12_gpu_cpu_write(int x, int y, int w, int h,
-	Epic12GpuFlushReason reason = EPIC12_GPU_FLUSH_OTHER)
+	Epic12GpuFlushReason reason, bool selective)
 {
 	// Conservative invalidation also handles a wrapped source/large upload.
 	// The upload loop can spill across a VRAM row; a geometric rectangle
@@ -2153,7 +2162,7 @@ static void epic12_gpu_cpu_write(int x, int y, int w, int h,
 		epic12_gpu_reset();
 		return;
 	}
-	if (reason == EPIC12_GPU_FLUSH_CPU_UPLOAD) {
+	if (reason == EPIC12_GPU_FLUSH_CPU_UPLOAD || selective) {
 		bool conflict = false;
 		if (epic12_gpu_count[0]) {
 			if (epic12_gpu_intersects(x, y, w, h, epic12_gpu_bounds[0])) {
@@ -2185,6 +2194,7 @@ static void epic12_gpu_cpu_write(int x, int y, int w, int h,
 			const int row = py << 6;
 			for (int px = dpx0; px <= dpx1; ++px) {
 				epic12_gpu_staging_pages[row | px] = true;
+				++epic12_gpu_staging_version[row | px];
 			}
 		}
 	}

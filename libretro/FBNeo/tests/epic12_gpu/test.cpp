@@ -374,6 +374,63 @@ static bool clipped_cpu_invalidation(UINT32 *ref, UINT32 *got, const UINT32 *ini
 	return true;
 }
 
+static bool blended_staging_coherency(UINT32 *ref, UINT32 *got)
+{
+ const unsigned bytes=8192*4352*4;
+ memset(ref,0,bytes);memset(got,0,bytes);
+ for(int y=0;y<16;++y)for(int x=0;x<16;++x) {
+  ref[y*8192+1024+x]=got[y*8192+1024+x]=0x204080c0;
+  ref[y*8192+1152+x]=got[y*8192+1152+x]=0x20c08040;
+ }
+ gpu_test_fail=false;gpu_test_attributes=gpu_test_specialized=gpu_test_alpha_trim=true;
+ gpu_test_set_capacity(256);epic12_gpu_reset();epic12_gpu_enabled=true;
+ Epic12GpuCommand stage;memset(&stage,0,sizeof(stage));
+ stage.sx=1024;stage.x=2048;stage.w=stage.h=16;stage.blend=1;stage.sa=31;
+ stage.tint.r=stage.tint.g=stage.tint.b=32;
+ Epic12GpuCommand read=stage;read.sx=2048;read.x=0;read.blend=0;
+ // Warm the atlas with old staging bytes, then replace them through submit's
+ // blended CPU path. A cached texture must not survive that write.
+ if(!cache_draw_matches(ref,got,read))return false;
+ m_bitmaps=ref;epic12_gpu_replay(stage);
+ m_bitmaps=got;
+ rectangle full(0,8191,0,4095);
+ if(!epic12_gpu_submit(0,0,1,0,0,&full,got,1024,0,2048,0,16,16,0,31,0,&stage.tint))return false;
+ if(!cache_draw_matches(ref,got,read))return false;
+ // Two snapshots of one staging rectangle in a still-pending batch must
+ // describe the bytes at each draw, even when the atlas pages are disjoint.
+ epic12_gpu_reset();
+ epic12_gpu_cpu_write(2048,0,16,16);
+ rectangle view(0,511,0,511);
+ m_bitmaps=ref;epic12_gpu_replay(read);
+ m_bitmaps=got;
+ if(!epic12_gpu_submit(0,0,0,0,0,&view,got,2048,0,0,0,16,16,0,0,0,&read.tint))return false;
+ unsigned queued=epic12_gpu_count[0];
+ stage.sx=1152;m_bitmaps=ref;epic12_gpu_replay(stage);read.x=32;epic12_gpu_replay(read);
+ m_bitmaps=got;
+ if(!epic12_gpu_submit(0,0,1,0,0,&full,got,1152,0,2048,0,16,16,0,31,0,&stage.tint))return false;
+ if(epic12_gpu_count[0]!=queued)return false; // preserve a disjoint batch
+ if(!epic12_gpu_submit(0,0,0,0,0,&view,got,2048,0,32,0,16,16,0,0,0,&read.tint))return false;
+ epic12_gpu_flush();
+ for(int y=0;y<16;++y)for(int x=0;x<48;++x)if(ref[y*8192+x]!=got[y*8192+x])return false;
+ // A queued GPU producer of a CPU staging source must finish before the
+ // CPU reads it, even though the CPU destination is outside the viewport.
+ read.sx=1152;read.x=64;
+ m_bitmaps=ref;epic12_gpu_replay(read);
+ m_bitmaps=got;
+ if(!epic12_gpu_submit(0,0,0,0,0,&view,got,1152,0,64,0,16,16,0,0,0,&read.tint))return false;
+ stage.sx=64;m_bitmaps=ref;epic12_gpu_replay(stage);m_bitmaps=got;
+ if(!epic12_gpu_submit(0,0,1,0,0,&full,got,64,0,2048,0,16,16,0,31,0,&stage.tint))return false;
+ for(int y=0;y<16;++y)for(int x=0;x<16;++x)if(ref[y*8192+2048+x]!=got[y*8192+2048+x])return false;
+ // Production accepts 4096 commands; model cropping must retain that many.
+ static Epic12GpuCommand many[4096];
+ read.sx=1024;read.x=0;read.w=read.h=1;
+ for(int i=0;i<4096;++i) {many[i]=read;many[i].x=i&15;many[i].y=(i>>4)&15;}
+ epic12_gpu_reset();rectangle bounds(0,15,0,15);
+ if(!batch_matches(ref,got,many,4096,bounds))return false;
+ puts("PASS blended staging: cached atlas invalidation, pending snapshot versions, disjoint batch retention, GPU-to-CPU read barrier and 4096-command model capacity");
+ return true;
+}
+
 // Compare CPU replay against the original blitter table, independently of
 // the shader model. These source modes also reach replay for off-screen draws.
 static bool source_mode_replay_oracle()
@@ -515,6 +572,7 @@ int main()
 	const unsigned vram_words=8192*4096;
 	UINT32 *initial=(UINT32*)calloc(words,4),*ref=(UINT32*)malloc(words*4),*got=(UINT32*)malloc(words*4);
 	if(!initial||!ref||!got)return 2;
+	if(!blended_staging_coherency(ref,got)) {puts("FAIL blended staging coherency");return 31;}
 	// Distinct opaque/transparent colors in active atlas, viewport and wrap rows.
 	for(int y=0;y<1024;++y) for(int x=0;x<1024;++x) initial[y*8192+x]=rnd()&0x20f8f8f8;
 	for(int y=4090;y<4096;++y) for(int x=0;x<1024;++x) initial[y*8192+x]=rnd()&0x20f8f8f8;

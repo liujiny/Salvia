@@ -253,7 +253,7 @@ static bool epic12_gpu_render(const Epic12GpuCommand *cmd,int count,const rectan
 		gpu_test_old_draws+=epic12_gpu_vertex_count(cmd[i])/3;
 		if(cmd[i].blend && !(cmd[i].dmode==0 && (cmd[i].da==31 || cmd[i].da==0))) ++gpu_test_old_feedback;
 	}
-	static Epic12GpuCommand cropped[1024];
+	static Epic12GpuCommand cropped[sizeof(epic12_gpu_commands[0]) / sizeof(epic12_gpu_commands[0][0])];
 	if(gpu_test_alpha_trim) {
 		int kept=epic12_gpu_alpha_crop_batch(cmd,count,cropped,gpu_test_alpha,slots,gpu_test_cache.capacity,r);
 		if(kept<0) {puts("FAIL source alpha metadata/slot mapping"); abort();}
