@@ -64,10 +64,10 @@
 // straddles a sector boundary, so reusing a sector can be made safe by
 // invalidating exactly the block-table slots that were compiled into it — a
 // bounded cost — instead of discarding every compiled block in the cache.
-// 1 MiB keeps the alignment waste (at most MAX_WORDS per sector) under 1% and
-// the slot map that makes the invalidation cheap at TABLE_SIZE bytes.
+// 2 MiB keeps the alignment waste under 1% while ensuring SECTOR_COUNT <= 32
+// so the sector index fits into the 5-bit field of slot_sector without overflow.
 #ifndef SH3_PPC_SECTOR_BYTES
-#define SH3_PPC_SECTOR_BYTES (1024 * 1024)
+#define SH3_PPC_SECTOR_BYTES (2 * 1024 * 1024)
 #endif
 
 namespace Sh3Ppc {
