@@ -105,9 +105,11 @@ static UINT32 gpu_test_pixel(UINT32 raw, UINT32 dest, const Epic12GpuCommand &c)
 		if(c.blend) {
 			if(epic12_gpu_dest_mode(c)==2) {
 				unsigned d=((dest>>shift)&255)/8;
-				unsigned out=d*s/31+d*c.da/31; if(out>31) out=31;
+				unsigned da=epic12_gpu_dest_alpha(c);
+				unsigned out=d*s/31+d*da/31; if(out>31) out=31;
 				byte=out*8;
 			} else {
+				if(epic12_gpu_dest_mode(c)==3) s=s*s/31;
 				unsigned out=s*c.sa/31;
 				if(!epic12_gpu_additive(c)) {
 					unsigned factor=c.dmode==4?31-c.da:(c.dmode==1?s:c.da);
@@ -124,8 +126,10 @@ static UINT32 gpu_test_pixel(UINT32 raw, UINT32 dest, const Epic12GpuCommand &c)
 		if(c.blend) {
 			if(epic12_gpu_dest_mode(c)==2) {
 				float d=floorf((((dest>>shift)&255)/255.0f)*(255.0f/8.0f)+0.001f);
-				out=floorf(d*s/31.0f+0.0001f)+floorf(d*c.da/31.0f+0.0001f); if(out>31) out=31;
+				int da=epic12_gpu_dest_alpha(c);
+				out=floorf(d*s/31.0f+0.0001f)+floorf(d*da/31.0f+0.0001f); if(out>31) out=31;
 			} else {
+				if(epic12_gpu_dest_mode(c)==3) s=floorf(s*s/31.0f+0.0001f);
 				out=floorf(s*c.sa/31.0f+0.0001f);
 				if(!epic12_gpu_additive(c)) {
 					float d=floorf((((dest>>shift)&255)/255.0f)*(255.0f/8.0f)+0.001f);
@@ -158,13 +162,17 @@ static UINT32 gpu_test_pixel_specialized(UINT32 raw, UINT32 snapshot, UINT32 tar
 		unsigned out=s;
 		if(feedback) {
 			unsigned d=((snapshot>>shift)&255)/8;
-			if(epic12_gpu_dest_mode(c)==2) {
+			if(c.dmode==2) {
 				out=d*s/31+d*c.da/31; if(out>31) out=31;
 			} else {
+				if(c.dmode==3) s=s*s/31;
 				unsigned factor=c.dmode==1?s:c.da;
 				out=s*c.sa/31+d*factor/31; if(out>31) out=31;
 			}
-		} else if(c.blend) out=s*c.sa/31;
+		} else if(c.blend) {
+			if(c.dmode==3) s=s*s/31;
+			out=s*c.sa/31;
+		}
 		unsigned byte=out*8;
 #else
 		float sample=((raw>>shift)&255)/255.0f;
@@ -172,19 +180,23 @@ static UINT32 gpu_test_pixel_specialized(UINT32 raw, UINT32 snapshot, UINT32 tar
 		s=floorf(s*tint[ch]/31.0f+0.0001f); if(s>31) s=31;
 		float out=s;
 		if(feedback) {
-			if(epic12_gpu_dest_mode(c)==2) {
+			if(c.dmode==2) {
 				float d=floorf((((snapshot>>shift)&255)/255.0f)*(255.0f/8.0f)+0.001f);
 				out=floorf(d*s/31.0f+0.0001f)+floorf(d*c.da/31.0f+0.0001f); if(out>31) out=31;
 			} else {
+				if(c.dmode==3) s=floorf(s*s/31.0f+0.0001f);
 				out=floorf(s*c.sa/31.0f+0.0001f);
 				float d=floorf((((snapshot>>shift)&255)/255.0f)*(255.0f/8.0f)+0.001f);
 				float factor=c.dmode==1?s:c.da;
 				out+=floorf(d*factor/31.0f+0.0001f); if(out>31) out=31;
 			}
-		} else if(c.blend) out=floorf(s*c.sa/31.0f+0.0001f);
+		} else if(c.blend) {
+			if(c.dmode==3) s=floorf(s*s/31.0f+0.0001f);
+			out=floorf(s*c.sa/31.0f+0.0001f);
+		}
 		unsigned byte=(unsigned)floorf((out*(8.0f/255.0f))*255.0f+0.5f);
 #endif
-		if(epic12_gpu_additive(c)) { byte+=(target>>shift)&255; if(byte>255) byte=255; }
+		if(c.blend && (c.dmode==0 || c.dmode==3) && c.da==31) { byte+=(target>>shift)&255; if(byte>255) byte=255; }
 		result|=byte<<shift;
 	}
 	return result;

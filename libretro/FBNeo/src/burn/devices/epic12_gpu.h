@@ -1897,13 +1897,19 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 	SalviaCv1kSampledSpan<64> submitSpan(36);
 #endif
 	if (!epic12_gpu_enabled) return false;
-#ifndef EPIC12_GPU_TEST
-	const int norm_dm = (smode == 2 && dmode == 0) ? 2 : ((dmode == 4 || dmode == 7 || dmode == 3) ? 0 : dmode);
-	if (blend && norm_dm != 0 && !(norm_dm == 1 && s_alpha == 0) && norm_dm != 2) {
-		return false;
+	int sm = smode, dm = dmode, sa = s_alpha, da = d_alpha;
+	if (blend) {
+		if (sm == 3 && (dm == 0 || dm == 3 || dm == 7)) {
+			sm = 0;
+			sa = 31;
+		} else if (sm == 1 && (dm == 0 || dm == 3 || dm == 7)) {
+			sa = 31;
+		}
 	}
-#endif
-	if (blend && ((smode != 0 && !(smode == 2 && dmode == 0)) || (dmode != 0 && dmode != 1 && dmode != 4 && dmode != 7 && dmode != 3))) {
+	const bool smode2_valid = (sm == 2 && (dm == 0 || dm == 3 || dm == 7));
+	const bool smode1_valid = (sm == 1 && (dm == 0 || dm == 3 || dm == 7));
+	const bool smode0_valid = (sm == 0 && (dm == 0 || dm == 1 || dm == 4 || dm == 7 || dm == 3));
+	if (blend && !smode0_valid && !smode1_valid && !smode2_valid) {
 		++epic12_gpu_reject_blend;
 		++epic12_gpu_reject_smode_dmode[smode & 7][dmode & 7];
 		return false;
@@ -1971,7 +1977,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 		Epic12GpuCommand c;
 		c.sx = sx; c.sy = sy; c.x = x; c.y = y; c.w = w; c.h = h;
 		c.flipx = !!flipx; c.flipy = !!flipy; c.transparent = !!transparent;
-		c.blend = !!blend; c.smode = smode; c.dmode = dmode; c.sa = s_alpha; c.da = d_alpha; c.tint = *tint_clr;
+		c.blend = !!blend; c.smode = sm; c.dmode = dm; c.sa = sa; c.da = da; c.tint = *tint_clr;
 #if SALVIA_FBNEO_DIAGNOSTICS
 		++epic12_gpu_diag_submit_staging_replay;
 #endif
@@ -2102,7 +2108,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 		++epic12_gpu_diag_bin_hits[0];
 #endif
 		epic12_gpu_add_to_bin(0, m, np, npl, px0, px1, py0, py1,
-			draw_sx, draw_sy, x, y, w, h, flipx, flipy, transparent, blend, smode, dmode, s_alpha, d_alpha, tint_clr);
+			draw_sx, draw_sy, x, y, w, h, flipx, flipy, transparent, blend, sm, dm, sa, da, tint_clr);
 		return true;
 	}
 	return false;

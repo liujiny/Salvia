@@ -429,6 +429,39 @@ int main()
 		}
 	}
 	puts("PASS 2097152 smode 2 dmode 0 modulation/screen blend component cases");
+	c.blend=1; c.smode=1; c.dmode=3;
+	for(int t=0;t<32;++t) for(int s=0;s<32;++s) for(int d=0;d<32;++d) {
+		c.tint.r=c.tint.g=c.tint.b=t; c.sa=31; c.da=31;
+		unsigned tinted=clamp(s*t/31);
+		unsigned sq=clamp(tinted*tinted/31);
+		unsigned expected=clamp(sq+d);
+		UINT32 dst=d==31?255:d*8;
+		Epic12GpuCommand normalized=c;
+		normalized.dmode=epic12_gpu_dest_mode(c); normalized.da=epic12_gpu_dest_alpha(c);
+		bool feedback=epic12_gpu_feedback(normalized);
+		UINT32 specialized=gpu_test_pixel_specialized(s*8,feedback?dst:0xcdcdcdcd,dst,normalized,feedback);
+		if(((gpu_test_pixel(s*8,dst,c)&248)>>3)!=expected || ((specialized&248)>>3)!=expected) {
+			printf("FAIL smode 1 dmode 3 shader arithmetic t=%d s=%d d=%d (pix=%d spec=%d exp=%d)\n", t, s, d,
+				(gpu_test_pixel(s*8,dst,c)&248)>>3, (specialized&248)>>3, expected);return 1;
+		}
+	}
+	puts("PASS 32768 smode 1 dmode 3 square additive blend component cases");
+	c.blend=1; c.smode=2; c.dmode=3;
+	for(int t=0;t<32;++t) for(int s=0;s<32;++s) for(int d=0;d<32;++d) {
+		c.tint.r=c.tint.g=c.tint.b=t; c.sa=0; c.da=31;
+		unsigned tinted=clamp(s*t/31);
+		unsigned expected=clamp(d*tinted/31+d);
+		UINT32 dst=d==31?255:d*8;
+		Epic12GpuCommand normalized=c;
+		normalized.dmode=epic12_gpu_dest_mode(c); normalized.da=epic12_gpu_dest_alpha(c);
+		bool feedback=epic12_gpu_feedback(normalized);
+		UINT32 specialized=gpu_test_pixel_specialized(s*8,feedback?dst:0xcdcdcdcd,dst,normalized,feedback);
+		if(((gpu_test_pixel(s*8,dst,c)&248)>>3)!=expected || ((specialized&248)>>3)!=expected) {
+			printf("FAIL smode 2 dmode 3 shader arithmetic t=%d s=%d d=%d (pix=%d spec=%d exp=%d)\n", t, s, d,
+				(gpu_test_pixel(s*8,dst,c)&248)>>3, (specialized&248)>>3, expected);return 1;
+		}
+	}
+	puts("PASS 32768 smode 2 dmode 3 modulation additive blend component cases");
 	c.smode=0; c.blend=0;
 	for(int t=0;t<64;++t) for(int s=0;s<32;++s) for(int d=0;d<2;++d) {
 		c.tint.r=c.tint.g=c.tint.b=t; c.sa=0; // plain ignores source alpha
