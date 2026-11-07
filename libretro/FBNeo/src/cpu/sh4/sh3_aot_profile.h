@@ -8,9 +8,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#if defined(_XBOX)
-#include <xtl.h>
-#endif
 
 #ifndef UINT32
 typedef uint32_t UINT32;
@@ -101,33 +98,36 @@ struct Sh3AotProfile {
 
 extern Sh3AotProfile sh3_aot_profile;
 
-static inline UINT64 sh3_aot_timer_ticks() {
 #if defined(_XBOX)
-	LARGE_INTEGER now;
-	if (QueryPerformanceCounter(&now) && now.QuadPart > 0) return (UINT64)now.QuadPart;
-	return 0;
-#elif defined(__GNUC__) && (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86) || defined(__powerpc__) || defined(__ppc__))
+extern "C" unsigned __int64 __mftb(void);
+#pragma intrinsic(__mftb)
+static inline UINT64 sh3_aot_timer_ticks() {
+	return (UINT64)__mftb();
+}
+static inline double sh3_aot_ticks_to_ms(UINT64 ticks) {
+	// Xenon TimeBase runs at exactly 50 MHz (50,000 ticks per millisecond)
+	return (double)ticks / 50000.0;
+}
+#elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
+static inline UINT64 sh3_aot_timer_ticks() {
+	return (UINT64)__builtin_ppc_get_timebase();
+}
+static inline double sh3_aot_ticks_to_ms(UINT64 ticks) {
+	return (double)ticks / 50000.0;
+}
+#elif defined(__GNUC__) && (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86))
+static inline UINT64 sh3_aot_timer_ticks() {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return (UINT64)ts.tv_sec * 1000000000ULL + (UINT64)ts.tv_nsec;
-#else
-	return 0;
-#endif
 }
-
 static inline double sh3_aot_ticks_to_ms(UINT64 ticks) {
-#if defined(_XBOX)
-	LARGE_INTEGER freq;
-	if (QueryPerformanceFrequency(&freq) && freq.QuadPart > 0) {
-		return (double)ticks * 1000.0 / (double)freq.QuadPart;
-	}
-	return 0.0;
-#elif defined(__GNUC__) && (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86) || defined(__powerpc__) || defined(__ppc__))
 	return (double)ticks / 1000000.0;
-#else
-	return 0.0;
-#endif
 }
+#else
+static inline UINT64 sh3_aot_timer_ticks() { return 0; }
+static inline double sh3_aot_ticks_to_ms(UINT64 ticks) { (void)ticks; return 0.0; }
+#endif
 
 static inline void Sh3AotReport(void (*emit)(const char*))
 {
