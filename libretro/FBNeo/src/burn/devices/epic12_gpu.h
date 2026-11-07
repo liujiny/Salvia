@@ -75,8 +75,6 @@ static unsigned epic12_gpu_diag_submit_onscreen;
 static unsigned epic12_gpu_diag_column_groups;
 static unsigned epic12_gpu_diag_column_commands;
 static unsigned epic12_gpu_diag_column_pixels;
-static unsigned epic12_gpu_diag_vector32_calls;
-static unsigned epic12_gpu_diag_vector32_pixels;
 static int epic12_gpu_diag_stag_samples[10][8];
 static int epic12_gpu_diag_stag_sample_count;
 static int epic12_gpu_diag_war_samples[10][24];
@@ -126,8 +124,6 @@ static void epic12_gpu_diag_reset()
 	epic12_gpu_diag_column_groups=0;
 	epic12_gpu_diag_column_commands=0;
 	epic12_gpu_diag_column_pixels=0;
-	epic12_gpu_diag_vector32_calls=0;
-	epic12_gpu_diag_vector32_pixels=0;
 	epic12_gpu_diag_stag_sample_count=0;
 	epic12_gpu_diag_war_sample_count=0;
 	epic12_gpu_diag_dep_true=0;
@@ -924,13 +920,6 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 	const UINT32 *lut_r, const UINT32 *lut_g, const UINT32 *lut_b)
 {
 	if (!transparent && tint_mode == 0 && !flipx) {
-		if (dimx == 32 && epic12_gpu_copy_staging32(d_row, s_row, dimy, s_step)) {
-#if SALVIA_FBNEO_DIAGNOSTICS
-			++epic12_gpu_diag_vector32_calls;
-			epic12_gpu_diag_vector32_pixels += (unsigned)(32 * dimy);
-#endif
-			return;
-		}
 		if ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0) {
 			if (dimx == 8) {
 				for (int r = 0; r < dimy; ++r) {

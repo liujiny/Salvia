@@ -156,19 +156,5 @@ static void epic12_gpu_copy_rows(void *destination, size_t dstPitch,
 		memcpy(out, in, width);
 }
 
-// Cached CPU staging VRAM, exactly 32 pixels per row. Keep row order and
-// reject same-row aliases: the old qword loop propagates overlapping writes,
-// whereas a vector unroll loads a full 128-byte row before storing it.
-static inline bool epic12_gpu_copy_staging32(void *destination, const void *source,
-	int rows, int source_step)
-{
-	const size_t d = (size_t)destination, s = (size_t)source;
-	if (rows <= 0 || source_step != 8192 || ((d | s) & 15) != 0) return false;
-	const size_t distance = d > s ? d - s : s - d;
-	if (distance < 128) return false;
-	epic12_gpu_copy_rows(destination, 32768, source, 32768, 128, (size_t)rows);
-	return true;
-}
-
 #undef EPIC12_REGION_VECTOR
 #endif
