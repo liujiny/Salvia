@@ -975,6 +975,17 @@ struct Compiler {
     a=reg(n); b=reg(m); logic(a,a,b,lo==9?28:lo==10?316:444); dirty(a); return true;
    case 0x2008:
     a=reg(n); b=reg(m); emit(x(a,0,b,28)|1); compare_t(2,true); return true;
+   case 0x200c: { // CMP/STR Rm, Rn: T = (any byte of Rn ^ Rm == 0)
+    a=reg(n); b=reg(m);
+    emit(x(a,0,b,316)); // xor r0, a, b (r0 = a ^ b)
+    imm(12,0x01010101);
+    sub(11,0,12); // subf r11, r12, r0: r11 = r0 - 0x01010101
+    emit(x(11,11,0,60)); // andc r11, r11, r0: r11 = r11 & ~r0
+    imm(12,0x80808080);
+    emit(x(11,12,12,28)|1); // and. r12, r11, r12 (Rc=1, tests CR0)
+    compare_t(2,false); // T = (CR0_EQ == 0)
+    return true;
+   }
    case 0x3000: case 0x3002: case 0x3003: case 0x3006: case 0x3007:
     a=reg(n); b=reg(m); cmp(a,b,lo==2||lo==6);
     compare_t(lo==0?2:lo==2||lo==3?0:1,lo!=2&&lo!=3); return true;

@@ -5118,7 +5118,7 @@ void Sh3WorkReport(void (*emit)(const char*))
 		selected[best]=true;
 		sprintf(text,"drc_work_interpreter rank=%u opcode_hi8=%02X count=%" SH3_WORK_COUNT,rank+1,best,p.interpreter_hi8[best]); emit(text);
 	}
-#if defined(SH3_PPC_DRC_WORK_TEST)
+#if defined(_XBOX) || defined(SH3_PPC_DRC_WORK_TEST)
 	{
 		// Exact interpreter opcodes, highest first. Bounded output; a fixed
 		// 16-entry insertion list keeps the report allocation-free.

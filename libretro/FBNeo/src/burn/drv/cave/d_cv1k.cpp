@@ -31,7 +31,7 @@ struct StartupDetail {
 	unsigned compiled_blocks;
 	unsigned interp_steps;
 };
-static StartupDetail s_startup_stalls[8];
+static StartupDetail s_startup_stalls[32];
 static unsigned s_startup_stall_count = 0;
 #endif
 #endif
@@ -134,7 +134,7 @@ void cv1k_review_report(void (*emit)(const char*))
             }
         }
         if (cv1k_review_drops.retained) {
-            sprintf(text, "core_drop_watch frames=%u invalid=%u threshold_ms=25 count=%u retained=%u peak_ms=%.3f coverage=all_core_frames",
+            sprintf(text, "core_drop_watch frames=%u invalid=%u threshold_ms=25 count=%u retained=%u peak_ms=%.3f coverage=steady_state_frames",
                 cv1k_review_drops.frames, cv1k_review_drops.invalid, cv1k_review_drops.count,
                 cv1k_review_drops.retained, cv1k_review_drops.peak * unit);
             emit(text);
@@ -950,10 +950,12 @@ static INT32 DrvFrame()
 		const unsigned compiledThisFrame = Sh3DrcCompileCount() - compiledBefore;
 		cv1k_review_stalls.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks * 4,
 			compiledThisFrame);
-		cv1k_review_drops.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks,
-			compiledThisFrame);
+		if (cv1k_review.frames > 60) {
+			cv1k_review_drops.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks,
+				compiledThisFrame);
+		}
 		if (cv1k_review.frames <= 60 && (reviewMarks[4] - reviewMarks[0]) > (cv1k_review_slow_ticks * 2)) {
-			if (s_startup_stall_count < 8) {
+			if (s_startup_stall_count < 32) {
 				StartupDetail &sd = s_startup_stalls[s_startup_stall_count++];
 				sd.frame = cv1k_review.frames;
 				sd.total = reviewMarks[4] - reviewMarks[0];
