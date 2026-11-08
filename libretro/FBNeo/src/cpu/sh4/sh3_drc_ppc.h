@@ -133,8 +133,16 @@ struct Shadow {
  // read only to prefetch the copy that will answer it, so a stale value costs
  // one fetch and nothing else -- the prefetch is a hint, not a validity test.
  UINT32 next_pc;
+#if SALVIA_FBNEO_DIAGNOSTICS
+ UINT32 slot;
+ UINT32 gen;
+#endif
  UINT16 original[MAX_INSNS + 1];
+#if SALVIA_FBNEO_DIAGNOSTICS
+ UINT8 pad[128 - 36 - (MAX_INSNS + 1) * 2];
+#else
  UINT8 pad[128 - 28 - (MAX_INSNS + 1) * 2];
+#endif
 };
 // The 32-bit record must be one console cache line; the host fixture builds
 // 64-bit and does not model that line.
@@ -211,6 +219,7 @@ static unsigned sh3_block_stores;
 static bool s_in_aot_precompile = false;
 #if SALVIA_FBNEO_DIAGNOSTICS
 static UINT8 *slot_aot_state;
+static UINT32 *slot_gen;
 static unsigned s_sync_code_calls = 0;
 static unsigned s_sync_code_words = 0;
 #endif
@@ -1206,6 +1215,7 @@ static bool allocate()
  slot_stores=(UINT8*)calloc(TABLE_SIZE,1);
 #if SALVIA_FBNEO_DIAGNOSTICS
  slot_aot_state=(UINT8*)calloc(TABLE_SIZE,1);
+ slot_gen=(UINT32*)calloc(TABLE_SIZE,sizeof(UINT32));
 #endif
 #if SALVIA_CV1K_SHADOW
  shadow=(Shadow*)calloc(CACHE_SETS,sizeof(Shadow));
@@ -1220,6 +1230,9 @@ static bool allocate()
  if(code==MAP_FAILED)code=NULL;
 #endif
  if(!blocks || !lookup || !slot_sector || !slot_stores || !code
+#if SALVIA_FBNEO_DIAGNOSTICS
+    || !slot_aot_state || !slot_gen
+#endif
 #if SALVIA_CV1K_SHADOW
     || !shadow
 #endif
@@ -1232,6 +1245,7 @@ static bool allocate()
   free(slot_stores); slot_stores=NULL;
 #if SALVIA_FBNEO_DIAGNOSTICS
   free(slot_aot_state); slot_aot_state=NULL;
+  free(slot_gen); slot_gen=NULL;
 #endif
 #if SALVIA_CV1K_SHADOW
   free(shadow); shadow=NULL;
@@ -1286,10 +1300,17 @@ static void arena_reuse_sector(unsigned sector)
   // reason recorded by arena_note_slot().
   if((slot_sector[i]&0x1Fu)!=(UINT8)sector) continue;
 #if SALVIA_FBNEO_DIAGNOSTICS
-  if(slot_aot_state && slot_aot_state[i] == 1) {
-   ++sh3_aot_profile.total_aot_replaced_cold;
-   slot_aot_state[i] = 0;
-  }
+		if(slot_aot_state) {
+			if (slot_aot_state[i] == 1) {
+				++sh3_aot_profile.total_aot_replaced_cold;
+				++sh3_aot_profile.total_aot_0c_replaced_cold;
+			} else if (slot_aot_state[i] == 3) {
+				++sh3_aot_profile.total_aot_replaced_cold;
+				++sh3_aot_profile.total_aot_ac_replaced_cold;
+			}
+			slot_aot_state[i] = 0;
+		}
+		if(slot_gen) ++slot_gen[i];
 #endif
   slot_sector[i]=0xFF;
   if(slot_stores) slot_stores[i]=0;
@@ -1306,22 +1327,48 @@ static void arena_reuse_sector(unsigned sector)
 // Called by the dispatcher for the table slot it just filled.
 static void arena_note_slot(unsigned slot,const Block &block)
 {
- if(!slot_sector || !block.entry || slot>=TABLE_SIZE) return;
- slot_sector[slot]=(UINT8)((((UINT32*)block.entry-code)/SECTOR_WORDS) | (sh3_block_end_reason<<5));
- if(slot_stores) slot_stores[slot]=(UINT8)(sh3_block_stores>255?255:sh3_block_stores);
+	if(!slot_sector || slot>=TABLE_SIZE) return;
 #if SALVIA_FBNEO_DIAGNOSTICS
- if(slot_aot_state) {
-  if(s_in_aot_precompile) {
-   slot_aot_state[slot]=1;
-  } else {
-   if(slot_aot_state[slot]==1) {
-    ++sh3_aot_profile.total_aot_replaced_cold;
-   }
-   slot_aot_state[slot]=3;
-   ++sh3_aot_profile.total_jit_compiled;
-  }
- }
+	if(slot_gen) {
+		++slot_gen[slot];
+	}
+	if(slot_aot_state) {
+		if(!block.entry) {
+			if(slot_aot_state[slot]==1) {
+				++sh3_aot_profile.total_aot_replaced_cold;
+				++sh3_aot_profile.total_aot_0c_replaced_cold;
+			} else if(slot_aot_state[slot]==3) {
+				++sh3_aot_profile.total_aot_replaced_cold;
+				++sh3_aot_profile.total_aot_ac_replaced_cold;
+			}
+			slot_aot_state[slot]=0;
+			return;
+		}
+		if(s_in_aot_precompile) {
+			if(slot_aot_state[slot]==1) {
+				++sh3_aot_profile.total_aot_replaced_cold;
+				++sh3_aot_profile.total_aot_0c_replaced_cold;
+			} else if(slot_aot_state[slot]==3) {
+				++sh3_aot_profile.total_aot_replaced_cold;
+				++sh3_aot_profile.total_aot_ac_replaced_cold;
+			}
+			slot_aot_state[slot]=(block.pc < 0x20000000u) ? 1 : 3;
+		} else {
+			if(slot_aot_state[slot]==1) {
+				++sh3_aot_profile.total_aot_replaced_cold;
+				++sh3_aot_profile.total_aot_0c_replaced_cold;
+			} else if(slot_aot_state[slot]==3) {
+				++sh3_aot_profile.total_aot_replaced_cold;
+				++sh3_aot_profile.total_aot_ac_replaced_cold;
+			}
+			slot_aot_state[slot]=5;
+			++sh3_aot_profile.total_jit_compiled;
+		}
+	}
 #endif
+	if(!block.entry) return;
+	slot_sector[slot]=(UINT8)((((UINT32*)block.entry-code)/SECTOR_WORDS) | (sh3_block_end_reason<<5));
+	if(slot_stores) slot_stores[slot]=(UINT8)(sh3_block_stores>255?255:sh3_block_stores);
 }
 
 static void compile(Block &block, UINT32 pc, const UINT16 *source)
@@ -1429,6 +1476,31 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
   if(used>sh3_drc_work.arena_peak)sh3_drc_work.arena_peak=used;
  }
 }
+#if SALVIA_FBNEO_DIAGNOSTICS
+static inline void Sh3DrcReportResidentSlots(void (*emit)(const char*))
+{
+	if (!emit || !slot_aot_state) return;
+	unsigned res_0c_cold = 0, res_0c_hot = 0;
+	unsigned res_ac_cold = 0, res_ac_hot = 0;
+	unsigned res_jit_cold = 0, res_jit_hot = 0;
+	for (unsigned i = 0; i < TABLE_SIZE; ++i) {
+		switch (slot_aot_state[i]) {
+		case 1: ++res_0c_cold; break;
+		case 2: ++res_0c_hot; break;
+		case 3: ++res_ac_cold; break;
+		case 4: ++res_ac_hot; break;
+		case 5: ++res_jit_cold; break;
+		case 6: ++res_jit_hot; break;
+		}
+	}
+	char buf[256];
+	sprintf(buf, "aot_resident total_aot=%u (0c_hot=%u 0c_cold=%u ac_hot=%u ac_cold=%u) total_jit=%u (jit_hot=%u jit_cold=%u)",
+		res_0c_cold + res_0c_hot + res_ac_cold + res_ac_hot,
+		res_0c_hot, res_0c_cold, res_ac_hot, res_ac_cold,
+		res_jit_cold + res_jit_hot, res_jit_hot, res_jit_cold);
+	emit(buf);
+}
+#endif
 #undef SO
 } // namespace Sh3Ppc
 
@@ -1508,7 +1580,19 @@ static void sh3_drc_reset()
  if(Sh3Ppc::slot_sector)memset(Sh3Ppc::slot_sector,0xFF,Sh3Ppc::TABLE_SIZE);
  if(Sh3Ppc::slot_stores)memset(Sh3Ppc::slot_stores,0,Sh3Ppc::TABLE_SIZE);
 #if SALVIA_FBNEO_DIAGNOSTICS
- if(Sh3Ppc::slot_aot_state)memset(Sh3Ppc::slot_aot_state,0,Sh3Ppc::TABLE_SIZE);
+	if (Sh3Ppc::slot_aot_state) {
+		for (unsigned i = 0; i < Sh3Ppc::TABLE_SIZE; ++i) {
+			if (Sh3Ppc::slot_aot_state[i] == 1) {
+				++sh3_aot_profile.total_aot_replaced_cold;
+				++sh3_aot_profile.total_aot_0c_replaced_cold;
+			} else if (Sh3Ppc::slot_aot_state[i] == 3) {
+				++sh3_aot_profile.total_aot_replaced_cold;
+				++sh3_aot_profile.total_aot_ac_replaced_cold;
+			}
+		}
+		memset(Sh3Ppc::slot_aot_state, 0, Sh3Ppc::TABLE_SIZE);
+	}
+	if (Sh3Ppc::slot_gen) memset(Sh3Ppc::slot_gen, 0, Sh3Ppc::TABLE_SIZE * sizeof(UINT32));
 #endif
 #if SALVIA_CV1K_SHADOW
  // Every record is gone, so every copy of one is too, and the sector
@@ -1545,6 +1629,7 @@ static void sh3_drc_exit()
  free(Sh3Ppc::slot_stores); Sh3Ppc::slot_stores=NULL;
 #if SALVIA_FBNEO_DIAGNOSTICS
  free(Sh3Ppc::slot_aot_state); Sh3Ppc::slot_aot_state=NULL;
+ free(Sh3Ppc::slot_gen); Sh3Ppc::slot_gen=NULL;
 #endif
 #if SALVIA_CV1K_SHADOW
  free(Sh3Ppc::shadow); Sh3Ppc::shadow=NULL;
@@ -1835,6 +1920,10 @@ void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger)
 				dst.epoch = Sh3Ppc::sector_epoch[dst.sector];
 				dst.reason = (UINT8)(Sh3Ppc::slot_sector ? (Sh3Ppc::slot_sector[index * Sh3Ppc::WAYS + way] >> 5) : 0);
 				dst.stores = (UINT8)(Sh3Ppc::slot_stores ? Sh3Ppc::slot_stores[index * Sh3Ppc::WAYS + way] : 0);
+#if SALVIA_FBNEO_DIAGNOSTICS
+				dst.slot = (UINT32)(index * Sh3Ppc::WAYS + way);
+				dst.gen = Sh3Ppc::slot_gen ? Sh3Ppc::slot_gen[dst.slot] : 0;
+#endif
 				memcpy(dst.original, b.original, (unsigned)b.words * 2);
 			}
 #endif

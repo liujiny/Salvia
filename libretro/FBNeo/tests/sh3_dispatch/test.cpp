@@ -60,8 +60,16 @@ struct Shadow {
  UINT8 stores;
  UINT32 epoch;
  UINT32 next_pc;
+#if SALVIA_FBNEO_DIAGNOSTICS
+ UINT32 slot;
+ UINT32 gen;
+#endif
  UINT16 original[MAX_INSNS + 1];
+#if SALVIA_FBNEO_DIAGNOSTICS
+ UINT8 pad[128 - 36 - (MAX_INSNS + 1) * 2];
+#else
  UINT8 pad[128 - 28 - (MAX_INSNS + 1) * 2];
+#endif
 };
 // The 32-bit record must be one console cache line; the host fixture builds
 // 64-bit and does not model that line.
@@ -81,6 +89,10 @@ static unsigned arena_sector_of(int (*entry)(Sh3PpcState*))
 static UINT8 slot_sector[TABLE_SIZE];
 // The same for the store-density diagnostic the sampled dispatcher reads.
 static UINT8 slot_stores[TABLE_SIZE];
+#if SALVIA_FBNEO_DIAGNOSTICS
+static UINT8 *slot_aot_state;
+static UINT32 *slot_gen;
+#endif
 // The write-stamp mechanism reads a registered RAM window and its stamp table.
 // This fixture has no generated stores and no window, so both stay empty and
 // the production helper reports "not clean", which leaves the dispatcher's

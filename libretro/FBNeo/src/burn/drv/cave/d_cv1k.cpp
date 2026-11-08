@@ -673,6 +673,7 @@ static INT32 DrvInit()
 	cv1k_review_slow_ticks = (SALVIA_FBNEO_DIAGNOSTICS && QueryPerformanceFrequency(&reviewFrequency) && reviewFrequency.QuadPart > 0)
 		? (SalviaReviewTick)reviewFrequency.QuadPart / 40 : 0; // strict >25 ms core samples
 	Sh3WorkReset();
+	sh3_aot_profile.clear();
 	salvia_cv1k_work_sample_frame = 0;
 #endif
 	struct BurnRomInfo ri;

@@ -198,6 +198,9 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   int (*entry)(Sh3PpcState*);
   int cycles;
   unsigned words, reason=0, stores=0;
+#if SALVIA_FBNEO_DIAGNOSTICS
+  unsigned exec_slot = 0;
+#endif
 #if SALVIA_CV1K_SHADOW
   // The shadow copy for this pc, if the dispatcher has one and it still
   // describes the bytes: its own tag and fetch page, a sector generation that
@@ -217,12 +220,18 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    if(Count) ++sh3_drc_work.shadow_hits;
    entry=copy->entry; cycles=copy->cycles; words=copy->words;
    reason=copy->reason; stores=copy->stores;
+#if SALVIA_FBNEO_DIAGNOSTICS
+   exec_slot=copy->slot;
+#endif
   } else
 #endif
   {
   if(Count) ++sh3_drc_work.lookups;
   Lookup &set=lookup[index];
   const unsigned way=sh3_drc_lookup4(set.tag,set.next,pc);
+#if SALVIA_FBNEO_DIAGNOSTICS
+  exec_slot=index*WAYS+way;
+#endif
   Block &b=blocks[index*WAYS+way];
 #if SALVIA_CV1K_LINK_PROBE >= 2
   const bool lp_immutable=Count && sh3_src_immutable(source,phys);
@@ -389,15 +398,6 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
   entry=b.entry; cycles=b.cycles; words=b.words;
   reason=slot_sector?(unsigned)(slot_sector[index*WAYS+way]>>5):0u;
   stores=slot_stores?slot_stores[index*WAYS+way]:0u;
-#if SALVIA_FBNEO_DIAGNOSTICS
-  if(slot_aot_state) {
-   const unsigned slot_idx = index*WAYS+way;
-   if(slot_aot_state[slot_idx] == 1) {
-    slot_aot_state[slot_idx] = 2;
-    ++sh3_aot_profile.total_aot_executed;
-   }
-  }
-#endif
 #if SALVIA_CV1K_SHADOW
   if(shadow && b.entry) {
    // The record now describes the bytes at this pc, so this is the moment to
@@ -409,6 +409,10 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    dst.sector=(UINT8)arena_sector_of(b.entry);
    dst.epoch=sector_epoch[dst.sector];
    dst.reason=(UINT8)reason; dst.stores=(UINT8)stores;
+#if SALVIA_FBNEO_DIAGNOSTICS
+   dst.slot=(UINT32)(index*WAYS+way);
+   dst.gen=slot_gen?slot_gen[dst.slot]:0;
+#endif
    memcpy(dst.original,b.original,(unsigned)b.words*2);
   }
 #endif
@@ -417,6 +421,35 @@ template<bool Chained, bool Count> static SH3_DISPATCH_INLINE bool sh3_drc_dispa
    if(Count) { ++sh3_drc_work.exit_no_entry; sh3_drc_work.fallback.last_origin=SH3_FB_NO_ENTRY; }
    return false;
   }
+#if SALVIA_FBNEO_DIAGNOSTICS
+  if (slot_aot_state) {
+   const bool gen_match = copy ? (slot_gen && copy->slot < TABLE_SIZE && slot_gen[copy->slot] == copy->gen) : true;
+   if (gen_match && exec_slot < TABLE_SIZE) {
+    const UINT8 st = slot_aot_state[exec_slot];
+    if (st == 1) {
+     slot_aot_state[exec_slot] = 2;
+     ++sh3_aot_profile.total_aot_executed;
+     ++sh3_aot_profile.total_aot_0c_executed;
+     ++sh3_aot_profile.dynamic_aot_entries;
+    } else if (st == 2) {
+     ++sh3_aot_profile.dynamic_aot_entries;
+    } else if (st == 3) {
+     slot_aot_state[exec_slot] = 4;
+     ++sh3_aot_profile.total_aot_executed;
+     ++sh3_aot_profile.total_aot_ac_executed;
+     ++sh3_aot_profile.dynamic_aot_entries;
+    } else if (st == 4) {
+     ++sh3_aot_profile.dynamic_aot_entries;
+    } else if (st == 5) {
+     slot_aot_state[exec_slot] = 6;
+     ++sh3_aot_profile.total_jit_executed;
+     ++sh3_aot_profile.dynamic_jit_entries;
+    } else if (st == 6) {
+     ++sh3_aot_profile.dynamic_jit_entries;
+    }
+   }
+  }
+#endif
   // A partial/guarded block requests one interpreter step at its updated PC,
   // even when earlier blocks in this call completed. Do not return true here.
   int before=0;

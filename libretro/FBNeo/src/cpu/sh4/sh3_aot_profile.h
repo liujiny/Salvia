@@ -81,6 +81,19 @@ struct Sh3AotProfile {
 	Sh3AotCount total_jit_compiled;      // Runtime blocks compiled by JIT
 	Sh3AotCount total_jit_executed;      // Runtime JIT blocks executed
 
+	// Per-address-space metrics across session
+	Sh3AotCount total_aot_0c_compiled;
+	Sh3AotCount total_aot_0c_executed;
+	Sh3AotCount total_aot_0c_replaced_cold;
+
+	Sh3AotCount total_aot_ac_compiled;
+	Sh3AotCount total_aot_ac_executed;
+	Sh3AotCount total_aot_ac_replaced_cold;
+
+	// Dynamic execution counts (every single block execution via DRC)
+	Sh3AotCount dynamic_aot_entries;
+	Sh3AotCount dynamic_jit_entries;
+
 	void clear() {
 		memset(this, 0, sizeof(*this));
 	}
@@ -93,6 +106,11 @@ struct Sh3AotProfile {
 			runs[MAX_RUNS - 1] = r;
 		}
 		total_aot_compiled += r.compile_success;
+		if (r.start_pc < 0x20000000u) {
+			total_aot_0c_compiled += r.compile_success;
+		} else {
+			total_aot_ac_compiled += r.compile_success;
+		}
 	}
 };
 
@@ -160,13 +178,30 @@ static inline void Sh3AotReport(void (*emit)(const char*))
 	}
 	double exec_pct = sh3_aot_profile.total_aot_compiled ?
 		(double)sh3_aot_profile.total_aot_executed * 100.0 / (double)sh3_aot_profile.total_aot_compiled : 0.0;
-	sprintf(text, "aot_summary total_aot_compiled=%" SH3_AOT_FMT " aot_executed=%" SH3_AOT_FMT " aot_executed_pct=%.1f aot_cold_evicted=%" SH3_AOT_FMT " jit_compiled=%" SH3_AOT_FMT " runs=%u",
+	Sh3AotCount total_dyn = sh3_aot_profile.dynamic_aot_entries + sh3_aot_profile.dynamic_jit_entries;
+	double dyn_pct = total_dyn ?
+		(double)sh3_aot_profile.dynamic_aot_entries * 100.0 / (double)total_dyn : 0.0;
+	sprintf(text, "aot_summary total_aot_compiled=%" SH3_AOT_FMT " aot_executed=%" SH3_AOT_FMT " aot_executed_pct=%.1f aot_cold_evicted=%" SH3_AOT_FMT " jit_compiled=%" SH3_AOT_FMT " jit_executed=%" SH3_AOT_FMT " runs=%u",
 		sh3_aot_profile.total_aot_compiled,
 		sh3_aot_profile.total_aot_executed,
 		exec_pct,
 		sh3_aot_profile.total_aot_replaced_cold,
 		sh3_aot_profile.total_jit_compiled,
+		sh3_aot_profile.total_jit_executed,
 		sh3_aot_profile.run_count);
+	emit(text);
+	sprintf(text, "aot_spaces 0c_compiled=%" SH3_AOT_FMT " 0c_exec=%" SH3_AOT_FMT " 0c_cold=%" SH3_AOT_FMT " ac_compiled=%" SH3_AOT_FMT " ac_exec=%" SH3_AOT_FMT " ac_cold=%" SH3_AOT_FMT,
+		sh3_aot_profile.total_aot_0c_compiled,
+		sh3_aot_profile.total_aot_0c_executed,
+		sh3_aot_profile.total_aot_0c_replaced_cold,
+		sh3_aot_profile.total_aot_ac_compiled,
+		sh3_aot_profile.total_aot_ac_executed,
+		sh3_aot_profile.total_aot_ac_replaced_cold);
+	emit(text);
+	sprintf(text, "aot_dynamic dyn_aot=%" SH3_AOT_FMT " dyn_jit=%" SH3_AOT_FMT " dyn_aot_pct=%.2f",
+		sh3_aot_profile.dynamic_aot_entries,
+		sh3_aot_profile.dynamic_jit_entries,
+		dyn_pct);
 	emit(text);
 }
 

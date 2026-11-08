@@ -5017,6 +5017,7 @@ void Sh3WorkReport(void (*emit)(const char*))
 #endif
 #if SALVIA_FBNEO_DIAGNOSTICS
 	Sh3AotReport(emit);
+	Sh3Ppc::Sh3DrcReportResidentSlots(emit);
 #endif
 	sprintf(text,"drc_work_rebuild_causes uncovered=%" SH3_WORK_COUNT " conflict=%" SH3_WORK_COUNT " source=%" SH3_WORK_COUNT " read_map=%" SH3_WORK_COUNT,
 		p.rebuild_uncovered,p.rebuild_conflict,p.rebuild_source,p.rebuild_map); emit(text);

@@ -67,16 +67,21 @@ int main() {
 	sh3_aot_profile.total_aot_executed = 4500;
 	sh3_aot_profile.total_aot_replaced_cold = 120;
 	sh3_aot_profile.total_jit_compiled = 45;
+	sh3_aot_profile.total_jit_executed = 30;
+	sh3_aot_profile.dynamic_aot_entries = 900000;
+	sh3_aot_profile.dynamic_jit_entries = 100000;
 
 	// Test 4: Report emission
 	emitted_lines.clear();
 	Sh3AotReport(test_emit);
-	assert(emitted_lines.size() == 3); // 2 runs + 1 summary
+	assert(emitted_lines.size() == 5); // 2 runs + summary + spaces + dynamic
 	assert(strstr(emitted_lines[0].c_str(), "aot_run id=1 trigger=boot range=0x0C000000..0x0C200000") != NULL);
 	assert(strstr(emitted_lines[0].c_str(), "seeds=1504 (fixed=4 prol=1200 ptr=300)") != NULL);
 	assert(strstr(emitted_lines[0].c_str(), "exit=queue_empty") != NULL);
 	assert(strstr(emitted_lines[1].c_str(), "aot_run id=2 trigger=boot range=0xAC000000..0xAC200000") != NULL);
-	assert(strstr(emitted_lines[2].c_str(), "aot_summary total_aot_compiled=7560 aot_executed=4500 aot_executed_pct=59.5 aot_cold_evicted=120 jit_compiled=45 runs=2") != NULL);
+	assert(strstr(emitted_lines[2].c_str(), "aot_summary total_aot_compiled=7560 aot_executed=4500 aot_executed_pct=59.5 aot_cold_evicted=120 jit_compiled=45 jit_executed=30 runs=2") != NULL);
+	assert(strstr(emitted_lines[3].c_str(), "aot_spaces 0c_compiled=3780 0c_exec=0 0c_cold=0 ac_compiled=3780 ac_exec=0 ac_cold=0") != NULL);
+	assert(strstr(emitted_lines[4].c_str(), "aot_dynamic dyn_aot=900000 dyn_jit=100000 dyn_aot_pct=90.00") != NULL);
 
 	// Test 5: Verify ring buffer bound (MAX_RUNS = 8)
 	for (unsigned i = 0; i < 10; ++i) {
@@ -300,7 +305,117 @@ int main() {
 		assert(visit_order[5] == 0x0c000090);
 	}
 
-	printf("PASS Sh3AotProfile: lifecycle, bounded runs=%u, execution tracking, formatting, queue retry on full, prioritized staged traversal\n",
+	// Test 9: R0 Shadow and table path execution tracking and generation accounting
+	{
+		sh3_aot_profile.clear();
+
+		enum { TEST_TABLE_SIZE = 128 };
+		uint8_t mock_slot_aot_state[TEST_TABLE_SIZE] = {0};
+		uint32_t mock_slot_gen[TEST_TABLE_SIZE] = {0};
+
+		struct MockShadow {
+			uint32_t pc;
+			uint32_t slot;
+			uint32_t gen;
+			void *entry;
+		};
+
+		// Helper simulating production unified dispatch accounting
+		auto dispatch_exec = [&](MockShadow *copy, unsigned table_slot, void *entry) -> bool {
+			if (!entry) return false;
+			if (mock_slot_aot_state) {
+				const unsigned exec_slot = copy ? copy->slot : table_slot;
+				const bool gen_match = copy ? (mock_slot_gen && copy->slot < TEST_TABLE_SIZE && mock_slot_gen[copy->slot] == copy->gen) : true;
+				if (gen_match && exec_slot < TEST_TABLE_SIZE) {
+					const uint8_t st = mock_slot_aot_state[exec_slot];
+					if (st == 1) {
+						mock_slot_aot_state[exec_slot] = 2;
+						++sh3_aot_profile.total_aot_executed;
+						++sh3_aot_profile.total_aot_0c_executed;
+						++sh3_aot_profile.dynamic_aot_entries;
+					} else if (st == 2) {
+						++sh3_aot_profile.dynamic_aot_entries;
+					} else if (st == 3) {
+						mock_slot_aot_state[exec_slot] = 4;
+						++sh3_aot_profile.total_aot_executed;
+						++sh3_aot_profile.total_aot_ac_executed;
+						++sh3_aot_profile.dynamic_aot_entries;
+					} else if (st == 4) {
+						++sh3_aot_profile.dynamic_aot_entries;
+					} else if (st == 5) {
+						mock_slot_aot_state[exec_slot] = 6;
+						++sh3_aot_profile.total_jit_executed;
+						++sh3_aot_profile.dynamic_jit_entries;
+					} else if (st == 6) {
+						++sh3_aot_profile.dynamic_jit_entries;
+					}
+				}
+			}
+			return true;
+		};
+
+		int dummy_code = 123;
+		void *valid_entry = &dummy_code;
+
+		// 9.1: AOT 0x0c block executed via Shadow hit (previously blind spot!)
+		mock_slot_gen[10] = 1;
+		mock_slot_aot_state[10] = 1; // 0x0c cold
+		MockShadow sh10 = {0x0c001000, 10, 1, valid_entry};
+
+		bool ok = dispatch_exec(&sh10, 0, valid_entry);
+		assert(ok);
+		assert(mock_slot_aot_state[10] == 2); // transitioned 1 -> 2
+		assert(sh3_aot_profile.total_aot_executed == 1);
+		assert(sh3_aot_profile.total_aot_0c_executed == 1);
+		assert(sh3_aot_profile.dynamic_aot_entries == 1);
+
+		// 9.2: Repeated execution via Shadow hit: unique count stays 1, dynamic count increments
+		ok = dispatch_exec(&sh10, 0, valid_entry);
+		assert(ok);
+		assert(mock_slot_aot_state[10] == 2);
+		assert(sh3_aot_profile.total_aot_executed == 1);
+		assert(sh3_aot_profile.dynamic_aot_entries == 2);
+
+		// 9.3: Control comparison via table path (Shadow miss) for 0xac AOT block
+		mock_slot_gen[20] = 1;
+		mock_slot_aot_state[20] = 3; // 0xac cold
+		ok = dispatch_exec(nullptr, 20, valid_entry);
+		assert(ok);
+		assert(mock_slot_aot_state[20] == 4); // transitioned 3 -> 4
+		assert(sh3_aot_profile.total_aot_executed == 2);
+		assert(sh3_aot_profile.total_aot_ac_executed == 1);
+		assert(sh3_aot_profile.dynamic_aot_entries == 3);
+
+		// 9.4: Stale Shadow with generation mismatch must NOT credit new occupant
+		// Suppose slot 10 gets reused by JIT and slot_gen bumped to 2
+		mock_slot_gen[10] = 2;
+		mock_slot_aot_state[10] = 5; // JIT unexecuted
+		// Stale shadow still holds gen = 1
+		assert(sh10.gen == 1);
+		// Dispatch with stale shadow
+		ok = dispatch_exec(&sh10, 0, valid_entry);
+		assert(ok);
+		// Crucial verification: new occupant in slot 10 must NOT have been marked executed!
+		assert(mock_slot_aot_state[10] == 5);
+		assert(sh3_aot_profile.total_jit_executed == 0);
+
+		// 9.5: Failed compile (!entry) must not record execution
+		mock_slot_aot_state[30] = 1; // AOT cold
+		ok = dispatch_exec(nullptr, 30, nullptr);
+		assert(!ok);
+		assert(sh3_aot_profile.total_aot_executed == 2); // unchanged!
+
+		// 9.6: JIT block execution
+		mock_slot_gen[40] = 1;
+		mock_slot_aot_state[40] = 5; // JIT cold
+		ok = dispatch_exec(nullptr, 40, valid_entry);
+		assert(ok);
+		assert(mock_slot_aot_state[40] == 6);
+		assert(sh3_aot_profile.total_jit_executed == 1);
+		assert(sh3_aot_profile.dynamic_jit_entries == 1);
+	}
+
+	printf("PASS Sh3AotProfile: lifecycle, bounded runs=%u, execution tracking, formatting, queue retry on full, prioritized staged traversal, R0 shadow/generation accounting\n",
 		Sh3AotProfile::MAX_RUNS);
 	return 0;
 }
