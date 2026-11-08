@@ -78,7 +78,19 @@ python3 libretro/FBNeo/tests/sh3_ppc/run.py --toolchain-root /home/humor/salvia-
 
 ---
 
-## 4. 验证限制与后续步骤
+## 4. 产物镜像与实机部署
+
+- **构建 Tag**：`r3-cmpstr`
+- **代码提交**：`b336cdcc`（基于 `39cbd232`）
+- **构建环境**：VS2010 / XDK，`SALVIA_FBNEO_DIAGNOSTICS 1`
+- **XEX 镜像信息**：
+  - `mmpork.xex` (diag)：34,832,384 字节，SHA256 `70189aa6de4677be9d49a448a89e49224ee2d1177acca3adddb2a31ce7f0e8b3`
+  - `fbneo.xex` (diag)：34,832,384 字节，SHA256 `846fa4d5d5cf5906a6497badc8ae769fe10ff5d4f8614d9a094c06bbdf9bf07f`
+- **实机部署**：已通过 FTP 上传至 Jasper 主机 `/Usb0/Salvia-360/mmpork.xex` 并通过 Aurora 自动启动。
+
+---
+
+## 5. 验证限制与后续步骤
 宿主与 PPC QEMU 测试证明了代码生成的正确性与 PPC 指令等价性。
 实机 CPU/IO 耗时减少幅度与慢帧改善效果须在 Xbox 360 Jasper 实机上运行验证。
 构建并部署新版诊断镜像，实机运行后通过暂停提取新日志以核对 `CMPSTR` 消除效果及剩余回退操作码。
