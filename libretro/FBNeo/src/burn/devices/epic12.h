@@ -5,6 +5,7 @@ void epic12_exit();
 #ifdef _XBOX
 const char *epic12_gpu_take_message(); // polled on the frontend emulation thread
 void cv1k_review_report(void (*emit)(const char*)); // main-thread pause snapshot only
+void epic12_gpu_get_frame_telemetry(unsigned *draws, unsigned *uploads);
 #endif
 void epic12_reset();
 void epic12_scan(INT32 nAction, INT32 *pnMin);

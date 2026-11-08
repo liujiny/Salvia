@@ -1231,6 +1231,23 @@ void epic12_wait_blitterthread()
 	thready.notify_wait();
 }
 
+#ifdef _XBOX
+void epic12_gpu_get_frame_telemetry(unsigned *draws, unsigned *uploads)
+{
+#if SALVIA_FBNEO_DIAGNOSTICS
+	static UINT64 last_commands = 0;
+	static UINT64 last_uploads = 0;
+	if (draws) *draws = (unsigned)(epic12_xenos_commands - last_commands);
+	if (uploads) *uploads = (unsigned)(epic12_xenos_upload_pages - last_uploads);
+	last_commands = epic12_xenos_commands;
+	last_uploads = epic12_xenos_upload_pages;
+#else
+	if (draws) *draws = 0;
+	if (uploads) *uploads = 0;
+#endif
+}
+#endif
+
 static void gfx_exec_write(UINT32 data)
 {
 //	if ( ACCESSING_BITS_0_7 )

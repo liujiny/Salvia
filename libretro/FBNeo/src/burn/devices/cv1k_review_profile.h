@@ -90,12 +90,15 @@ template<unsigned N> struct SalviaReviewStalls {
     struct Event {
         unsigned frame, compiled;
         SalviaReviewTick ticks[N], total;
+        unsigned draws, uploads;
+        SalviaReviewTick worker_wait;
     } events[8];
     unsigned frames, invalid, count, retained;
     SalviaReviewTick peak;
     void clear_window() { memset(this, 0, sizeof(*this)); }
     void record(const SalviaReviewTick (&stamp)[N + 1], unsigned frame,
-                SalviaReviewTick threshold, unsigned compiled = 0) {
+                SalviaReviewTick threshold, unsigned compiled = 0,
+                unsigned draws = 0, unsigned uploads = 0, SalviaReviewTick worker_wait = 0) {
         if (!threshold) return;
         if (!stamp[0]) { ++invalid; return; }
         for (unsigned i = 0; i < N; ++i)
@@ -112,6 +115,7 @@ template<unsigned N> struct SalviaReviewStalls {
         for (unsigned i = retained - 1; i > pos; --i) events[i] = events[i - 1];
         Event &event = events[pos];
         event.frame = frame; event.total = elapsed; event.compiled = compiled;
+        event.draws = draws; event.uploads = uploads; event.worker_wait = worker_wait;
         for (unsigned i = 0; i < N; ++i) event.ticks[i] = stamp[i + 1] - stamp[i];
     }
 };

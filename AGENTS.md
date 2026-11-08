@@ -1,6 +1,6 @@
 # Reversible Salvia development
 
-User requirement: one independently reviewable and revertible Git commit per logical change.
+User requirement: multiple related logical changes may be grouped into a single commit when requested by the user, while keeping changes reviewable and revertible.
 
 - This checkout records source history on `work/reversible-checkpoints`. Record HEAD and inspect the worktree before changing files. Preserve user edits; do not reset, clean, amend published history or force-push.
 - The configured Windows runtime/build source is the sibling `../Salvia`. Before editing, verify the relevant baseline text matches this Git checkout. Edit here, mirror only the reviewed changed paths to the runtime copy, and verify hashes before building. A Git revert in this checkout does NOT update that sibling or an existing XEX; mirror the reverted paths and rebuild, or restore the separately verified XEX backup.

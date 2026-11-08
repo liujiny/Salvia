@@ -1729,8 +1729,10 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 		const int tint_b_idx = (p[9] & 0xff) >> 2;
 
 		int total_dimx = dimx;
+		int total_dimy = dimy;
 		int step_count = 1;
 		bool repeated_src = false;
+		int fusion_dir = 0;
 		Epic12StagingColumns columns;
 		const unsigned column_count = (dimx == 2 && dimy >= 8) ?
 			epic12_staging_collect_columns(m_ram16_copy, m_main_rammask, cur_addr,
@@ -1740,7 +1742,7 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 			step_count = (int)column_count;
 		}
 
-		// Peek forward to fuse adjacent horizontal strips
+		// Peek forward to fuse adjacent horizontal or vertical strips
 		while (!column_count) {
 			const UINT32 next_ram = (cur_addr + step_count * 20) & m_main_rammask;
 			if (next_ram + 20 > max_ram) break;
@@ -1756,30 +1758,60 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 			const int nsx = np[2] & 0x1fff;
 			const int nsy = np[3] & 0x0fff;
 
-			if (ny != y || ndimy != dimy || nx != x + total_dimx) break;
 			if ((nattr & 0x0d00) != (attr & 0x0d00)) break;
 			if (np[8] != p[8] || np[9] != p[9]) break;
 
-			if (!repeated_src && step_count == 1 && nsx == sx && nsy == sy && ndimx == dimx) {
-				repeated_src = true;
-			} else if (repeated_src) {
-				if (nsx != sx || nsy != sy || ndimx != dimx) break;
-			} else {
-				if (nsx != sx + total_dimx || nsy != sy) break;
+			if (fusion_dir == 0) {
+				if (ny == y && ndimy == dimy && nx == x + total_dimx) {
+					fusion_dir = 1;
+				} else if (nx == x && ndimx == dimx && ny == y + total_dimy) {
+					fusion_dir = 2;
+				} else {
+					break;
+				}
 			}
 
-			if (x + total_dimx + ndimx > 8192) break;
-			if (!repeated_src && (sx + total_dimx + ndimx > 8192)) break;
+			if (fusion_dir == 1) {
+				if (ny != y || ndimy != dimy || nx != x + total_dimx) break;
 
-			total_dimx += ndimx;
-			++step_count;
+				if (!repeated_src && step_count == 1 && nsx == sx && nsy == sy && ndimx == dimx) {
+					repeated_src = true;
+				} else if (repeated_src) {
+					if (nsx != sx || nsy != sy || ndimx != dimx) break;
+				} else {
+					if (nsx != sx + total_dimx || nsy != sy) break;
+				}
+
+				if (x + total_dimx + ndimx > 8192) break;
+				if (!repeated_src && (sx + total_dimx + ndimx > 8192)) break;
+
+				total_dimx += ndimx;
+				++step_count;
+			} else {
+				if (nx != x || ndimx != dimx || ny != y + total_dimy) break;
+
+				if (!repeated_src && step_count == 1 && nsx == sx && nsy == sy && ndimy == dimy) {
+					repeated_src = true;
+				} else if (repeated_src) {
+					if (nsx != sx || nsy != sy || ndimy != dimy) break;
+				} else {
+					if (flipx || flipy) break;
+					if (nsx != sx || nsy != sy + total_dimy) break;
+				}
+
+				if (y + total_dimy + ndimy > 4096) break;
+				if (!repeated_src && (sy + total_dimy + ndimy > 4096)) break;
+
+				total_dimy += ndimy;
+				++step_count;
+			}
 		}
 
 		// Check WAR hazard against queued GPU commands in bin 0
-		const int dpy0 = y >> 7, dpy1 = (y + dimy - 1) >> 7;
+		const int dpy0 = y >> 7, dpy1 = (y + total_dimy - 1) >> 7;
 		const int dpx0 = x >> 7, dpx1 = (x + total_dimx - 1) >> 7;
 		const int source_width = column_count ? columns.source_width : (repeated_src ? dimx : total_dimx);
-		const int source_height = column_count ? columns.source_height : dimy;
+		const int source_height = column_count ? columns.source_height : (repeated_src ? dimy : total_dimy);
 		const int source_x = column_count ? columns.source_x : sx;
 		const int source_y = column_count ? columns.source_y : sy;
 		if (epic12_gpu_count[0] && epic12_gpu_intersects(source_x, source_y, source_width, source_height, epic12_gpu_bounds[0])) {
@@ -1811,7 +1843,7 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 			bool war_conflict = false;
 			if (war_overlap) {
 				const int x_max = x + total_dimx - 1;
-				const int y_max = y + dimy - 1;
+				const int y_max = y + total_dimy - 1;
 				for (int ci = 0; ci < epic12_gpu_count[0]; ++ci) {
 					const Epic12GpuCommand &cmd = epic12_gpu_commands[0][ci];
 					if (cmd.sx <= x_max && cmd.sx + cmd.w > x &&
@@ -1824,7 +1856,7 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 			if (war_conflict) {
 #if SALVIA_FBNEO_DIAGNOSTICS
 				++epic12_gpu_diag_war768_count;
-				epic12_gpu_record_war_sample(x, y, total_dimx, dimy, sx, sy, dpx0, dpx1, dpy0, dpy1);
+				epic12_gpu_record_war_sample(x, y, total_dimx, total_dimy, sx, sy, dpx0, dpx1, dpy0, dpy1);
 #endif
 				if (inv_max_x >= inv_min_x) {
 					rectangle r_inv(inv_min_x, inv_max_x, inv_min_y, inv_max_y);
@@ -1868,7 +1900,7 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 		}
 		if (y < inv_min_y) inv_min_y = y;
 		if (x + total_dimx - 1 > inv_max_x) inv_max_x = x + total_dimx - 1;
-		if (y + dimy - 1 > inv_max_y) inv_max_y = y + dimy - 1;
+		if (y + total_dimy - 1 > inv_max_y) inv_max_y = y + total_dimy - 1;
 
 #if SALVIA_FBNEO_DIAGNOSTICS
 		if (epic12_gpu_diag_stag_sample_count < 10) {
@@ -1876,7 +1908,7 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 			epic12_gpu_diag_stag_samples[s][0] = x;
 			epic12_gpu_diag_stag_samples[s][1] = y;
 			epic12_gpu_diag_stag_samples[s][2] = total_dimx;
-			epic12_gpu_diag_stag_samples[s][3] = dimy;
+			epic12_gpu_diag_stag_samples[s][3] = total_dimy;
 			epic12_gpu_diag_stag_samples[s][4] = sx;
 			epic12_gpu_diag_stag_samples[s][5] = sy;
 			epic12_gpu_diag_stag_samples[s][6] = ((!!flipx) << 8) | ((!!flipy) << 4) | (trans ? 1 : 0);
@@ -1910,6 +1942,15 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 			epic12_gpu_diag_column_commands += column_count;
 			epic12_gpu_diag_column_pixels += column_count * 2 * dimy;
 #endif
+		} else if (fusion_dir == 2) {
+			if (repeated_src) {
+				for (int k = 0; k < step_count; ++k) {
+					UINT32 *d_k = m_bitmaps + ((size_t)(y + k * dimy)) * 8192 + x;
+					epic12_staging_rasterize_blit(d_k, s_row, dimx, dimy, s_step, flipx, trans, tint_mode, lut_r, lut_g, lut_b);
+				}
+			} else {
+				epic12_staging_rasterize_blit(d_row, s_row, dimx, total_dimy, s_step, flipx, trans, tint_mode, lut_r, lut_g, lut_b);
+			}
 		} else if (step_count > 1 && repeated_src) {
 			if (!trans && tint_mode == 1 && !flipx && dimx == 16 && ((((uintptr_t)d_row | (uintptr_t)s_row) & 7) == 0)) {
 				for (int r = 0; r < dimy; ++r) {
@@ -1982,7 +2023,7 @@ static inline int epic12_gpu_staging_stream(UINT32 start_addr)
 			epic12_staging_rasterize_blit(d_row, s_row, total_dimx, dimy, s_step, flipx, trans, tint_mode, lut_r, lut_g, lut_b);
 		}
 
-		epic12_device_blit_delay += (unsigned)((column_count ? step_count * 2 : total_dimx) * dimy);
+		epic12_device_blit_delay += (unsigned)(column_count ? (step_count * 2 * dimy) : (total_dimx * total_dimy));
 #if SALVIA_FBNEO_DIAGNOSTICS
 		epic12_gpu_diag_submit_staging_ident += step_count;
 #endif

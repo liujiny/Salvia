@@ -118,9 +118,10 @@ void cv1k_review_report(void (*emit)(const char*))
         emit(text);
         for (unsigned i = 0; i < cv1k_review_stalls.retained; ++i) {
             const SalviaReviewStalls<4>::Event &event = cv1k_review_stalls.events[i];
-            sprintf(text, "core_stall rank=%u interval_frame=%u prep=%.3f cpu_io=%.3f audio_tail_misc=%.3f draw_sync=%.3f total=%.3f compiled_blocks=%u includes_aot=1",
+            sprintf(text, "core_stall rank=%u interval_frame=%u prep=%.3f cpu_io=%.3f audio_tail_misc=%.3f draw_sync=%.3f total=%.3f compiled_blocks=%u draws=%u uploads=%u worker_wait=%.3f includes_aot=1",
                 i + 1, event.frame, event.ticks[0] * unit, event.ticks[1] * unit,
-                event.ticks[2] * unit, event.ticks[3] * unit, event.total * unit, event.compiled);
+                event.ticks[2] * unit, event.ticks[3] * unit, event.total * unit, event.compiled,
+                event.draws, event.uploads, event.worker_wait * unit);
             emit(text);
         }
 #if SALVIA_FBNEO_DIAGNOSTICS
@@ -140,10 +141,11 @@ void cv1k_review_report(void (*emit)(const char*))
             emit(text);
             for (unsigned i = 0; i < cv1k_review_drops.retained; ++i) {
                 const SalviaReviewStalls<4>::Event &event = cv1k_review_drops.events[i];
-                sprintf(text, "core_drop rank=%u interval_frame=%u prep=%.3f cpu_io=%.3f audio_tail_misc=%.3f draw_sync=%.3f total=%.3f compiled_blocks=%u",
+                sprintf(text, "core_drop rank=%u interval_frame=%u prep=%.3f cpu_io=%.3f audio_tail_misc=%.3f draw_sync=%.3f total=%.3f compiled_blocks=%u draws=%u uploads=%u worker_wait=%.3f",
                     i + 1, event.frame,
                     event.ticks[0] * unit, event.ticks[1] * unit,
-                    event.ticks[2] * unit, event.ticks[3] * unit, event.total * unit, event.compiled);
+                    event.ticks[2] * unit, event.ticks[3] * unit, event.total * unit, event.compiled,
+                    event.draws, event.uploads, event.worker_wait * unit);
                 emit(text);
             }
         }
@@ -937,8 +939,17 @@ static INT32 DrvFrame()
 	if (SALVIA_FBNEO_DIAGNOSTICS) reviewMarks[3] = salvia_review_clock();
 #endif
 
+#if defined(_XBOX) && SALVIA_FBNEO_DIAGNOSTICS
+	SalviaReviewTick wait_start = 0, wait_end = 0;
+#endif
 	if (DrvDips[1] & 4) { // Thread Sync: Before Draw
+#if defined(_XBOX) && SALVIA_FBNEO_DIAGNOSTICS
+		wait_start = salvia_review_clock();
+#endif
 		epic12_wait_blitterthread();
+#if defined(_XBOX) && SALVIA_FBNEO_DIAGNOSTICS
+		wait_end = salvia_review_clock();
+#endif
 	}
 
 	if (pBurnDraw) {
@@ -948,11 +959,14 @@ static INT32 DrvFrame()
 	if (SALVIA_FBNEO_DIAGNOSTICS) {
 		reviewMarks[4] = salvia_review_clock();
 		const unsigned compiledThisFrame = Sh3DrcCompileCount() - compiledBefore;
+		const SalviaReviewTick workerWait = (wait_end > wait_start) ? (wait_end - wait_start) : 0;
+		unsigned drawsThisFrame = 0, uploadsThisFrame = 0;
+		epic12_gpu_get_frame_telemetry(&drawsThisFrame, &uploadsThisFrame);
 		cv1k_review_stalls.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks * 4,
-			compiledThisFrame);
+			compiledThisFrame, drawsThisFrame, uploadsThisFrame, workerWait);
 		if (cv1k_review.frames > 60) {
 			cv1k_review_drops.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks,
-				compiledThisFrame);
+				compiledThisFrame, drawsThisFrame, uploadsThisFrame, workerWait);
 		}
 		if (cv1k_review.frames <= 60 && (reviewMarks[4] - reviewMarks[0]) > (cv1k_review_slow_ticks * 2)) {
 			if (s_startup_stall_count < 32) {
