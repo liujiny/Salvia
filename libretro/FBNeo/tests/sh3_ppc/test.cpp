@@ -502,6 +502,45 @@ int main() {
  }
  Sh3SetDrcRam(NULL,0,0,0);
  printf("EDGE compiled device MOV.L / all operands / aliases / delay / callback and mapping revocation PASS cases=%u\n",device_cases);
+
+ // On-chip peripheral fast service (TMU TCR1 read/write and registered lower internal regs)
+ Sh3MapHandler(SH3_MAXHANDLER - 1, SH3_LOWER_REGBASE, SH3_LOWER_REGEND, MAP_READ | MAP_WRITE);
+ Sh3MapHandler(SH3_MAXHANDLER - 2, SH3_UPPER_REGBASE, SH3_UPPER_REGEND, MAP_READ | MAP_WRITE);
+ Sh3SetReadWordHandler(SH3_MAXHANDLER - 2, Sh3UpperReadWord);
+ Sh3SetWriteWordHandler(SH3_MAXHANDLER - 2, Sh3UpperWriteWord);
+ Sh3SetReadLongHandler(SH3_MAXHANDLER - 1, Sh3LowerReadLong);
+ Sh3SetDrcDeviceRead(1, 0x04000000, SH3_MAXHANDLER - 1);
+
+ unsigned onchip_cases = 0;
+ // Test 1: MOV.W R0, @R1 (0x2101) writing TMU TCR1 at 0xFFFFFEA8
+ state(1); { UINT16 *p=(UINT16*)(ram+0x100); p[0]=0x2101; p[1]=0xffff; }
+ m_r[0]=0x0020; m_r[1]=0xfffffea8u; m_sh4_icount=10;
+ sh3_drc_work.clear(); calls=0;
+ if (!sh3_drc_dispatch_impl<false, true>() || m_delay || m_pc != 0x0c000102 ||
+     sh3_drc_work.movll_services != 1 || sh3_drc_work.exit_partial) return 34;
+ ++onchip_cases;
+
+ // Test 2: MOV.W @R1, R0 (0x6011) reading TMU TCR1 at 0xFFFFFEA8
+ state(1); { UINT16 *p=(UINT16*)(ram+0x100); p[0]=0x6011; p[1]=0xffff; }
+ m_r[0]=0; m_r[1]=0xfffffea8u; m_sh4_icount=10;
+ sh3_drc_work.clear(); calls=0;
+ if (!sh3_drc_dispatch_impl<false, true>() || m_delay || m_pc != 0x0c000102 ||
+     (m_r[0] & 0xffff) != 0x0020 || sh3_drc_work.movll_services != 1 || sh3_drc_work.exit_partial) return 35;
+ ++onchip_cases;
+
+ // Test 3: MOV.L @R1, R0 (0x6012) reading 0xA4000000 (INTEVT2) via registered device read
+ state(1); { UINT16 *p=(UINT16*)(ram+0x100); p[0]=0x6012; p[1]=0xffff; }
+ m_r[0]=0; m_r[1]=0xa4000000u; m_sh4_icount=10;
+ sh3_drc_work.clear(); calls=0;
+ if (!sh3_drc_dispatch_impl<false, true>() || m_delay || m_pc != 0x0c000102 ||
+     sh3_drc_work.movll_services != 1 || sh3_drc_work.exit_partial) return 36;
+ ++onchip_cases;
+
+ Sh3SetDrcDeviceRead(1, 0, -1);
+ // Restore synthetic handlers
+ Sh3MapHandler(0, SH3_LOWER_REGBASE, SH3_LOWER_REGEND, MAP_READ | MAP_WRITE);
+ Sh3MapHandler(0, SH3_UPPER_REGBASE, SH3_UPPER_REGEND, MAP_READ | MAP_WRITE);
+ printf("EDGE on-chip peripheral fast service / TMU TCR1 read/write / lower regs PASS cases=%u\n", onchip_cases);
  // Observe before executing the real MOVLL/RL/handler path: diagnostic
  // calls must change only counters, never registers, cycles, RAM or callbacks.
  Sh3MapHandler(1,0x0c000000,0x0c00ffff,MAP_READ);

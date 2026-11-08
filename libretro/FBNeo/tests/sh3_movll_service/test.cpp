@@ -37,7 +37,24 @@ static unsigned RL(unsigned a) {
  EAT(7); EAT(1024);
  return (a&AM)^read_pc;
 }
+#ifndef SH3_UPPER_REGBASE
+#define SH3_UPPER_REGBASE (0xffffd000)
+#define SH3_UPPER_REGEND  (0xffffffff)
+#define SH3_LOWER_REGBASE (0x04000000)
+#define SH3_LOWER_REGEND  (0x07ffffff)
+#endif
 static void MOVLL(UINT16 op) { m_ea=m_r[(op>>4)&15];m_r[(op>>8)&15]=RL(m_ea); }
+static void MOVBL(UINT16 op) { MOVLL(op); }
+static void MOVWL(UINT16 op) { MOVLL(op); }
+static void MOVBP(UINT16 op) { MOVLL(op); }
+static void MOVWP(UINT16 op) { MOVLL(op); }
+static void MOVLP(UINT16 op) { MOVLL(op); }
+static void MOVBS(UINT16 op) { (void)op; }
+static void MOVWS(UINT16 op) { (void)op; }
+static void MOVLS(UINT16 op) { (void)op; }
+static void MOVBM(UINT16 op) { (void)op; }
+static void MOVWM(UINT16 op) { (void)op; }
+static void MOVLM(UINT16 op) { (void)op; }
 static void sh4_check_pending_irq() {
  ++irq_calls;m_test_irq=0;m_pc=0x0c000600;m_ppc^=0x1234;EAT(3);
 }
@@ -79,11 +96,11 @@ int main() {
   setup(0,0,2);unsigned op=0x6022;
   switch(bad) {
    case 0:sh3_drc_enabled=false;break;
-   case 1:op=0x6026;break;
+   case 1:op=0x6023;break;
    case 2:sh3_idle_watch_pc=NULL;break;
    case 3:m_r[2]=0xec002310;break;
    case 4:m_r[2]++;break;
-   case 5:m_pc+=4;break;
+   case 5:op=0x0009;break;
    case 6:sh3_ppc_state.mirror_watch+=4;break;
    case 7:sh3_ppc_state.mirror_page+=65536;break;
    case 8:sh3_ppc_state.read_mirror=NULL;break;
