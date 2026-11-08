@@ -114,3 +114,18 @@ dst[columns.count] = src[columns.source[columns.count - 1] + 1];
 - **128 源页上限**：严格维持 `epic12_gpu_batch_page_capacity() = 128`，不改动批次容量上限。
 - **单提交原则**：本轮所有改动聚焦于 GPU Blitter 绘图管线状态与几何生成流。
 - **构建环境**：按规范镜像至 `../Salvia` 运行目录进行 XDK 诊断镜像编译（`SALVIA_FBNEO_DIAGNOSTICS 1`）。
+
+---
+
+## 5. 构建物身份与实机部署
+
+- **构建脚本**：`/home/humor/salvia-tests/xex-build/build-xex.sh --baseline f61421f6 --tag blitter-opt --flavor diag --force`
+- **构建配置元数据**：`/home/humor/salvia-tests/xex-build/artifact-blitter-opt.json`
+- **构建输出（诊断版 `SALVIA_FBNEO_DIAGNOSTICS 1`）**：
+  | 镜像文件 | 文件大小 (Bytes) | SHA-256 哈希 | 归档位置 |
+  | :--- | :--- | :--- | :--- |
+  | `mmpork.xex` | 34,832,384 | `f22b2994afa681631727f99a0349de978a010b4f0c2622c67653e63b9b24c33a` | `/home/humor/salvia-tests/xex-archive/mmpork-20261108-1219-blitter-opt-diag.xex` |
+  | `fbneo.xex` | 34,832,384 | `58872f9dbf7477aadd16f44a380ec0ad39c8c5ccd936bc04cb5882e1924a7727` | `/home/humor/salvia-tests/xex-archive/fbneo-20261108-1217-blitter-opt-diag.xex` |
+  | `ddpsdoj.xex` | 34,832,384 | `0f92756c1854dbd530f964cac6906f98f01ea5fd68d8e3fd4c7feaee197fa145` | `/home/humor/salvia-tests/xex-archive/ddpsdoj-20261108-1220-blitter-opt-diag.xex` |
+- **主机部署**：已通过 FTP / SITE LAUNCH 部署并自动拉起运行于 Xbox 360 Jasper（`192.168.2.232:/Usb0/Salvia-360/mmpork.xex`）。
+
