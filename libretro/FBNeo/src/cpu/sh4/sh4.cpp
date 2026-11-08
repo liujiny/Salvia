@@ -4987,6 +4987,7 @@ int Sh3Run(int cycles)
 #endif
 void Sh3WorkBeginFrame() { ++sh3_drc_work.frames; }
 void Sh3WorkReset() { sh3_drc_work.clear(); }
+UINT64 Sh3WorkGetInterpreterSteps() { return (UINT64)sh3_drc_work.interpreter_steps; }
 int Sh3WorkRun(int cycles)
 {
 	if (timer_granularity == 0) {

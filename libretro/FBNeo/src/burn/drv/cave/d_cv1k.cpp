@@ -817,7 +817,7 @@ static INT32 DrvFrame()
 	const UINT32 compiledBefore = SALVIA_FBNEO_DIAGNOSTICS ? Sh3DrcCompileCount() : 0;
 #if SALVIA_FBNEO_DIAGNOSTICS
 	Sh3DrcResetCompileTicksFrame();
-	const UINT32 interpBefore = (UINT32)sh3_drc_work.interpreter_steps;
+	const UINT64 interpBefore = Sh3WorkGetInterpreterSteps();
 #endif
 	SalviaReviewTick reviewMarks[5];
 	if (SALVIA_FBNEO_DIAGNOSTICS) reviewMarks[0] = salvia_review_clock();
@@ -960,7 +960,7 @@ static INT32 DrvFrame()
 				sd.cpu_io = reviewMarks[2] - reviewMarks[1];
 				sd.jit_compile = (SalviaReviewTick)Sh3DrcGetCompileTicksFrame();
 				sd.compiled_blocks = compiledThisFrame;
-				sd.interp_steps = (unsigned)sh3_drc_work.interpreter_steps - interpBefore;
+				sd.interp_steps = (unsigned)(Sh3WorkGetInterpreterSteps() - interpBefore);
 			}
 		}
 		if (reviewSample && cv1k_review.record(reviewMarks))

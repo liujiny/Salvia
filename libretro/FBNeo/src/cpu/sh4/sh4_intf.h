@@ -58,6 +58,9 @@ void Sh3WorkBeginFrame();
 INT32 Sh3WorkRun(INT32 cycles);
 void Sh3WorkReset();
 void Sh3WorkReport(void (*emit)(const char*));
+UINT64 Sh3WorkGetInterpreterSteps();
+#else
+static inline UINT64 Sh3WorkGetInterpreterSteps() { return 0; }
 #endif
 
 void Sh3SetIRQLine(INT32 line, INT32 state);
