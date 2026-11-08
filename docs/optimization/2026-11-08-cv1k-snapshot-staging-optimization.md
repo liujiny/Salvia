@@ -80,3 +80,20 @@
   | `fbneo.xex` | 34,832,384 | `6fd5a1437f7675048d1b367e7f46e28ac25e51f32c1b3c38810311e5cac75bac` | `/home/humor/salvia-tests/xex-archive/fbneo-20261108-1301-snap-opt-diag.xex` |
   | `ddpsdoj.xex` | 34,832,384 | `fbc55cf15501b8b45554295561b299aaa8e4efd1ff9686c5799895cc63afded6` | `/home/humor/salvia-tests/xex-archive/ddpsdoj-20261108-1305-snap-opt-diag.xex` |
 - **主机部署**：部署至 Xbox 360 Jasper（`192.168.2.232:/Usb0/Salvia-360/mmpork.xex`）。
+
+---
+
+## 6. 实机遥测验证与收益评测
+
+在 Xbox 360 Jasper（`192.168.2.232`）上运行 10,475 帧实机游玩日志（`mmpork-snap-opt-cv1000-gpu.log`），对比基线结果：
+
+1. **`draw_sync` 慢帧瓶颈消除**：
+   - 优化前（`blitter-opt`）：Top 1 慢帧 `draw_sync` 达 **50.989 ms**（全帧 53.58ms，导致第一关 Boss 散币处掉到 40 帧）。
+   - 优化后（`snap-opt`）：Top 1 慢帧 `draw_sync` 降至 **0.729 ms**（**下降 98.6%**）。所有前 8 慢帧中 `draw_sync` 全部小于 0.73ms，GPU 绘图同步阻塞彻底消除！
+2. **Worker 线程等待极速释放**：
+   - 渲染工作线程峰值等待时间从 **44.665 ms** 降低至 **13.407 ms**（**降幅 70.0%**）。
+3. **Direct3D 9 状态流冗余过滤**：
+   - 全程成功过滤 **2,089,797 次** 无效 `SetRenderState` 调用（占全部状态变迁意图的 66.0%），有效精简了 Ring Buffer 吞吐。
+4. **归因机制剖析**：
+   - 直通无循环向量化行复制（32/64/128 字节）消除了每次快照复制时的 PPC 循环与预取气泡，结合宽幅 Staging 解卷，使整个 GPU 模拟/栅格化管线吞吐大幅跃升。
+
