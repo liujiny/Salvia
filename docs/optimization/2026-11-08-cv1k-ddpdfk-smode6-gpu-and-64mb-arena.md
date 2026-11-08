@@ -47,4 +47,22 @@
    - `sh3_movll_service`：**PASS (12,309 cases)**
    - `sh3_aot_profile`：**PASS**
 2. **PPC QEMU 着色器模型与批次全量回归测试** (`epic12_gpu`)：
-   - 包含新增的 2,097,152 组 `smode=6, dmode=0` 反向调制混合测试用例，100% 与整数参考实现一致。
+   - 包含新增的 2,097,152 组 `smode=6, dmode=0` 反向调制混合测试用例，100% 与整数参考实现一致：**PASS**
+3. **PPC QEMU SH3 DRC 回归测试** (`sh3_ppc`)：
+   - 851,662 cases compiled/fallback 验证 64MB arena 下代码生成与执行正确性：**PASS**
+
+---
+
+## 四、 构建与部署记录
+
+- **构建 Tag**：`ddpdfk-opt`
+- **基线 Commit**：`8626c67346eba21861292c8ac78ac8f0e855cc41`
+- **提交 Commit**：`802dc2add7851476274851f771b5bc0a6d19515b`
+- **生成的 XEX 镜像**：
+  - `fbneo.xex` (diag): 34,877,440 bytes | SHA256 `1052e32e8d96fae9ba9d378e60f1685f33e73cc2e2fbd0b87bdfad68bf91d2d2`
+  - `mmpork.xex` (diag): 34,877,440 bytes | SHA256 `5fe2e20c26bf4029ef42863ae9d71f6e758e7b6c84a193b5e5231198f4ed391a`
+  - `ddpsdoj.xex` (diag): 34,877,440 bytes | SHA256 `2ea9aedbf5b81f32569bc807a33f27b52c648b4c2ec3cdbd2c4732de453cc4d0`
+- **归档路径**：
+  - `/home/humor/salvia-tests/xex-archive/fbneo-20261108-2101-ddpdfk-opt-diag.xex`
+- **实机部署**：
+  - 已通过 FTP 部署至 Xbox 360 主机 (`192.168.2.232:/Usb0/Salvia-360/fbneo.xex`) 并由 Aurora 发起启动。
