@@ -25,8 +25,7 @@ template<bool Count> static bool sh3_drc_service_movll(unsigned opcode)
    eligible=physical==idle_ram &&
     (physical&~(unsigned)SH3_PAGEM)==sh3_ppc_state.mirror_page &&
     (uintptr_t)sh3_ppc_state.read_mirror>=SH3_MAXHANDLER &&
-    (uintptr_t)MemMapR[physical>>SH3_SHIFT]==sh3_ppc_state.mirror_handler &&
-    (handler_pc==idle_pc || handler_pc==idle_pc+2u);
+    (uintptr_t)MemMapR[physical>>SH3_SHIFT]==sh3_ppc_state.mirror_handler;
   } else {
    for(unsigned i=0;i<2;++i) {
     const Sh3DrcDeviceRead &read=sh3_device_reads[i];
