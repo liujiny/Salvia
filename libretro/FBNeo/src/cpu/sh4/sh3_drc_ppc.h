@@ -344,6 +344,9 @@ struct CodeWriteCheck { UINT32 *compare; unsigned size; };
 enum { CAT_BODY=0, CAT_MEMADDR, CAT_MEMGUARD, CAT_MEMACCESS, CAT_COMPLETE, CAT_EXIT, CAT_COUNT };
 static unsigned long long sh3_gen_words[CAT_COUNT];
 static unsigned long long sh3_gen_blocks;
+#if SALVIA_FBNEO_DIAGNOSTICS
+static UINT64 s_jit_compile_ticks_frame;
+#endif
 // Why the block that is being compiled ended. Buckets 0..5 are the classes the
 // earlier histogram showed; 6 and 7 split the delayed conditionals by whether
 // the block could instead have continued through the delay slot into the
@@ -1373,6 +1376,9 @@ static void arena_note_slot(unsigned slot,const Block &block)
 
 static void compile(Block &block, UINT32 pc, const UINT16 *source)
 {
+#if SALVIA_FBNEO_DIAGNOSTICS
+ volatile UINT64 c0 = sh3_aot_timer_ticks();
+#endif
  // The arena is a ring of sectors and a block never straddles a sector
  // boundary, so the slots recorded for a sector fully describe the code that
  // has to be dropped before that sector's space can be handed out again. This
@@ -1475,6 +1481,12 @@ static void compile(Block &block, UINT32 pc, const UINT16 *source)
   used=(unsigned)(c.out-code+3)&~3u; // 16-byte block alignment
   if(used>sh3_drc_work.arena_peak)sh3_drc_work.arena_peak=used;
  }
+#if SALVIA_FBNEO_DIAGNOSTICS
+ volatile UINT64 c1 = sh3_aot_timer_ticks();
+ if (c1 >= c0 && !s_in_aot_precompile) {
+  s_jit_compile_ticks_frame += (c1 - c0);
+ }
+#endif
 }
 #if SALVIA_FBNEO_DIAGNOSTICS
 static inline void Sh3DrcReportResidentSlots(void (*emit)(const char*))
@@ -1652,6 +1664,13 @@ static void sh3_drc_exit()
 static bool sh3_drc_run() { return sh3_drc_dispatch<false>(); }
 
 UINT32 Sh3DrcCompileCount() { return (UINT32)Sh3Ppc::sh3_gen_blocks; }
+#if SALVIA_FBNEO_DIAGNOSTICS
+UINT64 Sh3DrcGetCompileTicksFrame() { return Sh3Ppc::s_jit_compile_ticks_frame; }
+void Sh3DrcResetCompileTicksFrame() { Sh3Ppc::s_jit_compile_ticks_frame = 0; }
+#else
+UINT64 Sh3DrcGetCompileTicksFrame() { return 0; }
+void Sh3DrcResetCompileTicksFrame() {}
+#endif
 
 struct Sh3PrecompileQueue {
 	UINT8 *visited;

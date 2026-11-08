@@ -20,7 +20,20 @@ extern INT32 nBurnRenderCores;
 static SalviaReviewProfile<4> cv1k_review;
 static SalviaReviewTail<4> cv1k_review_tail;
 static SalviaReviewStalls<4> cv1k_review_stalls;
+static SalviaReviewStalls<4> cv1k_review_drops;
 static SalviaReviewTick cv1k_review_slow_ticks;
+#if SALVIA_FBNEO_DIAGNOSTICS
+struct StartupDetail {
+	unsigned frame;
+	SalviaReviewTick total;
+	SalviaReviewTick cpu_io;
+	SalviaReviewTick jit_compile;
+	unsigned compiled_blocks;
+	unsigned interp_steps;
+};
+static StartupDetail s_startup_stalls[8];
+static unsigned s_startup_stall_count = 0;
+#endif
 #endif
 
 #define SH3_CLOCK (12800000 * 8)
@@ -110,6 +123,31 @@ void cv1k_review_report(void (*emit)(const char*))
                 event.ticks[2] * unit, event.ticks[3] * unit, event.total * unit, event.compiled);
             emit(text);
         }
+#if SALVIA_FBNEO_DIAGNOSTICS
+        if (s_startup_stall_count) {
+            for (unsigned i = 0; i < s_startup_stall_count; ++i) {
+                const StartupDetail &sd = s_startup_stalls[i];
+                sprintf(text, "core_startup_stall frame=%u total=%.3f cpu_io=%.3f jit_compile=%.3f compiled_blocks=%u interp_steps=%u",
+                    sd.frame, sd.total * unit, sd.cpu_io * unit, sd.jit_compile * unit,
+                    sd.compiled_blocks, sd.interp_steps);
+                emit(text);
+            }
+        }
+        if (cv1k_review_drops.retained) {
+            sprintf(text, "core_drop_watch frames=%u invalid=%u threshold_ms=25 count=%u retained=%u peak_ms=%.3f coverage=all_core_frames",
+                cv1k_review_drops.frames, cv1k_review_drops.invalid, cv1k_review_drops.count,
+                cv1k_review_drops.retained, cv1k_review_drops.peak * unit);
+            emit(text);
+            for (unsigned i = 0; i < cv1k_review_drops.retained; ++i) {
+                const SalviaReviewStalls<4>::Event &event = cv1k_review_drops.events[i];
+                sprintf(text, "core_drop rank=%u interval_frame=%u prep=%.3f cpu_io=%.3f audio_tail_misc=%.3f draw_sync=%.3f total=%.3f compiled_blocks=%u",
+                    i + 1, event.frame,
+                    event.ticks[0] * unit, event.ticks[1] * unit,
+                    event.ticks[2] * unit, event.ticks[3] * unit, event.total * unit, event.compiled);
+                emit(text);
+            }
+        }
+#endif
     }
     Sh3WorkReport(emit);
 #if SALVIA_CV1K_PROBE
@@ -165,6 +203,10 @@ void cv1k_review_report(void (*emit)(const char*))
     cv1k_review.clear_window();
     cv1k_review_tail.clear_window();
     cv1k_review_stalls.clear_window();
+#if SALVIA_FBNEO_DIAGNOSTICS
+    cv1k_review_drops.clear_window();
+    s_startup_stall_count = 0;
+#endif
 #endif
 }
 #endif
@@ -669,6 +711,10 @@ static INT32 DrvInit()
 	cv1k_review.clear_window();
 	cv1k_review_tail.clear_window();
 	cv1k_review_stalls.clear_window();
+#if SALVIA_FBNEO_DIAGNOSTICS
+	cv1k_review_drops.clear_window();
+	s_startup_stall_count = 0;
+#endif
 	LARGE_INTEGER reviewFrequency;
 	cv1k_review_slow_ticks = (SALVIA_FBNEO_DIAGNOSTICS && QueryPerformanceFrequency(&reviewFrequency) && reviewFrequency.QuadPart > 0)
 		? (SalviaReviewTick)reviewFrequency.QuadPart / 40 : 0; // strict >25 ms core samples
@@ -769,6 +815,10 @@ static INT32 DrvFrame()
 		(DrvDips[1] & 2) && !(DrvDips[3] & 0x10);
 	salvia_cv1k_work_sample_frame = workSample ? 1u : 0u;
 	const UINT32 compiledBefore = SALVIA_FBNEO_DIAGNOSTICS ? Sh3DrcCompileCount() : 0;
+#if SALVIA_FBNEO_DIAGNOSTICS
+	Sh3DrcResetCompileTicksFrame();
+	const UINT32 interpBefore = (UINT32)sh3_drc_work.interpreter_steps;
+#endif
 	SalviaReviewTick reviewMarks[5];
 	if (SALVIA_FBNEO_DIAGNOSTICS) reviewMarks[0] = salvia_review_clock();
 #endif
@@ -897,8 +947,22 @@ static INT32 DrvFrame()
 #ifdef _XBOX
 	if (SALVIA_FBNEO_DIAGNOSTICS) {
 		reviewMarks[4] = salvia_review_clock();
+		const unsigned compiledThisFrame = Sh3DrcCompileCount() - compiledBefore;
 		cv1k_review_stalls.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks * 4,
-			Sh3DrcCompileCount() - compiledBefore);
+			compiledThisFrame);
+		cv1k_review_drops.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks,
+			compiledThisFrame);
+		if (cv1k_review.frames <= 60 && (reviewMarks[4] - reviewMarks[0]) > (cv1k_review_slow_ticks * 2)) {
+			if (s_startup_stall_count < 8) {
+				StartupDetail &sd = s_startup_stalls[s_startup_stall_count++];
+				sd.frame = cv1k_review.frames;
+				sd.total = reviewMarks[4] - reviewMarks[0];
+				sd.cpu_io = reviewMarks[2] - reviewMarks[1];
+				sd.jit_compile = (SalviaReviewTick)Sh3DrcGetCompileTicksFrame();
+				sd.compiled_blocks = compiledThisFrame;
+				sd.interp_steps = (unsigned)sh3_drc_work.interpreter_steps - interpBefore;
+			}
+		}
 		if (reviewSample && cv1k_review.record(reviewMarks))
 			cv1k_review_tail.record_validated(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks);
 	}

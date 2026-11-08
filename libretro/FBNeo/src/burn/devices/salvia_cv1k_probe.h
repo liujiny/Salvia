@@ -63,7 +63,7 @@ struct SalviaCv1kSpan {
 	SalviaCv1kSpan(int s) : slot(s), start(salvia_cv1k_tick()) {}
 	~SalviaCv1kSpan() {
 		unsigned long long end = salvia_cv1k_tick();
-		if (start && end) { salvia_cv1k_probe[slot] += end - start; ++salvia_cv1k_probe[slot + 1]; }
+		if (start && end && end >= start) { salvia_cv1k_probe[slot] += end - start; ++salvia_cv1k_probe[slot + 1]; }
 	}
 };
 
@@ -82,7 +82,7 @@ struct SalviaCv1kSampledSpan {
 	~SalviaCv1kSampledSpan() {
 		if (start) {
 			unsigned long long end = salvia_cv1k_tick();
-			if (end) {
+			if (end && end >= start) {
 				salvia_cv1k_probe[slot] += (end - start) * N;
 			}
 		}

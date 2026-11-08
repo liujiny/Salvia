@@ -41,6 +41,8 @@ INT32 Sh3SetDrcRam(UINT8* ram, UINT32 start, UINT32 span, UINT32 backing_size);
 void Sh3DrcPrecompile(UINT32 start_pc, UINT32 size, INT32 trigger = 0);
 // Monotonic compiler counter, including AOT; diagnostic frame deltas only.
 UINT32 Sh3DrcCompileCount();
+UINT64 Sh3DrcGetCompileTicksFrame();
+void Sh3DrcResetCompileTicksFrame();
 
 void Sh3SetTimerGranularity(INT32 timergransh); // speedhack
 

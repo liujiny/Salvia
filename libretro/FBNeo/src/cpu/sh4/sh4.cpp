@@ -128,6 +128,8 @@ void Sh3SetDrcDeviceRead(INT32, UINT32, INT32) {}
 INT32 Sh3SetDrcRam(UINT8*, UINT32, UINT32, UINT32) { return 0; }
 void Sh3DrcPrecompile(UINT32, UINT32, INT32) {}
 UINT32 Sh3DrcCompileCount() { return 0; }
+UINT64 Sh3DrcGetCompileTicksFrame() { return 0; }
+void Sh3DrcResetCompileTicksFrame() {}
 #endif
 
 static UINT32  m_spc;
@@ -4849,7 +4851,7 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 			const unsigned long long dispatchStart=salvia_cv1k_tick();
 			const bool dispatchOk=sh3_drc_enabled && !m_delay && !m_test_irq && sh3_drc_dispatch_impl<true,Count>();
 			const unsigned long long dispatchEnd=salvia_cv1k_tick();
-			if(dispatchStart&&dispatchEnd) { salvia_cv1k_probe[4]+=dispatchEnd-dispatchStart; ++salvia_cv1k_probe[5]; }
+			if(dispatchStart&&dispatchEnd&&dispatchEnd>=dispatchStart) { salvia_cv1k_probe[4]+=dispatchEnd-dispatchStart; ++salvia_cv1k_probe[5]; }
 			if(dispatchOk) continue;
 		}
 #else
@@ -4906,7 +4908,7 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 		const unsigned long long timerStart=salvia_cv1k_tick();
 		sh4_run_timers(cycles);
 		const unsigned long long timerEnd=salvia_cv1k_tick();
-		if(timerStart && timerEnd) salvia_cv1k_probe[10]+=timerEnd-timerStart;
+		if(timerStart && timerEnd && timerEnd >= timerStart) salvia_cv1k_probe[10]+=timerEnd-timerStart;
 	}
 #else
 	sh4_run_timers(cycles);
