@@ -4869,7 +4869,7 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 			m_ppc = m_pc;
 
 			if (Count) ++sh3_drc_work.interpreter_hi8[opcode >> 8];
-#if defined(SH3_PPC_DRC_WORK_TEST)
+#if defined(_XBOX) || defined(SH3_PPC_DRC_WORK_TEST)
 			if (Count) ++sh3_drc_work.interpreter_op16[opcode];
 #endif
 			sh3_execute_hot_fallback(opcode);
@@ -4883,7 +4883,7 @@ template<bool Count> static int Sh3Run_timerhack_impl(int cycles)
 			m_ppc = m_pc;
 
 			if (Count) ++sh3_drc_work.interpreter_hi8[opcode >> 8];
-#if defined(SH3_PPC_DRC_WORK_TEST)
+#if defined(_XBOX) || defined(SH3_PPC_DRC_WORK_TEST)
 			if (Count) ++sh3_drc_work.interpreter_op16[opcode];
 #endif
 			sh3_execute_hot_fallback(opcode);
