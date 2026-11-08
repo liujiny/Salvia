@@ -758,7 +758,7 @@ static INT32 DrvInit()
 	// Frequent CV1000 polling: blitter busy and external register / ROM read.
 	// DRC servicing calls RL, preserving the device handler, burn and IRQ order.
 	Sh3SetDrcDeviceRead(0, 0x18000010, 0);
-	Sh3SetDrcDeviceRead(1, 0x04000000, 0);
+	Sh3SetDrcDeviceRead(1, 0x04000000, 7);
 
 	Sh3Close();
 

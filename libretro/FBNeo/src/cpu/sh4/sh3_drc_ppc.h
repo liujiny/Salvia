@@ -1553,6 +1553,8 @@ void Sh3SetDrcDeviceRead(INT32 slot, UINT32 address, INT32 handler)
  Sh3DrcDeviceRead &read=sh3_device_reads[slot];
  read.address=0; read.handler=0; read.callback=NULL;
  if(handler>=0 && handler<SH3_MAXHANDLER && address<=AM && !(address&3)) {
+  UINT8 *pr = MemMapR[(address&AM) >> SH3_SHIFT];
+  if((uintptr_t)pr < SH3_MAXHANDLER) handler = (INT32)(uintptr_t)pr;
   read.address=address; read.handler=handler; read.callback=ReadLong[handler];
  }
  // Tagged exits depend on registration at compile time, not just execution.
