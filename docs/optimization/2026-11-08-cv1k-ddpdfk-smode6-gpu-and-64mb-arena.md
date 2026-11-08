@@ -66,3 +66,30 @@
   - `/home/humor/salvia-tests/xex-archive/fbneo-20261108-2101-ddpdfk-opt-diag.xex`
 - **实机部署**：
   - 已通过 FTP 部署至 Xbox 360 主机 (`192.168.2.232:/Usb0/Salvia-360/fbneo.xex`) 并由 Aurora 发起启动。
+
+---
+
+## 五、 实机运行结果与根因分析（64MB Arena 淘汰与回滚）
+
+### 1. 实机遥测反馈
+部署后游玩 DDPDFK（2,495 帧），用户反馈游戏极慢（平均帧耗时达到 42ms，仅 ~23 FPS）。检查 `cv1000-gpu.log` 与 `fbneo-state.log` 发现：
+- **`smode=6` GPU 加速完全生效**：
+  - 原先的 `reject_mode smode=6 dmode=0` 由 650,892 次**彻底降至 0**；
+  - `flushes cpu_draw` 由 598,812 次**骤降至仅 623 次**。
+- **但 DRC 发生致命回退（完全罢工）**：
+  - `total_aot_compiled=0, jit_compiled=0, blocks=0`；
+  - `native_calls=0`，而 `interpreter_steps=3135011`；
+  - `drc_work_exits gate=2748537`，所有指令全部走 C++ 纯软解释器！
+
+### 2. 根因剖析：64MB BSS 挤爆 Xbox 360 标题内存
+- `xbox_code` 在 Xbox 上为可执行静态 BSS 数组：
+  $$\text{static \_\_declspec(align(128)) UINT32 xbox\_code[CACHE\_BYTES / 4];}$$
+- 当 `CACHE_BYTES` 由 32MB 扩容至 64MB 时，XEX 的 BSS 数据区多占用了整整 32MB 内存。
+- 《怒首领蜂大复活》ROM 本身体量达 140MB+，运行期总内存需求逼近 350MB+。
+- `fbneo-state.log` 显示：游戏载入后，可用标题堆内存从原先的 ~45.8MB 暴跌至仅剩 **13.8MB** (`memory_available=13889536`)。
+- 而 `Sh3Ppc::allocate()` 初始化时分配 `Block`、`Lookup`、`Shadow` 等元数据表需要 **~16.6MB** 堆内存。
+- 由于 $13.8\text{MB} < 16.6\text{MB}$，`calloc(TABLE_SIZE, sizeof(Block))` 分配失败返回 NULL，触发 `failed = true`，DRC 引擎初始化中止，导致全核被迫在整个游玩期间 100% 走纯 C++ 解释器！
+
+### 3. 优化调整决策
+- **回滚 DRC Arena 容量至 32MB**（`SH3_PPC_CACHE_BYTES (32 * 1024 * 1024)`）：确保可用标题堆内存充裕（~45MB），使 `allocate()` 稳定成功，恢复完整的 JIT 与 AOT 极致性能。
+- **全量保留 `smode=6, dmode=0` GPU 反向调制硬件加速**：彻底根除 65 万次 Blitter 软渲染中断。

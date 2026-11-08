@@ -34,7 +34,7 @@
 // the pre-ring sweep measured as the default; it keeps the same state inside
 // 32 MiB arena keeps the working set bounded within 16 ring sectors while
 // preserving crucial title RAM for 160MB-footprint games (ddpsdoj).
-#define SH3_PPC_CACHE_BYTES (64 * 1024 * 1024)
+#define SH3_PPC_CACHE_BYTES (32 * 1024 * 1024)
 #endif
 
 // How many instructions past a delayed conditional's delay slot the fused
