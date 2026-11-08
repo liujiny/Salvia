@@ -285,9 +285,16 @@ static void epic12_xenos_report()
 		epic12_gpu_flush_reasons[EPIC12_GPU_FLUSH_OTHER],
 		epic12_gpu_flush_small_cpu,epic12_gpu_flush_render_fallback);
 	epic12_xenos_log(message);
+#if SALVIA_FBNEO_DIAGNOSTICS
+	sprintf(message, "diag_staging snapshots=%u pixels=%u hits=%u misses=%u | src_dep fit2=%u raw768=%u war768=%u",
+		epic12_gpu_diag_snapshot_count, epic12_gpu_diag_snapshot_pixels,
+		epic12_gpu_diag_snap_hits, epic12_gpu_diag_snap_misses,
+		epic12_gpu_diag_fit2_count, epic12_gpu_diag_raw768_count, epic12_gpu_diag_war768_count);
+#else
 	sprintf(message, "diag_staging snapshots=%u pixels=%u | src_dep fit2=%u raw768=%u war768=%u",
 		epic12_gpu_diag_snapshot_count, epic12_gpu_diag_snapshot_pixels,
 		epic12_gpu_diag_fit2_count, epic12_gpu_diag_raw768_count, epic12_gpu_diag_war768_count);
+#endif
 	epic12_xenos_log(message);
 	sprintf(message, "diag_blits clip=%u stag_ident=%u stag_replay=%u onscreen=%u",
 		epic12_gpu_diag_submit_clip, epic12_gpu_diag_submit_staging_ident,

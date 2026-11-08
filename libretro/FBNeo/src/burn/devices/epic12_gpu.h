@@ -65,6 +65,8 @@ static unsigned epic12_gpu_reject_smode_dmode[8][8];
 #if SALVIA_FBNEO_DIAGNOSTICS
 static unsigned epic12_gpu_diag_snapshot_count;
 static unsigned epic12_gpu_diag_snapshot_pixels;
+static unsigned epic12_gpu_diag_snap_hits;
+static unsigned epic12_gpu_diag_snap_misses;
 static unsigned epic12_gpu_diag_fit2_count;
 static unsigned epic12_gpu_diag_raw768_count;
 static unsigned epic12_gpu_diag_war768_count;
@@ -114,6 +116,8 @@ static void epic12_gpu_diag_reset()
 #if SALVIA_FBNEO_DIAGNOSTICS
 	epic12_gpu_diag_snapshot_count=0;
 	epic12_gpu_diag_snapshot_pixels=0;
+	epic12_gpu_diag_snap_hits=0;
+	epic12_gpu_diag_snap_misses=0;
 	epic12_gpu_diag_fit2_count=0;
 	epic12_gpu_diag_raw768_count=0;
 	epic12_gpu_diag_war768_count=0;
@@ -276,8 +280,8 @@ static bool epic12_gpu_staging_pages[EPIC12_VRAM_PAGES];
 static unsigned epic12_gpu_staging_version[EPIC12_VRAM_PAGES];
 
 enum {
-	EPIC12_SNAP_SETS = 512,
-	EPIC12_SNAP_WAYS = 2
+	EPIC12_SNAP_SETS = 1024,
+	EPIC12_SNAP_WAYS = 4
 };
 
 struct Epic12SnapshotEntry {
@@ -961,7 +965,12 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 			for (int r = 0; r < dimy; ++r) {
 				const UINT64 *s64 = (const UINT64*)s_row;
 				UINT64 *d64 = (UINT64*)d_row;
-				for (int col = 0; col < count64; ++col) d64[col] = s64[col];
+				int col = 0;
+				for (; col <= count64 - 4; col += 4) {
+					UINT64 w0 = s64[col + 0], w1 = s64[col + 1], w2 = s64[col + 2], w3 = s64[col + 3];
+					d64[col + 0] = w0; d64[col + 1] = w1; d64[col + 2] = w2; d64[col + 3] = w3;
+				}
+				for (; col < count64; ++col) d64[col] = s64[col];
 				if (odd) d_row[dimx - 1] = s_row[dimx - 1];
 				d_row += 8192;
 				s_row += s_step;
@@ -969,7 +978,12 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 			return;
 		}
 		for (int r = 0; r < dimy; ++r) {
-			for (int col = 0; col < dimx; ++col) d_row[col] = s_row[col];
+			int col = 0;
+			for (; col <= dimx - 4; col += 4) {
+				UINT32 p0 = s_row[col + 0], p1 = s_row[col + 1], p2 = s_row[col + 2], p3 = s_row[col + 3];
+				d_row[col + 0] = p0; d_row[col + 1] = p1; d_row[col + 2] = p2; d_row[col + 3] = p3;
+			}
+			for (; col < dimx; ++col) d_row[col] = s_row[col];
 			d_row += 8192;
 			s_row += s_step;
 		}
@@ -1094,6 +1108,18 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 				const UINT64 *s64 = (const UINT64*)s_row;
 				UINT64 *d64 = (UINT64*)d_row;
 				int col = 0;
+				for (; col <= count64 - 8; col += 8) {
+					UINT64 w0 = s64[col + 0], w1 = s64[col + 1], w2 = s64[col + 2], w3 = s64[col + 3];
+					UINT64 w4 = s64[col + 4], w5 = s64[col + 5], w6 = s64[col + 6], w7 = s64[col + 7];
+					d64[col + 0] = w0 & 0x2000000020000000ULL;
+					d64[col + 1] = w1 & 0x2000000020000000ULL;
+					d64[col + 2] = w2 & 0x2000000020000000ULL;
+					d64[col + 3] = w3 & 0x2000000020000000ULL;
+					d64[col + 4] = w4 & 0x2000000020000000ULL;
+					d64[col + 5] = w5 & 0x2000000020000000ULL;
+					d64[col + 6] = w6 & 0x2000000020000000ULL;
+					d64[col + 7] = w7 & 0x2000000020000000ULL;
+				}
 				for (; col <= count64 - 4; col += 4) {
 					UINT64 w0 = s64[col + 0], w1 = s64[col + 1], w2 = s64[col + 2], w3 = s64[col + 3];
 					d64[col + 0] = w0 & 0x2000000020000000ULL;
@@ -1111,7 +1137,15 @@ static inline void epic12_staging_rasterize_blit(UINT32 *d_row, const UINT32 *s_
 			return;
 		}
 		for (int r = 0; r < dimy; ++r) {
-			for (int col = 0; col < dimx; ++col) d_row[col] = s_row[col] & 0x20000000;
+			int col = 0;
+			for (; col <= dimx - 4; col += 4) {
+				UINT32 p0 = s_row[col + 0], p1 = s_row[col + 1], p2 = s_row[col + 2], p3 = s_row[col + 3];
+				d_row[col + 0] = p0 & 0x20000000;
+				d_row[col + 1] = p1 & 0x20000000;
+				d_row[col + 2] = p2 & 0x20000000;
+				d_row[col + 3] = p3 & 0x20000000;
+			}
+			for (; col < dimx; ++col) d_row[col] = s_row[col] & 0x20000000;
 			d_row += 8192;
 			s_row += s_step;
 		}
@@ -2132,10 +2166,16 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 				draw_sx = s_snap_cache[set][match_way].snap_x;
 				draw_sy = s_snap_cache[set][match_way].snap_y;
 				reused = true;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_gpu_diag_snap_hits;
+#endif
 			} else {
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_gpu_diag_snap_misses;
+#endif
 				int snap_x, snap_y;
 				int way = s_snap_lru[set] & (EPIC12_SNAP_WAYS - 1);
-				s_snap_lru[set] ^= 1;
+				s_snap_lru[set] = (s_snap_lru[set] + 1) & (EPIC12_SNAP_WAYS - 1);
 				if (epic12_gpu_snapshot_alloc(w, h, snap_x, snap_y)) {
 					draw_sx = snap_x;
 					draw_sy = snap_y;
@@ -2173,7 +2213,7 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 				draw_sy = snap_y;
 				const unsigned set = epic12_gpu_snap_hash(sx, sy, w, h) & (EPIC12_SNAP_SETS - 1);
 				int way = s_snap_lru[set] & (EPIC12_SNAP_WAYS - 1);
-				s_snap_lru[set] ^= 1;
+				s_snap_lru[set] = (s_snap_lru[set] + 1) & (EPIC12_SNAP_WAYS - 1);
 				epic12_gpu_snap_cache_insert(set, way, sx, sy, w, h, snap_x, snap_y, ver);
 			} else {
 				draw_sx = sx;
