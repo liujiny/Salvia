@@ -75,3 +75,17 @@ case 0x0f:
 
 - This test verifies the sequencer bytecode parsing and channel state machine under both x86_64 and PowerPC ISA.
 - Complete game audio loop verification during 24-minute gameplay sessions requires Xbox 360 Jasper deployment.
+
+---
+
+## 5. Artifact & Console Deployment
+
+- **Build Tag**: `cv1k-onchip-audioloop`
+- **Code Revision**: `617ed654` (based on `8cc9246b`)
+- **Flavor**: Diagnostics (`SALVIA_FBNEO_DIAGNOSTICS 1`)
+- **Built Images**:
+  - `fbneo.xex` (diag): 34,865,152 bytes, SHA-256 `16cd49469ae3832784a26e291b75c49fe5f59e23350ff8eb2e6b080c326f185c`
+  - `mmpork.xex` (diag): 34,832,384 bytes, SHA-256 `c5b3f59857722764da28602a3d016c28beabc9acac6a2488b63b80466b2ed20e`
+  - `ddpsdoj.xex` (diag): 34,832,384 bytes, SHA-256 `d74b3031f6fc78c814a3cf7a41cd97422710664353b344eaf59a7efe0133f35e`
+- **Deployment**: Both `fbneo.xex` and `mmpork.xex` mirrored to `/Usb0/Salvia-360` on Xbox 360 Jasper (`192.168.2.232`).
+

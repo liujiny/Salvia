@@ -63,3 +63,21 @@
    - 编译通过用例由 757,860 提升至 758,342，回退数显著下降。
 3. **Tier 3 PPC GPU 测试 (`libretro/FBNeo/tests/epic12_gpu`)**：
    - 全部通过。
+
+---
+
+## 4. 产物镜像与实机部署
+
+- **构建 Tag**：`cv1k-onchip-audioloop`
+- **代码提交**：`617ed654`（基于 `8cc9246b`）
+- **构建环境**：VS2010 / XDK，`SALVIA_FBNEO_DIAGNOSTICS 1`
+- **XEX 镜像信息**：
+  - `mmpork.xex` (diag)：34,832,384 字节，SHA256 `c5b3f59857722764da28602a3d016c28beabc9acac6a2488b63b80466b2ed20e`
+  - `fbneo.xex` (diag)：34,865,152 字节，SHA256 `16cd49469ae3832784a26e291b75c49fe5f59e23350ff8eb2e6b080c326f185c`
+  - `ddpsdoj.xex` (diag)：34,832,384 字节，SHA256 `d74b3031f6fc78c814a3cf7a41cd97422710664353b344eaf59a7efe0133f35e`
+- **归档文件**：
+  - `/home/humor/salvia-tests/xex-archive/mmpork-20261108-1957-cv1k-onchip-audioloop-diag.xex`
+  - `/home/humor/salvia-tests/xex-archive/fbneo-20261108-1955-cv1k-onchip-audioloop-diag.xex`
+  - `/home/humor/salvia-tests/xex-archive/ddpsdoj-20261108-1959-cv1k-onchip-audioloop-diag.xex`
+- **实机部署**：已通过 FTP 上传至 Jasper 主机 `/Usb0/Salvia-360/mmpork.xex` 并通过 Aurora 自动启动（返回 `200 Launching Game`）。
+
