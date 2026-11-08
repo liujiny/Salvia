@@ -223,7 +223,7 @@ static void epic12_gpu_replay(const Epic12GpuCommand &c)
 	// small batch, off-screen staging draw or failed GPU batch is replayed.
 	// Selecting only by destination mode silently changed square/modulation
 	// draws into source-alpha blends and could contaminate later source pages.
-	if (c.blend && (c.smode == 1 || c.smode == 2)) {
+	if (c.blend && (c.smode == 1 || c.smode == 2 || c.smode == 6)) {
 #define GPU_CPU_SOURCE_DRAW(f,t,s,d) \
 		if (tinted) draw_sprite_f##f##_ti1_tr##t##_s##s##_d##d(GPU_CPU_ARGS); \
 		else draw_sprite_f##f##_ti0_tr##t##_s##s##_d##d(GPU_CPU_ARGS)
@@ -233,7 +233,8 @@ static void epic12_gpu_replay(const Epic12GpuCommand &c)
 		else { GPU_CPU_SOURCE_DRAW(f,t,s,7); }
 #define GPU_CPU_SOURCE_CASE(f,t) \
 		if (c.smode == 1) { GPU_CPU_SOURCE_MODE(f,t,1); } \
-		else { GPU_CPU_SOURCE_MODE(f,t,2); }
+		else if (c.smode == 2) { GPU_CPU_SOURCE_MODE(f,t,2); } \
+		else { GPU_CPU_SOURCE_MODE(f,t,6); }
 		if (c.flipx) { if (c.transparent) { GPU_CPU_SOURCE_CASE(1,1); } else { GPU_CPU_SOURCE_CASE(1,0); } }
 		else { if (c.transparent) { GPU_CPU_SOURCE_CASE(0,1); } else { GPU_CPU_SOURCE_CASE(0,0); } }
 #undef GPU_CPU_SOURCE_CASE
@@ -2065,10 +2066,11 @@ static bool epic12_gpu_submit(int flipx, int transparent, int blend, int smode, 
 			sa = 31;
 		}
 	}
+	const bool smode6_valid = (sm == 6 && (dm == 0 || dm == 3 || dm == 7));
 	const bool smode2_valid = (sm == 2 && (dm == 0 || dm == 3 || dm == 7));
 	const bool smode1_valid = (sm == 1 && (dm == 0 || dm == 3 || dm == 7));
 	const bool smode0_valid = (sm == 0 && (dm == 0 || dm == 1 || dm == 4 || dm == 7 || dm == 3));
-	if (blend && !smode0_valid && !smode1_valid && !smode2_valid) {
+	if (blend && !smode0_valid && !smode1_valid && !smode2_valid && !smode6_valid) {
 		++epic12_gpu_reject_blend;
 		++epic12_gpu_reject_smode_dmode[smode & 7][dmode & 7];
 		return false;

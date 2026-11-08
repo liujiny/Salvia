@@ -573,6 +573,21 @@ int main()
 		}
 	}
 	puts("PASS 2097152 smode 2 dmode 0 modulation/screen blend component cases");
+	c.blend=1; c.smode=6; c.dmode=0;
+	for(int t=0;t<64;++t) for(int s=0;s<32;++s) for(int d=0;d<32;++d) for(int da=0;da<32;++da) {
+		c.tint.r=c.tint.g=c.tint.b=t; c.sa=0; c.da=da;
+		unsigned tinted=clamp(s*t/31);
+		unsigned expected=clamp((31-d)*tinted/31+d*da/31);
+		UINT32 dst=d==31?255:d*8;
+		Epic12GpuCommand normalized=c;
+		normalized.dmode=epic12_gpu_dest_mode(c); normalized.da=epic12_gpu_dest_alpha(c);
+		bool feedback=epic12_gpu_feedback(normalized);
+		UINT32 specialized=gpu_test_pixel_specialized(s*8,feedback?dst:0xcdcdcdcd,dst,normalized,feedback);
+		if(((gpu_test_pixel(s*8,dst,c)&248)>>3)!=expected || ((specialized&248)>>3)!=expected) {
+			printf("FAIL smode 6 dmode 0 shader arithmetic %d %d %d %d\n",t,s,d,da);return 1;
+		}
+	}
+	puts("PASS 2097152 smode 6 dmode 0 inverse modulation blend component cases");
 	c.blend=1; c.smode=1; c.dmode=3;
 	for(int t=0;t<32;++t) for(int s=0;s<32;++s) for(int d=0;d<32;++d) {
 		c.tint.r=c.tint.g=c.tint.b=t; c.sa=31; c.da=31;

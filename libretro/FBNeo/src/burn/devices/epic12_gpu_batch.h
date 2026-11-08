@@ -4,13 +4,15 @@
 
 static int epic12_gpu_dest_mode(const Epic12GpuCommand &c)
 {
-	if (c.smode == 2 && (c.dmode == 0 || c.dmode == 3 || c.dmode == 7)) return 2;
+	if (c.smode == 6 && (c.dmode == 0 || c.dmode == 3 || c.dmode == 4 || c.dmode == 7)) return 4;
+	if (c.smode == 2 && (c.dmode == 0 || c.dmode == 2 || c.dmode == 3 || c.dmode == 7)) return 2;
 	if (c.smode == 1 && (c.dmode == 0 || c.dmode == 3 || c.dmode == 7)) return 3;
 	return (c.dmode == 4 || c.dmode == 7 || c.dmode == 3) ? 0 : c.dmode;
 }
 
 static int epic12_gpu_dest_alpha(const Epic12GpuCommand &c)
 {
+	if (c.smode == 6) return (c.dmode == 7 || c.dmode == 3) ? 31 : c.da;
 	if (c.dmode == 7 || c.dmode == 3) return 31;
 	return c.dmode == 4 ? 31 - c.da : c.da;
 }
@@ -25,12 +27,12 @@ static bool epic12_gpu_feedback(const Epic12GpuCommand &c)
 #ifdef EPIC12_GPU_TEST
 	if (!c.blend) return false;
 	int dm = epic12_gpu_dest_mode(c);
-	if (dm == 1 || dm == 2) return true;
+	if (dm == 1 || dm == 2 || dm == 4) return true;
 	if (dm == 3) return false;
 	int da = epic12_gpu_dest_alpha(c);
 	return da != 0 && da != 31;
 #else
-	return c.blend && (epic12_gpu_dest_mode(c) == 2 || (epic12_gpu_dest_mode(c) == 1 && c.sa != 0));
+	return c.blend && (epic12_gpu_dest_mode(c) == 2 || epic12_gpu_dest_mode(c) == 4 || (epic12_gpu_dest_mode(c) == 1 && c.sa != 0));
 #endif
 }
 
@@ -41,7 +43,7 @@ static inline int epic12_gpu_blend_state(const Epic12GpuCommand &c)
 	if (epic12_gpu_dest_mode(c) == 1 && c.sa == 0) return 200;
 #endif
 	int dm = epic12_gpu_dest_mode(c);
-	if (dm == 1 || dm == 2) return 100;
+	if (dm == 1 || dm == 2 || dm == 4) return 100;
 	int da = epic12_gpu_dest_alpha(c);
 	if (da == 0) return 0;
 	if (da == 31) return (dm == 3) ? 50 : 1;

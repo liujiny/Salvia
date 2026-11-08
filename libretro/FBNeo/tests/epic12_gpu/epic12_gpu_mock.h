@@ -103,7 +103,12 @@ static UINT32 gpu_test_pixel(UINT32 raw, UINT32 dest, const Epic12GpuCommand &c)
 		unsigned s=(((raw>>shift)&255)/8)*tint[ch]/31; if(s>31) s=31;
 		unsigned byte=s*8;
 		if(c.blend) {
-			if(epic12_gpu_dest_mode(c)==2) {
+			if(epic12_gpu_dest_mode(c)==4) {
+				unsigned d=((dest>>shift)&255)/8;
+				unsigned da=epic12_gpu_dest_alpha(c);
+				unsigned out=(31-d)*s/31+d*da/31; if(out>31) out=31;
+				byte=out*8;
+			} else if(epic12_gpu_dest_mode(c)==2) {
 				unsigned d=((dest>>shift)&255)/8;
 				unsigned da=epic12_gpu_dest_alpha(c);
 				unsigned out=d*s/31+d*da/31; if(out>31) out=31;
@@ -124,7 +129,11 @@ static UINT32 gpu_test_pixel(UINT32 raw, UINT32 dest, const Epic12GpuCommand &c)
 		s=floorf(s*tint[ch]/31.0f+0.0001f); if(s>31) s=31;
 		float out=s;
 		if(c.blend) {
-			if(epic12_gpu_dest_mode(c)==2) {
+			if(epic12_gpu_dest_mode(c)==4) {
+				float d=floorf((((dest>>shift)&255)/255.0f)*(255.0f/8.0f)+0.001f);
+				int da=epic12_gpu_dest_alpha(c);
+				out=floorf((31.0f-d)*s/31.0f+0.0001f)+floorf(d*da/31.0f+0.0001f); if(out>31) out=31;
+			} else if(epic12_gpu_dest_mode(c)==2) {
 				float d=floorf((((dest>>shift)&255)/255.0f)*(255.0f/8.0f)+0.001f);
 				int da=epic12_gpu_dest_alpha(c);
 				out=floorf(d*s/31.0f+0.0001f)+floorf(d*da/31.0f+0.0001f); if(out>31) out=31;
@@ -162,7 +171,9 @@ static UINT32 gpu_test_pixel_specialized(UINT32 raw, UINT32 snapshot, UINT32 tar
 		unsigned out=s;
 		if(feedback) {
 			unsigned d=((snapshot>>shift)&255)/8;
-			if(c.dmode==2) {
+			if(c.dmode==4) {
+				out=(31-d)*s/31+d*c.da/31; if(out>31) out=31;
+			} else if(c.dmode==2) {
 				out=d*s/31+d*c.da/31; if(out>31) out=31;
 			} else {
 				if(c.dmode==3) s=s*s/31;
@@ -180,7 +191,10 @@ static UINT32 gpu_test_pixel_specialized(UINT32 raw, UINT32 snapshot, UINT32 tar
 		s=floorf(s*tint[ch]/31.0f+0.0001f); if(s>31) s=31;
 		float out=s;
 		if(feedback) {
-			if(c.dmode==2) {
+			if(c.dmode==4) {
+				float d=floorf((((snapshot>>shift)&255)/255.0f)*(255.0f/8.0f)+0.001f);
+				out=floorf((31.0f-d)*s/31.0f+0.0001f)+floorf(d*c.da/31.0f+0.0001f); if(out>31) out=31;
+			} else if(c.dmode==2) {
 				float d=floorf((((snapshot>>shift)&255)/255.0f)*(255.0f/8.0f)+0.001f);
 				out=floorf(d*s/31.0f+0.0001f)+floorf(d*c.da/31.0f+0.0001f); if(out>31) out=31;
 			} else {
