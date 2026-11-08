@@ -71,7 +71,18 @@ static void epic12_staging_draw_columns(uint32_t *vram, unsigned destination,
         // Every second pixel except the last is overwritten by the following
         // opaque column. No source aliases the destination, so only the final
         // value of each pixel is needed. Guest pixel delay still charges both.
-        for (unsigned i = 0; i < columns.count; ++i) {
+        unsigned i = 0;
+        for (; i + 3 < columns.count; i += 4) {
+            uint32_t p0 = src[columns.source[i + 0]];
+            uint32_t p1 = src[columns.source[i + 1]];
+            uint32_t p2 = src[columns.source[i + 2]];
+            uint32_t p3 = src[columns.source[i + 3]];
+            dst[i + 0] = p0;
+            dst[i + 1] = p1;
+            dst[i + 2] = p2;
+            dst[i + 3] = p3;
+        }
+        for (; i < columns.count; ++i) {
             dst[i] = src[columns.source[i]];
         }
         dst[columns.count] = src[columns.source[columns.count - 1] + 1];

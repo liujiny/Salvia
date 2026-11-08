@@ -229,10 +229,27 @@ static int epic12_gpu_vertex_count(const Epic12GpuCommand &c)
 static int epic12_gpu_vertices(const Epic12GpuCommand &c, const rectangle &bounds,
 	const int *slots, Epic12GpuVertex *out)
 {
-	int n = 0;
 	UINT32 tint = epic12_gpu_pack4(c.tint.r, c.tint.g, c.tint.b, c.sa);
 	UINT32 mode = epic12_gpu_pack4(c.transparent, c.blend,
 		epic12_gpu_dest_mode(c), epic12_gpu_dest_alpha(c));
+
+	const int spx0 = c.sx >> 7, spx1 = (c.sx + c.w - 1) >> 7;
+	const int spy0 = c.sy >> 7, spy1 = (c.sy + c.h - 1) >> 7;
+	if (spx0 == spx1 && spy0 == spy1) {
+		int slot = slots[(spy0 << 6) | spx0];
+		int u0 = (slot & 15) * 128 + (c.sx & 127), u1 = u0 + c.w;
+		int v0 = (slot >> 4) * 128 + (c.sy & 127), v1 = v0 + c.h;
+		int dx = c.x - bounds.min_x;
+		int dy = c.y - bounds.min_y;
+		Epic12GpuVertex v[3] = {
+			{(UINT16)dx, (UINT16)dy, (UINT16)(c.flipx ? u1 : u0), (UINT16)(c.flipy ? v1 : v0), tint, mode},
+			{(UINT16)(dx + c.w), (UINT16)dy, (UINT16)(c.flipx ? u0 : u1), (UINT16)(c.flipy ? v1 : v0), tint, mode},
+			{(UINT16)dx, (UINT16)(dy + c.h), (UINT16)(c.flipx ? u1 : u0), (UINT16)(c.flipy ? v0 : v1), tint, mode}};
+		out[0] = v[0]; out[1] = v[1]; out[2] = v[2];
+		return 3;
+	}
+
+	int n = 0;
 	for (int sy = c.sy; sy < c.sy + c.h;) {
 		int ey = ((sy >> 7) + 1) * 128; if (ey > c.sy + c.h) ey = c.sy + c.h;
 		int slot_row = (sy >> 7) * 64;

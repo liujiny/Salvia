@@ -45,6 +45,9 @@ static UINT64 epic12_xenos_reordered;
 static Epic12GpuAlphaPage epic12_xenos_alpha[256];
 static Epic12GpuCommand epic12_xenos_cropped[4096];
 static UINT64 epic12_xenos_raster_commands, epic12_xenos_raster_pixels;
+#if SALVIA_FBNEO_DIAGNOSTICS
+static UINT64 epic12_xenos_state_redundant, epic12_xenos_state_changes;
+#endif
 
 // Randomly sample about one in 64 batches to avoid locking to the same
 // batch position in every frame. Lock/readback waits include prior GPU work;
@@ -251,8 +254,14 @@ static void epic12_xenos_report()
 	sprintf(message,"ordering=%s moved_commands=%I64u",
 		epic12_xenos_attributes && epic12_xenos_reorder?"disjoint-lookahead8":"original",epic12_xenos_reordered);
 	epic12_xenos_log(message);
+#if SALVIA_FBNEO_DIAGNOSTICS
+	sprintf(message,"submission draws=%I64u feedback_resolves=%I64u feedback_pixels=%I64u state_redundant=%I64u state_changes=%I64u",
+		epic12_xenos_draws,epic12_xenos_feedbacks,epic12_xenos_feedback_pixels,
+		epic12_xenos_state_redundant,epic12_xenos_state_changes);
+#else
 	sprintf(message,"submission draws=%I64u feedback_resolves=%I64u feedback_pixels=%I64u",
 		epic12_xenos_draws,epic12_xenos_feedbacks,epic12_xenos_feedback_pixels);
+#endif
 	epic12_xenos_log(message);
 #if SALVIA_FBNEO_DIAGNOSTICS
 	sprintf(message,"atlas slots=%d batch_page_limit=%u hits=%I64u upload_pages=%I64u upload_bytes=%I64u (snap_up=%u vram_up=%u) input_pixels=%I64u",
@@ -812,8 +821,13 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 		d->SetVertexDeclaration(epic12_xenos_decl); d->SetVertexShader(epic12_xenos_vs);
 	}
 	d->SetTexture(0,epic12_xenos_atlas);
-	D3DPixelShader *activePs=epic12_xenos_attributes?epic12_xenos_ps:epic12_xenos_uniform_ps;
+	D3DPixelShader *activePs=(epic12_xenos_attributes && epic12_xenos_specialized)?
+		epic12_xenos_fast_ps:(epic12_xenos_attributes?epic12_xenos_ps:epic12_xenos_uniform_ps);
 	d->SetPixelShader(activePs);
+	BOOL cur_alpha_blend = FALSE;
+	D3DBLEND cur_src_blend = D3DBLEND_ONE;
+	D3DBLEND cur_dest_blend = D3DBLEND_ONE;
+	DWORD cur_blend_factor = 0xffffffff;
 	int snapshotEnd=0;
 	for (int first=0;first<count;) {
 		const Epic12GpuCommand &c=cmd[first];
@@ -837,21 +851,143 @@ static bool epic12_xenos_run(UINT32 *vram,const Epic12GpuCommand *cmd,int count,
 		int da_norm = epic12_gpu_dest_alpha(c);
 		int dm_norm = epic12_gpu_dest_mode(c);
 		if (!c.blend || (dm_norm == 0 && da_norm == 0) || feedback) {
-			d->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+			if (cur_alpha_blend) {
+				d->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+				cur_alpha_blend = FALSE;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_xenos_state_changes;
+#endif
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			else {
+				++epic12_xenos_state_redundant;
+			}
+#endif
 		} else if (dm_norm == 1 && c.sa == 0) {
-			d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-			d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
-			d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCCOLOR);
+			if (!cur_alpha_blend) {
+				d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+				cur_alpha_blend = TRUE;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_xenos_state_changes;
+#endif
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			else {
+				++epic12_xenos_state_redundant;
+			}
+#endif
+			if (cur_src_blend != D3DBLEND_ZERO) {
+				d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+				cur_src_blend = D3DBLEND_ZERO;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_xenos_state_changes;
+#endif
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			else {
+				++epic12_xenos_state_redundant;
+			}
+#endif
+			if (cur_dest_blend != D3DBLEND_SRCCOLOR) {
+				d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCCOLOR);
+				cur_dest_blend = D3DBLEND_SRCCOLOR;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_xenos_state_changes;
+#endif
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			else {
+				++epic12_xenos_state_redundant;
+			}
+#endif
 		} else if (da_norm == 31) {
-			d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-			d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
-			d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+			if (!cur_alpha_blend) {
+				d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+				cur_alpha_blend = TRUE;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_xenos_state_changes;
+#endif
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			else {
+				++epic12_xenos_state_redundant;
+			}
+#endif
+			if (cur_src_blend != D3DBLEND_ONE) {
+				d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+				cur_src_blend = D3DBLEND_ONE;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_xenos_state_changes;
+#endif
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			else {
+				++epic12_xenos_state_redundant;
+			}
+#endif
+			if (cur_dest_blend != D3DBLEND_ONE) {
+				d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+				cur_dest_blend = D3DBLEND_ONE;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_xenos_state_changes;
+#endif
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			else {
+				++epic12_xenos_state_redundant;
+			}
+#endif
 		} else {
-			d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-			d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
-			d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_BLENDFACTOR);
+			if (!cur_alpha_blend) {
+				d->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+				cur_alpha_blend = TRUE;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_xenos_state_changes;
+#endif
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			else {
+				++epic12_xenos_state_redundant;
+			}
+#endif
+			if (cur_src_blend != D3DBLEND_ONE) {
+				d->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+				cur_src_blend = D3DBLEND_ONE;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_xenos_state_changes;
+#endif
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			else {
+				++epic12_xenos_state_redundant;
+			}
+#endif
+			if (cur_dest_blend != D3DBLEND_BLENDFACTOR) {
+				d->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_BLENDFACTOR);
+				cur_dest_blend = D3DBLEND_BLENDFACTOR;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_xenos_state_changes;
+#endif
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			else {
+				++epic12_xenos_state_redundant;
+			}
+#endif
 			DWORD factor = (da_norm * 255 + 15) / 31;
-			d->SetRenderState(D3DRS_BLENDFACTOR, D3DCOLOR_RGBA(factor, factor, factor, factor));
+			DWORD factor_rgba = D3DCOLOR_RGBA(factor, factor, factor, factor);
+			if (cur_blend_factor != factor_rgba) {
+				d->SetRenderState(D3DRS_BLENDFACTOR, factor_rgba);
+				cur_blend_factor = factor_rgba;
+#if SALVIA_FBNEO_DIAGNOSTICS
+				++epic12_xenos_state_changes;
+#endif
+			}
+#if SALVIA_FBNEO_DIAGNOSTICS
+			else {
+				++epic12_xenos_state_redundant;
+			}
+#endif
 		}
 		if (!epic12_xenos_attributes) {
 			float constants[8]={(float)c.tint.r,(float)c.tint.g,(float)c.tint.b,(float)c.sa,
