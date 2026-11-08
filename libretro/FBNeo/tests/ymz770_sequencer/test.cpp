@@ -84,6 +84,30 @@ static void ymz770_internal_reg_write(UINT8 reg, UINT8 data)
 				break;
 		}
 	}
+	else if (reg >= 0x80)
+	{
+		int ch = (reg >> 4) & 7;
+		switch (reg & 0x0f)
+		{
+			case 0: m_sequences[ch].sequence = data; break;
+			case 1:
+				if ((data & 6) == 2 || ((data & 6) == 6 && !m_sequences[ch].is_playing))
+				{
+					m_sequences[ch].offset = ymz770_get_seq_offs(m_sequences[ch].sequence);
+					m_sequences[ch].delay = 0;
+					m_sequences[ch].is_playing = true;
+				}
+				else if ((data & 6) == 0 && m_sequences[ch].is_playing)
+				{
+					m_sequences[ch].is_playing = false;
+					for (int i = 0; i < 8; i++)
+						if (m_sequences[ch].stopchan & (1 << i))
+							m_channels[i].is_playing = false;
+				}
+				m_sequences[ch].loop = data & 1;
+				break;
+		}
+	}
 }
 
 // Production YMZ770 sequencer implementation with the loop-point fix
@@ -114,6 +138,7 @@ static void ymz770_sequencer()
 							if (sequence.stopchan & (1 << ch))
 								m_channels[ch].is_playing = false;
 						sequence.is_playing = false;
+						sequence.delay = 0;
 					}
 					break;
 				case 0x0e:
@@ -210,10 +235,11 @@ int main()
 
 	// Channel 0 MUST BE SILENCED on non-looping EOS
 	assert(m_channels[0].is_playing == false);
-	// Sequence MUST TERMINATE
+	// Sequence MUST TERMINATE and delay must be reset to 0
 	assert(seq.is_playing == false);
+	assert(seq.delay == 0);
 
-	printf("  PASS: Test 2 - Non-looping sequence silences stopchan and terminates cleanly\n");
+	printf("  PASS: Test 2 - Non-looping sequence silences stopchan, resets delay to 0, and terminates cleanly\n");
 
 	// Test 3: Multiple channels stopchan mask
 	memset(m_channels, 0, sizeof(m_channels));
@@ -239,9 +265,48 @@ int main()
 	assert(m_channels[2].is_playing == false);
 	assert(m_channels[3].is_playing == true); // Should still be playing!
 	assert(seq.is_playing == false);
+	assert(seq.delay == 0);
 
 	printf("  PASS: Test 3 - Multi-channel stopchan bitmask correctly evaluated\n");
 
-	printf("PASS ymz770_sequencer: all loop, EOS, and stopchan tests passed\n");
+	// Test 4: Sequence preemption and restart with Key-On (SQON data & 2)
+	// Even if sequence was already marked playing, Key-On must re-arm cleanly
+	memset(m_channels, 0, sizeof(m_channels));
+	memset(m_sequences, 0, sizeof(m_sequences));
+
+	seq_start = ymz770_get_seq_offs(3);
+	p = &m_rom[seq_start];
+	*p++ = 0x40; *p++ = 0x10; // Phrase 0x10
+	*p++ = 0x43; *p++ = 0x03; // Key On Ch 0
+	*p++ = 0x0f; *p++ = 0x00; // EOS
+
+	seq.sequence = 3;
+	seq.is_playing = true;     // Precondition: sequence was already running
+	seq.delay = -1;            // Precondition: dirty delay from previous opcode
+
+	// Key-On with data = 0x03 (loop + key-on): bit 1 is set
+	ymz770_internal_reg_write(0x81, 0x03);
+
+	assert(seq.is_playing == true);
+	assert(seq.delay == 0);
+	assert(seq.offset == seq_start);
+
+	// Step through and ensure it plays
+	ymz770_sequencer();
+	assert(m_channels[0].phrase == 0x10);
+	ymz770_sequencer();
+	assert(m_channels[0].is_playing == true);
+
+	printf("  PASS: Test 4 - Sequence preemption with Key-On correctly arms offset and resets delay\n");
+
+	// Test 5: Keep-Playing mode ((data & 6) == 6) preserves playing sequence without restart
+	UINT32 mid_offset = seq.offset;
+	ymz770_internal_reg_write(0x81, 0x07); // Bit 1 and 2 both 1: keep playing
+	assert(seq.offset == mid_offset);      // Must NOT rewind offset
+	assert(seq.is_playing == true);
+
+	printf("  PASS: Test 5 - Keep-Playing flag preserves in-flight sequence without rewinding\n");
+
+	printf("PASS ymz770_sequencer: all loop, EOS, stopchan, and key-on preemption tests passed\n");
 	return 0;
 }

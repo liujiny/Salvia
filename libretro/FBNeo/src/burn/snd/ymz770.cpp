@@ -425,6 +425,7 @@ static void ymz770_sequencer()
 							if (sequence.stopchan & (1 << ch))
 								m_channels[ch].is_playing = false;
 						sequence.is_playing = false;
+						sequence.delay = 0;
 					}
 					break;
 				case 0x0e:
