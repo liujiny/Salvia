@@ -73,3 +73,31 @@ if (pc >= hacky_idle_pc && pc <= hacky_idle_pc + 10)
 1. **宿主单元测试 (`review_profile`)**：100% PASS。
 2. **宿主单元测试 (`sh3_movll_service`)**：12,309 用例 100% PASS。
 3. **PPC QEMU 全指令套件 (`sh3_ppc`)**：851,662 用例 100% PASS。
+
+---
+
+## 4. Xbox 360 Jasper 实机遥测结果 (`26adabb1` / `mmpork-idle-fix`)
+
+实机游玩 10,252 帧（约 3 分钟实战连续测试），生成遥测日志快照：
+
+```text
+CV1000 review: build=mmpork-idle-fix 26adabb1 20261108-2002 diag frontend_interval_frames=10252 samples=150
+CV1000 GPU: core_frame_ms sampling=random-1-in-64 prep=0.003 cpu_io=10.820 audio_tail_misc=0.156 draw_sync=2.612 total=13.591 sampled_peak=38.099
+CV1000 review: frontend_frame_ms game_and_ui=13.889 present=1.115 limiter=2.423 sampled_active_loop=17.427 sampled_peak=38.895
+CV1000 GPU: core_slow_frame_ms threshold_ms=25.000 samples=7 prep=0.003 cpu_io=30.682 audio_tail_misc=0.150 draw_sync=0.798 total=31.633
+CV1000 GPU: core_drop_watch frames=10192 threshold_ms=25 count=392 peak_ms=40.843
+CV1000 GPU: fallback_origin reason=delay count=2322 (0.226/frame，前版为 0.903/frame)
+CV1000 GPU: drc_movll_service handled=6929 guest_cycles=27862640 rejected=27040
+CV1000 GPU: movll_idle_site pc=0C051770 handler_pc=0C05176A opcode=6022 address=0C002310 hits=3903 idle_condition_match=3903
+CV1000 GPU: drc_device_read slot=0 handled=34, slot=1 handled=991
+```
+
+### 4.1 关键成效与对比
+1. **延迟槽解释器回退暴降 75%**：
+   - `fallback_origin reason=delay` 由上一版 `574c78f6` 的每帧 0.903 次骤降至 **0.226 次**，减少 75.0% 的解释器跳出开销。
+2. **Speedhack 命中与周期加速**：
+   - 帧同步待机自旋正确被捕获并燃烧剩余周期，`drc_movll_service` 成功接管 6,929 次待机/外设访问并燃烧 **2,786 万客机周期**（27.86 Mcycles）。
+3. **峰值慢帧显著收窄**：
+   - 稳态慢帧率由 4.42% 降低至 3.84%，极端慢帧峰值由 43.88 ms 收窄至 40.84 ms。
+4. **片上外设 Fast Service 全程稳定**：
+   - 包含 TMU TCR1 在内的片上外设与板级设备读取平稳由 DRC 接管，未发生任何异常。
