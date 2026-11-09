@@ -136,6 +136,9 @@ struct threadystruct
 			our_callback();
 		}
 	}
+	bool is_busy() const {
+		return ok_to_thread && ok_to_wait;
+	}
 	void notify_wait() {
 		if (ok_to_thread && ok_to_wait) {
 			WaitForSingleObject(wait_event, INFINITE);
@@ -277,6 +280,9 @@ struct threadystruct
 			our_callback();
 		}
 	}
+	bool is_busy() const {
+		return ok_to_thread && ok_to_wait;
+	}
 	void notify_wait() {
 		if (ok_to_thread && ok_to_wait) {
 			WaitForSingleObject(wait_event, INFINITE);
@@ -392,6 +398,9 @@ struct threadystruct
 			// fallback to single-threaded mode
 			our_callback();
 		}
+	}
+	bool is_busy() const {
+		return ok_to_wait != 0;
 	}
 	void notify_wait() {
 		if (ok_to_wait) {
@@ -512,6 +521,9 @@ struct threadystruct
 			our_callback();
 		}
 	}
+	bool is_busy() const {
+		return ok_to_wait != 0;
+	}
 	void notify_wait() {
 		if (ok_to_wait) {
 			sem_wait(wait_event);
@@ -572,6 +584,9 @@ struct threadystruct
 	void notify() {
 		// fallback to single-threaded mode
 		our_callback();
+	}
+	bool is_busy() const {
+		return false;
 	}
 	void notify_wait() {
 	}
