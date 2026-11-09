@@ -65,3 +65,19 @@
   - `epic12_staging_columns`: **PASS**
   - `audio_tempo`: **PASS**
   - `frontend_state`: **PASS**
+
+---
+
+## 四、 构建与部署记录
+
+- **构建 Tag**：`blitter-busy-fix`
+- **基线 Commit**：`527b985bdb3966b8546308064d371000297746bc`
+- **提交 Commit**：`6e1fb9e278dac042fed87eb18066c8ce241fed03`
+- **生成的 XEX 镜像**：
+  - `fbneo.xex` (diag): 34,865,152 bytes | SHA256 `d081f068625925bc81a6467c1b4c87a43862fd1f798bd33fe4958f4faff7c996`
+- **归档路径**：
+  - `/home/humor/salvia-tests/xex-archive/fbneo-20261109-2127-blitter-busy-fix-diag.xex`
+- **Distro 部署**：
+  - 已部署至 `/home/humor/src/Salvia/Distro360/fbneo.xex`
+- **实机部署**：
+  - 自动部署后台守护脚本正在监听 Xbox 360 Jasper (`192.168.2.232:21`)，待退出至 Aurora Dashboard 即可完成静默上传。
