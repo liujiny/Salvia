@@ -43,17 +43,3 @@
 
 - 编译目标：`fbneo.xex`（诊断分支，`SALVIA_FBNEO_DIAGNOSTICS 1`，`--fbneo-only`）。
 - 部署目标：Xbox 360 Jasper (`192.168.2.232:/Usb0/Salvia-360/fbneo.xex`)。
-- 编译命令：
-  ```bash
-  /home/humor/salvia-tests/xex-build/build-xex.sh --tag ddpdfk-no-stall-default --flavor diag --fbneo-only
-  ```
-- 部署镜像信息：
-  - 文件：`Distro360/fbneo.xex`
-  - 大小：`34,897,920` 字节
-  - SHA-256：`54d34db2baf73c5a41a14d94cb4c1ce291499ab671558f43a56c85edda108d8d`
-  - 外部归档：`/home/humor/salvia-tests/xex-archive/fbneo-20261111-2126-ddpdfk-no-stall-default-diag.xex`
-- 部署命令：
-  ```bash
-  python3 /home/humor/salvia-tests/upload_to_xbox.py /home/humor/src/Salvia/Distro360/fbneo.xex
-  ```
-  已于 2026-11-11 21:27 成功上传至 Jasper 主机 `/Usb0/Salvia-360/fbneo.xex` 并由 Aurora 自动启动。
