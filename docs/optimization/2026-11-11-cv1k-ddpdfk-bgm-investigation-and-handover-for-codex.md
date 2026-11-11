@@ -1,3 +1,5 @@
+> Codex接手更新（2026-11-11）：已取回用户两份最新slot0和日志，并用回读SHA纠正了首次实际运行仍是旧版的部署差异；随后真正部署6e1fb9e2再次实机确认仍会失音。真实MPEG解码对照与现场末帧完全匹配。宿主单变量复现发现，Xbox新增整段Bus Stall CPU扣周期使下一段音乐命令晚745帧（约12.42秒）；无扣周期的解释器与DRC都能及时衔接。当前正在请用户切换本游戏Timing Model到Unthrottled (102.4MHz No Stall)验证。详见 [Codex接手取证与对照](2026-11-11-ddpdfk-bgm-codex-takeover.md)。下文关于MPEG损坏、音序无限快进和保存执行ACB_WRITE的表述属于未证实/需纠正假设，不能继续当作根因。
+
 # Salvia / FBNeo CV1000 大复活 (DDPDFK) BGM 背景音乐中断问题排查交接文档
 
 - **状态**：未解决，交接给 Codex 进一步排查与定位。
