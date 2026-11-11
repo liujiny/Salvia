@@ -383,8 +383,34 @@ static struct BurnDIPInfo Cv1ksDIPList[]=
 	{0x00, 0x01, 0x02, 0x02, "On"				},
 };
 
+static struct BurnDIPInfo Cv1kDfkDIPList[]=
+{
+	DIP_OFFSET(0x18)
+	{0x00, 0xff, 0xff, 0x00, NULL				},
+	{0x01, 0xff, 0xff, 0x0f, NULL				},
+	{0x02, 0xff, 0xff, 0x00, NULL				},
+	{0x03, 0xff, 0xff, 0x00, NULL				},
+
+	{0   , 0xfe, 0   ,    2, "S2:1"				},
+	{0x00, 0x01, 0x01, 0x00, "Off"				},
+	{0x00, 0x01, 0x01, 0x01, "On"				},
+
+	{0   , 0xfe, 0   ,    2, "S2:2"				},
+	{0x00, 0x01, 0x02, 0x00, "Off"				},
+	{0x00, 0x01, 0x02, 0x02, "On"				},
+
+	{0   , 0xfe, 0   ,    2, "S2:3"				},
+	{0x00, 0x01, 0x04, 0x00, "Off"				},
+	{0x00, 0x01, 0x04, 0x04, "On"				},
+
+	{0   , 0xfe, 0   ,    2, "S2:4"				},
+	{0x00, 0x01, 0x08, 0x00, "Off"				},
+	{0x00, 0x01, 0x08, 0x08, "On"				},
+};
+
 STDDIPINFOEXT(Cv1k, Cv1k, Default)
 STDDIPINFOEXT(Cv1ks, Cv1ks, Default)
+STDDIPINFOEXT(Cv1kDfk, Cv1kDfk, Default)
 
 static INT32 Cv1kBootDIPInfo(struct BurnDIPInfo* pdi, UINT32 i)
 {
@@ -402,6 +428,24 @@ static INT32 Cv1kBootDIPInfo(struct BurnDIPInfo* pdi, UINT32 i)
 	}
 #endif
 	return Cv1kDIPInfo(pdi, i);
+}
+
+static INT32 Cv1kDfkBootDIPInfo(struct BurnDIPInfo* pdi, UINT32 i)
+{
+#if defined(_XBOX) || defined(SH3_PPC_DRC_TEST)
+	const unsigned base = sizeof(Cv1kDfkDIPList) / sizeof(Cv1kDfkDIPList[0]) + sizeof(DefaultDIPList) / sizeof(DefaultDIPList[0]);
+	static const BurnDIPInfo boot[] = {
+		{0, 0xfe, 0, 2, "Skip Startup RAM Test (restart)"},
+		{0x03, 0x01, 0x40, 0x00, "On"},
+		{0x03, 0x01, 0x40, 0x40, "Off"}
+	};
+	if (i >= base) {
+		if (i - base >= sizeof(boot) / sizeof(boot[0])) return 1;
+		if (pdi) *pdi = boot[i - base];
+		return 0;
+	}
+#endif
+	return Cv1kDfkDIPInfo(pdi, i);
 }
 
 
@@ -1694,7 +1738,7 @@ struct BurnDriver BurnDrvDdpdfk = {
 	"DoDonPachi Dai-Fukkatsu Ver 1.5 (2008/06/23 MASTER VER 1.5)\0", NULL, "Cave (AMI license)", "CA019",
 	L"DoDonPachi Dai-Fukkatsu Ver 1.5\0\u6012\u9996\u9818\u8702 \u5927\u5fa9\u6d3b Ver 1.5 (2008/06/23 MASTER VER 1.5)\0", NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_ORIENTATION_VERTICAL | BDF_HISCORE_SUPPORTED, 2, HARDWARE_CAVE_CV1000, GBF_VERSHOOT, FBF_DONPACHI,
-	NULL, ddpdfkRomInfo, ddpdfkRomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kBootDIPInfo,
+	NULL, ddpdfkRomInfo, ddpdfkRomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kDfkBootDIPInfo,
 	DrvInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x10000,
 	240, 320, 3, 4
 };
@@ -1719,7 +1763,7 @@ struct BurnDriver BurnDrvDdpdfk10 = {
 	"DoDonPachi Dai-Fukkatsu Ver 1.0 (2008/05/16 MASTER VER)\0", NULL, "Cave (AMI license)", "CA019",
 	L"DoDonPachi Dai-Fukkatsu Ver 1.0\0\u6012\u9996\u9818\u8702 \u5927\u5fa9\u6d3b Ver 1.0 (2008/05/16 MASTER VER)\0", NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_HISCORE_SUPPORTED, 2, HARDWARE_CAVE_CV1000, GBF_VERSHOOT, FBF_DONPACHI,
-	NULL, ddpdfk10RomInfo, ddpdfk10RomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kDIPInfo,
+	NULL, ddpdfk10RomInfo, ddpdfk10RomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kDfkBootDIPInfo,
 	DrvInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x10000,
 	240, 320, 3, 4
 };
@@ -1769,7 +1813,7 @@ struct BurnDriver BurnDrvDfkbl = {
 	"DoDonPachi Dai-Fukkatsu Black Label (2010/1/18 BLACK LABEL)\0", NULL, "Cave", "CA019B",
 	L"DoDonPachi Dai-Fukkatsu Black Label\0\u6012\u9996\u9818\u8702 \u5927\u5fa9\u6d3b (2010/1/18 BLACK LABEL)\0", NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_ORIENTATION_VERTICAL | BDF_HISCORE_SUPPORTED, 2, HARDWARE_CAVE_CV1000, GBF_VERSHOOT, FBF_DONPACHI,
-	NULL, dfkblRomInfo, dfkblRomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kBootDIPInfo,
+	NULL, dfkblRomInfo, dfkblRomName, NULL, NULL, NULL, NULL, Cv1kInputInfo, Cv1kDfkBootDIPInfo,
 	DrvInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x10000,
 	240, 320, 3, 4
 };
