@@ -955,33 +955,31 @@ static INT32 DrvFrame()
 	if (pBurnDraw) {
 		BurnDrvRedraw();
 	}
-#ifdef _XBOX
-	if (SALVIA_FBNEO_DIAGNOSTICS) {
-		reviewMarks[4] = salvia_review_clock();
-		const unsigned compiledThisFrame = Sh3DrcCompileCount() - compiledBefore;
-		const SalviaReviewTick workerWait = (wait_end > wait_start) ? (wait_end - wait_start) : 0;
-		unsigned drawsThisFrame = 0, uploadsThisFrame = 0;
-		epic12_gpu_get_frame_telemetry(&drawsThisFrame, &uploadsThisFrame);
-		cv1k_review_stalls.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks * 4,
+#if defined(_XBOX) && SALVIA_FBNEO_DIAGNOSTICS
+	reviewMarks[4] = salvia_review_clock();
+	const unsigned compiledThisFrame = Sh3DrcCompileCount() - compiledBefore;
+	const SalviaReviewTick workerWait = (wait_end > wait_start) ? (wait_end - wait_start) : 0;
+	unsigned drawsThisFrame = 0, uploadsThisFrame = 0;
+	epic12_gpu_get_frame_telemetry(&drawsThisFrame, &uploadsThisFrame);
+	cv1k_review_stalls.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks * 4,
+		compiledThisFrame, drawsThisFrame, uploadsThisFrame, workerWait);
+	if (cv1k_review.frames > 60) {
+		cv1k_review_drops.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks,
 			compiledThisFrame, drawsThisFrame, uploadsThisFrame, workerWait);
-		if (cv1k_review.frames > 60) {
-			cv1k_review_drops.record(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks,
-				compiledThisFrame, drawsThisFrame, uploadsThisFrame, workerWait);
-		}
-		if (cv1k_review.frames <= 60 && (reviewMarks[4] - reviewMarks[0]) > (cv1k_review_slow_ticks * 2)) {
-			if (s_startup_stall_count < 32) {
-				StartupDetail &sd = s_startup_stalls[s_startup_stall_count++];
-				sd.frame = cv1k_review.frames;
-				sd.total = reviewMarks[4] - reviewMarks[0];
-				sd.cpu_io = reviewMarks[2] - reviewMarks[1];
-				sd.jit_compile = (SalviaReviewTick)Sh3DrcGetCompileTicksFrame();
-				sd.compiled_blocks = compiledThisFrame;
-				sd.interp_steps = (unsigned)(Sh3WorkGetInterpreterSteps() - interpBefore);
-			}
-		}
-		if (reviewSample && cv1k_review.record(reviewMarks))
-			cv1k_review_tail.record_validated(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks);
 	}
+	if (cv1k_review.frames <= 60 && (reviewMarks[4] - reviewMarks[0]) > (cv1k_review_slow_ticks * 2)) {
+		if (s_startup_stall_count < 32) {
+			StartupDetail &sd = s_startup_stalls[s_startup_stall_count++];
+			sd.frame = cv1k_review.frames;
+			sd.total = reviewMarks[4] - reviewMarks[0];
+			sd.cpu_io = reviewMarks[2] - reviewMarks[1];
+			sd.jit_compile = (SalviaReviewTick)Sh3DrcGetCompileTicksFrame();
+			sd.compiled_blocks = compiledThisFrame;
+			sd.interp_steps = (unsigned)(Sh3WorkGetInterpreterSteps() - interpBefore);
+		}
+	}
+	if (reviewSample && cv1k_review.record(reviewMarks))
+		cv1k_review_tail.record_validated(reviewMarks, cv1k_review.frames, cv1k_review_slow_ticks);
 #endif
 
 	return 0;
