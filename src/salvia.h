@@ -502,6 +502,34 @@ namespace {
 		return validKey;
 	}
 
+	inline bool consumePendingSelection(std::map<std::string, int>* pending,
+	                                    const std::string& rawKey,
+	                                    const std::string& validKey,
+	                                    int& outSelected)
+	{
+		if (!pending || pending->empty())
+			return false;
+		auto it = pending->find(rawKey);
+		if (it == pending->end() && validKey != rawKey)
+			it = pending->find(validKey);
+		if (it == pending->end())
+			return false;
+		outSelected = it->second;
+		pending->erase(it);
+		return true;
+	}
+
+	inline void preserveGameSpecificBeforeClear(CfgLoader* cfg)
+	{
+		if (!cfg) return;
+		for (auto it = cfg->gameSpecificLibretroParams.begin();
+		     it != cfg->gameSpecificLibretroParams.end(); ++it) {
+			if (cfg->pendingLibretroSelections.find(it->first) == cfg->pendingLibretroSelections.end())
+				cfg->pendingLibretroSelections[it->first] = it->second->selected;
+		}
+		cfg->gameSpecificLibretroParams.clear();
+	}
+
 	// Crea o actualiza una entrada preservando `selected` si ya existía.
 	void applyEntry(std::map<std::string, std::unique_ptr<cfg::t_emu_props> > &data,
 					const std::string& key,
@@ -509,7 +537,8 @@ namespace {
 					std::vector<std::string> values, // Pasamos por valor para mover
 					int defaultIdx,
 					std::vector<std::string> labels,
-					const std::string& category = "")
+					const std::string& category = "",
+					std::map<std::string, int>* pending = NULL)
 	{
 		std::string validKey = cleanPerGameKey(key);
 
@@ -524,8 +553,16 @@ namespace {
 			if (it->second->labels.empty() && !labels.empty())
 				it->second->labels = labels;
 
-			if (it->second->cachedValue.empty() && !it->second->values.empty())
+			int pendingSel = 0;
+			if (consumePendingSelection(pending, key, validKey, pendingSel))
+				it->second->selected = pendingSel;
+
+			const int nVals = static_cast<int>(it->second->values.size());
+			if (nVals > 0) {
+				if (it->second->selected < 0 || it->second->selected >= nVals)
+					it->second->selected = (defaultIdx >= 0 && defaultIdx < nVals) ? defaultIdx : 0;
 				it->second->cachedValue = it->second->values[it->second->selected];
+			}
 
 			it->second->isForThisGame = true;
 			it->second->category = category;
@@ -541,13 +578,20 @@ namespace {
 		raw->description = std::move(description);
 		raw->values      = std::move(values);
 		raw->labels      = std::move(labels);
-		raw->selected    = defaultIdx;
+		int initialSel   = defaultIdx;
+		int pendingSel   = 0;
+		if (consumePendingSelection(pending, key, validKey, pendingSel))
+			initialSel = pendingSel;
+		const int nVals = static_cast<int>(raw->values.size());
+		if (nVals > 0 && (initialSel < 0 || initialSel >= nVals))
+			initialSel = (defaultIdx >= 0 && defaultIdx < nVals) ? defaultIdx : 0;
+		raw->selected        = initialSel;
 		raw->defaultSelected = defaultIdx;
-		raw->isForThisGame = true;
-		raw->category    = category;
+		raw->isForThisGame   = true;
+		raw->category        = category;
 
 		if (!raw->values.empty())
-			raw->cachedValue = raw->values[defaultIdx];
+			raw->cachedValue = raw->values[raw->selected];
 
 		LOG_DEBUG("[Core Options] SET %s = %s", validKey.c_str(), raw->cachedValue.c_str());
 		data[validKey] = std::unique_ptr<cfg::t_emu_props>(raw); 
@@ -557,10 +601,11 @@ namespace {
 					const std::string& key,
 					std::string description,
 					std::vector<std::string> values,
-					int defaultIdx = 0)
+					int defaultIdx = 0,
+					std::map<std::string, int>* pending = NULL)
 	{
 		std::vector<std::string> emptyLabels;
-		applyEntry(data, key, description, values, defaultIdx, emptyLabels);
+		applyEntry(data, key, description, values, defaultIdx, emptyLabels, "", pending);
 	}
 } // anonim namespace
 
@@ -835,7 +880,9 @@ bool extractAndLoadGame(std::string rompath, bool tmpDelete = true){
 * Obtains all the parameters sent by RETRO_ENVIRONMENT_SET_VARIABLES and sets the parameter map in memory
 * with all the values
 */
-void processParameters(const retro_variable* vars, std::map<std::string, std::unique_ptr<cfg::t_emu_props> > &paramsMap){
+void processParameters(const retro_variable* vars,
+                       std::map<std::string, std::unique_ptr<cfg::t_emu_props> > &paramsMap,
+                       std::map<std::string, int>* pending = NULL){
 	//cleanPrefix(gameMenu->getCfgLoader()->startupLibretroParams);
 	for (int i = 0; vars[i].key != nullptr; ++i) {
 		// 1. Protección contra keys vacias (basura recurrente en algunos cores)
@@ -862,7 +909,7 @@ void processParameters(const retro_variable* vars, std::map<std::string, std::un
                 
 				if (!values.empty()) {
 					LOG_DEBUG("[Core Options] PARSE OK: %s", key.c_str());
-					applyEntry(paramsMap, key, desc, std::move(values), 0);
+					applyEntry(paramsMap, key, desc, std::move(values), 0, pending);
 				} else {
 					LOG_DEBUG("[Core Options] ERROR: No split tokens in %s", key.c_str());
 				}

@@ -30,6 +30,9 @@ public:
 	std::vector<std::unique_ptr<cfg::t_cfg_emu>> emulators;
 	std::map<std::string, std::unique_ptr<cfg::t_emu_props> > startupLibretroParams;
 	std::map<std::string, std::unique_ptr<cfg::t_emu_props> > gameSpecificLibretroParams;
+	// Selections loaded from core/game .opt files before the core declares
+	// its options (e.g. FBNeo declares options inside retro_load_game).
+	std::map<std::string, int> pendingLibretroSelections;
 	// libretro V2 core-option categories (category_key -> display desc), kept in the
 	// order the core declares them. Runtime only, not persisted; used to build the
 	// per-category submenus in the core options menu.

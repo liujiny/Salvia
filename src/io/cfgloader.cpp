@@ -13,6 +13,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <algorithm> // Requerido para std::rotate
 
 extern "C"{
@@ -792,18 +793,37 @@ std::string CfgLoader::saveMainParams(){
 	return LanguageManager::instance()->get("msg.cfg.savelocation") + mainPath;
 }
 
-std::string CfgLoader::saveCoreParams(){
-	std::vector<std::string> fileCoreCfg;
-	std::string optionValues;
-
-	for (auto it = startupLibretroParams.begin(); it != startupLibretroParams.end(); ++it) {
-		optionValues = "";
+static void appendCoreParamsLines(
+		const std::map<std::string, std::unique_ptr<cfg::t_emu_props> >& params,
+		std::vector<std::string>& outLines,
+		const std::set<std::string>* skipKeys = NULL){
+	for (auto it = params.begin(); it != params.end(); ++it) {
+		if (skipKeys && skipKeys->count(it->first))
+			continue;
+		std::string optionValues;
 		for (std::size_t i=0; i < it->second->values.size(); i++){
 			optionValues += it->second->values[i] + (i<it->second->values.size() - 1 ? " | " : "");
 		}
-		fileCoreCfg.push_back("#" + optionValues);
-		fileCoreCfg.push_back(it->first + "=" + Constant::TipoToStr(it->second->selected));
-    }
+		outLines.push_back("#" + optionValues);
+		outLines.push_back(it->first + "=" + Constant::TipoToStr(it->second->selected));
+	}
+}
+
+static void resetParamsMapToDefaults(
+		std::map<std::string, std::unique_ptr<cfg::t_emu_props> >& params){
+	for (auto it = params.begin(); it != params.end(); ++it) {
+		cfg::t_emu_props *p = it->second.get();
+		int d = (p->defaultSelected >= 0 && p->defaultSelected < (int)p->values.size())
+		        ? p->defaultSelected : 0;
+		p->selected = d;
+		if (!p->values.empty())
+			p->cachedValue = p->values[d];
+	}
+}
+
+std::string CfgLoader::saveCoreParams(){
+	std::vector<std::string> fileCoreCfg;
+	appendCoreParamsLines(startupLibretroParams, fileCoreCfg);
 
 	std::string corepath = getCoreCfgPath(true);
 	FileList::guardarVector(corepath, fileCoreCfg);
@@ -836,8 +856,8 @@ void CfgLoader::loadCoreParams(){
 // Aplica un fichero de opciones de core (lineas "key=indice", '#'=comentario)
 // ACTUALIZANDO `selected` in-place sobre las entradas existentes (conserva
 // values/labels que el core rellena en SET_CORE_OPTIONS); si la key no existe
-// aun, crea una entrada minima. Robusto tanto antes como despues de que el core
-// declare las opciones. Devuelve true si el fichero existia y tenia contenido.
+// aun (p.ej. FBNeo declara opciones y dipswitches dentro de retro_load_game),
+// la guarda en pendingLibretroSelections para aplicarla en SET_CORE_OPTIONS*.
 bool CfgLoader::applyCoreParamsFile(const std::string& path){
 	std::vector<std::string> fileConfig;
 	FileList::cargarVector(path, fileConfig);
@@ -851,13 +871,16 @@ bool CfgLoader::applyCoreParamsFile(const std::string& path){
 		if ((pos = linea.find("=")) != std::string::npos){
 			std::string key = linea.substr(0, pos);
 			int idx = Constant::strToTipo<int>(Constant::Trim(linea.substr(pos + 1)));
-			std::map<std::string, std::unique_ptr<cfg::t_emu_props> >::iterator it = startupLibretroParams.find(key);
-			if (it != startupLibretroParams.end()){
-				it->second->selected = idx;
+			auto itGame = gameSpecificLibretroParams.find(key);
+			if (itGame != gameSpecificLibretroParams.end()){
+				itGame->second->selected = idx;
+				continue;
+			}
+			auto itStartup = startupLibretroParams.find(key);
+			if (itStartup != startupLibretroParams.end()){
+				itStartup->second->selected = idx;
 			} else {
-				cfg::t_emu_props *ptr = new cfg::t_emu_props();
-				ptr->selected = idx;
-				startupLibretroParams[key] = std::unique_ptr<cfg::t_emu_props>(ptr);
+				pendingLibretroSelections[key] = idx;
 			}
 		}
 	}
@@ -871,18 +894,13 @@ std::string CfgLoader::getGameCoreCfgPath(const std::string& gamePath){
 	return dir.getFolder(gamePath) + Constant::getFileSep() + dir.getFileNameNoExt(gamePath) + CORE_OPT_EXT;
 }
 
-// Resetea TODAS las opciones (startupLibretroParams) a su valor por defecto
-// declarado por el core (defaultSelected, poblado por applyEntry en
-// SET_CORE_OPTIONS). Base para recargar limpio al cambiar de juego.
+// Resetea TODAS las opciones (startupLibretroParams y gameSpecificLibretroParams)
+// a su valor por defecto. Base para recargar limpio al cambiar de juego.
 void CfgLoader::resetCoreParamsToDefaults(){
 	appliedFileParmsCore = LanguageManager::instance()->get("menu.core.options.msg.default");
-	for (std::map<std::string, std::unique_ptr<cfg::t_emu_props> >::iterator it = startupLibretroParams.begin();
-	     it != startupLibretroParams.end(); ++it) {
-		cfg::t_emu_props *p = it->second.get();
-		int d = (p->defaultSelected >= 0 && p->defaultSelected < (int)p->values.size())
-		        ? p->defaultSelected : 0;
-		p->selected = d;
-	}
+	pendingLibretroSelections.clear();
+	resetParamsMapToDefaults(startupLibretroParams);
+	gameSpecificLibretroParams.clear();
 }
 
 // En la carga del juego, por CAPAS para no arrastrar opciones del juego anterior:
@@ -902,21 +920,20 @@ void CfgLoader::loadCoreParamsForGame(const std::string& gamePath){
 	}
 }
 
-// Igual que saveCoreParams pero al fichero por-juego (junto al juego).
+// Guarda tanto las opciones generales del core (startupLibretroParams) como las
+// especificas del juego (gameSpecificLibretroParams: dipswitch, cheat, ips, romdata)
+// en el fichero por-juego (<juego>.opt).
 std::string CfgLoader::saveGameCoreParams(const std::string& gamePath){
 	if (gamePath.empty())
 		return LanguageManager::instance()->get("msg.key.cfg.load");
 
+	std::set<std::string> gameKeys;
+	for (auto it = gameSpecificLibretroParams.begin(); it != gameSpecificLibretroParams.end(); ++it)
+		gameKeys.insert(it->first);
+
 	std::vector<std::string> fileCoreCfg;
-	std::string optionValues;
-	for (auto it = startupLibretroParams.begin(); it != startupLibretroParams.end(); ++it) {
-		optionValues = "";
-		for (std::size_t i=0; i < it->second->values.size(); i++){
-			optionValues += it->second->values[i] + (i<it->second->values.size() - 1 ? " | " : "");
-		}
-		fileCoreCfg.push_back("#" + optionValues);
-		fileCoreCfg.push_back(it->first + "=" + Constant::TipoToStr(it->second->selected));
-	}
+	appendCoreParamsLines(startupLibretroParams, fileCoreCfg, &gameKeys);
+	appendCoreParamsLines(gameSpecificLibretroParams, fileCoreCfg);
 
 	std::string gamecfg = getGameCoreCfgPath(gamePath);
 	FileList::guardarVector(gamecfg, fileCoreCfg);

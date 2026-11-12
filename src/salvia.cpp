@@ -560,11 +560,13 @@ static bool retro_environment(unsigned cmd, void *data) {
 			//Some cores don't publish their options until a rom is loaded, so we need to diferenciate them
 			//from the game specific ones to be able to store them separately
 			if (!gameMenu->romLoaded && g_currentRompath.empty()){
-				processParameters(vars, gameMenu->getCfgLoader()->startupLibretroParams);
+				processParameters(vars, gameMenu->getCfgLoader()->startupLibretroParams,
+					&gameMenu->getCfgLoader()->pendingLibretroSelections);
 			} else {
 				//We clear the previous game configuration if it existed
-				gameMenu->getCfgLoader()->gameSpecificLibretroParams.clear();
-				processParameters(vars, gameMenu->getCfgLoader()->gameSpecificLibretroParams);
+				preserveGameSpecificBeforeClear(gameMenu->getCfgLoader());
+				processParameters(vars, gameMenu->getCfgLoader()->gameSpecificLibretroParams,
+					&gameMenu->getCfgLoader()->pendingLibretroSelections);
 			}
 			gameMenu->configMenus->poblarCoreOptions(gameMenu->getCfgLoader());
 			gameMenu->configMenus->resetIndexPos();
@@ -681,7 +683,8 @@ static bool retro_environment(unsigned cmd, void *data) {
 					}
 				}
 
-				applyEntry(gameMenu->getCfgLoader()->startupLibretroParams, key, desc, values, defaultIdx, labels);
+				applyEntry(gameMenu->getCfgLoader()->startupLibretroParams, key, desc, values, defaultIdx, labels, "",
+					&gameMenu->getCfgLoader()->pendingLibretroSelections);
 			}
 			gameMenu->configMenus->poblarCoreOptions(gameMenu->getCfgLoader());
 			gameMenu->configMenus->resetIndexPos();
@@ -702,7 +705,7 @@ static bool retro_environment(unsigned cmd, void *data) {
 			const retro_core_options_v2* usV2 = nullptr;
 			//Fbneo uses lots of parameters for cheats and dips, so it is mandatory
 			//to clear them before
-			gameMenu->getCfgLoader()->gameSpecificLibretroParams.clear();
+			preserveGameSpecificBeforeClear(gameMenu->getCfgLoader());
 			gameMenu->getCfgLoader()->libretroCategories.clear();
 
 			if (cmd == RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2) {
@@ -800,14 +803,15 @@ static bool retro_environment(unsigned cmd, void *data) {
 
 				const std::string catKey = defs[i].category_key ? defs[i].category_key : "";
 
+				auto* pending = &gameMenu->getCfgLoader()->pendingLibretroSelections;
 				if (defs[i].category_key != nullptr) {
 					auto it = std::find(categoriesVec.begin(), categoriesVec.end(), defs[i].category_key);
 					if (it == categoriesVec.end())
-						applyEntry(gameMenu->getCfgLoader()->startupLibretroParams, key, desc, values, defaultIdx, labels, catKey);
+						applyEntry(gameMenu->getCfgLoader()->startupLibretroParams, key, desc, values, defaultIdx, labels, catKey, pending);
 					else
-						applyEntry(gameMenu->getCfgLoader()->gameSpecificLibretroParams, key, desc, values, defaultIdx, labels, catKey);
+						applyEntry(gameMenu->getCfgLoader()->gameSpecificLibretroParams, key, desc, values, defaultIdx, labels, catKey, pending);
 				} else {
-					applyEntry(gameMenu->getCfgLoader()->startupLibretroParams, key, desc, values, defaultIdx, labels, catKey);
+					applyEntry(gameMenu->getCfgLoader()->startupLibretroParams, key, desc, values, defaultIdx, labels, catKey, pending);
 				}
 			}
 
